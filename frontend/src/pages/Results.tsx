@@ -1,23 +1,40 @@
+/*
+ * PURPOSE: Results page to display swing analysis feedback
+ * 
+ * This component retrieves the analysis data sent from the Home page and
+ * displays a detailed breakdown of the golf swing, including:
+ * - Analysis summary
+ * - Recommended drills
+ * - Key frames from the video
+ * 
+ * It also features navigation back to the Home page for further analysis.
+ */
+
+// Import necessary libraries and components
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import AnalysisResults from '../components/AnalysisResults';
 
+// Define the structure of the analysis data
 interface AnalysisData {
-  summary: string;
+  summary: string;      // Text summary of the swing
   drills: Array<{
-    title: string;
-    description: string;
+    title: string;       // Drill name
+    description: string; // Drill description
   }>;
-  keyframes: string[];
+  keyframes: string[];  // URLs to key moments images
 }
 
+// Define the Results component
 const Results: React.FC = () => {
+  // Retrieve the analysis data passed through navigation
   const location = useLocation();
   const analysisData = location.state as AnalysisData;
 
   // If no data is available, show error message
   if (!analysisData) {
     return (
+      // Background styling and layout
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="bg-white rounded-lg shadow-md p-8">
@@ -26,6 +43,7 @@ const Results: React.FC = () => {
               It looks like you've reached this page without uploading a video. 
               Please go back to the home page to analyze your golf swing.
             </p>
+            {/* Button to navigate back to the upload page */}
             <Link
               to="/"
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -38,6 +56,7 @@ const Results: React.FC = () => {
     );
   }
 
+  // Return the main analysis results display
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -50,12 +69,14 @@ const Results: React.FC = () => {
           </p>
         </div>
 
+        {/* Render the analysis results component with the passed data */}
         <AnalysisResults
           summary={analysisData.summary}
           drills={analysisData.drills}
           keyframes={analysisData.keyframes}
         />
 
+        {/* Navigation button to analyze another video */}
         <div className="mt-12 text-center">
           <Link
             to="/"
@@ -69,4 +90,5 @@ const Results: React.FC = () => {
   );
 };
 
+// Export the Results component
 export default Results;

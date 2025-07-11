@@ -1,30 +1,54 @@
+/*
+ * PURPOSE: Home page component for the Golf Swing Analyzer
+ * 
+ * This component provides the main functionality for the app:
+ * 1. Users can upload a golf swing video
+ * 2. It handles video upload, removal, and analysis
+ * 3. Displays a loading overlay during analysis
+ * 4. Shows tips for better video analysis
+ * 5. Manages routes to the Results page upon analysis completion
+ */
+
+// Import React and necessary hooks
 import React, { useState } from 'react';
+// Import navigation hook to move between pages
 import { useNavigate } from 'react-router-dom';
+// Import custom components for uploading and previewing videos
 import VideoUpload from '../components/VideoUpload';
 import VideoPreview from '../components/VideoPreview';
+// Import the loading overlay component
 import LoadingOverlay from '../components/LoadingOverlay';
+// Import the API call function to analyze the swing
 import { analyzeSwing } from '../utils/api';
 
+// Home page functional component
 const Home: React.FC = () => {
+  // State to keep track of the selected video file
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  // State to determine if the app is currently analyzing the video
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // Hook to navigate to different routes (pages)
   const navigate = useNavigate();
 
+  // Function to handle video selection
   const handleVideoSelect = (file: File) => {
     setSelectedFile(file);
   };
 
+  // Function to remove the selected video
   const handleRemoveVideo = () => {
     setSelectedFile(null);
   };
 
+  // Function to initiate video analysis when user clicks "Analyze"
   const handleAnalyze = async () => {
     if (!selectedFile) return;
 
     setIsAnalyzing(true);
     try {
+      // Call the API to analyze the golf swing video
       const results = await analyzeSwing(selectedFile);
-      // Navigate to results page with the analysis data
+      // On successful analysis, navigate to the Results page with data
       navigate('/results', { state: results });
     } catch (error) {
       console.error('Analysis failed:', error);
@@ -34,8 +58,10 @@ const Home: React.FC = () => {
     }
   };
 
+  // Render the component
   return (
     <div className="min-h-screen bg-gray-50 py-12">
+      {/* Show loading overlay when analysis is in progress */}
       <LoadingOverlay isVisible={isAnalyzing} />
       
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -50,6 +76,7 @@ const Home: React.FC = () => {
         </div>
 
         <div className="space-y-8">
+          {/* Conditionally render based on whether a file is selected */}
           {!selectedFile ? (
             <VideoUpload 
               onVideoSelect={handleVideoSelect} 
@@ -65,7 +92,7 @@ const Home: React.FC = () => {
           )}
         </div>
 
-        {/* Tips Section */}
+        {/* Tips Section for users to get better analysis */}
         <div className="mt-16 bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Tips for Better Analysis</h2>
           <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-600">
@@ -92,4 +119,5 @@ const Home: React.FC = () => {
   );
 };
 
+// Export the Home component for use in other parts of the app
 export default Home;

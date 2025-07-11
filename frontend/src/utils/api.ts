@@ -1,29 +1,45 @@
+/*
+ * PURPOSE: API utility for communicating with the backend server
+ * 
+ * This module provides:
+ * 1. Function for analyzing a golf swing video by sending it to the backend
+ * 2. Defines the structure of the analysis response with an interface
+ * 3. Handles API errors and returns mock data for development
+ */
+
+// Define the shape of the analysis response from the backend
 interface AnalysisResponse {
-  summary: string;
+  summary: string; // Summary of the swing analysis
   drills: Array<{
-    title: string;
-    description: string;
+    title: string;       // Drill title
+    description: string; // Drill description
   }>;
-  keyframes: string[];
+  keyframes: string[]; // URLs to keyframes or images
 }
 
 // Base URL for the backend API - update this when you deploy your backend
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+// Function to analyze a golf swing video
+// Takes a File (video) as input and returns a Promise with analysis results
 export const analyzeSwing = async (videoFile: File): Promise<AnalysisResponse> => {
+  // Create a FormData object to hold the video file
   const formData = new FormData();
   formData.append('video', videoFile);
 
   try {
+    // Make a POST request to the backend server
     const response = await fetch(`${API_BASE_URL}/upload`, {
       method: 'POST',
       body: formData,
     });
 
+    // Check if the response is successful
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
+    // Parse the JSON response and return it
     const data = await response.json();
     return data;
   } catch (error) {
@@ -35,7 +51,9 @@ export const analyzeSwing = async (videoFile: File): Promise<AnalysisResponse> =
   }
 };
 
-// Mock data for development - remove when backend is ready
+// Function to get mock data for development
+// Returns fake analysis data
+// Remove this when the backend is ready
 const getMockAnalysisData = (): AnalysisResponse => {
   return {
     summary: "Your swing shows good fundamentals with a few areas for improvement. The main issue is early extension during the downswing, where your hips move toward the ball. This reduces power and can cause inconsistent contact. Your backswing plane is slightly steep, which contributes to an over-the-top move. Focus on maintaining your spine angle and improving your swing plane for better results.",
