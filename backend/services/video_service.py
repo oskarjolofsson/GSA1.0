@@ -5,42 +5,66 @@ This service handles video file processing and metadata extraction.
 It's responsible for:
 1. Processing uploaded video files
 2. Extracting video metadata (duration, resolution, etc.)
-3. Generating thumbnails or keyframes (optional)
-4. Preparing video data for AI analysis
-5. File cleanup and management
+3. Generating keyframes for AI analysis
+4. File cleanup and management
 """
 
 import os
 import cv2
 import uuid
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from werkzeug.datastructures import FileStorage
 
 class VideoProcessingService:
 
     def __init__(self, upload_folder: str):
         self.upload_folder = upload_folder
+        self.allowed_types = ['mp4', 'mov', 'avi', 'mkv']
+        self.max_file_size = 100 * 1024 * 1024  # 100MB
+        self.min_resolution = (640, 480)
+        self.min_duration = 1.0  # seconds
+        
         if not os.path.exists(upload_folder):
             os.makedirs(upload_folder)
             print(f"Upload folder created: {upload_folder}")
         else:
             print(f"Using existing upload folder: {upload_folder}")
 
-
-    
-    # Create metadata for a video file, including keyframes
-    # Args:
-    #     file_path: Path to the video file
-    #     num_keyframes: Number of keyframes to extract (default: 4)
-    # Returns:
-    #     Dict: Video metadata including duration, resolution, and keyframes
-    def create_video_metadata(self, file_path: str, num_keyframes: int = 20) -> Dict[str, Any]:
+    def _generate_unique_filename(self, original_filename: str) -> str:
+        """
+        Generate a unique filename to avoid conflicts
         
-        try:
-            # Open video file
-            cap = cv2.VideoCapture(file_path)
+        Args:
+            original_filename: The original filename
             
+        Returns:
+            str: A unique filename with timestamp and UUID
+        """
+        if not original_filename:
+            original_filename = "video"
+        
+        # Get file extension
+        name, ext = os.path.splitext(original_filename)
+        
+        # Generate unique filename with timestamp and UUID
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        unique_id = str(uuid.uuid4())[:8]
+        
+        return f"{name}_{timestamp}_{unique_id}{ext}"
+
+    def _extract_basic_metadata(self, file_path: str) -> Dict[str, Any]:
+        """
+        Extract basic video metadata without keyframes
+        
+        Args:
+            file_path: Path to the video file
+            
+        Returns:
+            Dict: Basic video metadata
+        """
+        try:
+            cap = cv2.VideoCapture(file_path)
             if not cap.isOpened():
                 raise ValueError(f"Could not open video file: {file_path}")
             
@@ -50,6 +74,56 @@ class VideoProcessingService:
             width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             duration = total_frames / fps if fps > 0 else 0
+            
+            cap.release()
+            
+            return {
+                "filename": os.path.basename(file_path),
+                "duration": round(duration, 2),
+                "resolution": f"{width}x{height}",
+                "fps": round(fps, 2),
+                "total_frames": total_frames,
+                "file_size": os.path.getsize(file_path),
+                "width": width,
+                "height": height,
+                "creation_time": datetime.fromtimestamp(os.path.getctime(file_path)).isoformat(),
+                "modification_time": datetime.fromtimestamp(os.path.getmtime(file_path)).isoformat(),
+                "format": os.path.splitext(file_path)[1].lower().replace('.', '')
+            }
+        except Exception as e:
+            print(f"Error extracting basic metadata from {file_path}: {str(e)}")
+            return {
+                "filename": os.path.basename(file_path) if file_path else "unknown",
+                "duration": 0,
+                "resolution": "unknown",
+                "fps": 0,
+                "total_frames": 0,
+                "file_size": 0,
+                "width": 0,
+                "height": 0,
+                "creation_time": None,
+                "modification_time": None,
+                "format": None,
+                "error": str(e)
+            }
+
+    def _extract_keyframes(self, file_path: str, num_keyframes: int = 20) -> List[str]:
+        """
+        Extract keyframes from video file
+        
+        Args:
+            file_path: Path to the video file
+            num_keyframes: Number of keyframes to extract
+            
+        Returns:
+            List[str]: List of keyframe file paths
+        """
+        try:
+            cap = cv2.VideoCapture(file_path)
+            if not cap.isOpened():
+                return []
+            
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             
             # Create directory for keyframes
             keyframes_dir = os.path.join(os.path.dirname(file_path), 'keyframes')
@@ -63,59 +137,73 @@ class VideoProcessingService:
                 os.makedirs(keyframes_dir, exist_ok=True)
             
             # Calculate frame intervals for keyframes
-            # Skip first and last 10% to avoid black frames
+            # Skip first and last 25% to avoid black frames
             start_frame = int(total_frames * 0.25)
             end_frame = int(total_frames * 0.75)
             usable_frames = end_frame - start_frame
             
             if usable_frames <= 0:
-                raise ValueError("Video too short to extract keyframes")
+                cap.release()
+                return []
             
-            # Extract keyframes-indexes at even intervals
-            keyframe_paths = []
+            # Extract keyframes at even intervals
             frame_interval = usable_frames // num_keyframes
             keyframe_indices = [start_frame + i * frame_interval for i in range(num_keyframes)]
-
+            
             keyframe_paths = []
             for idx, frame_number in enumerate(keyframe_indices):
                 cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
                 ret, frame = cap.read()
                 if ret:
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    unique_id = str(uuid.uuid4())[:8]
-                    filename = f"keyframe_{idx}_{timestamp}_{unique_id}.jpg"
-
-                    # filename = f"keyframe_{idx+1}.jpg"
+                    filename = self._generate_unique_filename(f"keyframe_{idx}.jpg")
                     
                     keyframe_path = os.path.join(keyframes_dir, filename)
                     cv2.imwrite(keyframe_path, frame)
                     keyframe_paths.append(keyframe_path)
                     print(f"Extracted keyframe {idx+1}/{num_keyframes} at frame {frame_number}")
             
-            # Release video capture
             cap.release()
+            return keyframe_paths
             
-            # Create metadata dictionary
-            metadata = {
-                "filename": os.path.basename(file_path),
-                "duration": round(duration, 2),
-                "resolution": f"{width}x{height}",
-                "fps": round(fps, 2),
-                "total_frames": total_frames,
-                "file_size": os.path.getsize(file_path),
+        except Exception as e:
+            print(f"Error extracting keyframes from {file_path}: {str(e)}")
+            return []
+
+    def create_video_metadata(self, file_path: str, num_keyframes: int = 20) -> Dict[str, Any]:
+        """
+        Create complete metadata for a video file, including keyframes
+        
+        Args:
+            file_path: Path to the video file
+            num_keyframes: Number of keyframes to extract
+            
+        Returns:
+            Dict: Complete video metadata including duration, resolution, and keyframes
+        """
+        try:
+            # Extract basic metadata
+            metadata = self._extract_basic_metadata(file_path)
+            
+            if "error" in metadata:
+                return metadata
+            
+            # Extract keyframes
+            keyframe_paths = self._extract_keyframes(file_path, num_keyframes)
+            
+            # Add keyframe information
+            metadata.update({
                 "keyframes": keyframe_paths,
                 "num_keyframes_extracted": len(keyframe_paths),
                 "extraction_timestamp": datetime.now().isoformat()
-            }
+            })
             
-            print(f"Successfully extracted metadata for {os.path.basename(file_path)}")
-            print(f"Duration: {duration:.2f}s, Resolution: {width}x{height}, Keyframes: {len(keyframe_paths)}")
+            print(f"Successfully extracted metadata for {metadata['filename']}")
+            print(f"Duration: {metadata['duration']}s, Resolution: {metadata['resolution']}, Keyframes: {len(keyframe_paths)}")
             
             return metadata
             
         except Exception as e:
             print(f"Error processing video {file_path}: {str(e)}")
-            # Return minimal metadata on error
             return {
                 "filename": os.path.basename(file_path) if file_path else "unknown",
                 "duration": 0,
@@ -129,279 +217,202 @@ class VideoProcessingService:
                 "extraction_timestamp": datetime.now().isoformat()
             }
 
-    # Process an uploaded video file and extract metadata
+    def process_uploaded_video(self, video_file: FileStorage, num_keyframes: int = 20) -> Dict[str, Any]:
+        """
+        Process an uploaded video file and extract metadata
         
-    # Args:
-    #     video_file: The uploaded video file from Flask request
-    # Returns:
-    #     Dict: Video metadata and processing information
-    def process_uploaded_video(self, video_file: FileStorage) -> Dict[str, Any]:
+        Args:
+            video_file: The uploaded video file from Flask request
+            num_keyframes: Number of keyframes to extract
+            
+        Returns:
+            Dict: Video metadata and processing information
+        """
         try:
-            # Generate unique filename
-            original_filename = video_file.filename
+            # Validate video file first
+            is_valid, errors = self._validate_video_file_basic(video_file)
+            if not is_valid:
+                return {
+                    "success": False,
+                    "errors": errors,
+                    "filename": video_file.filename or "unknown"
+                }
+            
+            # Generate unique filename and save file
+            original_filename = video_file.filename or "video"
             unique_filename = self._generate_unique_filename(original_filename)
             upload_path = os.path.join(self.upload_folder, unique_filename)
-
+            
             # Ensure upload directory exists
             os.makedirs(self.upload_folder, exist_ok=True)
-
+            
             # Save file to disk
             video_file.save(upload_path)
-
-            # Validate video file
-            is_valid, errors = self.validate_video_file(video_file)
+            
+            # Validate video content after saving
+            is_valid, errors = self._validate_video_content(upload_path)
             if not is_valid:
+                # Clean up invalid file
+                if os.path.exists(upload_path):
+                    os.remove(upload_path)
                 return {
                     "success": False,
                     "errors": errors,
                     "filename": unique_filename
                 }
-
-            # Extract metadata
-            metadata = self.create_video_metadata(upload_path)
+            
+            # Extract complete metadata
+            metadata = self.create_video_metadata(upload_path, num_keyframes)
             metadata["success"] = True
             metadata["saved_path"] = upload_path
-
+            
             return metadata
-
+            
         except Exception as e:
             return {
                 "success": False,
                 "errors": [str(e)],
                 "filename": getattr(video_file, "filename", "unknown")
             }
-        
-    # Extract metadata from a video file
-    # Args:
-    #     file_path: Path to the video file
-    # Returns:
-    #     Dict: Video metadata information
-    # Description:
-    #     Extracts metadata such as duration, resolution, frame rate, file size,
-    #     format/codec information, creation date/time, and other relevant properties.
+
     def extract_video_metadata(self, file_path: str) -> Dict[str, Any]:
+        """
+        Extract metadata from a video file (without keyframes)
         
-        try:
-            # Get video from file path
-            cap = cv2.VideoCapture(file_path)
-            if not cap.isOpened():
-                raise ValueError(f"Could not open video file: {file_path}")
+        Args:
+            file_path: Path to the video file
             
-            # Get video properties
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            duration = total_frames / fps if fps > 0 else 0
-            resolution = f"{width}x{height}"
-            file_size = os.path.getsize(file_path)
-            creation_time = datetime.fromtimestamp(os.path.getctime(file_path)).isoformat()
-            modification_time = datetime.fromtimestamp(os.path.getmtime(file_path)).isoformat()
-            format = os.path.splitext(file_path)[1].lower().replace('.', '')
+        Returns:
+            Dict: Video metadata information
+        """
+        return self._extract_basic_metadata(file_path)
 
-            metadata = {
-                "filename": os.path.basename(file_path),
-                "duration": round(duration, 2),
-                "resolution": resolution,
-                "fps": round(fps, 2),
-                "total_frames": total_frames,
-                "file_size": file_size,
-                "creation_time": creation_time,
-                "modification_time": modification_time,
-                "format": format
-            }
-
-            return metadata
-        except Exception as e:
-            print(f"Error extracting metadata from {file_path}: {str(e)}")
-            return {
-                "filename": os.path.basename(file_path) if file_path else "unknown",
-                "duration": 0,
-                "resolution": "unknown",
-                "fps": 0,
-                "total_frames": 0,
-                "file_size": 0,
-                "creation_time": None,
-                "modification_time": None,
-                "format": None,
-                "error": str(e)
-            }
-
-
-
-    # Generate thumbnail images from key moments in the video
-    # Args:
-    #     file_path: Path to the uploads directory containing keyframes
-    #     num_frames: Number of thumbnail frames to extract   
-    # @returns:
-    #     List[str]: List of paths to the generated thumbnail images
     def generate_thumbnails(self, file_path: str, num_frames: int = 5) -> List[str]:
+        """
+        Generate thumbnail images from existing keyframes
+        
+        Args:
+            file_path: Path to the video file
+            num_frames: Number of thumbnail frames to select
+            
+        Returns:
+            List[str]: List of paths to the selected thumbnail images
+        """
         try:
-            # Extract num_frames of the images in uploads/keyframes
-            # If not enough frames, extract as many as possible
-
             keyframes_dir = os.path.join(os.path.dirname(file_path), 'keyframes')
             if not os.path.exists(keyframes_dir):
-                os.makedirs(keyframes_dir, exist_ok=True)
-
-            files = [f for f in os.listdir(keyframes_dir) if os.path.isfile(os.path.join(keyframes_dir, f))]
+                return []
+            
+            files = [f for f in os.listdir(keyframes_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
             files.sort()
-
+            
+            if not files:
+                return []
+            
             # Select num_frames evenly spaced files
-            if len(files) < num_frames:
-                keyframes = files  # Use all available files
+            if len(files) <= num_frames:
+                return [os.path.join(keyframes_dir, f) for f in files]
             else:
                 indices = [int(i * (len(files) - 1) / (num_frames - 1)) for i in range(num_frames)]
-                keyframes = [files[i] for i in indices]
-
-            # Return the list with paths to the thumbnails
-            return keyframes
+                return [os.path.join(keyframes_dir, files[i]) for i in indices]
                 
         except Exception as e:
-            print(f"Error extracting thumbnails: {str(e)}")
+            print(f"Error generating thumbnails: {str(e)}")
             return []
-        
 
-    # Args:
-    #     video_file: The uploaded video file
-    # Returns:
-    #     tuple: (is_valid, list_of_errors)
-    #Description:
-    # This method checks the uploaded video file for:
-    # 1. Allowed file extensions (mp4, mov, avi, mkv)
-    # 2. File size limits (100MB max)
-    # 3. File readability and validity
-    # 4. Reasonable duration (not too short/long)
-    # 5. Adequate resolution for analysis (minimum 640x480)
-    # 6. Any other custom validation rules as needed
-    def validate_video_file(self, video_file: FileStorage) -> tuple[bool, List[str]]:
-        # Starting values
-        errors = []
-        is_valid = True
-        
-        # Check file size (100MB max)
-        if video_file.content_length > 100 * 1024 * 1024:
-            errors.append("File size exceeds 100MB limit")
-            is_valid = False
-        
-        # Check file type
-        allowed_types = ['mp4', 'mov', 'avi', 'mkv']
-        if not any(video_file.filename.lower().endswith(ext) for ext in allowed_types):
-            errors.append("File type not supported. Allowed types: mp4, mov, avi, mkv")
-            is_valid = False
-
-        # Check if file is empty
-        if video_file.content_length == 0:
-            errors.append("File is empty")
-            is_valid = False
-
-        # Check if file is readable
-        try:
-            video_file.seek(0)  # Reset file pointer
-            video_file.read(1)  # Try to read a byte
-        except Exception as e:
-            errors.append(f"File is not readable: {str(e)}")
-            is_valid = False
-
-        # Check if file is a valid video
-        try:
-            cap = cv2.VideoCapture(video_file)
-            if not cap.isOpened():
-                errors.append("File is not a valid video")
-                is_valid = False
-            else:
-                # Check duration (at least 1 second)
-                fps = cap.get(cv2.CAP_PROP_FPS)
-                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                if fps > 0 and total_frames / fps < 1:
-                    errors.append("Video duration is too short (less than 1 second)")
-                    is_valid = False
-                cap.release()
-        except Exception as e:
-            errors.append(f"Error validating video file: {str(e)}")
-            is_valid = False
-
-        # Check if video resolution is adequate
-        if is_valid:
-            cap = cv2.VideoCapture(video_file)
-            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-            if width < 640 or height < 480:
-                errors.append("Video resolution is too low (minimum 640x480 required)")
-                is_valid = False
-            cap.release()
-
-        # Return validation result
-        return is_valid, errors
-
-    
-    def save_video_file(self, video_file: FileStorage, filename: str = None) -> str:
+    def _validate_video_file_basic(self, video_file: FileStorage) -> Tuple[bool, List[str]]:
         """
-        Save uploaded video file to disk
+        Basic validation of uploaded video file (before saving)
         
         Args:
             video_file: The uploaded video file
-            filename: Optional custom filename, auto-generated if None
             
         Returns:
-            str: Path to saved video file
-        
-        TODO: Implement file saving:
-        1. Generate unique filename if not provided
-        2. Ensure upload directory exists
-        3. Save file to disk
-        4. Return full path to saved file
-        5. Handle file write errors
+            Tuple[bool, List[str]]: (is_valid, list_of_errors)
         """
+        errors = []
         
-        # Check if filename is provided, otherwise generate a unique one
-        if not filename:
-            filename = self._generate_unique_filename(video_file.filename)
-        upload_path = os.path.join(self.upload_folder, filename)
-
-        # Ensure upload directory exists
-        os.makedirs(self.upload_folder, exist_ok=True)
+        # Check file size
+        if video_file.content_length > self.max_file_size:
+            errors.append(f"File size exceeds {self.max_file_size // (1024*1024)}MB limit")
+        
+        # Check file type
+        if video_file.filename and not any(video_file.filename.lower().endswith(ext) for ext in self.allowed_types):
+            errors.append(f"File type not supported. Allowed types: {', '.join(self.allowed_types)}")
+        
+        # Check if file is empty
+        if video_file.content_length == 0:
+            errors.append("File is empty")
+        
+        # Check if file is readable
         try:
-            # Save the file to the upload directory
-            video_file.save(upload_path)
-            print(f"Video file saved to: {upload_path}")
-            return upload_path
+            video_file.seek(0)
+            video_file.read(1)
         except Exception as e:
-            raise IOError(f"Could not save video file: {str(e)}")
-    
-    
-        # Get basic file information
-        # Args:
-        #     file_path: Path to the file
-        # Returns:
-        #     Dict: File information
-        # TODO: Return file info including:
-        # - File size in bytes
-        # - Creation time
-        # - Modification time
-        # - File extension
-        # - Whet
-    def get_file_info(self, file_path: str) -> Dict[str, Any]:
+            errors.append(f"File is not readable: {str(e)}")
         
+        return len(errors) == 0, errors
+
+    def _validate_video_content(self, file_path: str) -> Tuple[bool, List[str]]:
+        """
+        Validate video content after saving to disk
         
-        if not os.path.exists(file_path):
-            file_info = {
-                "file_size": 0,
-                "creation_time": None,
-                "modification_time": None,
-                "extension": os.path.splitext(file_path)[1].lower(),
-                "exists": False,
-                "readable": False
-            }
-        else:
-            file_info = {
-                "file_size": os.path.getsize(file_path),
-                "creation_time": datetime.fromtimestamp(os.path.getctime(file_path)).isoformat(),
-                "modification_time": datetime.fromtimestamp(os.path.getmtime(file_path)).isoformat(),
-                "extension": os.path.splitext(file_path)[1].lower(),
-                "exists": True,
-                "readable": os.access(file_path, os.R_OK)
-            }
+        Args:
+            file_path: Path to the saved video file
+            
+        Returns:
+            Tuple[bool, List[str]]: (is_valid, list_of_errors)
+        """
+        errors = []
         
-        return file_info
+        try:
+            cap = cv2.VideoCapture(file_path)
+            if not cap.isOpened():
+                errors.append("File is not a valid video")
+            else:
+                # Check duration
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                duration = total_frames / fps if fps > 0 else 0
+                
+                if duration < self.min_duration:
+                    errors.append(f"Video duration is too short (minimum {self.min_duration} second)")
+                
+                # Check resolution
+                width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                
+                if width < self.min_resolution[0] or height < self.min_resolution[1]:
+                    errors.append(f"Video resolution is too low (minimum {self.min_resolution[0]}x{self.min_resolution[1]} required)")
+                
+                cap.release()
+                
+        except Exception as e:
+            errors.append(f"Error validating video content: {str(e)}")
+        
+        return len(errors) == 0, errors
+
+    def cleanup_files(self, file_path: str) -> None:
+        """
+        Clean up video file and its keyframes
+        
+        Args:
+            file_path: Path to the video file
+        """
+        try:
+            # Remove keyframes directory
+            keyframes_dir = os.path.join(os.path.dirname(file_path), 'keyframes')
+            if os.path.exists(keyframes_dir):
+                for filename in os.listdir(keyframes_dir):
+                    file_path_to_remove = os.path.join(keyframes_dir, filename)
+                    if os.path.isfile(file_path_to_remove):
+                        os.remove(file_path_to_remove)
+                os.rmdir(keyframes_dir)
+            
+            # Remove video file
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                
+        except Exception as e:
+            print(f"Error cleaning up files: {str(e)}")
     
