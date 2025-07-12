@@ -1,0 +1,21 @@
+# Flask and web framework dependencies
+Flask==2.3.3
+Flask-CORS==4.0.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# HTTP requests (for ChatGPT API calls)
+requests==2.31.0
+
+# File handling and validation
+Werkzeug==2.3.7
+
+# JSON handling (usually included with Python)
+# Development and testing
+pytest==7.4.2
+pytest-flask==1.2.0
+
+# Optional: For video processing (if needed later)
+# opencv-python==4.8.1.78
+# Pillow==10.0.1
