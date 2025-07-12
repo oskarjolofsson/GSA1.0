@@ -16,6 +16,9 @@ Werkzeug==2.3.7
 pytest==7.4.2
 pytest-flask==1.2.0
 
-# Optional: For video processing (if needed later)
-# opencv-python==4.8.1.78
-# Pillow==10.0.1
+# Video processing dependencies
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# ChatGPT API client
+openai>=1.0.0

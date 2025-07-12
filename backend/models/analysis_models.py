@@ -84,9 +84,8 @@ class VideoUploadModel:
         return errors
 
 def create_mock_analysis_response() -> AnalysisResponseModel:
-    """
-    Create a mock analysis response for testing
-    """
+    
+    #Create a mock analysis response for testing
     mock_drills = [
         DrillModel(
             title="Wall Drill",
