@@ -15,6 +15,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
 from werkzeug.datastructures import FileStorage
+from models.analysis_models import AnalysisResponseModel
 
 class VideoProcessingService:
 

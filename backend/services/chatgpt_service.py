@@ -53,10 +53,23 @@ class ChatGPTService:
     5. Return structured AnalysisResponseModel
     6. Handle API errors (rate limits, authentication, etc.)
     """  
+
+
     def analyze_golf_swing(self, video_metadata: Dict[str, Any]) -> AnalysisResponseModel:
-        
-        pass
+        # TODO: Implement ChatGPT analysis
+        # For now, return a mock response to satisfy the return type
+        from models.analysis_models import create_mock_analysis_response
 
-    
+        # Get the name of the video
 
+        # Use video service to scan and divide up into images
+
+        # Create a prompt with so many images that are given
+
+        # Create a analysis object with answer from prompt
+
+        # Return the analysis-object
+
+
+        return create_mock_analysis_response()
    
