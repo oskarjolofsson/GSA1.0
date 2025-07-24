@@ -13,7 +13,9 @@ import os
 import requests
 from typing import Dict, Any, List
 from models.analysis_models import AnalysisResponseModel, DrillModel
+from video_service import VideoProcessingService as vps
 from dotenv import load_dotenv
+from openai import OpenAI
 
 class ChatGPTService:
     """
@@ -27,49 +29,46 @@ class ChatGPTService:
         if not self.api_key:
             raise ValueError("API key not found. Please set OPENAI_API_KEY in your environment variables.")
         
-        #TODO - Configure request headers
-
-        #TODO set up rate limiting if needed
-
-
-    """
-    Analyze a golf swing using ChatGPT API
-    
-    Args:
-        video_metadata: Dictionary containing several images in the following format in order:
-            - filename: Name of the image file
-            - file_size: Size of the image file
-            - any extracted features or descriptions
-            - It comes with 12 images, each representing a key moment in the swing.
-    
-    Returns:
-        AnalysisResponseModel: Structured analysis response
-    
-    TODO: Implement the following steps:
-    1. Prepare the prompt for ChatGPT based on video metadata
-    2. Make API call to OpenAI
-    3. Parse the response from ChatGPT
-    4. Extract summary, drills, and keyframe information
-    5. Return structured AnalysisResponseModel
-    6. Handle API errors (rate limits, authentication, etc.)
-    """  
+        headers = {
+            'Authorization': f'Bearer {self.api_key}',
+            'Content-Type': 'application/json'
+        }
 
 
     def analyze_golf_swing(self, video_metadata: Dict[str, Any]) -> AnalysisResponseModel:
-        # TODO: Implement ChatGPT analysis
-        # For now, return a mock response to satisfy the return type
-        from models.analysis_models import create_mock_analysis_response
+        # Prepare the prompt for ChatGPT based on video metadata
+        prompt = "give the golfer 2 drills to improve the swing, and motivate your choice of drill"
 
-        # Get the name of the video
+        # Make API call to OpenAI
+        response = self._call_openai_api(prompt, video_metadata)
 
-        # Use video service to scan and divide up into images
+        # Parse the response from ChatGPT
+        analysis_data = self._parse_response(response)
 
-        # Create a prompt with so many images that are given
+        # Extract summary, drills, and keyframe information
+        summary = analysis_data.get("summary", "")
+        drills = [
+            DrillModel(title=drill.get("title", ""), description=drill.get("description", ""))
+            for drill in analysis_data.get("drills", [])
+        ]
+        keyframes = analysis_data.get("keyframes", [])
 
-        # Create a analysis object with answer from prompt
+        # Return structured AnalysisResponseModel
+        return AnalysisResponseModel(summary=summary, drills=drills, keyframes=keyframes)
 
-        # Return the analysis-object
+    def _call_openai_api(self, prompt: str, video_metadata: dict) -> Dict[str, Any]:
+        # Create client
+        client = OpenAI(self.api_key)
 
+        # Get the image paths
+        
 
-        return create_mock_analysis_response()
-   
+    # def _parse_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
+    #     # TODO: Implement logic for parsing the response from ChatGPT
+    #     return {":"}
+    
+
+if __name__ == "__main__" :
+    metadata = {"filename": ""}
+
+    service = ChatGPTService()

@@ -24,6 +24,7 @@ def upload_video():
     video_file.save(file_path)
 
     # TODO: Call the ChatGPT analysis service here
+    
     # mock_response = {'summary': 'This is a mock summary', 'drills': [], 'keyframes': []}
 
     # For now, return mock response

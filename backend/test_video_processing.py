@@ -39,7 +39,7 @@ def test_video_processing():
     # Process the video    
     if os.path.exists(video_path):
         print(f"Processing video: {os.path.basename(video_path)}")
-        metadata = video_service.create_video_metadata(video_path, 5)
+        metadata = video_service.create_video_metadata(video_path, 10)
         
         print("\n📊 Extracted Metadata:")
         print(f"  • Filename: {metadata['filename']}")
