@@ -17,8 +17,15 @@ class testAnalys:
 
 
     def get_response(self) -> str:
+        message_prompt = """
+        You are an expert golf coach analyzing a complete golf swing through the images Ive uploaded.
+        These images are in chronological order, showing the full motion from setup to follow-through.
+
+        Based only on what you see, give me two concise drills that would most effectively improve my swing.
+        Focus on form, timing, and mechanics. Keep your advice brief and actionable.
+        """
         image_paths = self.get_paths_in_folder(self.uploads_folder)
-        content = self.format_content(image_paths)
+        content = self.format_content(message_prompt ,image_paths)
         analysis = self.ai_analysis(content)
         return analysis
     
@@ -40,8 +47,8 @@ class testAnalys:
             path_list.append(file)
 
         return path_list
-    def format_content(self, paths: list[str]) -> list[dict[str, Any]]:
-        content = [{"type": "input_text", "text": "how can this swing be improved? keep it to max 2 improvements. Don't include things that are abvious such as look at the ball. Look at all the images in order. After you analyse the swing, give one drill for every problem. Explain it so that a 10 year old would understand. Dont write a summary or introduction. Just do what I tell you and keep it as short as possible"}]
+    def format_content(self, prompt: str, paths: list[str]) -> list[dict[str, Any]]:
+        content = [{"type": "input_text", "text": prompt}]
         for path in paths:
             image_prompt = {"type": "input_image", "file_id": self.create_fileid(path)}
             content.append(image_prompt)
@@ -59,10 +66,11 @@ class testAnalys:
     def ai_analysis(self, content: list[dict[str, Any]]) -> str:
         response = self.client.responses.create(
             model="gpt-4.1",
-            input=[{
-                "role": "user",
-                "content": content,
-            }],
+            temperature=0.1,
+            input=[
+                {"role": "system", "content": "You are a world-class AI golf instructor providing visual feedback and training drills."},
+                {"role": "user", "content": content,}
+            ],
         )
 
         return response.output_text
