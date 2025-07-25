@@ -114,6 +114,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(e)
 
-    print(quality.paths())
+    for path in quality.paths():
+        print(path)
     
     

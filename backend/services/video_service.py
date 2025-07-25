@@ -16,6 +16,7 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
 from werkzeug.datastructures import FileStorage
 from models.analysis_models import AnalysisResponseModel
+from .quality import quality_checker
 
 class VideoProcessingService:
 
@@ -150,6 +151,8 @@ class VideoProcessingService:
             # Extract keyframes at even intervals
             frame_interval = usable_frames // num_keyframes
             keyframe_indices = [start_frame + i * frame_interval for i in range(num_keyframes)]
+
+            qn = quality_checker()
             
             keyframe_paths = []
             for idx, frame_number in enumerate(keyframe_indices):
@@ -164,6 +167,13 @@ class VideoProcessingService:
                     print(f"Extracted keyframe {idx+1}/{num_keyframes} at frame {frame_number}")
             
             cap.release()
+            try:
+                qn.add_image_paths(keyframe_paths)
+            except Exception as e:
+                print(e)
+            
+            print("Video requirements met")
+
             return keyframe_paths
             
         except Exception as e:
@@ -190,6 +200,7 @@ class VideoProcessingService:
             
             # Extract keyframes
             keyframe_paths = self._extract_keyframes(file_path, num_keyframes)
+
             
             # Add keyframe information
             metadata.update({
