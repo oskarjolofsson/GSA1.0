@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 import os
+from backend.services.chatgpt_service import ChatGPT_service
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint('analysis', __name__)
@@ -23,12 +24,23 @@ def upload_video():
     file_path = os.path.join(upload_folder, video_file.filename)
     video_file.save(file_path)
 
-    # TODO: Call the ChatGPT analysis service here
+    # Call the ChatGPT analysis service
+    message_prompt = """
+        You are an expert golf coach analyzing a complete golf swing through the images I've uploaded.
+        These images are in chronological order, showing the full motion from setup to follow-through.
+        Based only on what you see, give me two concise drills that would most effectively improve my swing.
+        Focus on form, timing, and mechanics. Keep your advice brief and actionable.
+    """
     
-    # mock_response = {'summary': 'This is a mock summary', 'drills': [], 'keyframes': []}
+    gpt_service = ChatGPT_service(
+        uploads_folder=upload_folder,
+        video_path=file_path,
+        message_prompt=message_prompt
+    )
 
-    # For now, return mock response
-    return jsonify({'message': 'Video uploaded successfully'}), 200
+    results = gpt_service.get_response()
+    # Return json with summary, drills, observations and phase_notes
+    return jsonify(results), 200
 
 def allowed_file(filename):
     """

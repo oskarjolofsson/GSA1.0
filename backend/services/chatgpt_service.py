@@ -9,66 +9,190 @@ It's responsible for:
 4. Handling API errors and rate limits
 """
 
-import os
-import requests
-from typing import Dict, Any, List
-from models.analysis_models import AnalysisResponseModel, DrillModel
-from video_service import VideoProcessingService as vps
-from dotenv import load_dotenv
 from openai import OpenAI
-
-class ChatGPTService:
-    """
-    Service class for interacting with the OpenAI ChatGPT API
-    """
+import os
+from dotenv import load_dotenv
+from typing import Any
+from pathlib import Path
+import json
+import pprint   # For debugging
+from video_service import VideoProcessingService
     
-    def __init__(self):
-        # Init the service and load environment variables
+
+class ChatGPT_service:
+
+    def __init__(self, uploads_folder: str, video_path: str, message_prompt: str):
         load_dotenv()
-        self.api_key = os.getenv('OPENAI_API_KEY')
-        if not self.api_key:
-            raise ValueError("API key not found. Please set OPENAI_API_KEY in your environment variables.")
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise EnvironmentError("OPENAI_API_KEY environment variable not set.")
         
-        headers = {
-            'Authorization': f'Bearer {self.api_key}',
-            'Content-Type': 'application/json'
-        }
+        self.client = OpenAI(api_key=api_key)
+        self.uploads_folder = uploads_folder
+        self.video_path = video_path
+        self.message_prompt = message_prompt
 
 
-    def analyze_golf_swing(self, video_metadata: Dict[str, Any]) -> AnalysisResponseModel:
-        # Prepare the prompt for ChatGPT based on video metadata
-        prompt = "give the golfer 2 drills to improve the swing, and motivate your choice of drill"
+    def process_video(self) -> dict:
+        """
+        Process a video to extract its metadata and keyframes.
 
-        # Make API call to OpenAI
-        response = self._call_openai_api(prompt, video_metadata)
+        Args:
+        video_path (str): The path to the video file to process.
 
-        # Parse the response from ChatGPT
-        analysis_data = self._parse_response(response)
+        Returns:
+        dict: A dictionary containing video metadata and keyframe paths.
+        """
 
-        # Extract summary, drills, and keyframe information
-        summary = analysis_data.get("summary", "")
-        drills = [
-            DrillModel(title=drill.get("title", ""), description=drill.get("description", ""))
-            for drill in analysis_data.get("drills", [])
-        ]
-        keyframes = analysis_data.get("keyframes", [])
+        # Check if video file exists
+        if not os.path.exists(self.video_path):
+            raise FileNotFoundError(f"Video file not found: {self.video_path}")
 
-        # Return structured AnalysisResponseModel
-        return AnalysisResponseModel(summary=summary, drills=drills, keyframes=keyframes)
+        print(f"Processing video: {os.path.basename(self.video_path)}")
 
-    def _call_openai_api(self, prompt: str, video_metadata: dict) -> Dict[str, Any]:
-        # Create client
-        client = OpenAI(self.api_key)
+        # Initialize Video Processing Service
+        video_service = VideoProcessingService(self.uploads_folder)
 
-        # Get the image paths
+        # Extract metadata and keyframes
+        metadata = video_service.create_video_metadata(self.video_path, 1)
+
+        print("\n📊 Extracted Metadata:")
+        print(f"  • Filename: {metadata['filename']}")
+        print(f"  • Duration: {metadata['duration']} seconds")
+        print(f"  • Resolution: {metadata['resolution']}")
+        print(f"  • FPS: {metadata['fps']}")
+        print(f"  • File Size: {metadata['file_size']} bytes")
+        print(f"  • Keyframes Extracted: {metadata['num_keyframes_extracted']}")
+
+        print("\n🖼️ Keyframe Paths:")
+        for i, keyframe_path in enumerate(metadata['keyframes']):
+            print(f"  {i+1}. {keyframe_path}")
+
+        print("\n✅ Video processing completed successfully!")
+
+        return metadata
+
+
+    def get_response(self) -> str:
         
 
-    # def _parse_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
-    #     # TODO: Implement logic for parsing the response from ChatGPT
-    #     return {":"}
+        # Create metadata from video
+        self.process_video()
+        # Get the paths to all individual imnages in the uploads_folder
+        image_paths = self.get_paths_in_folder(self.uploads_folder)
+        # Format the prompt for the gpt api
+        content = self.format_content(self.message_prompt ,image_paths)
+        # Gather the final analysis in json format
+        analysis = self.ai_analysis(content)
+        return analysis
     
+
+    def is_image_file(self, file_path: str) -> bool:
+        image_extensions = {".jpg", ".jpeg", ".png", ".webp"}
+        return os.path.splitext(file_path)[1].lower() in image_extensions
+    
+
+    def get_paths_in_folder(self, folder_path: str) -> list[str]:
+        path = Path(folder_path)
+        if not path.exists:
+            raise FileNotFoundError(f"The path {folder_path} does not exist")
+        
+        path_list = []
+        for file in path.iterdir():
+            if not self.is_image_file(file):
+                raise ValueError(f"{path} is not a valid image type")
+            path_list.append(file)
+
+        return path_list
+    
+    
+    def format_content(self, prompt: str, paths: list[str]) -> list[dict[str, Any]]:
+        content = [{"type": "input_text", "text": prompt}]
+        for path in paths:
+            image_prompt = {"type": "input_image", "file_id": self.create_fileid(path)}
+            content.append(image_prompt)
+        
+        return content
+
+    def create_fileid(self, path: str) -> str:
+        with open(path, "rb") as file_content:
+            result = self.client.files.create(
+                file=file_content,
+                purpose="vision",
+            )
+            return result.id
+
+    def ai_analysis(self, content: list[dict[str, Any]]) -> str:
+        system_instructions = """
+        You are an expert golf coach analyzing a swing shown in the images. 
+        Please return your analysis in the following structure:
+
+        1. **Summary** . A brief, high-level summary of the swings strengths and weaknesses.
+        2. **Drills** - Two specific and actionable drills to address the main issues.
+        3. **Observations** - Technical details you noticed (e.g., posture, grip, weight transfer).
+        4. **Phase Notes** (optional) - If relevant, note specific swing phases (backswing, impact, etc.).
+
+        Keep it clear and brief — this is going into a training app.
+        Respond ONLY with valid JSON. Use the following structure:
+        - "summary": string
+        - "drills": list of 2 strings
+        - "observations": list of strings
+        - "phase_notes": dictionary with keys like "setup", "impact", etc., each mapping to a string.
+
+        Do not include any explanation or formatting outside the JSON object. Return only valid JSON.
+        """
+
+        response = self.client.responses.create(
+            model="gpt-4.1",
+            temperature=0.1,
+            input=[
+                {"role": "system", "content": system_instructions},
+                {"role": "user", "content": content,}
+            ],
+        )
+
+        return response
+
+
+
 
 if __name__ == "__main__" :
-    metadata = {"filename": ""}
+    message_prompt = """
+        You are an expert golf coach analyzing a complete golf swing through the images Ive uploaded.
+        These images are in chronological order, showing the full motion from setup to follow-through.
 
-    service = ChatGPTService()
+        Based only on what you see, give me two concise drills that would most effectively improve my swing.
+        Focus on form, timing, and mechanics. Keep your advice brief and actionable.
+        """
+
+    gpt_service = ChatGPT_service(
+        uploads_folder="backend/uploads/keyframes",
+        video_path="backend/uploads/20250626_191212.mp4",
+        message_prompt=message_prompt
+        )
+    
+    results = gpt_service.get_response()
+
+    print("==OUTPUT-TEXT==")
+    #print(results.output_text)
+
+    # Get it in json format
+    try:
+        data = json.loads(results.output_text)
+    except:
+        print("GPT did not return valid json this time, try again.")
+        exit(1)
+    
+    for key, value in data.items():
+        print(f"{key.capitalize()}:")
+        
+        if isinstance(value, list):
+            for item in value:
+                print(f"  - {item}")
+        
+        elif isinstance(value, dict):
+            for subkey, subvalue in value.items():
+                print(f"  {subkey.title()}: {subvalue}")
+        
+        else:  # it's likely a string (e.g. summary)
+            print(f"  {value}")

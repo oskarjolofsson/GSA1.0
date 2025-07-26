@@ -1,11 +1,3 @@
 backend/services/quality.py:
 - Fix the machine learning model to identify if its a body or not
 - Fix test files
-
-
-backend/testImageAnalys.py:
-- Copy into backend/services/chatgpt_service.py
-
-
-General:
-- Incorporate everything
