@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 import os
+import shutil
 from backend.services.chatgpt_service import ChatGPT_service
 
 # Create a Blueprint for analysis routes
@@ -19,10 +20,17 @@ def upload_video():
     if not allowed_file(video_file.filename):
         return jsonify({'error': 'Invalid file type'}), 400
 
-    # Save the file to the uploads directory
-    upload_folder = current_app.config['UPLOAD_FOLDER']
-    file_path = os.path.join(upload_folder, video_file.filename)
-    video_file.save(file_path)
+    # Define upload_folder and create it if it doesn't exist
+    upload_folder = "backend/uploads/keyframes"
+    os.makedirs(upload_folder, exist_ok=True)
+
+    # Create a video directory inside uploads directory as well
+    video_folder = "backend/uploads/video"
+    os.makedirs(video_folder, exist_ok=True)
+
+    # Save the video_file to the video directory
+    video_path = os.path.join(video_folder, video_file.filename)
+    video_file.save(video_path)
 
     # Call the ChatGPT analysis service
     message_prompt = """
@@ -34,7 +42,7 @@ def upload_video():
     
     gpt_service = ChatGPT_service(
         uploads_folder=upload_folder,
-        video_path=file_path,
+        video_path=video_path,
         message_prompt=message_prompt
     )
 
@@ -48,4 +56,3 @@ def allowed_file(filename):
     """
     allowed_extensions = set(['mp4', 'mov', 'avi', 'mkv'])
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
