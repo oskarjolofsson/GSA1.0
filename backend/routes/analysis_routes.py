@@ -6,6 +6,13 @@ from backend.services.chatgpt_service import ChatGPT_service
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint('analysis', __name__)
 
+
+# For tests
+@analysis_bp.route('/api/hello', methods=['GET'])
+def hello():
+    return jsonify(message="Hello from Flask! (Golf Swing Analyzer)")
+
+
 @analysis_bp.route('/upload', methods=['POST'])
 def upload_video():
     """

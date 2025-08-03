@@ -1,0 +1,21 @@
+.upload-container {
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 2rem;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 400px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.upload-container h2 {
+  margin-bottom: 1rem;
+}
+
+.upload-container input[type="file"] {
+  margin-bottom: 1rem;
+}
+
+.description {
+  font-size: 0.95rem;
+  color: #333;
+}

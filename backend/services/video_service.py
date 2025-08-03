@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple
 from werkzeug.datastructures import FileStorage
-from quality import quality_checker
+from backend.services.quality import quality_checker
 
 class VideoProcessingService:
 

@@ -16,7 +16,7 @@ from typing import Any
 from pathlib import Path
 import json
 import pprint   # For debugging
-from video_service import VideoProcessingService
+from backend.services.video_service import VideoProcessingService
     
 
 class ChatGPT_service:
@@ -54,7 +54,7 @@ class ChatGPT_service:
         video_service = VideoProcessingService(self.uploads_folder)
 
         # Extract metadata and keyframes
-        metadata = video_service.create_video_metadata(self.video_path, 1)
+        metadata = video_service.create_video_metadata(self.video_path, 10)
 
         print("\n📊 Extracted Metadata:")
         print(f"  • Filename: {metadata['filename']}")

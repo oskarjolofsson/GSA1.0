@@ -9,6 +9,7 @@ from flask import Flask
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
+from backend.routes.analysis_routes import analysis_bp
 
 # Load environment variables
 load_dotenv()
@@ -28,7 +29,6 @@ def create_app():
     CORS(app, origins=['http://localhost:3000'])  # Allow React dev server
     
     # Register blueprints (route modules)
-    from routes.analysis_routes import analysis_bp
     app.register_blueprint(analysis_bp)
     
     # Create upload directory if it doesn't exist
