@@ -16,7 +16,7 @@ from typing import Any
 from pathlib import Path
 import json
 import pprint   # For debugging
-from backend.services.video_service import VideoProcessingService
+from services.video_service import VideoProcessingService
     
 
 class ChatGPT_service:

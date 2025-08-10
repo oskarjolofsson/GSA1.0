@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify, current_app
 import os
 import shutil
-from backend.services.chatgpt_service import ChatGPT_service
+import json
+from services.chatgpt_service import ChatGPT_service
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint('analysis', __name__)
@@ -54,8 +55,29 @@ def upload_video():
     )
 
     results = gpt_service.get_response()
-    # Return json with summary, drills, observations and phase_notes
-    return jsonify(results), 200
+    # Convert OpenAI response to plain JSON
+    try:
+        # Common SDK shape provides a JSON string at .output_text
+        if hasattr(results, 'output_text') and isinstance(results.output_text, str):
+            parsed = json.loads(results.output_text)
+            return jsonify(parsed), 200
+        # Some SDKs expose a JSON dump method
+        if hasattr(results, 'model_dump_json'):
+            txt = results.model_dump_json()
+            parsed = json.loads(txt)
+            return jsonify(parsed), 200
+        # Fallback: try to coerce to dict directly (may fail)
+        if isinstance(results, dict):
+            return jsonify(results), 200
+        return jsonify({
+            'error': 'Unexpected analysis response format',
+            'details': str(type(results))
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to parse analysis output',
+            'details': str(e)
+        }), 500
 
 def allowed_file(filename):
     """

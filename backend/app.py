@@ -9,7 +9,7 @@ from flask import Flask
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-from backend.routes.analysis_routes import analysis_bp
+from routes.analysis_routes import analysis_bp
 
 # Load environment variables
 load_dotenv()

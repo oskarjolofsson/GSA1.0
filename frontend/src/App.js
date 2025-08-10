@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Topbar from "./components/Topbar";
 import Home from "./pages/Home";
 import VideoUploadPage from './pages/VideoUploadPage';
+import ResultsPage from './pages/ResultsPage';
+import LoadingPage from './pages/LoadingPage';
 import './styles/App.css';
 
 function App() {
@@ -10,7 +12,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/hello')
+    // Use relative URL so dev proxy can be used; fallback to absolute if needed
+    fetch('/api/hello')
       .then((res) => res.json())
       .then((data) => setMessage(data.message))
       .catch((error) => {
@@ -27,6 +30,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/upload" element={<VideoUploadPage />} />
+          <Route path="/results" element={<ResultsPage />} />
+          <Route path="/loading" element={<LoadingPage />} />
         </Routes>
       </main>
     </div>
