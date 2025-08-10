@@ -1,5 +1,6 @@
 import '../styles/Home.css';
 import golfImg from '../assets/golfer.png';
+import { Link } from 'react-router-dom';
 
 export default function Home() {
   return (
@@ -24,9 +25,9 @@ export default function Home() {
       <p className="hero-desc">
         AI-powered golf training with personalized swing feedback.
       </p>
-      <a href="#" className="hero-btn">
-        Analyse you swing <span className="arrow">↗</span>
-      </a>
+      <Link to="/upload" className="hero-btn">
+        Analyse your swing <span className="arrow">↗</span>
+      </Link>
     </section>
   );
 }
