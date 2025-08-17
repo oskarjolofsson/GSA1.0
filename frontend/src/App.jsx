@@ -1,0 +1,27 @@
+import { useState } from 'react'
+import { Routes, Route, Link } from "react-router-dom";
+import './App.css'
+
+// Import pages
+import Home from "./pages/Home.jsx";
+import NotFound from './pages/NotFound.jsx';
+
+// Import components
+import Nav from "./components/nav/Nav.jsx"
+
+function App() {
+  return (
+    <div>
+      <Nav />
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+
+        {/* 404 */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
+  );
+}
+
+export default App
