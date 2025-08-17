@@ -1,0 +1,54 @@
+body {
+    margin: 0; /* Remove default margins */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.hero-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    padding: 0 5%; /* Horizontal padding for the content */
+    box-sizing: border-box;
+    background-image: url('../../public/images/pexels-pixabay-33478.jpg');
+    background-size: cover;
+    background-position: center;
+    border-radius: 15px;
+    background-color: white; /* White border effect */
+}
+
+.hero-content {
+    flex: 1;
+    text-align: left;
+    max-width: 500px;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.hero-description {
+    font-size: 1.25rem;
+    margin-bottom: 30px;
+    color: #666;
+}
+
+.hero-button {
+    margin-left: auto; 
+    padding: 10px 20px;
+    font-size: 1rem;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.hero-button:hover {
+    background-color: #0056b3;
+}

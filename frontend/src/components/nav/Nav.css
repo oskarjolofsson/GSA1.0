@@ -1,7 +1,7 @@
 .nav {
   width: 50%;
   padding: 10px 20px;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.75); 
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-radius: 25px;
   display: flex;
@@ -11,6 +11,19 @@
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
+  backdrop-filter: blur(10px);
+  animation: popUp 0.5s ease-out;
+}
+
+@keyframes popUp {
+  0% {
+    transform: translateX(-50%) scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
 }
 
 .nav-logo {
@@ -20,16 +33,37 @@
 .nav-links {
   display: flex;
   gap: 20px;
+  flex: 1;
+  justify-content: center;
 }
 
 .nav-links a {
   text-decoration: none;
   color: #000;
-  font-size: 16px;
+  font-size: 18px;
+  position: relative;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: #4e8cff;
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
 }
 
 .nav-links a:hover {
   color: #4e8cff;
+  transform: scale(1.1);
+}
+
+.nav-links a:hover::after {
+  transform: scaleX(1);
 }
 
 .nav-action {
@@ -37,18 +71,18 @@
   align-items: center;
 }
 
-.nav-action .register {
-  padding: 8px 16px;
-  font-size: 16px;
-  border: none;
-  background-color: #4e8cff;
+.register {
+  background-color: rgba(58, 111, 176, 0.85); /* Adjusted hover color */
   color: #fff;
-  border-radius: 5px;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 16px;
   cursor: pointer;
+  backdrop-filter: blur(5px); /* Frost effect */
+  transition: transform 0.3s ease, background-color 0.3s ease; /* Smooth transitions */
 }
 
-.nav-action .register:hover {
-  background-color: #3a6fcf;
+.register:hover {
+  background-color: rgba(78, 140, 255, 0.75); /* Lighter, semi-transparent blue */
+  transform: scale(1.05); /* Slightly larger on hover */
 }
-
-
