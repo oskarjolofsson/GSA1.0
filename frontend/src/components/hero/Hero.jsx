@@ -1,9 +1,7 @@
-// Hero.jsx
-import React from "react";
 import "./hero.css";
-import { FileUpload } from 'primereact/fileupload';
 
 import { Link } from 'react-router-dom';
+import Upload from "../fileUpload/VideoUploader.jsx"
 
 export default function Hero() {
   return (
@@ -16,7 +14,7 @@ export default function Hero() {
             {/* Left column: heading + description */}
             <div className="copy">
               <h1 className="title">
-                Swing Smarter. Play Bette
+                Swing Smarter. Play Better
                 <span className="subtitle">Accurate, fast</span>
               </h1>
               <p className="desc">
@@ -25,17 +23,9 @@ export default function Hero() {
               </p>
             </div>
 
-            {/* Right column: modern CTA */}
-            <div className="cta-wrap">
-              <a className="cta" href="#get-started" aria-label="Get started">
-                <span>Get started</span>
-                <svg className="cta-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M13.5 4.5L21 12l-7.5 7.5M21 12H3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </a>
-              <div className="support-links" aria-label="Secondary actions">
-                <Link to="/" className="support-link">Learn more</Link>
-              </div>
+            {/*Right column: modern CTA */}
+             <div className="upload-wrap">
+              <Upload />
             </div>
           </div>
         </section>

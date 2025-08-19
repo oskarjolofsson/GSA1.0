@@ -1,0 +1,88 @@
+:root {
+  --bg-start: #f5f7fb;
+  --bg-mid: #ffffff;
+  --bg-end: #eef2f6;
+  --text-strong: #0f172a; /* slate-900-ish */
+  --text: #334155;        /* slate-600-ish */
+  --muted: #64748b;       /* slate-500-ish */
+  --frame-shadow: 0 12px 36px -12px rgba(0,0,0,0.25);
+  --ring: rgba(0,0,0,0.06);
+  --radius-outer: 24px;
+  --radius-inner: 20px;
+  --cta: #0ea5e9;         /* sky-500-ish */
+  --cta-ink: #ffffff;
+}
+
+.page-wrap {
+  min-height: 100svh;
+  width: 100%;
+  box-sizing: border-box;
+  padding: clamp(12px, 2vw, 24px);
+  background: linear-gradient(135deg, var(--bg-start), var(--bg-mid) 40%, var(--bg-end));
+}
+
+.frame {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: var(--radius-outer);
+  box-shadow: var(--frame-shadow);
+  padding: clamp(8px, 1vw, 12px);
+  outline: 1px solid var(--ring);
+  margin-top: 7vh;
+}
+
+.text-content {
+  padding: 2rem;
+  color: black;
+  position: relative; /* just in case */
+  z-index: 1;         /* explicitly above ::before/::after */
+}
+
+.big-header {
+  font-size: 2.5rem;
+  color: var(--text-strong);
+  margin-bottom: 1rem;
+}
+
+.small-header {
+  font-size: 1.75rem;
+  color: var(--text-strong); /* Match strong text color for visibility */
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.normal-text {
+  font-size: 1rem;
+  color: var(--text); /* Ensure normal text color */
+}
+
+.surface {
+  position: relative;
+  border-radius: var(--radius-inner);
+  background: #ffffff;
+  overflow: hidden;   /* better than clip, cross-browser */
+  z-index: 0;         /* establish stacking context */
+}
+
+.surface::before,
+.surface::after {
+  content: "";
+  position: absolute;
+  inset: -120px 0 auto 0;
+  height: 160px;
+  background: none; 
+  pointer-events: none;
+  z-index: -1;        /* push them behind everything inside .surface */
+}
+
+/* strong but scoped override */
+.surface,
+.surface .text-content,
+.surface .text-content h1,
+.surface .text-content h2,
+.surface .text-content p {
+  color: #0f172a;             /* dark text */
+}
+.small-header,
+.normal-text { color: #334155; }  /* optional nuance */

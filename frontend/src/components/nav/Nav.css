@@ -29,7 +29,9 @@
 }
 
 .nav-logo {
-  font-size: 24px;
+  width: 50px;
+  height: auto;
+  display: block;
 }
 
 .nav-links {

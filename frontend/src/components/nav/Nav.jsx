@@ -4,11 +4,14 @@ import './Nav.css';
 function Nav() {
   return (
     <nav className="nav">
-      <a href='/'>
-        <div className="nav-logo">🔳</div>
-      </a>
+      <Link to="/">
+        <img
+            src="/icons/logo.png"
+            alt="logo"
+            className="nav-logo"
+          />
+      </Link>
       <div className="nav-links">
-        <Link to="/">Home</Link>
         <Link to="/about">About</Link>
       </div>
       <div className='nav-action'>

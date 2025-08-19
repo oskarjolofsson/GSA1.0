@@ -5,6 +5,7 @@ import './App.css'
 // Import pages
 import Home from "./pages/Home.jsx";
 import About from "./pages/About.jsx"
+import Result from "./pages/Results.jsx"
 import NotFound from './pages/NotFound.jsx';
 
 // Import components
@@ -18,6 +19,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
+        <Route path="/result" element={<Result />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
