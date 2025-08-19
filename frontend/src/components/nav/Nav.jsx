@@ -9,7 +9,7 @@ function Nav() {
       </a>
       <div className="nav-links">
         <Link to="/">Home</Link>
-        <Link to="/">About</Link>
+        <Link to="/about">About</Link>
       </div>
       <div className='nav-action'>
         <button className="register">Register</button>
