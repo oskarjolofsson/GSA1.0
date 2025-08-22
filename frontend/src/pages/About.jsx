@@ -1,4 +1,4 @@
-import TextPage from "../components/textPage/textPage.jsx"
+import TextPage from "../components/aboutPage/aboutPage.jsx"
 
 export default function About() {
     return (

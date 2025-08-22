@@ -12,10 +12,12 @@ function Nav() {
           />
       </Link>
       <div className="nav-links">
+        <Link to="/">Home</Link>
+        <Link to="/products">Products</Link>
         <Link to="/about">About</Link>
       </div>
       <div className='nav-action'>
-        <button className="register">Register</button>
+        <Link className="register" to="/register">Register</Link>
       </div>
     </nav>
   );

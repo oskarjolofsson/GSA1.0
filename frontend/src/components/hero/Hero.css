@@ -18,13 +18,17 @@
   width: 100%;
   box-sizing: border-box;
   padding: clamp(12px, 2vw, 24px);
-  background: linear-gradient(135deg, var(--bg-start), var(--bg-mid) 40%, var(--bg-end));
+  background-color: gray;
+
+  background-image: url("/icons/topography.svg");
+  background-repeat: repeat; /* makes it tile */
+  background-size: auto;     /* adjust if you want to scale pattern */
 }
 
 .frame {
   max-width: 1200px;
   margin: 0 auto;
-  background: #fff;
+  background: transparent;
   border-radius: var(--radius-outer);
   box-shadow: var(--frame-shadow);
   padding: clamp(8px, 1vw, 12px);
@@ -35,7 +39,7 @@
 .surface {
   position: relative;
   border-radius: var(--radius-inner);
-  background: linear-gradient(180deg, #ffffff, #f9fafb);
+  background: transparent;
   overflow: clip;
 }
 

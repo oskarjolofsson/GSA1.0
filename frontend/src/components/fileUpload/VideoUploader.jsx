@@ -51,7 +51,12 @@ export default function VideoUploader() {
     }
   };
 
-  // Render interface elements
+  const handleAnalyze = () => {  // Step 2: Create navigation handler
+    if (uploadedFile) {
+      navigate("/results");  // Change '/results' to your actual results page path
+    }
+  };
+
   return (
     <div className="uploader">
       <form
@@ -92,7 +97,7 @@ export default function VideoUploader() {
           <span className="file-name">
             {uploadedFile.name}
           </span>
-          <button className="analyze-button">Analyze</button>
+          <button className="analyze-button" onClick={handleAnalyze}>Analyze</button>
         </div>
       )}
     </div>

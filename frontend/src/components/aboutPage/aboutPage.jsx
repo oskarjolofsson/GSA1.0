@@ -1,4 +1,4 @@
-import "./textPage.css"
+import "./aboutPage.css"
 
 export default function TextPage() {
   return (

@@ -1,4 +1,4 @@
-import "./textPage.css"
+import "./textBox.css"
 
 export default function TextBox({ header, text }) {
   return (
