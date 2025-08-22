@@ -1,7 +1,7 @@
 :root {
-  --bg-start: #f5f7fb;
-  --bg-mid: #ffffff;
-  --bg-end: #eef2f6;
+  --bg-start: #01655C;
+  --bg-mid: gray;
+  --bg-end: black;
   --text-strong: #0f172a; /* slate-900-ish */
   --text: #334155;        /* slate-600-ish */
   --muted: #64748b;       /* slate-500-ish */
@@ -18,29 +18,60 @@
   width: 100%;
   box-sizing: border-box;
   padding: clamp(12px, 2vw, 24px);
-  background-color: gray;
-
-  background-image: url("/icons/topography.svg");
-  background-repeat: repeat; /* makes it tile */
-  background-size: auto;     /* adjust if you want to scale pattern */
+  background: linear-gradient(135deg, var(--bg-start), var(--bg-mid) 40%, var(--bg-end)),
+              url("/icons/topography.svg");
+  background-blend-mode: multiply;
 }
+
+/* .page-wrap.hero-bg {
+  background-color: gray;
+  background-image: url("/icons/topography.svg");
+  background-repeat: repeat;
+  background-size: auto;
+} */
 
 .frame {
   max-width: 1200px;
   margin: 0 auto;
-  background: transparent;
+  background: #fff;
   border-radius: var(--radius-outer);
   box-shadow: var(--frame-shadow);
   padding: clamp(8px, 1vw, 12px);
   outline: 1px solid var(--ring);
-  margin-top: 7vh;
+  margin-top: 5vh;
+}
+
+.text-content {
+  padding: 2rem;
+  color: black;
+  position: relative; /* just in case */
+  z-index: 1;         /* explicitly above ::before/::after */
+}
+
+.big-header {
+  font-size: 2.5rem;
+  color: var(--text-strong);
+  margin-bottom: 1rem;
+}
+
+.small-header {
+  font-size: 1.75rem;
+  color: var(--text-strong); /* Match strong text color for visibility */
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.normal-text {
+  font-size: 1rem;
+  color: var(--text); /* Ensure normal text color */
 }
 
 .surface {
   position: relative;
   border-radius: var(--radius-inner);
-  background: transparent;
-  overflow: clip;
+  background: #ffffff;
+  overflow: hidden;   /* better than clip, cross-browser */
+  z-index: 0;         /* establish stacking context */
 }
 
 .surface::before,
@@ -49,15 +80,23 @@
   position: absolute;
   inset: -120px 0 auto 0;
   height: 160px;
-  background: radial-gradient(60% 60% at 50% 0%, rgba(14,165,233,0.20), transparent 70%);
-  filter: blur(18px);
+  background: none; 
   pointer-events: none;
-}
-.surface::after {
-  inset: auto 0 -120px 0;
-  background: radial-gradient(60% 60% at 50% 100%, rgba(14,165,233,0.16), transparent 70%);
+  z-index: -1;        /* push them behind everything inside .surface */
 }
 
+/* strong but scoped override */
+.surface,
+.surface .text-content,
+.surface .text-content h1,
+.surface .text-content h2,
+.surface .text-content p {
+  color: #0f172a;             /* dark text */
+}
+.small-header,
+.normal-text { color: #334155; }  /* optional nuance */
+
+/* Hero styles */
 
 .hero {
   display: grid;
@@ -161,4 +200,3 @@
 @media (prefers-reduced-motion: reduce) {
   .cta, .cta-icon { transition: none; }
 }
-

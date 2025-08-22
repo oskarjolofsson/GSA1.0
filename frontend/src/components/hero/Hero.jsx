@@ -1,4 +1,4 @@
-import "./hero.css";
+import "../../styles/comp1.css";
 
 import { Link } from 'react-router-dom';
 import Upload from "../fileUpload/VideoUploader.jsx"

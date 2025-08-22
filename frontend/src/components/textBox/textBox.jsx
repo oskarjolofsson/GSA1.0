@@ -1,4 +1,4 @@
-import "./textBox.css"
+import "../../styles/comp1.css"
 
 export default function TextBox({ header, text }) {
   return (
