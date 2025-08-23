@@ -26,7 +26,7 @@ export default function Results() {
   }, [jobId]);
 
   if (status === "waiting") {
-    return <p>Processing your video… please wait ⏳</p>;
+    return <p>Processing your video… please wait ⏳</p>; 
   }
 
   return (

@@ -23,10 +23,10 @@ export default function Hero() {
               </p>
             </div>
 
-            {/*Right column: modern CTA */}
+            {/* Right column: modern CTA
              <div className="upload-wrap">
               <Upload />
-            </div>
+            </div> */}
           </div>
         </section>
       </div>

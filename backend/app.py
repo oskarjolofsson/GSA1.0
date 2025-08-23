@@ -26,7 +26,10 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     
     # Enable CORS for all routes (allows React frontend to call this backend)
-    CORS(app, origins=['http://localhost:3000'])  # Allow React dev server
+    CORS(
+        app,
+        resources={r"/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}}
+    )
     
     # Register blueprints (route modules)
     app.register_blueprint(analysis_bp)
@@ -44,11 +47,11 @@ def health_check():
     """
     Basic health check endpoint
     """
+    print("health check")
     return {
-        'status': 'healthy',
-        'message': 'Golf Swing Analyzer Backend is running',
-        'version': '1.0.0'
+        'message': 'hello world'
     }
+
 
 @app.errorhandler(404)
 def not_found(error):
