@@ -1,3 +1,4 @@
+
 export default function Hero() {
   return (
     <div className="min-h-screen bg-[#0b1020] text-slate-100 flex items-start justify-center relative overflow-hidden">
@@ -49,23 +50,13 @@ export default function Hero() {
                     <button
                       type="button"
                       className="flex items-center gap-2 rounded-xl px-5 py-3 bg-emerald-500/90 hover:bg-emerald-500 text-white font-semibold shadow-md shadow-emerald-900/30 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                      onClick={() => alert('Start with Golf')}
+                      onClick={() => window.location.href = '/analyse'}
                     >
-                      {/* Placeholder for sport SVG */}
-                      <span className="inline-block w-5 h-5 bg-white/30 rounded" />
+                      <img src="./icons/land-plot.svg" />
                       Golf
                     </button>
-
-                    <button
-                      type="button"
-                      className="flex items-center gap-2 rounded-xl px-5 py-3 bg-slate-700/70 dark:bg-slate-800/70 text-slate-300 border border-white/20 cursor-not-allowed text-left"
-                      aria-disabled
-                      title="Coming soon"
-                    >
-                      {/* Placeholder for sport SVG */}
-                      <span className="inline-block w-5 h-5 bg-slate-400/40 rounded" />
-                      Tennis <span className="ml-1 text-xs opacity-70">(coming soon)</span>
-                    </button>
+                    {/* Pplace more buttons later */}
+                    
                   </div>
                 </div>
               </div>

@@ -8,7 +8,7 @@ import About from "./pages/About.jsx";
 import NotFound from './pages/NotFound.jsx';
 import Products from './pages/Products.jsx';
 import Register from './pages/Register.jsx';
-import Analyser from './pages/GolfAnalyser.jsx';
+import Analyser from './pages/AnalyserPage.jsx';
 
 // Import components
 import Nav from "./components/nav/Nav2.jsx"
