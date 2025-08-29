@@ -20,6 +20,7 @@ def upload_video():
     Endpoint to upload a video and perform analysis.
     """
     if 'video' not in request.files:
+        print("No video")
         return jsonify({'error': 'No video file provided'}), 400
 
     video_file = request.files['video']
@@ -29,11 +30,11 @@ def upload_video():
         return jsonify({'error': 'Invalid file type'}), 400
 
     # Define upload_folder and create it if it doesn't exist
-    upload_folder = "backend/uploads/keyframes"
+    upload_folder = "uploads/keyframes"
     os.makedirs(upload_folder, exist_ok=True)
 
     # Create a video directory inside uploads directory as well
-    video_folder = "backend/uploads/video"
+    video_folder = "uploads/video"
     os.makedirs(video_folder, exist_ok=True)
 
     # Save the video_file to the video directory
@@ -54,30 +55,36 @@ def upload_video():
         message_prompt=message_prompt
     )
 
-    results = gpt_service.get_response()
-    # Convert OpenAI response to plain JSON
-    try:
-        # Common SDK shape provides a JSON string at .output_text
-        if hasattr(results, 'output_text') and isinstance(results.output_text, str):
-            parsed = json.loads(results.output_text)
-            return jsonify(parsed), 200
-        # Some SDKs expose a JSON dump method
-        if hasattr(results, 'model_dump_json'):
-            txt = results.model_dump_json()
-            parsed = json.loads(txt)
-            return jsonify(parsed), 200
-        # Fallback: try to coerce to dict directly (may fail)
-        if isinstance(results, dict):
-            return jsonify(results), 200
-        return jsonify({
-            'error': 'Unexpected analysis response format',
-            'details': str(type(results))
-        }), 500
-    except Exception as e:
-        return jsonify({
-            'error': 'Failed to parse analysis output',
-            'details': str(e)
-        }), 500
+    results = gpt_service.get_response()    # Response-object
+    # Make into a string
+    result_text = results.output_text
+
+    # Return the string given:
+    return jsonify({'analysis_results': result_text}), 200
+
+    # # Convert OpenAI response to plain JSON
+    # try:
+    #     # Common SDK shape provides a JSON string at .output_text
+    #     if hasattr(results, 'output_text') and isinstance(results.output_text, str):
+    #         parsed = json.loads(results.output_text)
+    #         return jsonify(parsed), 200
+    #     # Some SDKs expose a JSON dump method
+    #     if hasattr(results, 'model_dump_json'):
+    #         txt = results.model_dump_json()
+    #         parsed = json.loads(txt)
+    #         return jsonify(parsed), 200
+    #     # Fallback: try to coerce to dict directly (may fail)
+    #     if isinstance(results, dict):
+    #         return jsonify(results), 200
+    #     return jsonify({
+    #         'error': 'Unexpected analysis response format',
+    #         'details': str(type(results))
+    #     }), 500
+    # except Exception as e:
+    #     return jsonify({
+    #         'error': 'Failed to parse analysis output',
+    #         'details': str(e)
+    #     }), 500
 
 def allowed_file(filename):
     """

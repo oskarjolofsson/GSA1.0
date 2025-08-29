@@ -24,6 +24,8 @@ class ChatGPT_service:
     def __init__(self, uploads_folder: str, video_path: str, message_prompt: str):
         load_dotenv()
         api_key = os.getenv("OPENAI_API_KEY")
+        print(api_key)
+
         if not api_key:
             raise EnvironmentError("OPENAI_API_KEY environment variable not set.")
         
@@ -133,66 +135,25 @@ class ChatGPT_service:
         4. **Phase Notes** (optional) - If relevant, note specific swing phases (backswing, impact, etc.).
 
         Keep it clear and brief — this is going into a training app.
-        Respond ONLY with valid JSON. Use the following structure:
+        Respond using specifically the following structure:
         - "summary": string
         - "drills": list of 2 strings
         - "observations": list of strings
         - "phase_notes": dictionary with keys like "setup", "impact", etc., each mapping to a string.
 
-        Do not include any explanation or formatting outside the JSON object. Return only valid JSON.
+        Do not include any explanation or formatting outside the structure specified.
         """
 
+        # Response is a string response
         response = self.client.responses.create(
-            model="gpt-4.1",
-            temperature=0.1,
+            model="gpt-5",
             input=[
                 {"role": "system", "content": system_instructions},
                 {"role": "user", "content": content,}
             ],
         )
 
+        print("Response in chatgpt_service:\n " + response.output_text)
+
+        # Return response-object
         return response
-
-
-
-
-if __name__ == "__main__" :
-    message_prompt = """
-        You are an expert golf coach analyzing a complete golf swing through the images Ive uploaded.
-        These images are in chronological order, showing the full motion from setup to follow-through.
-
-        Based only on what you see, give me two concise drills that would most effectively improve my swing.
-        Focus on form, timing, and mechanics. Keep your advice brief and actionable.
-        """
-
-    gpt_service = ChatGPT_service(
-        uploads_folder="backend/uploads/keyframes",
-        video_path="backend/uploads/20250626_191212.mp4",
-        message_prompt=message_prompt
-        )
-    
-    results = gpt_service.get_response()
-
-    print("==OUTPUT-TEXT==")
-    #print(results.output_text)
-
-    # Get it in json format
-    try:
-        data = json.loads(results.output_text)
-    except:
-        print("GPT did not return valid json this time, try again.")
-        exit(1)
-    
-    for key, value in data.items():
-        print(f"{key.capitalize()}:")
-        
-        if isinstance(value, list):
-            for item in value:
-                print(f"  - {item}")
-        
-        elif isinstance(value, dict):
-            for subkey, subvalue in value.items():
-                print(f"  {subkey.title()}: {subvalue}")
-        
-        else:  # it's likely a string (e.g. summary)
-            print(f"  {value}")

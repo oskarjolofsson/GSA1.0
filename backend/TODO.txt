@@ -1,3 +1,0 @@
-backend/services/quality.py:
-- Fix the machine learning model to identify if its a body or not
-- Fix test files

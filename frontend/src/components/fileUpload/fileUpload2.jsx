@@ -1,11 +1,16 @@
 import { useState, useRef, useEffect } from "react";
 
+// Components
+import ResultBox from "../result-box/result-box.jsx"
+
 export default function UploadPage() {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef(null);
   const [ready, setReady] = useState(false);
+  const [analysisText, setAnalysisText] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     // cleanup preview URL
@@ -34,30 +39,63 @@ export default function UploadPage() {
   function onDrop(e) {
     e.preventDefault();
     setDragActive(false);
+    if (uploading) return; // ignore drops while uploading
     if (file) return; // max one file
     onSelect(e.dataTransfer.files);
   }
 
   function onRemove() {
+    if (uploading) return;
     setFile(null);
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     if (inputRef.current) inputRef.current.value = "";
   }
 
+
+  // Upload methods
+
   async function onUpload() {
-    if (!file) return;
-    // stubbed upload; replace with your API endpoint
+    if (!file) return; // Exit if no file is selected
+    if (uploading) return;
+
+    // Remove previous analysis box (if any)
+    setAnalysisText(null);
+    setUploading(true);
+
+    // Prepare the file for upload using FormData
     const form = new FormData();
-    form.append("file", file);
+    form.append("video", file);
+
     try {
-      const res = await fetch("http://localhost:8000/upload", { method: "POST", body: form });
-      if (!res.ok) throw new Error("Upload failed");
+      const res = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: form,
+      });
+
+      if (!res.ok) {
+        // Try to parse JSON error
+        let errorMessage = "Upload failed";
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // fallback if backend didn't send JSON
+          const text = await res.text();
+          if (text) errorMessage = text;
+        }
+        throw new Error(errorMessage);
+      }
+
       const data = await res.json();
-      alert("Uploaded! " + (data.message || ""));
-    } catch (err) {
-      alert("Could not upload. Check backend.");
+
+      const result = data.analysis_results ?? data.message ?? "";
+      setAnalysisText(result || "Upload succeeded, but no analysis result was returned.");
+    } 
+    catch (err) {
+      setAnalysisText("Could not upload. Error: " + err.message);
     }
+    setUploading(false);
   }
 
   return (
@@ -67,7 +105,7 @@ export default function UploadPage() {
         className="pointer-events-none absolute inset-0 opacity-20"
         style={{
           backgroundImage: "url('/icons/topography.svg')",
-          backgroundRepeat: 'no-repeat',
+          backgroundRepeat: 'repeat',
           backgroundPosition: 'top left',
           backgroundSize: '1200px',
         }}
@@ -120,10 +158,18 @@ export default function UploadPage() {
               <button
                 type="button"
                 onClick={onUpload}
-                disabled={!file}
-                className="rounded-xl bg-emerald-500/90 hover:bg-emerald-500 disabled:opacity-50 text-white px-5 py-2 font-semibold"
+                disabled={!file || uploading}
+                className="rounded-xl bg-emerald-500/90 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2 font-semibold"
+                aria-busy={uploading}
               >
-                Upload
+                {uploading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white/90"></span>
+                    Uploading...
+                  </span>
+                ) : (
+                  "Upload"
+                )}
               </button>
             </div>
           </div>
@@ -146,7 +192,8 @@ export default function UploadPage() {
                   <button
                     type="button"
                     onClick={onRemove}
-                    className="inline-flex items-center gap-1 rounded-xl bg-white/5 px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/10"
+                    disabled={uploading}
+                    className="inline-flex items-center gap-1 rounded-xl bg-white/5 px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6l-12 12"/></svg>
                     Remove
@@ -156,6 +203,9 @@ export default function UploadPage() {
             )}
           </div>
         </div>
+        {analysisText && (
+          <ResultBox title="Analysis Result" text={analysisText} />
+        )}
       </section>
     </div>
   );
