@@ -163,7 +163,6 @@ class VideoProcessingService:
                     keyframe_path = os.path.join(keyframes_dir, filename)
                     cv2.imwrite(keyframe_path, frame)
                     keyframe_paths.append(keyframe_path)
-                    print(f"Extracted keyframe {idx+1}/{num_keyframes} at frame {frame_number}")
             
             cap.release()
             try:
@@ -171,7 +170,6 @@ class VideoProcessingService:
             except Exception as e:
                 print(e)
             
-            print("Video requirements met")
 
             return keyframe_paths
             
@@ -210,6 +208,7 @@ class VideoProcessingService:
             
             print(f"Successfully extracted metadata for {metadata['filename']}")
             print(f"Duration: {metadata['duration']}s, Resolution: {metadata['resolution']}, Keyframes: {len(keyframe_paths)}")
+            print()
             
             return metadata
             

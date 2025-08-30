@@ -99,22 +99,5 @@ class quality_checker:
         return all(visible_points)
     
 
-if __name__ == "__main__":
-    quality = quality_checker()
-
-    directory = "backend/uploads/keyframes"
-
-    if not os.path.exists(directory) or not os.path.isdir(directory):
-        raise FileNotFoundError(f"Directory does not exist or is not a directory: {directory}")
-    
-    path_list = [os.path.join(directory, file) for file in os.listdir(directory)]
-
-    try:
-        quality.add_image_paths(path_list)
-    except Exception as e:
-        print(e)
-
-    for path in quality.paths():
-        print(path)
     
     

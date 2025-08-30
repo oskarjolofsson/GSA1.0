@@ -24,7 +24,6 @@ class ChatGPT_service:
     def __init__(self, uploads_folder: str, video_path: str, message_prompt: str):
         load_dotenv()
         api_key = os.getenv("OPENAI_API_KEY")
-        print(api_key)
 
         if not api_key:
             raise EnvironmentError("OPENAI_API_KEY environment variable not set.")
@@ -50,7 +49,7 @@ class ChatGPT_service:
         if not os.path.exists(self.video_path):
             raise FileNotFoundError(f"Video file not found: {self.video_path}")
 
-        print(f"Processing video: {os.path.basename(self.video_path)}")
+        # print(f"Processing video: {os.path.basename(self.video_path)}")
 
         # Initialize Video Processing Service
         video_service = VideoProcessingService(self.uploads_folder)
@@ -71,16 +70,24 @@ class ChatGPT_service:
             print(f"  {i+1}. {keyframe_path}")
 
         print("\n✅ Video processing completed successfully!")
+        print()
 
         return metadata
 
 
     def get_response(self) -> str:
-        
+        """
+        Get results
+
+        Returns:
+        response: response object
+        """
 
         # Create metadata from video
         self.process_video()
-        # Get the paths to all individual imnages in the uploads_folder
+        # Get the paths to all individual images in the uploads_folder
+        print("Image paths created from following folder: " + self.uploads_folder)
+        print()
         image_paths = self.get_paths_in_folder(self.uploads_folder)
         # Format the prompt for the gpt api
         content = self.format_content(self.message_prompt ,image_paths)
@@ -144,6 +151,9 @@ class ChatGPT_service:
         Do not include any explanation or formatting outside the structure specified.
         """
 
+        print("Content:")
+        print(content)
+
         # Response is a string response
         response = self.client.responses.create(
             model="gpt-5",
@@ -152,8 +162,6 @@ class ChatGPT_service:
                 {"role": "user", "content": content,}
             ],
         )
-
-        print("Response in chatgpt_service:\n " + response.output_text)
 
         # Return response-object
         return response

@@ -34,7 +34,7 @@ def upload_video():
     os.makedirs(upload_folder, exist_ok=True)
 
     # Create a video directory inside uploads directory as well
-    video_folder = "uploads/video"
+    video_folder = "uploads"
     os.makedirs(video_folder, exist_ok=True)
 
     # Save the video_file to the video directory
@@ -49,6 +49,11 @@ def upload_video():
         Focus on form, timing, and mechanics. Keep your advice brief and actionable.
     """
     
+    print("In analysis_routes")
+    print("uploads_folder" + upload_folder)
+    print("uploads_folder" + video_path)
+    print()
+
     gpt_service = ChatGPT_service(
         uploads_folder=upload_folder,
         video_path=video_path,
