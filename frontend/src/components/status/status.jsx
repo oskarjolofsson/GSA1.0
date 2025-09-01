@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+const API = import.meta.env.VITE_API_URL;
 
 export default function Status() {
   const [status, setStatus] = useState("Checking...");
@@ -8,7 +9,7 @@ export default function Status() {
   // Function to check if the backend is responding
   async function checkBackendStatus() {
     try {
-      const res = await fetch("http://localhost:8000/", { cache: "no-store" });
+      const res = await fetch(API, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
       const data = await res.json(); // ← extract JSON

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+const API = import.meta.env.VITE_API_URL;
 
 // Components
 import ResultBox from "../result-box/result-box.jsx"
@@ -67,7 +68,7 @@ export default function UploadPage() {
     form.append("video", file);
 
     try {
-      const res = await fetch("http://localhost:8000/upload", {
+      const res = await fetch(API + "/upload", {
         method: "POST",
         body: form,
       });
