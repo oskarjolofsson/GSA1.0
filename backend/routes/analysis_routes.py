@@ -13,6 +13,10 @@ analysis_bp = Blueprint('analysis', __name__)
 def hello():
     return jsonify(message="Hello from Flask! (Golf Swing Analyzer)")
 
+@analysis_bp.get("/ping")
+def ping():
+    return jsonify(ok=True), 200
+
 
 @analysis_bp.route('/upload', methods=['POST'])
 def upload_video():

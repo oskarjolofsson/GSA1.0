@@ -1,0 +1,44 @@
+services:
+  # --- Backend: Flask API ---
+  - type: web
+    name: flask-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app -b 0.0.0.0:$PORT
+    healthCheckPath: /ping
+    previews:
+      generation: automatic
+    buildFilter:
+      paths:
+        - backend/**
+
+  # --- Frontend: Vite static site ---
+  - type: web
+    name: react-frontend
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      # SPA routing: send all paths to index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # Expose the backend URL to Vite at build time
+      - key: VITE_API_URL
+        fromService:
+          name: flask-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      # Optional: lock Node version (good for reproducible builds)
+      - key: NODE_VERSION
+        value: 18
+    previews:
+      generation: automatic
+    buildFilter:
+      paths:
+        - frontend/**
