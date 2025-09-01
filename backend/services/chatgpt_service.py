@@ -55,7 +55,7 @@ class ChatGPT_service:
         video_service = VideoProcessingService(self.uploads_folder)
 
         # Extract metadata and keyframes
-        metadata = video_service.create_video_metadata(self.video_path, 10)
+        metadata = video_service.create_video_metadata(self.video_path, 5)
 
         print("\n📊 Extracted Metadata:")
         print(f"  • Filename: {metadata['filename']}")
@@ -146,13 +146,11 @@ class ChatGPT_service:
         - "summary": string
         - "drills": list of 2 strings
         - "observations": list of strings
-        - "phase_notes": dictionary with keys like "setup", "impact", etc., each mapping to a string.
+        - "phase_notes": dictionary with keys the keys: setup, backswing, transition, impact, finish.
 
         Do not include any explanation or formatting outside the structure specified.
         """
 
-        print("Content:")
-        print(content)
 
         # Response is a string response
         response = self.client.responses.create(
@@ -162,6 +160,8 @@ class ChatGPT_service:
                 {"role": "user", "content": content,}
             ],
         )
+        
+        print(response.output_text)
 
         # Return response-object
         return response

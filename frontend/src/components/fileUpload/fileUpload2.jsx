@@ -9,7 +9,7 @@ export default function UploadPage() {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef(null);
   const [ready, setReady] = useState(false);
-  const [analysisText, setAnalysisText] = useState(null);
+  const [analysis, setAnalysis] = useState(null);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -60,7 +60,6 @@ export default function UploadPage() {
     if (uploading) return;
 
     // Remove previous analysis box (if any)
-    setAnalysisText(null);
     setUploading(true);
 
     // Prepare the file for upload using FormData
@@ -78,7 +77,7 @@ export default function UploadPage() {
         let errorMessage = "Upload failed";
         try {
           const errorData = await res.json();
-          errorMessage = errorData.message || errorMessage;
+          errorMessage = errorData.message || errorData.error || errorMessage;
         } catch {
           // fallback if backend didn't send JSON
           const text = await res.text();
@@ -89,11 +88,16 @@ export default function UploadPage() {
 
       const data = await res.json();
 
-      const result = data.analysis_results ?? data.message ?? "";
-      setAnalysisText(result || "Upload succeeded, but no analysis result was returned.");
+      // NOTE: backend returns { analysis_results: { summary, ... } }
+      const summary = data.analysis_results?.summary ?? "Could not be found";   // String summary of the swing
+      const drills  = data.analysis_results?.drills ?? [];                      //
+      const observations = data.analysis_results?.observations ?? [];
+      const phase_notes = data.analysis_results?.phase_notes ?? {};
+
+      setAnalysis({ summary, drills, observations, phase_notes });
     } 
     catch (err) {
-      setAnalysisText("Could not upload. Error: " + err.message);
+      setAnalysis(null);
     }
     setUploading(false);
   }
@@ -203,8 +207,14 @@ export default function UploadPage() {
             )}
           </div>
         </div>
-        {analysisText && (
-          <ResultBox title="Analysis Result" text={analysisText} />
+        {(analysis) && (
+          <ResultBox
+            title="Analysis Result"
+            summary={analysis?.summary}
+            drills={analysis?.drills}
+            observations={analysis?.observations}
+            phase_notes={analysis?.phase_notes}
+          />
         )}
       </section>
     </div>
