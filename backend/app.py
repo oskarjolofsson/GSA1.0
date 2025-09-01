@@ -28,7 +28,7 @@ def create_app():
     # Enable CORS for all routes (allows React frontend to call this backend)
     CORS(
         app,
-        resources={r"/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}}
+        resources={r"/*": {"origins": [os.getenv("VITE_API_URL"), os.getenv("VITE_API_URL2")]}}
     )
     
     # Register blueprints (route modules)
