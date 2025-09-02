@@ -1,10 +1,10 @@
 # Flask and web framework dependencies
-Flask==2.3.3
-Flask-CORS==4.0.0
-gunicorn==21.2.0
+flask
+flask-cors
+gunicorn
 
 # Environment variables
-python-dotenv==1.0.0
+python-dotenv
 
 # HTTP requests (for ChatGPT API calls)
 requests==2.31.0

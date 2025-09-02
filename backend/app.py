@@ -26,10 +26,13 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     
     # Enable CORS for all routes (allows React frontend to call this backend)
-    CORS(
-        app,
-        resources={r"/*": {"origins": [os.getenv("VITE_API_URL"), os.getenv("VITE_API_URL2")]}}
-    )
+    # CORS(
+    #     app,
+    #     resources={r"/*": {"origins": [os.getenv("VITE_API_URL"), os.getenv("VITE_API_URL2")]}}
+    # )
+    allowed = [os.getenv("VITE_API_URL"), os.getenv("VITE_API_URL2")]
+    allowed = [o for o in allowed if o]
+    CORS(app, resources={r"/*": {"origins": allowed or "*"}})
     
     # Register blueprints (route modules)
     app.register_blueprint(analysis_bp)
@@ -80,3 +83,4 @@ if __name__ == '__main__':
         port=8000,       # Port 8000 (matches frontend API configuration)
         debug=True       # Enable debug mode for development
     )
+    

@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify, current_app
 import os
 import shutil
 import json
-from services.chatgpt_service import ChatGPT_service
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint('analysis', __name__)
@@ -23,6 +22,8 @@ def upload_video():
     """
     Endpoint to upload a video and perform analysis.
     """
+    from services.chatgpt_service import ChatGPT_service
+
     if 'video' not in request.files:
         print("No video")
         return jsonify({'error': 'No video file provided'}), 400
