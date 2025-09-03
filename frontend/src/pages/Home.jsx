@@ -1,4 +1,4 @@
-import Hero from '../components/hero/hero.jsx';
+import Hero from '../components/hero/Hero.jsx';
 import Faq from '../components/faq/faq.jsx'
 import Status from '../components/status/status.jsx';
 
