@@ -4,8 +4,9 @@ export default function NavBar() {
   const [open, setOpen] = useState(false);
 
   const navItems = [
-    { name: 'Tools', href: '/' },
-    { name: 'Blog', href: '/' },
+    // { name: 'Tools', href: '/' },
+    // { name: 'Blog', href: '/' },
+    { name: 'About', href: '/about' },
   ];
 
   return (

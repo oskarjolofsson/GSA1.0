@@ -46,19 +46,10 @@ export default function FAQ({ items = defaultFaqs }) {
   }, []);
 
   return (
-    <div className="bg-[#0b1020] text-slate-100 relative overflow-hidden py-16">
-      {/* subtle topo texture and gradient like hero */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: "url('/icons/topography.svg')",
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'top left',
-          backgroundSize: '1200px',
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-white/10" />
+    <div className="text-slate-100 relative overflow-hidden py-16">
+      
+      
+      
 
       <section className="relative mx-auto w-full max-w-5xl px-4 py-12">
         <div className="text-center mb-10">

@@ -44,20 +44,10 @@ export default function Status() {
   }, []);
 
   return (
-    <div className="bg-[#0b1020] text-slate-100 flex items-start justify-center relative overflow-hidden py-10">
-      {/* subtle topo texture (same as hero) */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: "url('/icons/topography.svg')",
-          backgroundRepeat: 'repeat',
-          backgroundPosition: 'top left',
-          backgroundSize: '1200px',
-        }}
-      />
-      {/* Dark-to-light atmosphere: darker top → lighter bottom */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-white/10" />
+    <div className="text-slate-100 flex items-start justify-center relative overflow-hidden py-10">
+      
+      
+      
 
       <section className="relative mx-auto max-w-3xl w-full px-4">
         <div

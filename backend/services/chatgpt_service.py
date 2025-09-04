@@ -55,7 +55,7 @@ class ChatGPT_service:
         video_service = VideoProcessingService(self.uploads_folder)
 
         # Extract metadata and keyframes
-        metadata = video_service.create_video_metadata(self.video_path, 5)
+        metadata = video_service.create_video_metadata(self.video_path, 15)
 
         print("\n📊 Extracted Metadata:")
         print(f"  • Filename: {metadata['filename']}")
