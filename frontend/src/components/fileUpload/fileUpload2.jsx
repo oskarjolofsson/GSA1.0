@@ -2,7 +2,178 @@ import { useState, useRef, useEffect } from "react";
 const API = import.meta.env.VITE_API_URL;
 
 // Components
-import ResultBox from "../result-box/result-box.jsx"
+import ResultBox from "../result-box/result-box.jsx";
+
+// Presentational pieces
+function PageBackground() {
+  return (
+    <>
+      <div
+        className="pointer-events-none absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: "url('/icons/topography.svg')",
+          backgroundRepeat: "repeat",
+          backgroundPosition: "top left",
+          backgroundSize: "1200px",
+        }}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-white/10" />
+    </>
+  );
+}
+
+function UploadHeader() {
+  return (
+    <header className="mb-12 text-center">
+      <h1 className="text-3xl sm:text-5xl font-bold tracking-tight">Upload & Get Feedback</h1>
+      <p className="mt-4 text-slate-400">Drop a single video below. We’ll analyze it and return insights.</p>
+    </header>
+  );
+}
+
+function DropZone({
+  file,
+  dragActive,
+  setDragActive,
+  ready,
+  inputRef,
+  onDrop,
+  onSelect,
+  onUpload,
+  uploading,
+}) {
+  function handleDragOver(e) {
+    e.preventDefault();
+    if (!file) setDragActive(true);
+  }
+
+  function handleChange(e) {
+    if (!file) onSelect(e.target.files);
+  }
+
+  return (
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={() => setDragActive(false)}
+      onDrop={onDrop}
+      className={`rounded-3xl border-2 border-dashed p-10 text-center backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] transition-all duration-700 ease-out will-change-transform transform ${
+        ready ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      } ${dragActive ? "border-emerald-400 bg-emerald-400/5" : "border-white/10 bg-[#0e1428]/70"}`}
+    >
+      <input
+        ref={inputRef}
+        id="video-input"
+        type="file"
+        accept="video/*"
+        className="hidden"
+        onChange={handleChange}
+      />
+
+      <label htmlFor="video-input" className="cursor-pointer block">
+        <div className="mx-auto grid place-items-center h-14 w-14 rounded-full bg-white/5 ring-1 ring-white/10">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </div>
+        <p className="mt-6 text-slate-200 font-semibold">Drop your video here or click to browse</p>
+        <p className="text-sm text-slate-400 mt-1">Max one file • MP4, MOV, etc.</p>
+      </label>
+
+      <div className="mt-8 flex items-center justify-center gap-4">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="rounded-xl bg-white/5 px-5 py-2 ring-1 ring-white/10 hover:bg-white/10"
+          disabled={!!file}
+        >
+          Choose file
+        </button>
+        <button
+          type="button"
+          onClick={onUpload}
+          disabled={!file || uploading}
+          className="rounded-xl bg-emerald-500/90 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2 font-semibold"
+          aria-busy={uploading}
+        >
+          {uploading ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white/90"></span>
+              Uploading...
+            </span>
+          ) : (
+            "Upload"
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PreviewPane({ previewUrl, ready, uploading, onRemove, file }) {
+  return (
+    <div
+      className={`rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 min-h-[280px] flex items-center justify-center transition-all duration-700 ease-out will-change-transform transform ${
+        ready ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      } delay-150`}
+    >
+      {!previewUrl ? (
+        <div className="text-slate-400 text-sm">No video selected</div>
+      ) : (
+        <div className="w-full h-full flex flex-col">
+          <div className="flex-1 flex items-center justify-center">
+            <video
+              className="max-h-64 w-full rounded-2xl ring-1 ring-white/10 object-contain"
+              src={previewUrl}
+              controls
+            />
+          </div>
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-xs text-slate-400 truncate">{file?.name}</div>
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={uploading}
+              className="inline-flex items-center gap-1 rounded-xl bg-white/5 px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              >
+                <path d="M6 6l12 12M18 6l-12 12" />
+              </svg>
+              Remove
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AnalysisResult({ analysis }) {
+  if (!analysis) return null;
+  return (
+    <ResultBox
+      title="Analysis Result"
+      summary={analysis?.summary}
+      drills={analysis?.drills}
+      observations={analysis?.observations}
+      phase_notes={analysis?.phase_notes}
+    />
+  );
+}
 
 export default function UploadPage() {
   const [file, setFile] = useState(null);
@@ -53,17 +224,12 @@ export default function UploadPage() {
     if (inputRef.current) inputRef.current.value = "";
   }
 
-
-  // Upload methods
-
   async function onUpload() {
     if (!file) return; // Exit if no file is selected
     if (uploading) return;
 
-    // Remove previous analysis box (if any)
     setUploading(true);
 
-    // Prepare the file for upload using FormData
     const form = new FormData();
     form.append("video", file);
 
@@ -74,13 +240,11 @@ export default function UploadPage() {
       });
 
       if (!res.ok) {
-        // Try to parse JSON error
         let errorMessage = "Upload failed";
         try {
           const errorData = await res.json();
           errorMessage = errorData.message || errorData.error || errorMessage;
         } catch {
-          // fallback if backend didn't send JSON
           const text = await res.text();
           if (text) errorMessage = text;
         }
@@ -89,134 +253,49 @@ export default function UploadPage() {
 
       const data = await res.json();
 
-      // NOTE: backend returns { analysis_results: { summary, ... } }
-      const summary = data.analysis_results?.summary ?? "Could not be found";   // String summary of the swing
-      const drills  = data.analysis_results?.drills ?? [];                      //
+      const summary = data.analysis_results?.summary ?? "Could not be found";
+      const drills = data.analysis_results?.drills ?? [];
       const observations = data.analysis_results?.observations ?? [];
       const phase_notes = data.analysis_results?.phase_notes ?? {};
 
       setAnalysis({ summary, drills, observations, phase_notes });
-    } 
-    catch (err) {
+    } catch (err) {
       setAnalysis(null);
     }
+
     setUploading(false);
   }
 
   return (
     <div className="bg-[#0b1020] text-slate-100 relative overflow-hidden py-12 min-h-screen">
-      {/* topo + gradient background (same vibe as hero) */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: "url('/icons/topography.svg')",
-          backgroundRepeat: 'repeat',
-          backgroundPosition: 'top left',
-          backgroundSize: '1200px',
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-white/10" />
+      <PageBackground />
 
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
-        <header className="mb-12 text-center">
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight">Upload & Get Feedback</h1>
-          <p className="mt-4 text-slate-400">Drop a single video below. We’ll analyze it and return insights.</p>
-        </header>
+        <UploadHeader />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {/* Drop zone */}
-          <div
-            onDragOver={(e) => { e.preventDefault(); if (!file) setDragActive(true); }}
-            onDragLeave={() => setDragActive(false)}
+          <DropZone
+            file={file}
+            dragActive={dragActive}
+            setDragActive={setDragActive}
+            ready={ready}
+            inputRef={inputRef}
             onDrop={onDrop}
-            className={`rounded-3xl border-2 border-dashed p-10 text-center backdrop-blur-md shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] transition-all duration-700 ease-out will-change-transform transform ${ready ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} ${
-              dragActive ? 'border-emerald-400 bg-emerald-400/5' : 'border-white/10 bg-[#0e1428]/70'
-            }`}
-          >
-            <input
-              ref={inputRef}
-              id="video-input"
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={(e) => { if (!file) onSelect(e.target.files); }}
-            />
-
-            <label htmlFor="video-input" className="cursor-pointer block">
-              <div className="mx-auto grid place-items-center h-14 w-14 rounded-full bg-white/5 ring-1 ring-white/10">
-                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
-              </div>
-              <p className="mt-6 text-slate-200 font-semibold">Drop your video here or click to browse</p>
-              <p className="text-sm text-slate-400 mt-1">Max one file • MP4, MOV, etc.</p>
-            </label>
-
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                className="rounded-xl bg-white/5 px-5 py-2 ring-1 ring-white/10 hover:bg-white/10"
-                disabled={!!file}
-              >
-                Choose file
-              </button>
-              <button
-                type="button"
-                onClick={onUpload}
-                disabled={!file || uploading}
-                className="rounded-xl bg-emerald-500/90 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2 font-semibold"
-                aria-busy={uploading}
-              >
-                {uploading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white/90"></span>
-                    Uploading...
-                  </span>
-                ) : (
-                  "Upload"
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Preview */}
-          <div className={`rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 min-h-[280px] flex items-center justify-center transition-all duration-700 ease-out will-change-transform transform ${ready ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} delay-150`}>
-            {!previewUrl ? (
-              <div className="text-slate-400 text-sm">No video selected</div>
-            ) : (
-              <div className="w-full h-full flex flex-col">
-                <div className="flex-1 flex items-center justify-center">
-                  <video
-                    className="max-h-64 w-full rounded-2xl ring-1 ring-white/10 object-contain"
-                    src={previewUrl}
-                    controls
-                  />
-                </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="text-xs text-slate-400 truncate">{file?.name}</div>
-                  <button
-                    type="button"
-                    onClick={onRemove}
-                    disabled={uploading}
-                    className="inline-flex items-center gap-1 rounded-xl bg-white/5 px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6l-12 12"/></svg>
-                    Remove
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        {(analysis) && (
-          <ResultBox
-            title="Analysis Result"
-            summary={analysis?.summary}
-            drills={analysis?.drills}
-            observations={analysis?.observations}
-            phase_notes={analysis?.phase_notes}
+            onSelect={onSelect}
+            onUpload={onUpload}
+            uploading={uploading}
           />
-        )}
+
+          <PreviewPane
+            previewUrl={previewUrl}
+            ready={ready}
+            uploading={uploading}
+            onRemove={onRemove}
+            file={file}
+          />
+        </div>
+
+        <AnalysisResult analysis={analysis} />
       </section>
     </div>
   );
