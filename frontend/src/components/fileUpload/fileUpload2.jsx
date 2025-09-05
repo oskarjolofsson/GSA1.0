@@ -4,24 +4,6 @@ const API = import.meta.env.VITE_API_URL;
 // Components
 import ResultBox from "../result-box/result-box.jsx";
 
-// Presentational pieces
-function PageBackground() {
-  return (
-    <>
-      <div
-        className="pointer-events-none absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: "url('/icons/topography.svg')",
-          backgroundRepeat: "repeat",
-          backgroundPosition: "top left",
-          backgroundSize: "1200px",
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-b from-transparent to-white/10" />
-    </>
-  );
-}
 
 function UploadHeader() {
   return (
@@ -267,9 +249,7 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="bg-[#0b1020] text-slate-100 relative overflow-hidden py-12 min-h-screen">
-      <PageBackground />
-
+    <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
         <UploadHeader />
 
