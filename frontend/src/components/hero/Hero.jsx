@@ -92,7 +92,7 @@ export default function Hero() {
     <div className="min-h-screen bg-[#0b1020] text-slate-100 flex items-start justify-center relative overflow-hidden">
       {/* subtle topo texture and vignette */}
       {backgroundTexture()}
-      {BottomVignette}
+      {BottomVignette()}
       <main className="mx-auto w-full max-w-6xl px-4">
         {heroWrapper()}
       </main>

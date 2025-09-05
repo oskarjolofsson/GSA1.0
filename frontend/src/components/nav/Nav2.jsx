@@ -32,6 +32,8 @@ function desktopNav(navItems) {
 
 
 function account() {
+
+  
   return (
     <div className="hidden md:flex items-center gap-3">
       <a
@@ -104,20 +106,17 @@ export default function NavBar() {
       <div className="mx-auto max-w-6xl px-4">
         <div className="mt-4 rounded-2xl bg-transparent backdrop-blur-sm">
           <nav className="flex items-center justify-start gap-4 px-4 py-2 text-slate-100">
-            {/* Left: Logo */}
             {leftLogo()}
-
-            {/* Desktop nav */}
             {desktopNav(navItems)}
 
             {/* Right: Sign in */}
             {account()}
 
-            {/* If screen not wide enough, show the ones bellow */}
-            {/* Mobile: menu button */}
+            {/* If screen not wide enough, show the manu bellow */}
             {mobileMenuButton(open, setOpen)}
           </nav>
 
+          {/* Only shows if open */}
           {mobilePanel(open, navItems)}
 
         </div>

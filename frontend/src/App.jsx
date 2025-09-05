@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, Link } from "react-router-dom";
 import { onAuthStateChanged, signOut, signInWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "./lib/firebase";
+import { auth, googleProvider } from "./lib/firebase.js";
 import './App.css'
 
 // Import pages
