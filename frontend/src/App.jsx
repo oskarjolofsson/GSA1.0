@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route, Link } from "react-router-dom";
+import { onAuthStateChanged, signOut, signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "lib/firebase";
 import './App.css'
 
 // Import pages
@@ -16,6 +18,19 @@ import Footer from './components/footer/footer.jsx';
 
 
 function App() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, setUser);
+  }, []);
+
+  const login = async () => {
+    await signInWithPopup(auth, googleProvider);
+    // TODO??? IDTOKEN
+  }
+
+  const logout = () => signOut(auth);
+
   return (
     <div className="min-h-screen flex flex-col relative z-0 overflow-hidden bg-[#0b1020] text-slate-100">
       <div
