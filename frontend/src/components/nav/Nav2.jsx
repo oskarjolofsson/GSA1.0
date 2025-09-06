@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../../auth/authContext';
 
 
 function leftLogo() {
@@ -32,18 +33,51 @@ function desktopNav(navItems) {
 
 
 function account() {
+  const {login, logout, loading, user} = useAuth();
+  let text = "";
+  let method = () => {};
 
-  
+  if (loading) {
+    text = "Loading...";
+  } else if (user) {
+    text = "Sign out";
+    method = logout;
+  } else {
+    text = "Sign in / Register";
+    method = login;
+  }
+
   return (
     <div className="hidden md:flex items-center gap-3">
       <a
-        href="#signin"
+        onClick={method}
         className="inline-flex items-center rounded-full bg-white/5 px-4 py-2 text-sm font-medium ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/10 transition-colors"
       >
-        Sign in
+        {text}
       </a>
     </div>
   );
+}
+
+function showLoading(text) {
+  return (
+    <a
+      // Dont lead anywhere
+      className="inline-flex items-center rounded-full bg-white/5 px-4 py-2 text-sm font-medium ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/10 transition-colors"
+    >
+      {text}
+    </a>
+  )
+}
+
+
+function showLogOut(text) {
+
+}
+
+
+function showLogIn(text) {
+
 }
 
 
