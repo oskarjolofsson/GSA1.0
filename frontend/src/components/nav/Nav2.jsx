@@ -49,12 +49,12 @@ function account() {
 
   return (
     <div className="hidden md:flex items-center gap-3">
-      <a
+      <button
         onClick={method}
-        className="inline-flex items-center rounded-full bg-white/5 px-4 py-2 text-sm font-medium ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/10 transition-colors"
-      >
+        type="button"
+        className="inline-flex items-center rounded-full bg-white/5 px-4 py-2 text-sm font-medium ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/10 transition-colors cursor-pointer">
         {text}
-      </a>
+      </button>
     </div>
   );
 }
