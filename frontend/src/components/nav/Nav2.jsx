@@ -32,29 +32,38 @@ function desktopNav(navItems) {
 }
 
 
+import SignInPopup from '../signInPopup/signInPopup.jsx';
+
 function account() {
-  const {login, logout, loading, user} = useAuth();
+  const { login, logout, loading, user } = useAuth();
+  const [showPopup, setShowPopup] = useState(false);
+
   let text = "";
-  let method = () => {};
+  let onClick = () => {};
 
   if (loading) {
     text = "Loading...";
   } else if (user) {
     text = "Sign out";
-    method = logout;
+    onClick = logout;
   } else {
     text = "Sign in / Register";
-    method = login;
+    onClick = () => setShowPopup(true);
   }
 
   return (
     <div className="hidden md:flex items-center gap-3">
       <button
-        onClick={method}
+        onClick={onClick}
         type="button"
-        className="inline-flex items-center rounded-full bg-white/5 px-4 py-2 text-sm font-medium ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/10 transition-colors cursor-pointer">
+        disabled={loading}
+        className="inline-flex items-center rounded-full bg-white/5 px-4 py-2 text-sm font-medium ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-60">
         {text}
       </button>
+
+      {showPopup && !user && (
+        <SignInPopup onStartSignIn={login} />
+      )}
     </div>
   );
 }

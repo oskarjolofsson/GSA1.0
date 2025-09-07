@@ -69,7 +69,7 @@ export default function SignInPopup({
   // Render into a portal (body) to ensure it overlays everything
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className={`fixed inset-0 z-50 flex items-center justify-center ${closing ? "pointer-events-none" : ""}`}
       aria-live="polite"
       aria-busy={isChecking || waiting ? "true" : "false"}
     >
