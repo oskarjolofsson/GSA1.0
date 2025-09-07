@@ -12,7 +12,6 @@ import Products from './pages/Products.jsx';
 import Register from './pages/Register.jsx';
 import Analyser from './pages/AnalyserPage.jsx';
 import Dashboard from "./pages/Dashboard.jsx";
-import Login from "./pages/Login.jsx"
 
 // Import components
 import Nav from "./components/nav/Nav2.jsx"
@@ -42,13 +41,12 @@ function App() {
       <main className="flex-1">
         {/* Add route RequireAuth around the ones that require login */}
         <Routes>
+          {/* Public */}
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/products" element={<Products />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
           
-
           <Route element={<RequireAuth />}>
             <Route path="/analyse" element={<Analyser />} />
             <Route path="/dashboard" element={<Dashboard />}/>

@@ -59,27 +59,6 @@ function account() {
   );
 }
 
-function showLoading(text) {
-  return (
-    <a
-      // Dont lead anywhere
-      className="inline-flex items-center rounded-full bg-white/5 px-4 py-2 text-sm font-medium ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/10 transition-colors"
-    >
-      {text}
-    </a>
-  )
-}
-
-
-function showLogOut(text) {
-
-}
-
-
-function showLogIn(text) {
-
-}
-
 
 function mobileMenuButton(open, setOpen, controlsId = 'mobile-nav') {
   return (
