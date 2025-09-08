@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../auth/authContext';
 
-
 function leftLogo() {
   return (
     <a href="/" className="flex items-center gap-2 shrink-0">
@@ -12,7 +11,6 @@ function leftLogo() {
     </a>
   );
 }
-
 
 function desktopNav(navItems) {
   return (
@@ -31,7 +29,6 @@ function desktopNav(navItems) {
   );
 }
 
-
 import SignInPopup from '../signInPopup/signInPopup.jsx';
 
 function account() {
@@ -48,7 +45,7 @@ function account() {
     onClick = logout;
   } else {
     text = "Sign in / Register";
-    onClick = () => setShowPopup(true);
+    onClick = () => setShowPopup(prevState => !prevState);
   }
 
   return (
@@ -62,12 +59,11 @@ function account() {
       </button>
 
       {showPopup && !user && (
-        <SignInPopup onStartSignIn={login} />
+        <SignInPopup onStartSignIn={login} onClose={() => setShowPopup(false)} />
       )}
     </div>
   );
 }
-
 
 function mobileMenuButton(open, setOpen, controlsId = 'mobile-nav') {
   return (
@@ -84,7 +80,6 @@ function mobileMenuButton(open, setOpen, controlsId = 'mobile-nav') {
     </button>
   );
 }
-
 
 function mobilePanel(open, navItems) {
   return (
@@ -112,37 +107,27 @@ function mobilePanel(open, navItems) {
   );
 }
 
-
 export default function NavBar() {
   const [open, setOpen] = useState(false);
 
   const navItems = [
-    // { name: 'Tools', href: '/' },
-    // { name: 'Blog', href: '/' },
     { name: 'About', href: '/about' },
   ];
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
-      {/* transparent + slight blur so it stays visible on scroll */}
       <div className="mx-auto max-w-6xl px-4">
         <div className="mt-4 rounded-2xl bg-transparent backdrop-blur-sm">
           <nav className="flex items-center justify-start gap-4 px-4 py-2 text-slate-100">
             {leftLogo()}
             {desktopNav(navItems)}
-
-            {/* Right: Sign in */}
             {account()}
-
-            {/* If screen not wide enough, show the manu bellow */}
             {mobileMenuButton(open, setOpen)}
           </nav>
-
-          {/* Only shows if open */}
           {mobilePanel(open, navItems)}
-
         </div>
       </div>
     </header>
   );
 }
+
