@@ -76,14 +76,14 @@ export default function SignInPopup({
       {/* Backdrop */}
       <div
         onClick={handleBackdropClick}
-        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-400 ${closing ? "opacity-0" : "opacity-100"}`}
+        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ${closing ? "opacity-0 pointer-events-none": "opacity-100"}`}
       />
 
       {/* Dialog */}
       <div
         role="dialog"
         aria-modal="true"
-        className={`relative mx-4 w-full max-w-md rounded-2xl bg-neutral-900/95 ring-1 ring-white/10 shadow-2xl p-6 text-white transition-all duration-200 transform ${closing ? "opacity-0 scale-95" : "opacity-100 scale-100"}`}
+        className={`relative mx-4 w-full max-w-md rounded-2xl bg-neutral-900/95 ring-1 ring-white/10 shadow-2xl p-6 text-white transition-all duration-200 transform ${closing ? "opacity-0 pointer-events-none scale-95" : "opacity-100 scale-100"}`}
       >
         <div className="mb-4 flex flex-col items-center gap-3 text-center">
           
