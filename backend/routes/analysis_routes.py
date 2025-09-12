@@ -3,6 +3,8 @@ import os
 import shutil
 import json
 
+from services.file_handeling import Video_file
+
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint('analysis', __name__)
 
@@ -88,10 +90,10 @@ def golf():
         print("No video")
         return jsonify({'error': 'No video file provided'}), 400
 
-    video_storage = request.files['video']
+    video_FileStorage = request.files['video']
 
-    # # Store the file
-    # file = Video_file(video_storage)
+    # Store the file
+    video_file = Video_file(video_FileStorage)
 
     # # Quality, if !q.all()
     # q = Quality(file).all()
