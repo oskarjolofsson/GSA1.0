@@ -81,6 +81,32 @@ def upload_video():
     return jsonify({'analysis_results': data}), 200
 
     
+@analysis_bp.route('/upload/golf', methods=['POST'])
+def golf():
+    # Get the file
+    if 'video' not in request.files:
+        print("No video")
+        return jsonify({'error': 'No video file provided'}), 400
+
+    video_storage = request.files['video']
+
+    # # Store the file
+    # file = Video_file(video_storage)
+
+    # # Quality, if !q.all()
+    # q = Quality(file).all()
+    # if not q["status"]:
+    #     return jsonify({"error": q["message"]}), 400
+    
+    # # Divide up into keyframes -> [Image_file]
+
+    # # Get analysis -> dict(str: any)
+    # analysis = Golf_analysis(file.get_keyframes())
+
+    # return jsonify({'analysis_results': analysis}), 200
+    
+    
+
 
 def allowed_file(filename):
     """
