@@ -86,8 +86,6 @@ class ChatGPT_service:
         # Create metadata from video
         self.process_video()
         # Get the paths to all individual images in the uploads_folder
-        print("Image paths created from following folder: " + self.uploads_folder)
-        print()
         image_paths = self.get_paths_in_folder(self.uploads_folder)
         # Format the prompt for the gpt api
         content = self.format_content(self.message_prompt ,image_paths)
