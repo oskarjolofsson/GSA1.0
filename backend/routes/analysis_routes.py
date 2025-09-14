@@ -4,7 +4,7 @@ import shutil
 import json
 
 from services.file_handeling.Video_file import Video_file
-from services.qualityCheck import VideoQuality
+from services.qualityCheck.VideoQuality import VideoQuality
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint('analysis', __name__)
@@ -100,9 +100,11 @@ def golf():
     q = VideoQuality(video_file)
     if not q.validate():
         return jsonify({"error": q.issues()}), 400
+    
+    keyframes = video_file.keyframes()
 
     # # Get analysis -> dict(str: any)
-    # analysis = Golf_analysis(file.get_keyframes())
+    # analysis = Golf_analysis(keyframes)
 
     # return jsonify({'analysis_results': analysis}), 200
     

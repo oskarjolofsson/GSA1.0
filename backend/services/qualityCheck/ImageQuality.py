@@ -1,6 +1,5 @@
 from Quality import Quality
 from typing import Any
-from PIL import Image
 import cv2
 
 class ImageQuality(Quality):
@@ -35,17 +34,9 @@ class ImageQuality(Quality):
         return laplacian_var > threshold  
 
     def correct_size(self, min_width: int = 512, min_height: int = 512) -> bool:
-        m = self.metrics()
+        m = self.file.metrics()
         return m["width"] >= min_width and m["height"] >= min_height
 
-    def metrics(self) -> dict[str, Any]:
-        # example: use Pillow
-        with Image.open(self.path) as img:
-            return {
-                "width": img.width, 
-                "height": img.height, 
-                "format": img.format
-            }
         
     # Add more methods to test aspects bellow
     # Also add these mehtods in self.issues dict as well self.validate 
