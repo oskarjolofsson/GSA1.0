@@ -5,6 +5,7 @@ import json
 
 from services.file_handeling.Video_file import Video_file
 from services.qualityCheck.VideoQuality import VideoQuality
+from services.analy.Analysis import GolfAnalysis
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint('analysis', __name__)
@@ -92,6 +93,7 @@ def golf():
         return jsonify({'error': 'No video file provided'}), 400
 
     video_FileStorage = request.files['video']
+    prompt = ""     # TODO accept text prompt from user as well
 
     # Store the file
     video_file = Video_file(video_FileStorage)
@@ -103,10 +105,10 @@ def golf():
     
     keyframes = video_file.keyframes()
 
-    # # Get analysis -> dict(str: any)
-    # analysis = Golf_analysis(keyframes)
+    # Get analysis -> dict(str: any)
+    analysis = GolfAnalysis(keyframes)
 
-    # return jsonify({'analysis_results': analysis}), 200
+    return jsonify({'analysis_results': analysis}), 200
     
     
 
