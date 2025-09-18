@@ -1,4 +1,4 @@
-from File import File
+from services.file_handeling.File import File
 from services.keyframes.Keyframes import Keyframes
 from services.file_handeling.Image_file import Image_file
 from typing import List, Dict, Any 
@@ -6,12 +6,19 @@ from openai import OpenAI
 import cv2
 from datetime import datetime
 import os
+from werkzeug.datastructures import FileStorage
 
 class Video_file(File):
-    def __init__(self):
-        super().__init__()
-        self.allowed_extensions = set(['mp4', 'mov', 'avi', 'mkv'])
-        self.folder = "uploads/keyframes"   # TODO Create new unique foldername for every file, in case 2 of the same
+    def __init__(self, f: FileStorage):
+        super().__init__(f)
+
+    @property
+    def allowed_extensions(self) -> set:
+        return {'mp4', 'mov', 'avi', 'mkv'}
+
+    @property
+    def folder(self) -> str:
+        return "uploads/video"  # TODO Create new unique foldername for every file, in case 2 of the same
 
     def keyframes(self, num_keyframes: int) -> Keyframes:
         """
@@ -74,7 +81,7 @@ class Video_file(File):
         Returns:
             Dict: Basic video metrics
         """
-        file_path = self.file.path()
+        file_path = self.path()
 
         try:
             cap = cv2.VideoCapture(file_path)
