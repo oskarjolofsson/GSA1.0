@@ -38,7 +38,7 @@ class Image_file(File):
             }
 
     def assign_openai_id(self, client: OpenAI) -> str:
-        with open(self.path, "rb") as file_content:
+        with open(self.path(), "rb") as file_content:
             result = client.files.create(
                 file=file_content,
                 purpose="vision",

@@ -21,10 +21,10 @@ class Analysis(ABC):
     def image_ids(self) -> list[str]:
         return self.keyframes.open_ai_id(self.client)
     
-    def format_content(self, ids: str) -> list[dict[str, str]]:
+    def format_content(self, ids: list[str]) -> list[dict[str, str]]:
         content = [{"type": "input_text", "text": self.prompt}]
         for id in ids:
-            image_prompt = {"type": "input_image", "file_id": ids}
+            image_prompt = {"type": "input_image", "file_id": id}
             content.append(image_prompt)
         
         return content

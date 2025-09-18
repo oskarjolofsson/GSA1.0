@@ -23,6 +23,7 @@ class File(ABC):
 
     def saveFileStorage(self, f: FileStorage):
         filename = self._generate_unique_filename(f.filename)
+        print(f"filename is: {filename}")
         if not self.allowed_file(filename):
             raise ValueError("Invalid file type")
         

@@ -111,6 +111,7 @@ def golf():
     print("Quality checked")
     
     keyframes = video_file.keyframes(1)
+    print(keyframes)
 
     print("keyframes made")
 

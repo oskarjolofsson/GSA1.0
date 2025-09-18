@@ -20,10 +20,15 @@ class Keyframes:
         for file in self.images:
             return_li.append(file.assign_openai_id(client))
 
-        return_li
+        return return_li
 
     def deleteAll(self):
         for image in self.images():
             image.remove()
 
+    def __str__(self):
+        return_str = ""
+        for image in self.images:
+            return_str += image.path() + "\n"
+        return return_str
 

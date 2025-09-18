@@ -32,6 +32,7 @@ class Video_file(File):
             List[str]: List of keyframe file paths
         """
         file_path = self.path()
+        print(f"Keyframes-method: filepath is {file_path}")
         try:
             cap = cv2.VideoCapture(file_path)
             if not cap.isOpened():
@@ -65,7 +66,8 @@ class Video_file(File):
             cap.release()
             
             # Create keyframes object from list of images
-            kf = Keyframes().add_all(keyframe_images)
+            kf = Keyframes()
+            kf.add_all(keyframe_images)
             return kf
             
         except Exception as e:
