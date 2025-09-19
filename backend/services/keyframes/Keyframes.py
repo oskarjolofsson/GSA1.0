@@ -5,7 +5,7 @@ from services.file_handeling.Image_file import Image_file
 
 class Keyframes:
     def __init__(self):
-        self.images = []
+        self.images: list[Image_file] = []
 
     def add(self, file: Image_file) -> None:
         self.images.append(file)
@@ -22,8 +22,8 @@ class Keyframes:
 
         return return_li
 
-    def deleteAll(self):
-        for image in self.images():
+    def removeAll(self):
+        for image in self.images:
             image.remove()
 
     def __str__(self):

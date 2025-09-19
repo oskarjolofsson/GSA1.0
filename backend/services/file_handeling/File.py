@@ -45,10 +45,10 @@ class File(ABC):
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in self.allowed_extensions
     
     def remove(self):
-        if os.path.exists(self.path):
-            os.remove(self.path)
+        if os.path.exists(self.path()):
+            os.remove(self.path())
         else:
-            raise FileNotFoundError(f"no such file: {self.path}")
+            raise FileNotFoundError(f"no such file: {self.path()}")
         
     def _generate_unique_filename(self, original_filename: str) -> str:
         if not original_filename:

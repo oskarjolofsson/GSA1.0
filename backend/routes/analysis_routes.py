@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+import json
 
 from services.file_handeling.Video_file import Video_file
 from services.qualityCheck.VideoQuality import VideoQuality
@@ -15,36 +16,27 @@ def ping():
 def golf():
     # Get the file
     if 'video' not in request.files:
-        print("No video")
         return jsonify({'error': 'No video file provided'}), 400
 
     video_FileStorage = request.files['video']
-    print("video recieved")
 
-    prompt = ""     # TODO accept text prompt from user as well
-
-    # Store the file
     video_file = Video_file(video_FileStorage)
-    print("video stored")
 
-    # Quality, if !q.all()
     q = VideoQuality(video_file)
-    print(q.validate())
-    print(q.issues())
     if not q.validate():
         return jsonify({"error": q.issues()}), 400
     
-    print("Quality checked")
+    keyframes = video_file.keyframes(15)
+
+    analysis = GolfAnalysis(keyframes, "").get_response()   # TODO take in prompt from frontend as well
+    raw_text = analysis.output_text
+    try:
+        data = json.loads(raw_text)
+    except ValueError as e:
+        return jsonify({"error": "Error parsing AI response"})
     
-    keyframes = video_file.keyframes(1)
-    print(keyframes)
+    keyframes.removeAll()
+    video_file.remove()
 
-    print("keyframes made")
-
-    # Get analysis -> dict(str: any)
-    analysis = GolfAnalysis(keyframes).get_response()
-
-    print("analysis made")
-
-    return jsonify({'analysis_results': analysis}), 200
+    return jsonify({'analysis_results': data}), 200
     

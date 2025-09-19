@@ -44,12 +44,8 @@ class Analysis(ABC):
         image_ids = self.image_ids()
         content = self.format_content(image_ids)
         ai_analysis = self.ai_analysis(content, self.system_instructions())
+        return ai_analysis
 
-        raw_text = ai_analysis.output_text
-        data = json.loads(raw_text)
-
-        return data
-    
     @abstractmethod
     def system_instructions(self) -> str:
         ...
@@ -61,22 +57,31 @@ class GolfAnalysis(Analysis):
         super().__init__(keyframes, prompt)
 
     def system_instructions(self) -> str:
-        instructions = """
-        You are an expert golf coach analyzing a swing shown in the images. 
-        Please return your analysis in the following structure:
+        system_prompt = """You are an expert golf coach analyzing a swing shown in the images. 
 
-        1. **Summary** . A brief, high-level summary of the swings strengths and weaknesses.
-        2. **Drills** - Two specific and actionable drills to address the main issues.
-        3. **Observations** - Technical details you noticed (e.g., posture, grip, weight transfer).
-        4. **Phase Notes** (optional) - If relevant, note specific swing phases (backswing, impact, etc.).
+        Return your analysis only as valid JSON with the following structure:
 
-        Keep it clear and brief — this is going into a training app.
-        Respond using specifically the following structure:
-        - "summary": string
-        - "drills": list of 2 strings
-        - "observations": list of strings
-        - "phase_notes": dictionary with keys the keys: setup, backswing, transition, impact, finish.
+        {
+        "summary": "string",
+        "drills": ["string", "string"],
+        "observations": ["string", "string", "..."],
+        "phase_notes": {
+            "setup": "string",
+            "backswing": "string",
+            "transition": "string",
+            "impact": "string",
+            "finish": "string"
+            }
+        }
 
-        Do not include any explanation or formatting outside the structure specified.
-        """
-        return instructions
+        Instructions for each field:
+        - "summary": Write a brief, high-level overview of the swings main strengths and weaknesses in 1 to 2 sentences. Keep it concise and balanced.
+        - "drills": Provide exactly two specific, actionable drills the player can practice. Write them as short, clear coaching cues.
+        - "observations": List 3 to 5 short technical notes you noticed (e.g., posture, grip, weight transfer). Each should be a single, simple sentence.
+        - "phase_notes": Give one short sentence of feedback for each swing phase ("setup", "backswing", "transition", "impact", "finish"). Be direct and specific to that phase.
+
+        Rules:
+        - Do not include anything outside the JSON object (no extra text, no explanations).
+        - All values must be strings.
+        - Ensure the JSON is valid and can be parsed directly with json.loads()."""
+        return system_prompt
