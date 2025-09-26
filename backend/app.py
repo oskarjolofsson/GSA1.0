@@ -5,7 +5,7 @@ This is the entry point for the Flask application that provides API endpoints
 for analyzing golf swing videos using AI/ChatGPT integration.
 """
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
@@ -76,6 +76,10 @@ def internal_error(error):
         'error': 'Internal Server Error',
         'message': 'An unexpected error occurred'
     }, 500
+
+@analysis_bp.get("/ping")
+def ping():
+    return jsonify(ok=True), 200
 
 if __name__ == '__main__':
     # Run the Flask development server

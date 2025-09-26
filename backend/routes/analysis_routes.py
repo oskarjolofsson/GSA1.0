@@ -7,10 +7,6 @@ from services.analy.Analysis import GolfAnalysis
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint('analysis', __name__)
-
-@analysis_bp.get("/ping")
-def ping():
-    return jsonify(ok=True), 200
     
 @analysis_bp.route('/upload', methods=['POST'])
 def golf():
@@ -39,4 +35,6 @@ def golf():
     video_file.remove()
 
     return jsonify({'analysis_results': data}), 200
+
+# TODO put all logic in services, only include return and gathering of files
     

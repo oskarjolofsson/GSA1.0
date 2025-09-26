@@ -9,6 +9,7 @@ import os
 from functools import wraps
 from flask import request, jsonify
 from datetime import datetime
+from google.api_core.exceptions import AlreadyExists
 
 class FirebaseService:
     def __init__(self):
@@ -119,6 +120,9 @@ class FirebaseService:
                 'createdAt': datetime.now().isoformat(),
                 'lastUpdated': datetime.now().isoformat()
             })
+        except AlreadyExists:
+            print(f"Will not init {user_id}, already exists")
+            return
         except Exception as e:
             print(f"Error initializing user tokens: {e}")
             raise e
@@ -213,31 +217,3 @@ class FirebaseService:
 
 # Create a singleton instance
 firebase_service = FirebaseService()
-
-def require_auth(f):
-    """
-    Decorator to require Firebase authentication for routes
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Get the authorization header
-        auth_header = request.headers.get('Authorization', '')
-        
-        if not auth_header.startswith('Bearer '):
-            return jsonify({'error': 'Invalid authorization header'}), 401
-        
-        # Extract the token
-        id_token = auth_header.split('Bearer ')[1]
-        
-        # Verify the token
-        decoded_token = firebase_service.verify_token(id_token)
-        
-        if not decoded_token:
-            return jsonify({'error': 'Invalid or expired token'}), 401
-        
-        # Add the decoded token to the request context
-        request.user = decoded_token
-        
-        return f(*args, **kwargs)
-    
-    return decorated_function
