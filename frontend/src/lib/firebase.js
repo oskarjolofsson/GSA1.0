@@ -3,6 +3,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -19,6 +20,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 // Use the correct OAuth prompt value: "select_account"
 googleProvider.setCustomParameters({ prompt: "select_account" });

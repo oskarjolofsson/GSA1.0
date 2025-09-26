@@ -24,6 +24,9 @@ Pillow>=10.0.0
 # ChatGPT API client
 openai>=1.0.0
 
+# Firebase Admin SDK for backend authentication and Firestore
+firebase-admin
+
 # Quality check
 ultralytics==8.1.29
 opencv-python>=4.7

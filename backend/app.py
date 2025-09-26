@@ -10,6 +10,7 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from routes.analysis_routes import analysis_bp
+from routes.token_routes import token_bp
 
 # Load environment variables
 load_dotenv()
