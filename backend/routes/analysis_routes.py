@@ -6,9 +6,9 @@ from services.qualityCheck.VideoQuality import VideoQuality
 from services.analy.Analysis import GolfAnalysis
 
 # Create a Blueprint for analysis routes
-analysis_bp = Blueprint('analysis', __name__)
+analysis_bp = Blueprint('analysis', __name__, url_prefix='/api/v1/analysis')
     
-@analysis_bp.route('/upload', methods=['POST'])
+@analysis_bp.route('/upload_video', methods=['POST'])
 def golf():
     # Get the file
     if 'video' not in request.files:

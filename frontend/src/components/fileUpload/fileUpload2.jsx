@@ -216,7 +216,7 @@ export default function UploadPage() {
     form.append("video", file);
 
     try {
-      const res = await fetch(API + "/upload", {
+      const res = await fetch(API + "/api/v1/analysis/upload_video", {
         method: "POST",
         body: form,
       });
