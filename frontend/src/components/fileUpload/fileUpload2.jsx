@@ -3,7 +3,7 @@ const API = import.meta.env.VITE_API_URL;
 
 // Components
 import ResultBox from "../result-box/result-box.jsx";
-import ErrorPopup from "./ErrorPopup.jsx";
+import ErrorPopup from "../errorPopup/ErrorPopup.jsx";
 
 
 function UploadHeader() {
