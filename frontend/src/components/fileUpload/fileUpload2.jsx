@@ -3,6 +3,7 @@ const API = import.meta.env.VITE_API_URL;
 
 // Components
 import ResultBox from "../result-box/result-box.jsx";
+import ErrorPopup from "./ErrorPopup.jsx";
 
 
 function UploadHeader() {
@@ -165,6 +166,7 @@ export default function UploadPage() {
   const [ready, setReady] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     // cleanup preview URL
@@ -210,6 +212,8 @@ export default function UploadPage() {
     if (!file) return; // Exit if no file is selected
     if (uploading) return;
 
+    // Clear any previous error before starting a new upload
+    setErrorMessage("");
     setUploading(true);
 
     const form = new FormData();
@@ -223,15 +227,18 @@ export default function UploadPage() {
       
 
       if (!res.ok) {
-        let errorMessage = "Upload failed";
+        let backendMessage = "Upload failed";
         try {
           const errorData = await res.json();
-          errorMessage = errorData.message || errorData.error || errorMessage;
+          // backend returns { success: false, error: 'message' }
+          backendMessage = errorData.message || errorData.error || backendMessage;
         } catch {
           const text = await res.text();
-          if (text) errorMessage = text;
+          if (text) backendMessage = text;
         }
-        throw new Error(errorMessage);
+        // surface error to the user via popup
+        setErrorMessage(backendMessage);
+        throw new Error(backendMessage);
       }
 
       const data = await res.json();
@@ -244,6 +251,9 @@ export default function UploadPage() {
       setAnalysis({ summary, drills, observations, phase_notes });
     } catch (err) {
       setAnalysis(null);
+      // err.message already set in setErrorMessage above for known backend responses,
+      // but ensure we show something if parsing failed
+      if (!errorMessage) setErrorMessage(err.message || "Upload failed");
     }
 
     setUploading(false);
@@ -277,6 +287,7 @@ export default function UploadPage() {
         </div>
 
         <AnalysisResult analysis={analysis} />
+        <ErrorPopup message={errorMessage} onClose={() => setErrorMessage("")} />
       </section>
     </div>
   );
