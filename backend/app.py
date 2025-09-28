@@ -32,6 +32,7 @@ def create_app():
     
     # Register blueprints (route modules)
     app.register_blueprint(analysis_bp)
+    app.register_blueprint(token_bp)
     
     # Create upload directory if it doesn't exist
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
