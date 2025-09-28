@@ -1,13 +1,16 @@
 from services.keyframes.Keyframes import Keyframes
+from services.file_handeling.Video_file import Video_file
+from services.qualityCheck.VideoQuality import VideoQuality
 
 from dotenv import load_dotenv
 import os
 from openai import OpenAI
 from abc import ABC, abstractmethod
 import json
+from werkzeug.datastructures import FileStorage
 
 class Analysis(ABC):
-    def __init__(self, keyframes: Keyframes, prompt: str = ""):
+    def __init__(self):
         load_dotenv()
         api_key = os.getenv("OPENAI_API_KEY")
 
@@ -15,14 +18,12 @@ class Analysis(ABC):
             raise EnvironmentError("OPENAI_API_KEY environment variable not set.")
         
         self.client = OpenAI(api_key=api_key)
-        self.keyframes = keyframes
-        self.prompt = prompt
 
-    def image_ids(self) -> list[str]:
-        return self.keyframes.open_ai_id(self.client)
+    def image_ids(self, keyframes: Keyframes) -> list[str]:
+        return keyframes.open_ai_id(self.client)
     
-    def format_content(self, ids: list[str]) -> list[dict[str, str]]:
-        content = [{"type": "input_text", "text": self.prompt}]
+    def format_content(self, ids: list[str], prompt: str) -> list[dict[str, str]]:
+        content = [{"type": "input_text", "text": prompt}]
         for id in ids:
             image_prompt = {"type": "input_image", "file_id": id}
             content.append(image_prompt)
@@ -39,12 +40,32 @@ class Analysis(ABC):
             ],
         )
         return response
+
     
-    def get_response(self):
-        image_ids = self.image_ids()
-        content = self.format_content(image_ids)
-        ai_analysis = self.ai_analysis(content, self.system_instructions())
-        return ai_analysis
+    def get_response(self, video_FileStorage: FileStorage, prompt: str = ""):
+        video_file = Video_file(video_FileStorage)
+
+        q = VideoQuality(video_file)
+        if not q.validate():
+            raise ValueError("\n".join(q.issues()))
+
+        # Format the prompt and get result
+        keyframes = video_file.keyframes(1)     # <-- Decide how many keyframes here
+        image_ids = self.image_ids(keyframes=keyframes)
+        content = self.format_content(image_ids, prompt=prompt)
+        analysis = self.ai_analysis(content, system_instructions=self.system_instructions())
+
+        # format result
+        raw_text = analysis.output_text
+        data = json.loads(raw_text)
+        
+        # Delete image and video-files from memory
+        keyframes.removeAll()
+        video_file.remove()
+
+        # Returns a formated dict that can be directly returned
+        return data
+
 
     @abstractmethod
     def system_instructions(self) -> str:
@@ -53,8 +74,8 @@ class Analysis(ABC):
 # Different sports bellow
 
 class GolfAnalysis(Analysis):
-    def __init__(self, keyframes: Keyframes, prompt: str = ""):
-        super().__init__(keyframes, prompt)
+    def __init__(self):
+        super().__init__()
 
     def system_instructions(self) -> str:
         system_prompt = """You are an expert golf coach analyzing a swing shown in the images. 
@@ -85,3 +106,7 @@ class GolfAnalysis(Analysis):
         - All values must be strings.
         - Ensure the JSON is valid and can be parsed directly with json.loads()."""
         return system_prompt
+    
+# Single instance of main method of class
+def get_response(video_FileStorage: FileStorage, prompt: str = ""):
+    return GolfAnalysis().get_response(video_FileStorage, prompt)
