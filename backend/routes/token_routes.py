@@ -4,8 +4,8 @@ API endpoints for managing user tokens
 """
 
 from flask import Blueprint, request, jsonify
-from backend.services.firebase.firebase_tokens import firebase_service
-from backend.services.firebase.firebase_auth import require_auth
+from services.firebase.firebase_tokens import firebase_service
+from services.firebase.firebase_auth import require_auth
 
 
 # Create the blueprint

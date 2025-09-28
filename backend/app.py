@@ -26,11 +26,6 @@ def create_app():
     app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
     
-    # Enable CORS for all routes (allows React frontend to call this backend)
-    # CORS(
-    #     app,
-    #     resources={r"/*": {"origins": [os.getenv("VITE_API_URL"), os.getenv("VITE_API_URL2")]}}
-    # )
     allowed = [os.getenv("VITE_API_URL"), os.getenv("VITE_API_URL2")]
     allowed = [o for o in allowed if o]
     CORS(app, resources={r"/*": {"origins": allowed or "*"}})
@@ -77,7 +72,7 @@ def internal_error(error):
         'message': 'An unexpected error occurred'
     }, 500
 
-@analysis_bp.get("/ping")
+@app.get("/ping")
 def ping():
     return jsonify(ok=True), 200
 

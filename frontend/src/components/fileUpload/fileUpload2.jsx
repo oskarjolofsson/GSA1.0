@@ -220,6 +220,7 @@ export default function UploadPage() {
         method: "POST",
         body: form,
       });
+      
 
       if (!res.ok) {
         let errorMessage = "Upload failed";

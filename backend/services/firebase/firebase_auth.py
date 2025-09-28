@@ -39,7 +39,6 @@ class FirebaseAuthService:
                 else:
                     firebase_admin.initialize_app()
             self._initialized = True
-            print("Firebase Admin SDK (auth) initialized successfully")
         except Exception as e:
             print(f"Error initializing Firebase Admin SDK (auth): {e}")
             self._initialized = False

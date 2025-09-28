@@ -51,7 +51,6 @@ class FirebaseService:
             
             # Get Firestore client
             self.db = firestore.client()
-            print("Firebase Admin SDK initialized successfully")
             
         except Exception as e:
             print(f"Error initializing Firebase Admin SDK: {e}")
