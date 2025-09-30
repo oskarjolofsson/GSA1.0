@@ -50,7 +50,7 @@ class Analysis(ABC):
             raise ValueError("\n".join(q.issues()))
 
         # Format the prompt and get result
-        keyframes = video_file.keyframes(1)     # <-- Decide how many keyframes here
+        keyframes = video_file.keyframes(10)     # <-- Decide how many keyframes here
         image_ids = self.image_ids(keyframes=keyframes)
         content = self.format_content(image_ids, prompt=prompt)
         analysis = self.ai_analysis(content, system_instructions=self.system_instructions())
