@@ -30,6 +30,7 @@ function Columns() {
         <ul className="space-y-2 text-sm">
           <li><a href="#" className="hover:text-white">Features</a></li>
           <li><a href="#" className="hover:text-white">Pricing</a></li>
+          <li><a href="/about" className="hover:text-white">About</a></li>
         </ul>
       </div>
 

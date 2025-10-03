@@ -116,11 +116,29 @@ function mobilePanel(open, navItems) {
   );
 }
 
+function Settings() {
+  const { user } = useAuth();
+  if (user) {
+    return (
+    <a
+      href="/settings"
+      className="inline-flex items-center justify-center rounded-xl p-2 ring-1 ring-white/10 bg-white/5 hover:bg-white/10 focus:outline-none"
+      aria-label="Settings"
+    >
+      <img src="/icons/settings.svg" alt="Settings" className="h-5 w-5" />
+    </a>
+    );
+  } else {
+    return null;
+  }
+
+}
+
 export default function NavBar() {
   const [open, setOpen] = useState(false);
 
   const navItems = [
-    { name: 'About', href: '/about' },
+    { name: 'Products', href: '/' },
   ];
 
   return (
@@ -130,7 +148,9 @@ export default function NavBar() {
           <nav className="flex items-center justify-start gap-4 px-4 py-2 text-slate-100">
             {leftLogo()}
             {desktopNav(navItems)}
-              <Account />
+            <Account />
+            <Settings />
+
             {mobileMenuButton(open, setOpen)}
           </nav>
           {mobilePanel(open, navItems)}

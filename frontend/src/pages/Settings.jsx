@@ -14,7 +14,7 @@ export default function Settings() {
     return (
       <button
         onClick={() => setActive(tab.toLowerCase())}
-        className={`w-full text-left py-3 px-4 rounded-l-md transition-colors ${active == {tab} ? 'bg-slate-900/40 border-l-4 border-green-500 text-slate-100' : 'hover:bg-slate-900/20 text-slate-300'}`}>
+        className={`w-full text-left py-3 px-4 rounded-l-md transition-colors ${active === tab.toLowerCase() ? 'bg-slate-900/40 border-l-4 border-green-500 text-slate-100' : 'hover:bg-slate-900/20 text-slate-300'}`}>
         {tab}
       </button>
     );
