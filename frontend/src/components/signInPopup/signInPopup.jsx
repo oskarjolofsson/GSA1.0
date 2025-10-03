@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function SignInPopup({
   onStartSignIn,         // () => Promise<void> | void  (start your sign-in flow)
+  onClose,               // optional callback when the popup is closed (backdrop / escape)
   title = "Sign In",
   subtitle = "Get access to the best athletic trainer on the web",
   waitingText = "Waiting for you to finish sign-in in the other tab…",
@@ -38,10 +39,19 @@ export default function SignInPopup({
     }
   };
 
+  // If user appears (for example sign-in completed in another tab), notify parent to clear its show state
+  useEffect(() => {
+    if (user) {
+      try { onClose?.(); } catch (e) { /* ignore */ }
+    }
+  }, [user, onClose]);
+
   const handleBackdropClick = () => {
     if (closing) return;
     setClosing(true);
     setTimeout(() => {
+      // Notify parent that the popup is closing (so it can clear its show state)
+      try { onClose?.(); } catch (e) { /* ignore errors from parent callback */ }
       navigate("/");
     }, 200);
   };
@@ -54,6 +64,7 @@ export default function SignInPopup({
         if (!closing) {
           setClosing(true);
           setTimeout(() => {
+            try { onClose?.(); } catch (err) { /* ignore */ }
             navigate("/");
           }, 200);
         }

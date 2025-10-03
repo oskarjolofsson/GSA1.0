@@ -31,7 +31,7 @@ function desktopNav(navItems) {
 
 import SignInPopup from '../signInPopup/signInPopup.jsx';
 
-function account() {
+function Account({ mobile = false }) {
   const { login, logout, loading, user } = useAuth();
   const [showPopup, setShowPopup] = useState(false);
 
@@ -48,13 +48,21 @@ function account() {
     onClick = () => setShowPopup(prevState => !prevState);
   }
 
+  // desktop: hidden on small screens, flex from md up
+  // mobile: show only on small screens
+  const wrapperClass = mobile ? 'flex md:hidden items-center gap-3 w-full justify-center' : 'hidden md:flex items-center gap-3';
+  const buttonClass = mobile
+    ? 'inline-flex w-full max-w-xs items-center justify-center rounded-lg bg-white/5 px-4 py-2 text-sm font-medium ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-60'
+    : 'inline-flex items-center rounded-full bg-white/5 px-4 py-2 text-sm font-medium ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-60';
+
   return (
-    <div className="hidden md:flex items-center gap-3">
+    <div className={wrapperClass}>
       <button
         onClick={onClick}
         type="button"
         disabled={loading}
-        className="inline-flex items-center rounded-full bg-white/5 px-4 py-2 text-sm font-medium ring-1 ring-white/10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-60">
+        className={buttonClass}
+      >
         {text}
       </button>
 
@@ -97,9 +105,10 @@ function mobilePanel(open, navItems) {
             </li>
           ))}
           <li>
-            <a href="#signin" className="mt-1 inline-flex w-full items-center justify-center rounded-xl bg-white/5 px-4 py-2 ring-1 ring-white/10 hover:bg-white/10">
-              Sign in
-            </a>
+            {/* Use the account method for mobile */}
+            <div className="mt-1 w-full flex items-center justify-center">
+              <Account mobile />
+            </div>
           </li>
         </ul>
       </div>
@@ -121,7 +130,7 @@ export default function NavBar() {
           <nav className="flex items-center justify-start gap-4 px-4 py-2 text-slate-100">
             {leftLogo()}
             {desktopNav(navItems)}
-            {account()}
+              <Account />
             {mobileMenuButton(open, setOpen)}
           </nav>
           {mobilePanel(open, navItems)}
