@@ -9,9 +9,9 @@ import Home from "./pages/Home.jsx";
 import About from "./pages/About.jsx";
 import NotFound from './pages/NotFound.jsx';
 import Products from './pages/Products.jsx';
-import Register from './pages/Register.jsx';
 import Analyser from './pages/AnalyserPage.jsx';
 import Dashboard from "./pages/Dashboard.jsx";
+import Settings from "./pages/Settings.jsx";
 
 // Import components
 import Nav from "./components/nav/Nav2.jsx"
@@ -45,11 +45,11 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/products" element={<Products />} />
-          <Route path="/register" element={<Register />} />
           
           <Route element={<RequireAuth />}>
             <Route path="/analyse" element={<Analyser />} />
             <Route path="/dashboard" element={<Dashboard />}/>
+            <Route path="/settings" element={<Settings />}/>
           </Route>
 
           {/* PUBLIC 404 */}
