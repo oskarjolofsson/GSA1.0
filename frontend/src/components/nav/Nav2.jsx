@@ -122,10 +122,14 @@ function Settings() {
     return (
     <a
       href="/settings"
-      className="inline-flex items-center justify-center rounded-xl p-2 ring-1 ring-white/10 bg-white/5 hover:bg-white/10 focus:outline-none"
+      className="inline-flex items-center justify-center rounded-xl p-2 focus:outline-none cursor-pointer hover:bg-white/10 hover:ring-1 hover:ring-white/10 transition"
       aria-label="Settings"
     >
-      <img src="/icons/settings.svg" alt="Settings" className="h-5 w-5" />
+      <img
+        src="/icons/settings.svg"
+        alt="Settings"
+        className="h-5 w-5 transition-transform duration-300 hover:rotate-[30deg]"
+      />
     </a>
     );
   } else {
