@@ -38,11 +38,12 @@ function Account({ mobile = false }) {
   let text = "";
   let onClick = () => {};
 
+  if (user) {
+    return null; // Don't show account button if logged in (show settings instead)
+  }
+
   if (loading) {
     text = "Loading...";
-  } else if (user) {
-    text = "Sign out";
-    onClick = logout;
   } else {
     text = "Sign in / Register";
     onClick = () => setShowPopup(prevState => !prevState);
