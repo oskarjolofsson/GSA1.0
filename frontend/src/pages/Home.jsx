@@ -1,6 +1,6 @@
 import Hero from '../components/hero/Hero.jsx';
 import Faq from '../components/faq/faq.jsx'
-import Status from '../components/status/status.jsx';
+import Status from '../components/status/StatusBox.jsx';
 import PriceBox from '../components/price/pricebox.jsx';
 
 export default function Home() {
@@ -11,8 +11,6 @@ export default function Home() {
             <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
             
             <Faq />
-            <PriceBox />
-            <Status />
         </div>
     );
 }

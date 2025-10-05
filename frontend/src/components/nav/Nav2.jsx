@@ -32,7 +32,7 @@ function desktopNav(navItems) {
 import SignInPopup from '../signInPopup/signInPopup.jsx';
 
 function Account({ mobile = false }) {
-  const { login, logout, loading, user } = useAuth();
+  const { login, loading, user } = useAuth();
   const [showPopup, setShowPopup] = useState(false);
 
   let text = "";
