@@ -30,7 +30,7 @@ This project is the result of that vision: bringing advanced AI technology to th
 | Area           | Technology                                     |
 | -------------- | ---------------------------------------------- |
 | Frontend       | React + Tailwind CSS                           |
-| Backend        | Python Flask (or Firebase Functions)           |
+| Backend        | Python Flask                                   |
 | AI / Analysis  | Python OpenAI API                              |
 | Storage        | Firebase Storage                               |
 | Authentication | Firebase Auth                                  |
