@@ -1,5 +1,64 @@
-import { logout } from "../../auth/auth";
 import { useAuth } from "../../auth/authContext";
+import { useEffect, useState } from "react";
+const API = import.meta.env.VITE_API_URL;
+
+function Balance() {
+  const { user, loading } = useAuth();
+  const [text, setText] = useState("");
+
+  useEffect(() => {
+    if (loading || !user) return;
+
+    let aborted = false;
+
+    const fetchBalance = async () => {
+      try {
+        const response = await fetch(`${API}/api/v1/tokens/balance`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${user.accessToken}`,
+          },
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || data.success === false) {
+          throw new Error(data?.error || "Failed to fetch token balance");
+        }
+
+        if (!aborted) {
+          setText(
+            typeof data.tokens === "number" && isFinite(data.tokens)
+              ? `Tokens: ${data.tokens}`
+              : "Tokens: N/A"
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching token balance:", error);
+        if (!aborted) setText("Error fetching tokens");
+      }
+    };
+
+    fetchBalance();
+
+    return () => {
+      aborted = true;
+    };
+  }, [user, loading]);
+
+  if (loading) {
+    setText("Loading...");
+  }
+
+  if (!user) return null;
+
+  return (
+    <div className="mt-4">
+      <p className="text-green-500 font-bold">{text}</p>
+    </div>
+  );
+}
 
 function logOutButton() {
   const { user, loading, logout } = useAuth();
@@ -27,7 +86,6 @@ function logOutButton() {
       Logout
     </button>
   );
-
 }
 
 export default function GeneralTab({ user }) {
@@ -35,6 +93,7 @@ export default function GeneralTab({ user }) {
     <div>
       <h3 className="text-lg font-medium mb-2">General</h3>
       
+      <Balance />
       {logOutButton()}
     </div>
   );
