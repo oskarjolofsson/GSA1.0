@@ -1,67 +1,81 @@
-import React from "react";
+import { useAuth } from "../../auth/authContext";
 
-export default function PriceBox() {
+function PriceCard({ plan, price, tokens, color, border, features, link, description }) {
+  const { user } = useAuth();
+  const cta = user ? "Switch plan" : "Buy Now";
+
   return (
-    <div className="mt-12 flex flex-col md:flex-row justify-center items-stretch gap-6 py-10 px-6">
-      {/* 15 Tokens Plan - Darkest */}
-      <a href="/checkout?plan=basic" className="flex flex-col justify-between w-full md:w-80 bg-slate-800 text-white rounded-2xl shadow-lg p-6 border border-slate-700 transition-transform transform hover:scale-105 cursor-pointer group">
-        <div>
-          <h3 className="text-blue-300 font-semibold">Basic</h3>
-          <p className="text-4xl font-bold mt-2">$5</p>
-          <p className="text-slate-300 mb-2">15 Tokens</p>
+    <a
+      href={link}
+      className={`flex flex-col justify-between w-full md:w-80 ${color} text-white rounded-2xl shadow-lg p-6 border ${border} transition-transform transform hover:scale-105 cursor-pointer group`}
+    >
+      <div>
+        <h3 className="text-blue-300 font-semibold">{plan}</h3>
+        <p className="text-4xl font-bold mt-2">${price}</p>
+        <p className="text-slate-300 mb-2">{tokens}</p>
 
-          <p className="text-slate-200 mb-4">Perfect for trying things out.</p>
-          <ul className="space-y-2 text-slate-100">
-            <li>✔ Get 15 tokens instantly</li>
-            <li>✔ One-time purchase</li>
-          </ul>
-        </div>
-
-        <div className="mt-6 w-full py-3 bg-blue-600 rounded-xl font-semibold text-center group-hover:bg-blue-700">
-          Buy Now
+        <p className="text-slate-200 mb-4">{description}</p>
+        <ul className="space-y-2 text-slate-100">
+          {features.map((feature, index) => (
+            <li key={index}>✔ {feature}</li>
+          ))}
+        </ul>
       </div>
-      </a>
 
-      {/* 40 Tokens Plan - Medium Darkness */}
-      <a href="/checkout?plan=standard" className="flex flex-col justify-between w-full md:w-80 bg-slate-700 text-white rounded-2xl shadow-xl p-6 border border-slate-600 transition-transform transform hover:scale-105 cursor-pointer group">
-        <div>
-          <h3 className="text-blue-300 font-semibold">Standard</h3>
-          <p className="text-4xl font-bold mt-2">$10</p>
-          <p className="text-slate-300 mb-2">40 Tokens</p>
-
-          <p className="text-slate-200 mb-4">Best value for regular use.</p>
-          <ul className="space-y-2 text-slate-100">
-            <li>✔ Get 40 tokens instantly</li>
-            <li>✔ One-time purchase</li>
-            <li>✔ Extra tokens at a better rate</li>
-          </ul>
-        </div>
-
-        <div className="mt-6 w-full py-3 bg-blue-600 rounded-xl font-semibold text-center group-hover:bg-blue-700">
-          Buy Now
+      <div className="mt-6 w-full py-3 bg-blue-600 rounded-xl font-semibold text-center group-hover:bg-blue-700">
+        {cta}
       </div>
-      </a>
-
-      {/* Year Supply Plan - Lightest */}
-      <a href="/checkout?plan=premium" className="flex flex-col justify-between w-full md:w-80 bg-slate-600 text-white rounded-2xl shadow-md p-6 border border-slate-500 transition-transform transform hover:scale-105 cursor-pointer group">
-        <div>
-          <h3 className="text-blue-300 font-semibold">Premium</h3>
-          <p className="text-4xl font-bold mt-2">$50</p>
-          <p className="text-slate-300 mb-2">1 Year Supply</p>
-
-          <p className="text-slate-200 mb-4">For heavy users who want peace of mind.</p>
-          <ul className="space-y-2 text-slate-100">
-            <li>✔ Unlimited access for 1 year</li>
-            <li>✔ No need to buy tokens separately</li>
-            <li>✔ Best overall deal</li>
-          </ul>
-        </div>
-
-        <div className="mt-6 w-full py-3 bg-blue-600 rounded-xl font-semibold text-center group-hover:bg-blue-700">
-          Buy Now
-      </div>
-      </a>
-    </div>
+    </a>
   );
 }
 
+export default function PriceBox() {
+  const plans = [
+    {
+      plan: "Basic",
+      price: 5,
+      tokens: "15 Tokens",
+      color: "bg-slate-800",
+      border: "border-slate-700",
+      description: "Perfect for trying things out.",
+      link: "/checkout?plan=basic",
+      features: ["Get 15 tokens instantly", "One-time purchase"],
+    },
+    {
+      plan: "Standard",
+      price: 10,
+      tokens: "40 Tokens",
+      color: "bg-slate-700",
+      border: "border-slate-600",
+      description: "Best value for regular use.",
+      link: "/checkout?plan=standard",
+      features: [
+        "Get 40 tokens instantly",
+        "One-time purchase",
+        "Extra tokens at a better rate",
+      ],
+    },
+    {
+      plan: "Premium",
+      price: 50,
+      tokens: "1 Year Supply",
+      color: "bg-slate-600",
+      border: "border-slate-500",
+      description: "For heavy users who want peace of mind.",
+      link: "/checkout?plan=premium",
+      features: [
+        "Unlimited access for 1 year",
+        "No need to buy tokens separately",
+        "Best overall deal",
+      ],
+    },
+  ];
+
+  return (
+    <div className="mt-12 flex flex-col md:flex-row justify-center items-stretch gap-6 py-10 px-6">
+      {plans.map((plan) => (
+        <PriceCard key={plan.plan} {...plan} />
+      ))}
+    </div>
+  );
+}
