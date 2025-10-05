@@ -11,7 +11,7 @@ function UpperBar() {
 function Brand() {
   return (
     <div className="col-span-2 sm:col-span-1">
-      <a href="#" className="flex items-center gap-2">
+      <a href="/" className="flex items-center gap-2">
         <img src="/icons/logo.png" alt="Logo" className="h-8 w-8" />
         <span className="text-xl font-bold tracking-tight">
             <span className="text-white">True </span>Form
@@ -29,7 +29,7 @@ function Columns() {
         <h3 className="text-sm font-semibold text-white mb-3">PRODUCT</h3>
         <ul className="space-y-2 text-sm">
           <li><a href="#" className="hover:text-white">Features</a></li>
-          <li><a href="#" className="hover:text-white">Pricing</a></li>
+          <li><a href="/products" className="hover:text-white">Pricing</a></li>
           <li><a href="/about" className="hover:text-white">About</a></li>
         </ul>
       </div>

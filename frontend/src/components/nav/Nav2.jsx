@@ -143,7 +143,7 @@ export default function NavBar() {
   const [open, setOpen] = useState(false);
 
   const navItems = [
-    { name: 'Products', href: '/' },
+    { name: 'Products', href: '/products' },
   ];
 
   return (
