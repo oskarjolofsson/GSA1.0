@@ -4,11 +4,7 @@ import { useState, useEffect, useRef } from "react";
 const defaultFaqs = [
   {
     q: "How can this app improve my training?",
-    a: "Upload short clips, get instant analysis, and clear action items. Most users see improvements within their first week of using it consistently.",
-  },
-  {
-    q: "Can I cancel my subscription at any time?",
-    a: "Yes. Manage your plan from account settings. If you need help with anything, our human support team is ready to assist.",
+    a: "Upload short clips, get instant analysis, and clear action items to improve your golf swing. It's like having a personal coach available 24/7.",
   },
   {
     q: "Do I need to be a pro to use it?",
@@ -16,12 +12,39 @@ const defaultFaqs = [
   },
   {
     q: "What kind of content can I upload?",
-    a: "Short videos (vertical or horizontal) work best. We support common formats like MP4 and MOV.",
+    a: "Short videos (vertical or horizontal). We support common formats like MP4 and MOV.",
   },
   {
     q: "How much control do I have over AI suggestions?",
     a: "You control everything. Accept, tweak, or ignore any suggestion. Your data remains private by default.",
   },
+
+  {
+    q: "What does this app do?",
+    a: "Our app uses advanced AI to analyze your golf swing from a short video. It provides insights and appropriate drills for your golf swing — helping you improve faster and cheaper.",
+  },
+
+  {
+    q: "Is my data safe?",
+    a: "Absolutely. We prioritize your privacy and security. Your videos and data are encrypted and never shared without your consent.",
+  },
+  {
+    q: "What if I need help?",
+    a: "We're here for you. Reach out via email or chat, and our support team will assist you promptly.",
+  },
+  {
+    q: "Can I use this app on my phone?",
+    a: "Yes! Our app is designed to work seamlessly on both desktop and mobile devices.",
+  },
+  {
+    q: "How long does the analysis take?",
+    a: "Most analyses are completed in under a minute, depending on the video length and current queue."
+  },
+
+  {
+    q: "What kind of feedback will I receive?",
+    a: "You will get detailed insights into your swing mechanics, including strengths and areas for improvement, along with personalized drills to help you practice effectively.",
+  }
 ];
 
 
