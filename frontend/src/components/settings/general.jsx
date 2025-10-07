@@ -30,8 +30,8 @@ function Balance() {
         if (!aborted) {
           setText(
             typeof data.tokens === "number" && isFinite(data.tokens)
-              ? `Tokens: ${data.tokens}`
-              : "Tokens: N/A"
+              ? `${data.tokens}`
+              : "-"
           );
         }
       } catch (error) {
@@ -55,7 +55,19 @@ function Balance() {
 
   return (
     <div className="mt-4">
+      <span className="font-medium inline-flex items-center gap-1">
+      {/* Token Balance with logo: */}
+      <span
+        role="img"
+        aria-label="Token"
+        className="inline-block h-4 w-4 bg-emerald-500"
+        style={{
+          WebkitMask: 'url(/icons/token.svg) no-repeat center / contain',
+          mask: 'url(/icons/token.svg) no-repeat center / contain',
+        }}
+      />
       <p className="text-green-500 font-bold">{text}</p>
+      </span>
     </div>
   );
 }

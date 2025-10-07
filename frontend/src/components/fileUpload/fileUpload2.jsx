@@ -83,7 +83,20 @@ function DropZone({
           Choose file
         </button>
         <div className="flex items-center gap-3">
-          <div className="text-xs text-slate-300 mr-2">Tokens: <span className="font-medium">{tokenCount ?? '—'}</span></div>
+          <div className="text-xs text-slate-300 mr-2">
+            <span className="font-medium inline-flex items-center gap-1">
+            <span
+              role="img"
+              aria-label="Token"
+              className="inline-block h-4 w-4 bg-emerald-500"
+              style={{
+                WebkitMask: 'url(/icons/token.svg) no-repeat center / contain',
+                mask: 'url(/icons/token.svg) no-repeat center / contain',
+              }}
+            />
+            {tokenCount ?? '—'}
+            </span>
+          </div>
           <button
             type="button"
             onClick={onUpload}
