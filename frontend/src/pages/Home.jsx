@@ -1,7 +1,7 @@
 import Hero from '../components/hero/Hero.jsx';
 import Faq from '../components/faq/faq.jsx'
 
-import MarketingBox from "../components/marketing/marketingbox.jsx"
+import MarketingBox from "../components/marketing/Marketingbox.jsx";
 
 export default function Home() {
     return (
