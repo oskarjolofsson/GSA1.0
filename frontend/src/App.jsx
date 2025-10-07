@@ -10,7 +10,6 @@ import About from "./pages/About.jsx";
 import NotFound from './pages/NotFound.jsx';
 import Products from './pages/Products.jsx';
 import Analyser from './pages/AnalyserPage.jsx';
-import Dashboard from "./pages/Dashboard.jsx";
 import Settings from "./pages/Settings.jsx";
 
 // Import components
@@ -48,7 +47,6 @@ function App() {
           
           <Route element={<RequireAuth />}>
             <Route path="/analyse" element={<Analyser />} />
-            <Route path="/dashboard" element={<Dashboard />}/>
             <Route path="/settings" element={<Settings />}/>
           </Route>
 

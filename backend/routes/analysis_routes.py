@@ -12,10 +12,12 @@ def golf():
         if 'video' not in request.files:
             return jsonify({'error': 'No video file provided'}), 400
 
-        # Method from analysis service
-        # request.files should be accessed by key only. Using a tuple here caused a TypeError
-        # which resulted in a 500 response. Pass the FileStorage to the service.
-        data = get_response(request.files['video']) # TODO take in prompt from frontend as well
+        video = request.files['video']
+        note = request.form.get('note', '')
+
+        print("note: " + note)
+        
+        data = get_response(video, note) 
         return jsonify({'analysis_results': data}), 200
 
     except Exception as e:
