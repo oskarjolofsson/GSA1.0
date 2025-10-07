@@ -18,7 +18,7 @@ class Video_file(File):
 
     @property
     def folder(self) -> str:
-        return "uploads/video"  # TODO Create new unique foldername for every file, in case 2 of the same
+        return "uploads/video"  
 
     def keyframes(self, num_keyframes: int) -> Keyframes:
         """

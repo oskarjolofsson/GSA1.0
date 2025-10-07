@@ -1,5 +1,3 @@
-import React from "react";
-
 // Simple icon set for the feature list
 const Icon = ({ name }) => {
   const common = "h-5 w-5";
