@@ -38,10 +38,10 @@ const Icon = ({ name }) => {
  */
 export default function MarketingBox({
   header = "Get instant results",
-  subtext = "Fast quality — Get your results in under a minute",
+  subtext = "",
   className = "",
   features = [
-    { icon: "bolt", title: "Fast Uploads", desc: "Get your swing analyzed in under a minute with our optimized pipeline." },
+    { icon: "bolt", title: "Fast Uploads", desc: "Fast quality — Get your results in under a minute." },
     { icon: "target", title: "Pro‑Grade Insights", desc: "Actionable feedback on mechanics, rotation, balance, plus tailored drills." },
     { icon: "shield", title: "Private by Design", desc: "Secure upload, temporary processing, and auto‑delete after analysis." },
   ],
