@@ -6,6 +6,7 @@ import DropZone from "./DropZone.jsx";
 import PreviewPane from "./PreviewPane.jsx";
 import ResultBox from "../result-box/result-box.jsx";
 import ErrorPopup from "../errorPopup/ErrorPopup.jsx";
+import VideoTrimmer from "./VideoTrimmer.jsx";
 import tokenService from "../../services/tokenService.js";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -43,6 +44,7 @@ export default function UploadPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [tokenCount, setTokenCount] = useState(null);
   const [note, setNote] = useState("");
+  const [trimmerOpen, setTrimmerOpen] = useState(false);
 
   useEffect(() => {
     // cleanup preview URL
@@ -99,6 +101,20 @@ export default function UploadPage() {
     if (inputRef.current) inputRef.current.value = "";
     setNote("");
   }
+
+  function onEdit() {
+    if (!file) return;
+    setTrimmerOpen(true);
+  }
+
+  function onTrimmed(newFile) {
+    // replace the selected file and preview URL with the trimmed version
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setFile(newFile);
+    setPreviewUrl(URL.createObjectURL(newFile));
+    setTrimmerOpen(false);
+  }
+
 
   async function onUpload() {
     if (!file) return; // Exit if no file is selected
@@ -223,8 +239,13 @@ export default function UploadPage() {
             file={file}
             note={note}
             setNote={setNote}
+            onEdit={onEdit}
           />
         </div>
+
+        {trimmerOpen && file && (
+          <VideoTrimmer file={file} onCancel={() => setTrimmerOpen(false)} onTrimmed={onTrimmed} />
+        )}
 
         <AnalysisResult analysis={analysis} />
         <ErrorPopup message={errorMessage} onClose={() => setErrorMessage("")} />
