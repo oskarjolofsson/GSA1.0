@@ -1,141 +1,232 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import * as MP4Box from "mp4box";
+import { useRef, useState, useEffect } from "react";
 
-export default function VideoTrimmer({ file, onCancel, onTrimmed }) {
-    const [ffmpeg, setFfmpeg] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [ready, setReady] = useState(false);
+export default function VideoTrimmer2({ file, onCancel, onTrimmed }) {
+    const videoRef = useRef(null);
+    const [url, setUrl] = useState("");
+    const [duration, setDuration] = useState(0);
     const [start, setStart] = useState(0);
-    const [end, setEnd] = useState(null);
-    const [duration, setDuration] = useState(null);
+    const [end, setEnd] = useState(0);
+    const [busy, setBusy] = useState(false);
+    const [err, setErr] = useState("");
 
-    const fetchFileRef = useRef(null);
-    const previewURL = useMemo(() => URL.createObjectURL(file), [file]);
-
-    useEffect(() => {
-        const load = async () => {
-            // dynamic import to avoid bundler export problems
-            try {
-                const mod = await import("@ffmpeg/ffmpeg");
-                // module might expose named exports or a default object depending on bundler/version
-                const createFFmpeg = mod.createFFmpeg || (mod.default && mod.default.createFFmpeg);
-                const fetchFile = mod.fetchFile || (mod.default && mod.default.fetchFile);
-                if (!createFFmpeg || !fetchFile) {
-                    console.error("@ffmpeg/ffmpeg module keys:", Object.keys(mod));
-                    throw new Error("Could not find createFFmpeg/fetchFile on @ffmpeg/ffmpeg module");
-                }
-
-                fetchFileRef.current = fetchFile;
-                const ff = createFFmpeg({ log: true });
-                setFfmpeg(ff);
-                await ff.load();
-                setReady(true);
-            } catch (err) {
-                console.error("Failed to load @ffmpeg/ffmpeg:", err);
-            }
-        };
-        load();
-    }, []);
-
+    // create object URL for preview
     useEffect(() => {
         if (!file) return;
-        // get video duration via HTMLVideoElement
-        const url = URL.createObjectURL(file);
-        const v = document.createElement("video");
-        v.preload = "metadata";
-        v.src = url;
-        const onLoaded = () => {
-            const d = v.duration || 0;
-            setDuration(d);
-            setEnd(d);
-            URL.revokeObjectURL(url);
-        };
-        v.addEventListener("loadedmetadata", onLoaded);
-        return () => v.removeEventListener("loadedmetadata", onLoaded);
+        const u = URL.createObjectURL(file);
+        setUrl(u);
+        return () => URL.revokeObjectURL(u);
     }, [file]);
 
-    const formatTime = (s) => {
-        if (s == null || isNaN(s)) return "0.000s";
-        return s.toFixed(3) + "s"; // return time with 3 decimals
+    // initialize end once metadata is loaded
+    const handleLoaded = () => {
+        if (!videoRef.current) return;
+        const d = videoRef.current.duration || 0;
+        setDuration(d);
+        setEnd(prev => (prev > 0 ? prev : Math.floor(d)));
     };
 
-    const doTrim = async () => {
-        if (!ffmpeg || !ready) return;
-        // clamp
-        const s = Math.max(0, Math.min(start, duration || 0));
-        const e = Math.max(0, Math.min(end || (duration || 0), duration || 0));
-        if (e <= s) {
-            alert("End must be greater than start");
-            return;
-        }
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-        setLoading(true);
+    const onChangeStart = (e) => {
+        const v = Number(e.target.value);
+        setStart(clamp(isNaN(v) ? 0 : v, 0, Math.max(0, end - 0.1)));
+    };
+
+    const onChangeEnd = (e) => {
+        const v = Number(e.target.value);
+        setEnd(clamp(isNaN(v) ? 0 : v, start + 0.1, duration || 10_000));
+    };
+
+    const secondsLabel = (s) => (Number.isFinite(s) ? s.toFixed(2) + "s" : "—");
+
+    async function handleTrim() {
+        setErr("");
+        setBusy(true);
         try {
-            const name = file.name || "input.mp4";
-            const inName = "in" + name.replace(/[^a-z0-9.]/gi, "_");
-            const outName = "out_" + inName;
-
-            // write file to FS
-            if (!fetchFileRef.current) throw new Error("fetchFile not available");
-            ffmpeg.FS("writeFile", inName, await fetchFileRef.current(file));
-
-            // run ffmpeg trim: -ss start -to end -c copy
-            // using -ss and -to with copy is fast but may be imprecise; acceptable for simple trims
-            await ffmpeg.run("-ss", `${s}`, "-i", inName, "-to", `${e - s}`, "-c", "copy", outName);
-
-            const data = ffmpeg.FS("readFile", outName);
-            const blob = new Blob([data.buffer], { type: file.type || "video/mp4" });
-            const trimmedFile = new File([blob], file.name || "trimmed.mp4", { type: file.type || "video/mp4" });
-
-            // cleanup
-            try {
-                ffmpeg.FS("unlink", inName);
-                ffmpeg.FS("unlink", outName);
-            } catch (e) { }
-
-            onTrimmed(trimmedFile);
-        } catch (err) {
-            console.error(err);
-            alert("Trimming failed: " + (err.message || err));
+            if (!file) throw new Error("No file provided");
+            const outFile = await trimMp4(file, start, end);
+            onTrimmed?.(outFile);
+            // Close the popup
+            onCancel?.();
+        } catch (e) {
+            console.error(e);
+            setErr(e?.message || String(e));
         } finally {
-            setLoading(false);
+            setBusy(false);
         }
-        console.log('Loading: ' + loading);
-        console.log('Ready: ' + ready);
-    };
+    }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-            <div className="bg-[#0e1428] rounded-2xl p-6 w-full max-w-3xl h-[80vh] overflow-auto text-slate-100">
-                <h3 className="text-lg font-semibold mb-4">Trim video length</h3>
-                <div className="mb-4">
-                    <div className="mb-2 text-sm text-slate-300">Preview</div>
-                    <video 
-                        src={previewURL} 
-                        controls 
-                        className="w-full rounded-md max-h-[40vh] object-contain" 
-                    />  
-                    {/* TODO Create seperate video-component and add start and end markers so that they will be moved when start and end is moved */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl">
+                <div className="flex items-center justify-between border-b p-4">
+                    <h2 className="text-lg font-semibold">Trim video</h2>
+                    <button className="rounded-full p-2 hover:bg-black/5" onClick={onCancel} aria-label="Close">✕</button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <label className="text-sm text-slate-300">Start ({formatTime(start)})
-                        <input type="range" min="0" max={duration || 0} step="0.1" value={start} onChange={(e) => setStart(parseFloat(e.target.value))} className="w-full" />
-                    </label>
-                    <label className="text-sm text-slate-300">End ({formatTime(end)})
-                        <input type="range" min="0" max={duration || 0} step="0.1" value={end || 0} onChange={(e) => setEnd(parseFloat(e.target.value))} className="w-full" />
-                    </label>
-                </div>
+                <div className="grid gap-4 p-4 md:grid-cols-2">
+                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
+                        {url && (
+                            <video
+                                ref={videoRef}
+                                src={url}
+                                className="h-full w-full"
+                                controls
+                                onLoadedMetadata={handleLoaded}
+                            />
+                        )}
+                    </div>
 
-                <div className="flex items-center justify-between">
-                    <div className="text-sm text-slate-400">Duration: {duration ? formatTime(duration) : '—'}</div>
-                    <div className="flex items-center gap-2">
-                        <button onClick={onCancel} className="rounded-xl bg-white/5 px-4 py-2 text-sm hover:bg-white/10">Cancel</button>
-                        <button onClick={doTrim} disabled={!ready || loading} className="rounded-xl bg-emerald-500 px-4 py-2 text-sm text-white disabled:opacity-50">
-                            {loading ? 'Trimming...' : 'Trim'}
-                        </button>
+                    <div className="flex flex-col gap-4">
+                        <div>
+                            <label className="mb-1 block text-sm font-medium">Start (s)</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                min={0}
+                                max={Math.max(0, end - 0.1)}
+                                value={start}
+                                onChange={onChangeStart}
+                                className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-1 block text-sm font-medium">End (s)</label>
+                            <input
+                                type="number"
+                                step="0.1"
+                                min={start + 0.1}
+                                max={duration || undefined}
+                                value={end}
+                                onChange={onChangeEnd}
+                                className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring"
+                            />
+                        </div>
+
+                        <div className="text-sm text-gray-600">
+                            <div>Duration: <strong>{secondsLabel(duration)}</strong></div>
+                            <div>Selection: <strong>{secondsLabel(end - start)}</strong></div>
+                        </div>
+
+                        {err && (
+                            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                {err}
+                            </div>
+                        )}
+
+                        <div className="mt-auto flex gap-3">
+                            <button
+                                onClick={onCancel}
+                                className="rounded-xl border px-4 py-2 font-medium hover:bg-black/5 disabled:opacity-50"
+                                disabled={busy}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleTrim}
+                                className="rounded-xl bg-black px-4 py-2 font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                                disabled={busy || end <= start}
+                            >
+                                {busy ? "Trimming…" : "Trim & Save"}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     );
+}
+
+async function trimMp4(file, startSec, endSec, outName = 'trim.mp4') {
+    if (!(startSec >= 0) || !(endSec > startSec)) {
+        throw new Error('Invalid range');
+    }
+
+    const mp4box = MP4Box.createFile();
+    const chunks = [];
+
+    // --- Promise to resolve when segmentation finishes ---
+    let doneResolve, doneReject;
+    const done = new Promise((res, rej) => { doneResolve = res; doneReject = rej; });
+
+    mp4box.onError = e => {
+        mp4box.onError = (e) => doneReject(new Error("mp4box error: " + e));
+    };
+
+    mp4box.onReady = (info) => {
+        // 1) ask for keyframe-aligned segments
+        info.tracks.forEach(t =>
+            mp4box.setSegmentOptions(t.id, null, { rapAlignement: true })
+        );
+
+        // 2) push init segments first
+        const initSegs = mp4box.initializeSegmentation();
+        initSegs?.forEach(seg => seg?.buffer && chunks.push(seg.buffer));
+
+        // 3) seek to start (seconds) and start processing
+        mp4box.seek(startSec, true);
+        mp4box.start();
+
+        // 4) mark stopping point (seconds). We'll flush after feeding is done.
+        mp4box.seek(endSec, true);
+    };
+
+    // (id, user, buffer, sampleNum, isLast)
+    mp4box.onSegment = (id, user, buffer, _n, isLast) => {
+        if (buffer?.byteLength) {
+            chunks.push(buffer);
+        }
+        if (isLast) {
+            try {
+                if (!chunks.length) {
+                    throw new Error("No output produced");
+                }
+
+                // Calculate total space
+                const total = chunks.reduce((n, b) => n + b.byteLength, 0);
+                // Take up 'total' space
+                const out = new Uint8Array(total);
+
+                // assign data to out-space
+                let off = 0;
+                for (const b of chunks) {
+                    out.set(new Uint8Array(b), off); off += b.byteLength;
+                }
+
+                // Remake into usable file
+                const blob = new Blob([out], { type: "video/mp4" });
+                const fileOut = new File([blob], outName, { type: "video/mp4" });
+
+                doneResolve(fileOut);
+            } catch (err) {
+                doneReject(err);
+            }
+        }
+    };
+
+    // 5) feed data in chunks
+    await feedFileInChunks(file, mp4box);
+
+    // 6) signal end-of-input once
+    mp4box.flush();
+
+    // 7) wait for last segment to arrive and the file to be built
+    return done;
+}
+
+async function feedFileInChunks(file, mp4box, chunkSize = 2 * 1024 * 1024) { // 2 MB chunks
+    // Parser variable to keep track of which chunk to parse
+    let offset = 0;
+
+    while (offset < file.size) {
+        // Chunch to be added next to ab
+        const slice = file.slice(offset, offset + chunkSize);
+        // remake slice into binary data in memory
+        const ab = await slice.arrayBuffer();
+        ab.fileStart = offset;
+        mp4box.appendBuffer(ab);
+        offset += chunkSize;
+    }
 }
