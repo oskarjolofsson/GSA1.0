@@ -7,6 +7,9 @@ import cv2
 from datetime import datetime
 import os
 from werkzeug.datastructures import FileStorage
+from werkzeug.datastructures import Headers
+from io import BytesIO
+import subprocess
 
 class Video_file(File):
     def __init__(self, f: FileStorage):
@@ -131,3 +134,92 @@ class Video_file(File):
 
     def open_ai_ids(self, client: OpenAI) -> List[str]:
         return self.keyframes().open_ai_id(client)
+
+    def trim(self, start_seconds: float, end_seconds: float) -> 'Video_file':
+        """
+        Trim the saved video file between start_seconds and end_seconds.
+        This implementation uses ffmpeg via subprocess to create a new trimmed file
+        next to the original and updates this object's internal path to the new file.
+
+        Args:
+            start_seconds (float): start time in seconds
+            end_seconds (float): end time in seconds
+
+        Returns:
+            Video_file: self (with updated path)
+        """
+        input_path = self.path()
+        if start_seconds is None or end_seconds is None:
+            raise ValueError("start and end must be provided for trim")
+
+        try:
+            start = float(start_seconds)
+            end = float(end_seconds)
+        except Exception:
+            raise ValueError("start and end must be numeric")
+
+        if end <= start:
+            raise ValueError("end must be greater than start")
+
+        # create output filename
+        base, ext = os.path.splitext(os.path.basename(input_path))
+        out_name = f"{base}_trim_{int(start)}_{int(end)}{ext}"
+        out_folder = self.folder
+        os.makedirs(out_folder, exist_ok=True)
+        out_path = os.path.join(out_folder, out_name)
+
+        # ffmpeg command: -y overwrite, -ss start -to end -i input -c copy out
+        # using -ss and -to before/after input can affect accuracy; use -ss before input and -to with -accurate_seek
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i", input_path,
+            "-ss", str(start),
+            "-to", str(end),
+            "-c", "copy",
+            out_path,
+        ]
+
+        try:
+            # run ffmpeg and capture output for debugging
+            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"ffmpeg trimming failed: {e.stderr.decode('utf-8', errors='ignore')}")
+
+        # remove original file
+        self.remove()
+
+        # update internal path to trimmed file
+        self._path = out_path
+        return self
+
+    def to_filestorage(self) -> FileStorage:
+        """
+        Convert the saved video file back into a Werkzeug FileStorage-like object
+        by reading bytes into an in-memory file. This allows sending the file
+        in Flask responses or further handling as if it were an uploaded file.
+
+        Returns:
+            FileStorage: in-memory FileStorage with filename and stream
+        """
+        file_path = self.path()
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(file_path)
+
+        with open(file_path, 'rb') as f:
+            data = f.read()
+
+        stream = BytesIO(data)
+        # create a minimal headers object to pass content-type if needed
+        headers = Headers()
+        # try to guess content type from extension
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == '.mp4':
+            headers.add('Content-Type', 'video/mp4')
+        elif ext == '.mov':
+            headers.add('Content-Type', 'video/quicktime')
+
+        fs = FileStorage(stream=stream, filename=os.path.basename(file_path), headers=headers)
+        # Reset stream position for consumers
+        fs.stream.seek(0)
+        return fs

@@ -1,5 +1,30 @@
 import { useRef, useState, useEffect } from "react";
-import { trimVideo } from "./TrimMp4.js";
+
+const API = import.meta.env.VITE_API_URL;
+
+
+async function trimVideo(file, start, end) {
+  const formData = new FormData();
+  formData.append('video', file);   // file is a File object (e.g. from <input type="file">)
+  formData.append('start', start);  // e.g. "5.3" or "00:00:05.3"
+  formData.append('end', end);      // e.g. "10.0"
+
+  const response = await fetch(`${API}/api/v1/edit/trim_video`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `Server error (${response.status})`);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+
+  return { new_url: url, new_file: blob}
+}
+
 
 export default function VideoTrimmer2({ file, onCancel, onTrimmed }) {
     const videoRef = useRef(null);
@@ -48,14 +73,13 @@ export default function VideoTrimmer2({ file, onCancel, onTrimmed }) {
         try {
             if (!file) throw new Error("No file provided");
 
-            console.log("Video length: ", duration, "s. Trimming to:", start, "-", end, "s");
-
-            const { new_blob, new_url } = await trimVideo(file, start, end);
-
-            console.log("Trimmed file:", new_blob);
+            // fetch backend to trim the video
+            let { new_url, new_file } = await trimVideo(file, start, end);
+            
+            console.log("Trimmed file:", new_file);
             console.log("Old file:", file);
 
-            onTrimmed?.(new_blob, new_url);
+            onTrimmed?.(new_file, new_url);
             onCancel?.();
         } catch (e) {
             console.error(e);
