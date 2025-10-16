@@ -9,6 +9,7 @@ import ErrorPopup from "../errorPopup/ErrorPopup.jsx";
 import VideoTrimmer from "./VideoTrimmer.jsx";
 import tokenService from "../../services/tokenService.js";
 import { v4 as uuidv4 } from 'uuid';
+import { setUserId } from "firebase/analytics";
 
 
 function UploadHeader() {
@@ -93,6 +94,7 @@ export default function UploadPage() {
     onSelect(e.dataTransfer.files);
   }
 
+  // Remove the selected file and clear state
   function onRemove() {
     if (uploading) return;
     setFile(null);
@@ -102,17 +104,18 @@ export default function UploadPage() {
     setNote("");
   }
 
+  // Open the video trimmer modal
   function onEdit() {
     if (!file) return;
     setTrimmerOpen(true);
   }
 
-  function onTrimmed(newFile) {
+  // Handle the trimmed video returned from VideoTrimmer
+  async function onTrimmed(newFile, newUrl) {
     // replace the selected file and preview URL with the trimmed version
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setFile(newFile);
-    setPreviewUrl(URL.createObjectURL(newFile));
-    setTrimmerOpen(false);
+    setPreviewUrl(newUrl);
   }
 
 
