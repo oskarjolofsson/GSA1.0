@@ -1,5 +1,5 @@
-import * as MP4Box from "mp4box";
 import { useRef, useState, useEffect } from "react";
+import { trimVideo } from "./TrimMp4.js";
 
 export default function VideoTrimmer2({ file, onCancel, onTrimmed }) {
     const videoRef = useRef(null);
@@ -28,11 +28,13 @@ export default function VideoTrimmer2({ file, onCancel, onTrimmed }) {
 
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
+    // User sets start-time
     const onChangeStart = (e) => {
         const v = Number(e.target.value);
         setStart(clamp(isNaN(v) ? 0 : v, 0, Math.max(0, end - 0.1)));
     };
 
+    // User sets end-time
     const onChangeEnd = (e) => {
         const v = Number(e.target.value);
         setEnd(clamp(isNaN(v) ? 0 : v, start + 0.1, duration || 10_000));
@@ -45,9 +47,15 @@ export default function VideoTrimmer2({ file, onCancel, onTrimmed }) {
         setBusy(true);
         try {
             if (!file) throw new Error("No file provided");
-            const outFile = await trimMp4(file, start, end);
-            onTrimmed?.(outFile);
-            // Close the popup
+
+            console.log("Video length: ", duration, "s. Trimming to:", start, "-", end, "s");
+
+            const { new_blob, new_url } = await trimVideo(file, start, end);
+
+            console.log("Trimmed file:", new_blob);
+            console.log("Old file:", file);
+
+            onTrimmed?.(new_blob, new_url);
             onCancel?.();
         } catch (e) {
             console.error(e);
@@ -137,96 +145,4 @@ export default function VideoTrimmer2({ file, onCancel, onTrimmed }) {
             </div>
         </div>
     );
-}
-
-async function trimMp4(file, startSec, endSec, outName = 'trim.mp4') {
-    if (!(startSec >= 0) || !(endSec > startSec)) {
-        throw new Error('Invalid range');
-    }
-
-    const mp4box = MP4Box.createFile();
-    const chunks = [];
-
-    // --- Promise to resolve when segmentation finishes ---
-    let doneResolve, doneReject;
-    const done = new Promise((res, rej) => { doneResolve = res; doneReject = rej; });
-
-    mp4box.onError = e => {
-        mp4box.onError = (e) => doneReject(new Error("mp4box error: " + e));
-    };
-
-    mp4box.onReady = (info) => {
-        // 1) ask for keyframe-aligned segments
-        info.tracks.forEach(t =>
-            mp4box.setSegmentOptions(t.id, null, { rapAlignement: true })
-        );
-
-        // 2) push init segments first
-        const initSegs = mp4box.initializeSegmentation();
-        initSegs?.forEach(seg => seg?.buffer && chunks.push(seg.buffer));
-
-        // 3) seek to start (seconds) and start processing
-        mp4box.seek(startSec, true);
-        mp4box.start();
-
-        // 4) mark stopping point (seconds). We'll flush after feeding is done.
-        mp4box.seek(endSec, true);
-    };
-
-    // (id, user, buffer, sampleNum, isLast)
-    mp4box.onSegment = (id, user, buffer, _n, isLast) => {
-        if (buffer?.byteLength) {
-            chunks.push(buffer);
-        }
-        if (isLast) {
-            try {
-                if (!chunks.length) {
-                    throw new Error("No output produced");
-                }
-
-                // Calculate total space
-                const total = chunks.reduce((n, b) => n + b.byteLength, 0);
-                // Take up 'total' space
-                const out = new Uint8Array(total);
-
-                // assign data to out-space
-                let off = 0;
-                for (const b of chunks) {
-                    out.set(new Uint8Array(b), off); off += b.byteLength;
-                }
-
-                // Remake into usable file
-                const blob = new Blob([out], { type: "video/mp4" });
-                const fileOut = new File([blob], outName, { type: "video/mp4" });
-
-                doneResolve(fileOut);
-            } catch (err) {
-                doneReject(err);
-            }
-        }
-    };
-
-    // 5) feed data in chunks
-    await feedFileInChunks(file, mp4box);
-
-    // 6) signal end-of-input once
-    mp4box.flush();
-
-    // 7) wait for last segment to arrive and the file to be built
-    return done;
-}
-
-async function feedFileInChunks(file, mp4box, chunkSize = 2 * 1024 * 1024) { // 2 MB chunks
-    // Parser variable to keep track of which chunk to parse
-    let offset = 0;
-
-    while (offset < file.size) {
-        // Chunch to be added next to ab
-        const slice = file.slice(offset, offset + chunkSize);
-        // remake slice into binary data in memory
-        const ab = await slice.arrayBuffer();
-        ab.fileStart = offset;
-        mp4box.appendBuffer(ab);
-        offset += chunkSize;
-    }
 }
