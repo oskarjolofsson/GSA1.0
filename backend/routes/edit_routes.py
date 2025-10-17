@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, send_file
 
-from services.edit.edit_service import trim_video
+from services.edit.VideoEdit import trim_video
 
 # Create a Blueprint for analysis routes
 edit_bp = Blueprint('edit', __name__, url_prefix='/api/v1/edit')
