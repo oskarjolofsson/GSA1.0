@@ -7,6 +7,7 @@ import PreviewPane from "./preview/PreviewPane.jsx";
 import ResultBox from "../result-box/result-box.jsx";
 import ErrorPopup from "../errorPopup/ErrorPopup.jsx";
 import tokenService from "../../services/tokenService.js";
+import UploadButtonZone from "./UploadButtonZone.jsx";
 import { v4 as uuidv4 } from 'uuid';
 
 function UploadHeader() {
@@ -223,16 +224,24 @@ export default function UploadPage() {
               uploading={uploading}
               tokenCount={tokenCount}
             />) : (
-            <PreviewPane
-              previewUrl={previewUrl}
-              ready={ready}
-              uploading={uploading}
-              onRemove={onRemove}
-              file={file}
-              note={note}
-              setNote={setNote}
-              onTime={onTime}
-            />
+            <>  
+              <PreviewPane
+                previewUrl={previewUrl}
+                ready={ready}
+                uploading={uploading}
+                onRemove={onRemove}
+                file={file}
+                note={note}
+                setNote={setNote}
+                onTime={onTime}
+              />
+              <UploadButtonZone
+                onUpload={onUpload}
+                uploading={uploading}
+                tokenCount={tokenCount}
+                file={file}
+              />
+            </>
           )}
 
         </div>
