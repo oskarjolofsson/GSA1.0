@@ -7,6 +7,10 @@ import cv2
 from datetime import datetime
 import os
 from werkzeug.datastructures import FileStorage
+from werkzeug.datastructures import Headers
+from io import BytesIO
+import subprocess
+import shutil
 
 class Video_file(File):
     def __init__(self, f: FileStorage):
@@ -131,3 +135,102 @@ class Video_file(File):
 
     def open_ai_ids(self, client: OpenAI) -> List[str]:
         return self.keyframes().open_ai_id(client)
+    
+    ## Video editing methods
+
+
+
+    def trim(self, start_seconds: float, end_seconds: float) -> "Video_file":
+        """
+        Trim the video accurately between start_seconds and end_seconds.
+        Always re-encodes for guaranteed audio/video sync.
+
+        Args:
+            start_seconds (float): start time in seconds
+            end_seconds (float): end time in seconds
+
+        Returns:
+            Video_file: self with updated internal path
+        """
+        # --- validate inputs ---
+        if shutil.which("ffmpeg") is None:
+            raise RuntimeError("ffmpeg not found on PATH")
+
+        if start_seconds is None or end_seconds is None:
+            raise ValueError("start and end must be provided for trim")
+
+        try:
+            start = float(start_seconds)
+            end = float(end_seconds)
+        except Exception:
+            raise ValueError("start and end must be numeric")
+
+        if end <= start:
+            raise ValueError("end must be greater than start")
+
+        # --- setup paths ---
+        duration = end - start
+        input_path = self.path()
+
+        base, ext = os.path.splitext(os.path.basename(input_path))
+        out_name = f"{base}_trim_{int(start)}_{int(end)}{ext or '.mp4'}"
+        os.makedirs(self.folder, exist_ok=True)
+        out_path = os.path.join(self.folder, out_name)
+
+        # --- ffmpeg command (re-encode for sync) ---
+        cmd = [
+            "ffmpeg", "-hide_banner", "-y",
+            "-ss", str(start),
+            "-i", input_path,
+            "-t", str(duration),
+            "-fflags", "+genpts",            # regenerate timestamps
+            "-c:v", "libx264",
+            "-preset", "veryfast",
+            "-crf", "20",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "192k",
+            "-movflags", "+faststart",
+            out_path,
+        ]
+
+        # --- run ffmpeg ---
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"ffmpeg trimming failed: {result.stderr.decode('utf-8', errors='ignore')}"
+            )
+
+        # --- replace original with trimmed version ---
+        self.remove()
+        self._path = out_path
+        return self
+
+    def to_filestorage(self) -> FileStorage:
+        """
+        Convert the saved video file back into a Werkzeug FileStorage-like object
+        by reading bytes into an in-memory file. 
+
+        Returns:
+            FileStorage: in-memory FileStorage with filename and stream
+        """
+        file_path = self.path()
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(file_path)
+
+        with open(file_path, 'rb') as f:
+            data = f.read()
+
+        stream = BytesIO(data)
+        # create a minimal headers object to pass content-type if needed
+        headers = Headers()
+        # try to guess content type from extension
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext == '.mp4':
+            headers.add('Content-Type', 'video/mp4')
+        elif ext == '.mov':
+            headers.add('Content-Type', 'video/quicktime')
+
+        fs = FileStorage(stream=stream, filename=os.path.basename(file_path), headers=headers)
+        # Reset stream position for consumers
+        fs.stream.seek(0)
+        return fs

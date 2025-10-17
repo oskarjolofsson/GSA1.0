@@ -65,3 +65,5 @@ class File(ABC):
     def metrics(self) -> dict[str, Any]:
         ...
 
+    def __str__(self):
+        return self.metrics().__str__()
