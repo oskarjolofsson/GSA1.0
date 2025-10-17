@@ -3,7 +3,7 @@ const API = import.meta.env.VITE_API_URL;
 
 // Components
 import DropZone from "./DropZone.jsx";
-import PreviewPane from "./PreviewPane.jsx";
+import PreviewPane from "./preview/PreviewPane.jsx";
 import ResultBox from "../result-box/result-box.jsx";
 import ErrorPopup from "../errorPopup/ErrorPopup.jsx";
 import tokenService from "../../services/tokenService.js";
@@ -209,31 +209,32 @@ export default function UploadPage() {
     <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
         <UploadHeader />
+        <div className="gap-12">
+          {!file ? (
+            <DropZone
+              file={file}
+              dragActive={dragActive}
+              setDragActive={setDragActive}
+              ready={ready}
+              inputRef={inputRef}
+              onDrop={onDrop}
+              onSelect={onSelect}
+              onUpload={onUpload}
+              uploading={uploading}
+              tokenCount={tokenCount}
+            />) : (
+            <PreviewPane
+              previewUrl={previewUrl}
+              ready={ready}
+              uploading={uploading}
+              onRemove={onRemove}
+              file={file}
+              note={note}
+              setNote={setNote}
+              onTime={onTime}
+            />
+          )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <DropZone
-            file={file}
-            dragActive={dragActive}
-            setDragActive={setDragActive}
-            ready={ready}
-            inputRef={inputRef}
-            onDrop={onDrop}
-            onSelect={onSelect}
-            onUpload={onUpload}
-            uploading={uploading}
-            tokenCount={tokenCount}
-          />
-
-          <PreviewPane
-            previewUrl={previewUrl}
-            ready={ready}
-            uploading={uploading}
-            onRemove={onRemove}
-            file={file}
-            note={note}
-            setNote={setNote}
-            onTime={onTime}
-          />
         </div>
 
 

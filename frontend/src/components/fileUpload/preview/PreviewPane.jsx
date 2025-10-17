@@ -3,7 +3,7 @@ import VideoWithSlider from "./VideoWithSlider";
 export default function PreviewPane({ previewUrl, ready, uploading, onRemove, file, note, setNote, onTime }) {
   return (
     <div
-      className={`rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 min-h-[280px] flex items-center justify-center transition-all duration-700 ease-out will-change-transform transform ${
+      className={`rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 min-h-[280px] max-w-[700px] mx-auto flex items-center justify-center transition-all duration-700 ease-out will-change-transform transform ${
         ready ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       } delay-150`}
     >
