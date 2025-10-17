@@ -14,10 +14,10 @@ def golf():
 
         video = request.files['video']
         note = request.form.get('note', '')
-
-        print("note: " + note)
+        start_time = float(request.form.get('start_time', None))
+        end_time = float(request.form.get('end_time', None))
         
-        data = get_response(video, note) 
+        data = get_response(video, note, start_time, end_time) 
         return jsonify({'analysis_results': data}), 200
 
     except Exception as e:

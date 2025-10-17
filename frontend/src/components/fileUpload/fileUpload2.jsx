@@ -9,7 +9,6 @@ import ErrorPopup from "../errorPopup/ErrorPopup.jsx";
 import tokenService from "../../services/tokenService.js";
 import { v4 as uuidv4 } from 'uuid';
 
-
 function UploadHeader() {
   return (
     <header className="mb-12 text-center">
@@ -43,6 +42,13 @@ export default function UploadPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [tokenCount, setTokenCount] = useState(null);
   const [note, setNote] = useState("");
+  const [startTime, setStartTime] = useState(0);
+  const [endTime, setEndTime] = useState(0);
+
+  function onTime(start, end) {
+    setStartTime(start);
+    setEndTime(end);
+  }
 
   useEffect(() => {
     // cleanup preview URL
@@ -91,6 +97,7 @@ export default function UploadPage() {
     onSelect(e.dataTransfer.files);
   }
 
+  // Remove the selected file and clear state
   function onRemove() {
     if (uploading) return;
     setFile(null);
@@ -99,6 +106,7 @@ export default function UploadPage() {
     if (inputRef.current) inputRef.current.value = "";
     setNote("");
   }
+
 
   async function onUpload() {
     if (!file) return; // Exit if no file is selected
@@ -136,13 +144,14 @@ export default function UploadPage() {
     if (note && note.trim().length) {
       form.append("note", note.trim());
     }
+    form.append("start_time", String(startTime));
+    form.append("end_time", String(endTime));
 
     try {
       const res = await fetch(API + "/api/v1/analysis/upload_video", {
         method: "POST",
         body: form,
       });
-      
 
       if (!res.ok) {
         let backendMessage = "Upload failed";
@@ -159,25 +168,25 @@ export default function UploadPage() {
         throw new Error(backendMessage);
       }
 
-              <div className="mt-8 flex items-center justify-center gap-4">
-                <div className="text-xs text-slate-300 mr-2">Tokens: <span className="font-medium">{tokenCount ?? '—'}</span></div>
-                <button
-                  type="button"
-                  onClick={onUpload}
-                  disabled={!file || uploading}
-                  className="rounded-xl bg-emerald-500/90 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2 font-semibold"
-                  aria-busy={uploading}
-                >
-                  {uploading ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white/90"></span>
-                      Uploading...
-                    </span>
-                  ) : (
-                    "Upload"
-                  )}
-                </button>
-              </div>
+      <div className="mt-8 flex items-center justify-center gap-4">
+        <div className="text-xs text-slate-300 mr-2">Tokens: <span className="font-medium">{tokenCount ?? '—'}</span></div>
+        <button
+          type="button"
+          onClick={onUpload}
+          disabled={!file || uploading}
+          className="rounded-xl bg-emerald-500/90 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2 font-semibold"
+          aria-busy={uploading}
+        >
+          {uploading ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white/90"></span>
+              Uploading...
+            </span>
+          ) : (
+            "Upload"
+          )}
+        </button>
+      </div>
       const data = await res.json();
 
       const summary = data.analysis_results?.summary ?? "Could not be found";
@@ -223,8 +232,10 @@ export default function UploadPage() {
             file={file}
             note={note}
             setNote={setNote}
+            onTime={onTime}
           />
         </div>
+
 
         <AnalysisResult analysis={analysis} />
         <ErrorPopup message={errorMessage} onClose={() => setErrorMessage("")} />

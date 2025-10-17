@@ -1,4 +1,6 @@
-export default function PreviewPane({ previewUrl, ready, uploading, onRemove, file, note, setNote }) {
+import VideoWithSlider from "./VideoWithSlider";
+
+export default function PreviewPane({ previewUrl, ready, uploading, onRemove, file, note, setNote, onTime }) {
   return (
     <div
       className={`rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 min-h-[280px] flex items-center justify-center transition-all duration-700 ease-out will-change-transform transform ${
@@ -9,13 +11,7 @@ export default function PreviewPane({ previewUrl, ready, uploading, onRemove, fi
         <div className="text-slate-400 text-sm">No video selected</div>
       ) : (
         <div className="w-full h-full flex flex-col">
-          <div className="flex-1 flex items-center justify-center">
-            <video
-              className="max-h-64 w-full rounded-2xl ring-1 ring-white/10 object-contain"
-                src={previewUrl}
-                controls
-              />
-          </div>
+          <VideoWithSlider previewUrl={previewUrl} onTime={onTime} />
           {/* Show a small text input only when a video is present */}
           {previewUrl && file?.type?.startsWith("video/") && (
             <div className="mt-4">
@@ -32,26 +28,26 @@ export default function PreviewPane({ previewUrl, ready, uploading, onRemove, fi
           )}
           <div className="mt-4 flex items-center justify-between">
             <div className="text-xs text-slate-400 truncate">{file?.name}</div>
-            <button
-              type="button"
-              onClick={onRemove}
-              disabled={uploading}
-              className="inline-flex items-center gap-1 rounded-xl bg-white/5 px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <svg
-                viewBox="0 0 24 24"
-
-  
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onRemove}
+                disabled={uploading}
+                className="inline-flex items-center gap-1 rounded-xl bg-white/5 px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <path d="M6 6l12 12M18 6l-12 12" />
-              </svg>
-              Remove
-            </button>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <path d="M6 6l12 12M18 6l-12 12" />
+                </svg>
+                Remove
+              </button>
+            </div>
           </div>
         </div>
       )}

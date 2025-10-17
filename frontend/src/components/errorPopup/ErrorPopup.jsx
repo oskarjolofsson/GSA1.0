@@ -44,7 +44,7 @@ export default function ErrorPopup({ message, onClose }) {
             </div>
 
             <div className="flex-1">
-              <div className="text-sm font-semibold">Upload failed</div>
+              <div className="text-sm font-semibold">Error</div>
               <div className="mt-1 text-xs text-red-100 break-words">{message}</div>
             </div>
 
