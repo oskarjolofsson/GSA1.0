@@ -1,17 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
+const API = import.meta.env.VITE_API_URL;
 
 function formatTime(s, digits = 2) {
     if (!Number.isFinite(s)) return "0.00";
     return s.toFixed(digits);
 }
 
-export default function VideoWithStartEnd({ previewUrl }) {
+export default function VideoWithStartEnd({ previewUrl, onTime }) {
     const videoRef = useRef(null);
     const [duration, setDuration] = useState(0);
     const [current, setCurrent] = useState(0);
 
     const [start, setStart] = useState(0);
     const [end, setEnd] = useState(0);
+
+    useEffect(() => {
+        onTime(start, end);
+    } , [start, end]);
 
     useEffect(() => {
         const v = videoRef.current;
@@ -64,22 +69,20 @@ export default function VideoWithStartEnd({ previewUrl }) {
                     ref={videoRef}
                     className="max-h-64 w-full rounded-2xl ring-1 ring-white/10 object-contain"
                     src={previewUrl}
-                    controls
+                    controls               
                 />
             </div>
 
             {/* Readout */}
-            <div className="mt-3 grid grid-cols-3 text-xs text-white/80 tabular-nums">
+            <div className="flex justify-between text-xs text-white/80 tabular-nums mt-2">
                 <span>Start: {formatTime(start)}</span>
-                <span className="text-center">Now: {formatTime(current)}</span>
-                <span className="text-right">End: {formatTime(end || duration)}</span>
+                <span>End: {formatTime(end || duration)}</span>
             </div>
 
             {/* Start Slider (fixed range 0..duration) */}
             <div className="mt-4">
                 <div className="mb-1 flex justify-between text-[11px] text-white/70">
                     <span>Start</span>
-                    <span>{formatTime(start)}</span>
                 </div>
                 <input
                     type="range"
@@ -96,7 +99,6 @@ export default function VideoWithStartEnd({ previewUrl }) {
             <div className="mt-4">
                 <div className="mb-1 flex justify-between text-[11px] text-white/70">
                     <span>End</span>
-                    <span>{formatTime(end || duration)}</span>
                 </div>
                 <input
                     type="range"

@@ -42,15 +42,19 @@ class Analysis(ABC):
         return response
 
     
-    def get_response(self, video_FileStorage: FileStorage, prompt: str = ""):
+    def get_response(self, video_FileStorage: FileStorage, prompt: str = "", start_time: float = None, end_time: float = None):
         video_file = Video_file(video_FileStorage)
+
+        # Trim video if start and end times are provided
+        if start_time is not None and end_time is not None:
+            video_file.trim(start_time, end_time)
 
         q = VideoQuality(video_file)
         if not q.validate():
             raise ValueError("\n".join(q.issues()))
 
         # Format the prompt and get result
-        keyframes = video_file.keyframes(10)     # <-- Decide how many keyframes here
+        keyframes = video_file.keyframes(15)     # <-- Decide how many keyframes here
         image_ids = self.image_ids(keyframes=keyframes)
         content = self.format_content(image_ids, prompt=prompt)
         analysis = self.ai_analysis(content, system_instructions=self.system_instructions())
@@ -108,5 +112,5 @@ class GolfAnalysis(Analysis):
         return system_prompt
     
 # Single instance of main method of class
-def get_response(video_FileStorage: FileStorage, prompt: str = ""):
-    return GolfAnalysis().get_response(video_FileStorage, prompt)
+def get_response(video_FileStorage: FileStorage, prompt: str = "", start_time: float = None, end_time: float = None):
+    return GolfAnalysis().get_response(video_FileStorage, prompt, start_time, end_time)
