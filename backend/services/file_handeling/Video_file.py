@@ -208,8 +208,7 @@ class Video_file(File):
     def to_filestorage(self) -> FileStorage:
         """
         Convert the saved video file back into a Werkzeug FileStorage-like object
-        by reading bytes into an in-memory file. This allows sending the file
-        in Flask responses or further handling as if it were an uploaded file.
+        by reading bytes into an in-memory file. 
 
         Returns:
             FileStorage: in-memory FileStorage with filename and stream

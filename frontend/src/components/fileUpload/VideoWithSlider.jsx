@@ -111,7 +111,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
                 />
             </div>
 
-            {/* Optional visualization of selected window */}
+            {/* visualization of selected window */}
             <div className="relative mt-3 h-2 rounded-full bg-white/10">
                 <div
                     className="absolute top-0 h-2 rounded-full bg-white/30"
