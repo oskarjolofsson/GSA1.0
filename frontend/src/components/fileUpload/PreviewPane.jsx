@@ -29,20 +29,6 @@ export default function PreviewPane({ previewUrl, ready, uploading, onRemove, fi
           <div className="mt-4 flex items-center justify-between">
             <div className="text-xs text-slate-400 truncate">{file?.name}</div>
             <div className="flex items-center gap-2">
-              {file?.type?.startsWith("video/") && (
-                <button
-                  type="button"
-                  onClick={() => onEdit && onEdit()}
-                  disabled={uploading}
-                  className="inline-flex items-center gap-1 rounded-xl bg-white/5 px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-                  </svg>
-                  Edit
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={onRemove}
@@ -51,8 +37,6 @@ export default function PreviewPane({ previewUrl, ready, uploading, onRemove, fi
               >
                 <svg
                   viewBox="0 0 24 24"
-
-
                   className="h-4 w-4"
                   fill="none"
                   stroke="currentColor"
