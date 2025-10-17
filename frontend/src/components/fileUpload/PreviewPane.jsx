@@ -1,3 +1,5 @@
+import VideoWithSlider from "./VideoWithSlider";
+
 export default function PreviewPane({ previewUrl, ready, uploading, onRemove, file, note, setNote, onEdit }) {
   return (
     <div
@@ -9,13 +11,7 @@ export default function PreviewPane({ previewUrl, ready, uploading, onRemove, fi
         <div className="text-slate-400 text-sm">No video selected</div>
       ) : (
         <div className="w-full h-full flex flex-col">
-          <div className="flex-1 flex items-center justify-center">
-            <video
-              className="max-h-64 w-full rounded-2xl ring-1 ring-white/10 object-contain"
-                src={previewUrl}
-                controls
-              />
-          </div>
+          <VideoWithSlider previewUrl={previewUrl} />
           {/* Show a small text input only when a video is present */}
           {previewUrl && file?.type?.startsWith("video/") && (
             <div className="mt-4">
