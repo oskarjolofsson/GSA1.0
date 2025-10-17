@@ -10,6 +10,7 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.datastructures import Headers
 from io import BytesIO
 import subprocess
+import shutil
 
 class Video_file(File):
     def __init__(self, f: FileStorage):
@@ -134,21 +135,27 @@ class Video_file(File):
 
     def open_ai_ids(self, client: OpenAI) -> List[str]:
         return self.keyframes().open_ai_id(client)
+    
+    ## Video editing methods
 
-    def trim(self, start_seconds: float, end_seconds: float) -> 'Video_file':
+
+
+    def trim(self, start_seconds: float, end_seconds: float) -> "Video_file":
         """
-        Trim the saved video file between start_seconds and end_seconds.
-        This implementation uses ffmpeg via subprocess to create a new trimmed file
-        next to the original and updates this object's internal path to the new file.
+        Trim the video accurately between start_seconds and end_seconds.
+        Always re-encodes for guaranteed audio/video sync.
 
         Args:
             start_seconds (float): start time in seconds
             end_seconds (float): end time in seconds
 
         Returns:
-            Video_file: self (with updated path)
+            Video_file: self with updated internal path
         """
-        input_path = self.path()
+        # --- validate inputs ---
+        if shutil.which("ffmpeg") is None:
+            raise RuntimeError("ffmpeg not found on PATH")
+
         if start_seconds is None or end_seconds is None:
             raise ValueError("start and end must be provided for trim")
 
@@ -161,35 +168,40 @@ class Video_file(File):
         if end <= start:
             raise ValueError("end must be greater than start")
 
-        # create output filename
-        base, ext = os.path.splitext(os.path.basename(input_path))
-        out_name = f"{base}_trim_{int(start)}_{int(end)}{ext}"
-        out_folder = self.folder
-        os.makedirs(out_folder, exist_ok=True)
-        out_path = os.path.join(out_folder, out_name)
+        # --- setup paths ---
+        duration = end - start
+        input_path = self.path()
 
-        # ffmpeg command: -y overwrite, -ss start -to end -i input -c copy out
-        # using -ss and -to before/after input can affect accuracy; use -ss before input and -to with -accurate_seek
+        base, ext = os.path.splitext(os.path.basename(input_path))
+        out_name = f"{base}_trim_{int(start)}_{int(end)}{ext or '.mp4'}"
+        os.makedirs(self.folder, exist_ok=True)
+        out_path = os.path.join(self.folder, out_name)
+
+        # --- ffmpeg command (re-encode for sync) ---
         cmd = [
-            "ffmpeg",
-            "-y",
-            "-i", input_path,
+            "ffmpeg", "-hide_banner", "-y",
             "-ss", str(start),
-            "-to", str(end),
-            "-c", "copy",
+            "-i", input_path,
+            "-t", str(duration),
+            "-fflags", "+genpts",            # regenerate timestamps
+            "-c:v", "libx264",
+            "-preset", "veryfast",
+            "-crf", "20",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac", "-b:a", "192k",
+            "-movflags", "+faststart",
             out_path,
         ]
 
-        try:
-            # run ffmpeg and capture output for debugging
-            subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"ffmpeg trimming failed: {e.stderr.decode('utf-8', errors='ignore')}")
+        # --- run ffmpeg ---
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"ffmpeg trimming failed: {result.stderr.decode('utf-8', errors='ignore')}"
+            )
 
-        # remove original file
+        # --- replace original with trimmed version ---
         self.remove()
-
-        # update internal path to trimmed file
         self._path = out_path
         return self
 
