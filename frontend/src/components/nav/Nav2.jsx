@@ -34,7 +34,7 @@ function desktopNav(navItems) {
 
 import SignInPopup from '../signInPopup/signInPopup.jsx';
 
-function Account({ mobile = false }) {
+function SignIn({ mobile = false }) {
   const { login, loading, user } = useAuth();
   const [showPopup, setShowPopup] = useState(false);
 
@@ -111,7 +111,7 @@ function mobilePanel(open, navItems) {
           <li>
             {/* Use the account method for mobile */}
             <div className="mt-1 w-full flex items-center justify-center">
-              <Account mobile />
+              <SignIn mobile />
             </div>
           </li>
         </ul>
@@ -120,33 +120,12 @@ function mobilePanel(open, navItems) {
   );
 }
 
-function Settings() {
-  const { user } = useAuth();
-  if (user) {
-    return (
-    <a
-      href="/settings"
-      className="inline-flex items-center justify-center rounded-xl p-2 focus:outline-none cursor-pointer hover:bg-white/10 hover:ring-1 hover:ring-white/10 transition"
-      aria-label="Settings"
-    >
-      <img
-        src="/icons/settings.svg"
-        alt="Settings"
-        className="h-5 w-5 transition-transform duration-300 hover:rotate-[30deg]"
-      />
-    </a>
-    );
-  } else {
-    return null;
-  }
-
-}
 
 export default function NavBar() {
   const [open, setOpen] = useState(false);
 
   const navItems = [
-    { name: 'Products', href: '/products' },
+    //{ name: 'Home', href: '/' },
   ];
 
   return (
@@ -156,11 +135,12 @@ export default function NavBar() {
           <nav className="flex items-center justify-start gap-4 px-4 py-2 text-slate-100">
             {leftLogo()}
             {desktopNav(navItems)}
-            <Account />
-            {/* <Settings /> */}
+            <SignIn />
             <ProfileDropdown />
+            {navItems.length > 0 &&
+              mobileMenuButton(open, setOpen)
+            }
 
-            {mobileMenuButton(open, setOpen)}
           </nav>
           {mobilePanel(open, navItems)}
         </div>
