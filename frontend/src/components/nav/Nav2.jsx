@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../../auth/authContext';
 
+// Components and icons
+import ProfileDropdown from './DropDown.jsx';
+
 function leftLogo() {
   return (
     <a href="/" className="flex items-center gap-2 shrink-0">
@@ -154,7 +157,8 @@ export default function NavBar() {
             {leftLogo()}
             {desktopNav(navItems)}
             <Account />
-            <Settings />
+            {/* <Settings /> */}
+            <ProfileDropdown />
 
             {mobileMenuButton(open, setOpen)}
           </nav>
