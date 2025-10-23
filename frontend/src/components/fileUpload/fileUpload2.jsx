@@ -4,7 +4,7 @@ const API = import.meta.env.VITE_API_URL;
 // Components
 import DropZone from "./DropZone.jsx";
 import PreviewPane from "./preview/PreviewPane.jsx";
-import ResultBox from "../result-box/result-box.jsx";
+import ResultBox from "./result-box.jsx";
 import ErrorPopup from "../errorPopup/ErrorPopup.jsx";
 import tokenService from "../../services/tokenService.js";
 import UploadButtonZone from "./UploadButtonZone.jsx";

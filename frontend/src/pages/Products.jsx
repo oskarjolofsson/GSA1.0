@@ -1,5 +1,5 @@
 import Textbox from '../components/textBox/textBox.jsx';
-import PriceBox from '../components/price/pricebox.jsx';
+import PriceBox from '../components/home-page/pricebox.jsx';
 
 export default function Products() {
     return (
