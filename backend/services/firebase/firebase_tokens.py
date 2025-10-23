@@ -10,53 +10,12 @@ from functools import wraps
 from flask import request, jsonify
 from datetime import datetime
 from google.api_core.exceptions import AlreadyExists
+from services.firebase.firebase import FireBaseService;
 
-class FirebaseService:
+class FirebaseService(FireBaseService):
     def __init__(self):
-        """Initialize Firebase Admin SDK"""
-        self.db = None
-        self.initialize_firebase()
+        super().__init__()
     
-    def initialize_firebase(self):
-        """Initialize Firebase Admin SDK with service account credentials"""
-        try:
-            # Check if Firebase Admin is already initialized
-            if not firebase_admin._apps:
-                # Option 1: Using service account JSON file (recommended for production)
-                # Uncomment and use this if you have a service account key file
-                # cred = credentials.Certificate('path/to/serviceAccountKey.json')
-                
-                # Option 2: Using environment variables
-                # You'll need to set these in your .env file
-                firebase_config = {
-                    "type": "service_account",
-                    "project_id": os.getenv("FLASK_FIREBASE_PROJECT_ID"),
-                    "private_key_id": os.getenv("FLASK_FIREBASE_PRIVATE_KEY_ID"),
-                    "private_key": os.getenv("FLASK_FIREBASE_PRIVATE_KEY", "").replace('\\n', '\n'),
-                    "client_email": os.getenv("FLASK_FIREBASE_CLIENT_EMAIL"),
-                    "client_id": os.getenv("FLASK_FIREBASE_CLIENT_ID"),
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token",
-                    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-                    "client_x509_cert_url": os.getenv("FLASK_FIREBASE_CLIENT_CERT_URL")
-                }
-                
-                # Only initialize if we have the necessary environment variables
-                if firebase_config["project_id"] and firebase_config["client_email"]:
-                    cred = credentials.Certificate(firebase_config)
-                    firebase_admin.initialize_app(cred)
-                else:
-                    # Option 3: Use default credentials (for Google Cloud environments)
-                    firebase_admin.initialize_app()
-            
-            # Get Firestore client
-            self.db = firestore.client()
-            
-        except Exception as e:
-            print(f"Error initializing Firebase Admin SDK: {e}")
-            # Continue without Firebase if initialization fails
-            # This allows the app to run even if Firebase is not configured
-            self.db = None
     
     def verify_token(self, id_token):
         """
