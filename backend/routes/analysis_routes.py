@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from services.firebase.firebase_auth import require_auth
 import traceback
+from firebase_admin import auth as firebase_auth
 
 from services.analy.analyser import Analysis
 from services.firebase.firebase_past_analysis import FireBasePastAnalysis
@@ -45,10 +46,22 @@ def golf():
         }), 500
 
 
-@analysis_bp.route('/get_previous_drills', methods=['POST'])
+@analysis_bp.route('/get_previous_drills', methods=['GET', 'POST'])
 def get_golf_drills():
     try:
-        user_id = request.form.get('user_id')
+        # Get the token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'No authorization token provided'}), 401
+        
+        # Extract the token (remove 'Bearer ' prefix)
+        id_token = auth_header.split('Bearer ')[1]
+        
+        # Verify the token with Firebase Admin SDK
+        decoded_token = firebase_auth.verify_id_token(id_token)
+        
+        # Extract user_id from the decoded token
+        user_id = decoded_token['uid']
         sport = request.form.get('sport', 'golf')
         drills = FireBasePastAnalysis(user_id, sport).get_drills()
         return jsonify({'drills': drills}), 200
