@@ -58,4 +58,8 @@ class Analysis():
                                                   start_time=start_time, 
                                                   end_time=end_time, 
                                                   user_id=user_id)
+        
+        # Store drills in firestore
+        FireBasePastAnalysis(user_id).log_past_drills([return_dict])
+        
         return return_dict
