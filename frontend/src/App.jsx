@@ -12,6 +12,7 @@ import Products from './pages/Products.jsx';
 import Analyser from './pages/AnalyserPage.jsx';
 import Settings from "./pages/Settings.jsx";
 import Profile from "./pages/Profile.jsx";
+import PastDrills from "./pages/PastDrills.jsx";
 
 // Import components
 import Layout from './components/layout.jsx';
@@ -45,6 +46,7 @@ function App() {
           <Route path="/analyse" element={<Analyser />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/past-drills" element={<PastDrills />} />
         </Route>
 
         {/* 404 */}
