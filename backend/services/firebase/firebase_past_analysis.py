@@ -1,39 +1,36 @@
-
-
 from services.firebase.firebase import FireBaseService
-
+from firebase_admin import firestore
 
 class FireBasePastAnalysis(FireBaseService):
-    def __init__(self, user_id: str):
+    def __init__(self, user_id: str, sport: str):
         super().__init__(user_id=user_id)
+        self.sport = sport
+        self.doc_ref = (self.db.
+                        collection('users').
+                        document(user_id).
+                        collection('past_analysis').
+                        document(sport).
+                        collection('drills'))
 
-    def log_past_drills(self, drill_data: list[str]) -> None:
-        """
-        Log past drill data for a user
-        Args:
-            drill_data: A list of drill data to log, String
-        Returns:
-            None
-        """
-        if not self.db:
-            raise Exception("Firestore not initialized")
-    
-        analysis_ref = self.db.collection('users').document(self.user_id).collection('past_drills')
-        for drill in drill_data:
-            analysis_ref.add(drill)
-
-    def get_past_drills(self) -> list[dict]:
-        """
-        Retrieve past drills for a user
+    def add_drills(self, drills: list[str]):
+        col = self.doc_ref
+        batch = self.db.batch()
+        for text in drills:
+            ref = col.document()
+            batch.set(ref, {
+                "content": text,
+                "sport": self.sport,
+                "createdAt": firestore.SERVER_TIMESTAMP,
+                "updatedAt": firestore.SERVER_TIMESTAMP,
+                "editedBy": self.user_id,
+            })
+        batch.commit()
         
-        Args:
-            user_id: The Firebase user ID
+    def update_drill(self, drill_id: str, data: dict):
+        ref = self.doc_ref.document(drill_id)
+        data["updatedAt"] = firestore.SERVER_TIMESTAMP
+        ref.set(data, merge=True)
 
-        Returns:
-            list: A list of past drill documents or an empty list if none found
-        """
-        if not self.db:
-            raise Exception("Firestore not initialized")
-
-        analysis_ref = self.db.collection('users').document(self.user_id).collection('past_drills')
-        return [doc.to_dict() for doc in analysis_ref.stream()] or []
+    def get_drills(self) -> list[dict]:
+        col = self.doc_ref
+        return [d.to_dict() | {"id": d.id} for d in col.order_by("createdAt", direction=firestore.Query.DESCENDING).stream()]

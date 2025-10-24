@@ -3,87 +3,54 @@ Firebase Admin SDK Service
 Handles Firebase authentication verification and Firestore operations for token management
 """
 
-from firebase_admin import auth, firestore
-from datetime import datetime
+from firebase_admin import firestore
 from services.firebase.firebase import FireBaseService;
 
 class FireBaseTokens(FireBaseService):
     def __init__(self, user_id):
         super().__init__(user_id)
         
-        self.tokens_ref = self.db.collection('users').document(user_id).collection('tokens').document('init')
-
-    def get_user_tokens(self):
-        user_ref = self.db.collection('users').document(self.user_id)
-        user_doc = user_ref.get()
+        self.tokens_ref = self.db.collection('users').document(user_id).collection('tokens').document('token_balance')
+        self.initialize_user_tokens()
         
-        if user_doc.exists:
-            return user_doc.to_dict().get('tokens', 0)
-        else:
-            # Initialize user with 3 tokens if they don't exist
-            self.initialize_user_tokens(self.user_id)
-            return 3
-    
-    def initialize_user_tokens(self):
-        tokens_ref = self.db.collection('users').document(self.user_id).collection('tokens').document('init')
-        doc = tokens_ref.get()
+    def get_user_tokens(self):
+        snap = self.tokens_ref.get()
+        return (snap.to_dict() or {}).get('tokens', 0)
 
-        if not doc.exists:
-            tokens_ref.set({
+    def initialize_user_tokens(self):
+        if not self.tokens_ref.get().exists:
+            self.tokens_ref.set({
                 'tokens': 3,
-                'createdAt': datetime.now().isoformat(),
-                'lastUpdated': datetime.now().isoformat()
+                'createdAt': firestore.SERVER_TIMESTAMP,
+                'lastUpdated': firestore.SERVER_TIMESTAMP
             })
 
     def spend_tokens(self, amount=1):
-        user_ref = self.db.collection('users').document(self.user_id)
-        # Use a transaction to ensure atomicity
-        transaction = self.db.transaction()
-        
+        assert amount > 0
+        tx = self.db.transaction()
+
         @firestore.transactional
-        def update_in_transaction(transaction, user_ref, amount):
-            snapshot = user_ref.get(transaction=transaction)
+        def run(tx):
+            snap = self.tokens_ref.get(transaction=tx)
             
-            if not snapshot.exists:
-                # Initialize user if they don't exist
-                transaction.set(user_ref, {
-                    'tokens': 3,
-                    'createdAt': datetime.now().isoformat(),
-                    'lastUpdated': datetime.now().isoformat()
-                })
-                current_tokens = 3
-            else:
-                current_tokens = snapshot.to_dict().get('tokens', 0)
-            
-            # Check if user has enough tokens
-            if current_tokens < amount:
-                return False, current_tokens, "Insufficient tokens"
-            
-            # Update the token count
-            new_token_count = current_tokens - amount
-            transaction.update(user_ref, {
-                'tokens': new_token_count,
-                'lastUpdated': datetime.now().isoformat()
+            data = snap.to_dict() or {'tokens': 3}
+            cur = int(data.get('tokens', 0))
+            if cur < amount:
+                return False, cur, "Insufficient tokens"
+            tx.update(self.tokens_ref, {
+                'tokens': cur - amount,
+                'lastUpdated': firestore.SERVER_TIMESTAMP
             })
-            
-            return True, new_token_count, "Tokens spent successfully"
-        
-        return update_in_transaction(transaction, user_ref, amount)
-            
+            return True, cur - amount, "OK"
+
+        return run(tx)
 
     def add_tokens(self, amount):
-        user_ref = self.db.collection('users').document(self.user_id)
-        user_doc = user_ref.get()
+        assert amount > 0
+        # atomic increment (creates doc if merge=True + missing)
         
-        if user_doc.exists:
-            current_tokens = user_doc.to_dict().get('tokens', 0)
-            new_tokens = current_tokens + amount
-        else:
-            new_tokens = 3 + amount  # Start with 3 tokens plus the added amount
-        
-        user_ref.set({
-            'tokens': new_tokens,
-            'lastUpdated': datetime.now().isoformat()
+        self.tokens_ref.set({
+            'tokens': firestore.Increment(amount),
+            'lastUpdated': firestore.SERVER_TIMESTAMP
         }, merge=True)
-        
-        return new_tokens
+        return self.get_user_tokens()
