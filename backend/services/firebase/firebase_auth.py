@@ -12,8 +12,8 @@ from flask import request, jsonify
 from services.firebase.firebase import FireBaseService
 
 class FirebaseAuthService(FireBaseService):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, user_id=None):
+        super().__init__(user_id=user_id)
 
     def verify_token(self, id_token):
         """Verify a Firebase ID token; return decoded token dict or None."""
@@ -40,6 +40,7 @@ class FirebaseAuthService(FireBaseService):
             request.user = decoded_token  # attach user info to request
             return f(*args, **kwargs)
         return decorated_function
+    
 
 # Prefer lazy singleton to avoid import-time side effects
 _auth_service = None
