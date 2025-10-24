@@ -119,25 +119,25 @@ export default function UploadPage() {
 
     // Before uploading, verify user has tokens and spend one atomically
     const idempotencyKey = uuidv4();
-    try {
-      const resp = await tokenService.verifyAndSpend(1, 'analysis_upload', idempotencyKey);
-      if (!resp || !resp.success) {
-        const msg = resp?.error || resp?.message || 'Insufficient tokens';
-        setErrorMessage(msg);
-        setUploading(false);
-        return;
-      }
-      // Update local tokenCount from response if provided
-      if (resp.transaction?.remaining_balance !== undefined) {
-        setTokenCount(resp.transaction.remaining_balance);
-      } else if (resp.remaining_tokens !== undefined) {
-        setTokenCount(resp.remaining_tokens);
-      }
-    } catch (err) {
-      setErrorMessage(err.message || 'Token verification failed');
-      setUploading(false);
-      return;
-    }
+    // try {
+    //   const resp = await tokenService.verifyAndSpend(1, 'analysis_upload', idempotencyKey);
+    //   if (!resp || !resp.success) {
+    //     const msg = resp?.error || resp?.message || 'Insufficient tokens';
+    //     setErrorMessage(msg);
+    //     setUploading(false);
+    //     return;
+    //   }
+    //   // Update local tokenCount from response if provided
+    //   if (resp.transaction?.remaining_balance !== undefined) {
+    //     setTokenCount(resp.transaction.remaining_balance);
+    //   } else if (resp.remaining_tokens !== undefined) {
+    //     setTokenCount(resp.remaining_tokens);
+    //   }
+    // } catch (err) {
+    //   setErrorMessage(err.message || 'Token verification failed');
+    //   setUploading(false);
+    //   return;
+    // }
 
     const form = new FormData();
     form.append("video", file);
@@ -147,6 +147,10 @@ export default function UploadPage() {
     }
     form.append("start_time", String(startTime));
     form.append("end_time", String(endTime));
+
+    // Get user_id from tokenService (adjust this line to your actual implementation)
+    const userId = tokenService.getUserId(); // Make sure this returns the user ID
+    form.append("user_id", userId);
 
     try {
       const res = await fetch(API + "/api/v1/analysis/upload_video", {
@@ -167,6 +171,14 @@ export default function UploadPage() {
         // surface error to the user via popup
         setErrorMessage(backendMessage);
         throw new Error(backendMessage);
+      }
+
+      // Update the token count after successful upload
+      try {
+        const updatedCount = await tokenService.getBalance();
+        setTokenCount(updatedCount);
+      } catch (e) {
+        console.error('Error updating token balance after upload:', e);
       }
 
       <div className="mt-8 flex items-center justify-center gap-4">
