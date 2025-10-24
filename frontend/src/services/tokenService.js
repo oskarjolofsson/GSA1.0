@@ -80,6 +80,11 @@ class TokenService {
     const json = await this._fetch('verify-and-spend', body);
     return json;
   }
+
+  getUserId() {
+    const user = auth.currentUser;
+    return user ? user.uid : null;
+  }
 }
 
 export default new TokenService();
