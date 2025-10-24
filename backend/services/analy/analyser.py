@@ -6,6 +6,7 @@ from services.firebase.firebase_tokens import FireBaseTokens
 # Import models and sports analyses
 from services.analy.Models.OpenAI.gpt5 import Gpt5AnalysisService
 from services.analy.Sports.golfInstructions import GolfAnalysis
+from services.firebase.firebase_past_analysis import FireBasePastAnalysis
 
 # Factory
 models = {
@@ -59,7 +60,7 @@ class Analysis():
                                                   end_time=end_time, 
                                                   user_id=user_id)
         
-        # Store drills in firestore
-        FireBasePastAnalysis(user_id).log_past_drills([return_dict])
+        # Log past drills
+        FireBasePastAnalysis(user_id, sport_name).add_drills(return_dict["drills"])
         
         return return_dict
