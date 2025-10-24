@@ -1,19 +1,26 @@
 import os
 import firebase_admin
 from firebase_admin import credentials, firestore
+import traceback
+from dotenv import load_dotenv
 
 class FireBaseService:
-    def __init__(self):
+    def __init__(self, user_id):
         self._initialized = False
         self.db = None
         self.initialize_firebase()
+        
+        if not self.db:
+            raise Exception("Firestore not initialized")
+        
+        self.user_id = user_id
 
     def initialize_firebase(self):
-        """Initialize Firebase Admin SDK with service account credentials"""
         if self._initialized:
             return
         try:
             if not firebase_admin._apps:
+                load_dotenv()
                 firebase_config = {
                     "type": "service_account",
                     "project_id": os.getenv("FLASK_FIREBASE_PROJECT_ID"),
@@ -37,4 +44,5 @@ class FireBaseService:
             self._initialized = True
         except Exception as e:
             print(f"Error initializing Firebase Admin SDK (auth): {e}")
+            traceback.print_exc()
             self._initialized = False

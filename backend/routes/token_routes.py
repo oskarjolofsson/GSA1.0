@@ -4,7 +4,7 @@ API endpoints for managing user tokens
 """
 
 from flask import Blueprint, request, jsonify
-from services.firebase.firebase_tokens import firebase_service
+from services.firebase.firebase_tokens import FireBaseTokens
 from services.firebase.firebase_auth import require_auth
 
 
@@ -22,7 +22,7 @@ def get_token_balance():
     """
     try:
         user_id = request.user['uid']
-        token_count = firebase_service.get_user_tokens(user_id)
+        token_count = FireBaseTokens(user_id).get_user_tokens()
         
         return jsonify({
             'success': True,
@@ -61,7 +61,7 @@ def spend_tokens():
             }), 400
         
         # Spend the tokens
-        success, remaining_tokens, message = firebase_service.spend_tokens(user_id, amount)
+        success, remaining_tokens, message = FireBaseTokens(user_id).spend_tokens(amount)
         
         if success:
             return jsonify({
@@ -109,7 +109,7 @@ def add_tokens():
             }), 400
         
         # Add the tokens
-        new_balance = firebase_service.add_tokens(user_id, amount)
+        new_balance = FireBaseTokens(user_id).add_tokens(amount)
         
         return jsonify({
             'success': True,
@@ -135,7 +135,7 @@ def initialize_user_tokens():
     """
     try:
         user_id = request.user['uid']
-        firebase_service.initialize_user_tokens(user_id)
+        FireBaseTokens(user_id).initialize_user_tokens()
         
         return jsonify({
             'success': True,
@@ -177,8 +177,8 @@ def verify_and_spend_tokens():
             }), 400
         
         # Check current balance first
-        current_balance = firebase_service.get_user_tokens(user_id)
-        
+        current_balance = FireBaseTokens(user_id).get_user_tokens()
+
         if current_balance < amount:
             return jsonify({
                 'success': False,
@@ -188,7 +188,7 @@ def verify_and_spend_tokens():
             }), 402  # Payment Required
         
         # Spend the tokens
-        success, remaining_tokens, message = firebase_service.spend_tokens(user_id, amount)
+        success, remaining_tokens, message = FireBaseTokens(user_id).spend_tokens(amount)
         
         if success:
             return jsonify({

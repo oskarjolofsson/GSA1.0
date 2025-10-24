@@ -44,10 +44,6 @@ app = create_app()
 
 @app.route('/')
 def health_check():
-    """
-    Basic health check endpoint
-    """
-    print("health check")
     return {
         'message': 'hello world'
     }
@@ -55,9 +51,6 @@ def health_check():
 
 @app.errorhandler(404)
 def not_found(error):
-    """
-    Handle 404 errors
-    """
     return {
         'error': 'Not Found',
         'message': 'The requested endpoint does not exist'
@@ -65,9 +58,6 @@ def not_found(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    """
-    Handle 500 errors
-    """
     return {
         'error': 'Internal Server Error',
         'message': 'An unexpected error occurred'
