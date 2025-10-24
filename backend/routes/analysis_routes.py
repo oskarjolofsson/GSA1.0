@@ -3,6 +3,7 @@ from services.firebase.firebase_auth import require_auth
 import traceback
 
 from services.analy.analyser import Analysis
+from services.firebase.firebase_past_analysis import FireBasePastAnalysis
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint('analysis', __name__, url_prefix='/api/v1/analysis')
@@ -40,5 +41,24 @@ def golf():
         return jsonify({
             'success': False,
             'error': "error with analysis",
+            'details': str(e)
+        }), 500
+
+
+@analysis_bp.route('/get_previous_drills', methods=['POST'])
+def get_golf_drills():
+    try:
+        user_id = request.form.get('user_id')
+        sport = request.form.get('sport', 'golf')
+        drills = FireBasePastAnalysis(user_id, sport).get_drills()
+        return jsonify({'drills': drills}), 200
+
+    except Exception as e:
+        traceback.print_exc()
+        print(f"Error retrieving previous drills: {str(e)}")
+
+        return jsonify({
+            'success': False,
+            'error': "error with retrieving previous drills",
             'details': str(e)
         }), 500
