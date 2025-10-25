@@ -20,59 +20,39 @@ export default function InfoBox({ title, summary, drills = [], observations = []
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-white mb-2">Drills</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {drills.map((item, idx) => (
-                <div key={idx} className="col-span-1 bg-white/5 rounded-2xl border border-white/10 p-4">
-                  <p className="text-slate-300">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+              {drills.map((drill, idx) => {
+                const isObj = drill && typeof drill === 'object';
+                const drillTitle = isObj
+                  ? (drill['drill-title'] ?? drill.title ?? `Drill ${idx + 1}`)
+                  : `Drill ${idx + 1}`;
+                const drillDescription = isObj
+                  ? (drill['drill-description'] ?? drill.description ?? '')
+                  : String(drill);
 
-        {/* {Array.isArray(observations) && observations.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold text-white mb-2">Observations</h3>
-            <ul className="list-disc list-inside space-y-1 text-slate-300">
-              {observations.map((item, idx) => (
-                <li key={idx}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        )} */}
-
-        {phase_notes && typeof phase_notes === 'object' && Object.keys(phase_notes).length > 0 && (
-          <div className="mb-2">
-            <h3 className="text-xl font-semibold text-white mb-2">Phase Notes</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {['setup', 'backswing', 'transition', 'impact', 'finish'].map((key) => (
-                phase_notes[key] ? (
-                  <div key={key} className="col-span-1 bg-white/5 rounded-2xl border border-white/10 p-4">
-                    <h4 className="text-lg font-semibold capitalize text-white mb-2">{key}</h4>
-                    {Array.isArray(phase_notes[key]) ? (
-                      <ul className="list-disc list-inside space-y-1 text-slate-300">
-                        {phase_notes[key].map((item, idx) => (
-                          <li key={idx}>{item}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-slate-300">{String(phase_notes[key])}</p>
-                    )}
+                return (
+                  <div key={idx} className="col-span-1 bg-white/5 rounded-2xl border border-white/10 p-4">
+                    <h4 className="text-lg font-semibold text-white mb-2">{drillTitle}</h4>
+                    {drillDescription && <p className="text-slate-300">{drillDescription}</p>}
                   </div>
-                ) : null
-              ))}
-            </div>
-          </div>
-        )}
+                );
+                })}
+              </div>
+              </div>
+            )}
 
-        {image && (
-          <div className="mt-4">
-            <img
-              src={image}
-              alt={title || "Info image"}
-              className="rounded-2xl border border-white/10 max-h-80 w-auto object-contain"
-            />
-          </div>
-        )}
+            {observations && typeof observations === 'object' && !Array.isArray(observations) && Object.keys(observations).length > 0 && (
+              <div className="mb-6">
+              <h3 className="text-xl font-semibold text-white mb-2">Observations</h3>
+              <div className="flex flex-col gap-4">
+                {Object.entries(observations).map(([key, value]) => (
+                <div key={key} className="bg-white/5 rounded-2xl border border-white/10 p-4">
+
+                  <p className="text-slate-300">{String(value)}</p>
+                </div>
+                ))}
+              </div>
+              </div>
+            )}
       </div>
     </section>
   );
