@@ -20,20 +20,25 @@ export default function DrillDropdown({ header, text, date }) {
 
   return (
     <div className={`rounded-2xl bg-white/5 border border-white/10`}>
-      {HeaderButton(open, setOpenAdapter, active, item, 0)}
+      {HeaderButton(open, setOpenAdapter, active, item, 0, date)}
       {Text(active, item)}
     </div>
   );
 }
 
-function HeaderButton(open, setOpen, active, item, i) {
+function HeaderButton(open, setOpen, active, item, i, date  = null) {
   return (
     <button
       className="w-full flex items-center justify-between gap-4 text-left px-5 py-4 text-white/90 hover:bg-white/7 rounded-2xl"
       onClick={() => setOpen(active ? -1 : i)}
       aria-expanded={active}
     >
-      <span className="text-base sm:text-lg font-semibold">{item.q}</span>
+      <span className="flex items-center gap-2 min-w-0">
+        <span className="text-base sm:text-lg font-semibold truncate">{item.q}</span>
+        {date ? (
+          <span className="text-xs sm:text-sm text-white/60 whitespace-nowrap">{date}</span>
+        ) : null}
+      </span>
       <span
         className={`grid h-7 w-7 place-items-center rounded-full ring-1 ring-white/10 transition-colors ${
           active ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-white/70"
