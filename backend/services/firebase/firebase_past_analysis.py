@@ -12,13 +12,15 @@ class FireBasePastAnalysis(FireBaseService):
                         document(sport).
                         collection('drills'))
 
-    def add_drills(self, drills: list[str]):
+    def add_drills(self, drills: list[dict[str, str]]):
         col = self.doc_ref
         batch = self.db.batch()
-        for text in drills:
+        for drill in drills:
             ref = col.document()
             batch.set(ref, {
-                "content": text,
+                "title": drill.get("drill-title", ""),
+                "content": drill.get("drill-description", ""),
+                "youtubeLink": drill.get("drill-youtube-video-link", ""),
                 "sport": self.sport,
                 "createdAt": firestore.SERVER_TIMESTAMP,
                 "updatedAt": firestore.SERVER_TIMESTAMP,

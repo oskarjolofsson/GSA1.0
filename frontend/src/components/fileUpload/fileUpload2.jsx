@@ -23,11 +23,9 @@ function AnalysisResult({ analysis }) {
   if (!analysis) return null;
   return (
     <ResultBox
-      title="Analysis Result"
-      summary={analysis?.summary}
+      title="Analysis Results"
       drills={analysis?.drills}
       observations={analysis?.observations}
-      phase_notes={analysis?.phase_notes}
     />
   );
 }
@@ -108,7 +106,6 @@ export default function UploadPage() {
     setNote("");
   }
 
-
   async function onUpload() {
     if (!file) return; // Exit if no file is selected
     if (uploading) return;
@@ -116,28 +113,6 @@ export default function UploadPage() {
     // Clear any previous error before starting a new upload
     setErrorMessage("");
     setUploading(true);
-
-    // Before uploading, verify user has tokens and spend one atomically
-    const idempotencyKey = uuidv4();
-    // try {
-    //   const resp = await tokenService.verifyAndSpend(1, 'analysis_upload', idempotencyKey);
-    //   if (!resp || !resp.success) {
-    //     const msg = resp?.error || resp?.message || 'Insufficient tokens';
-    //     setErrorMessage(msg);
-    //     setUploading(false);
-    //     return;
-    //   }
-    //   // Update local tokenCount from response if provided
-    //   if (resp.transaction?.remaining_balance !== undefined) {
-    //     setTokenCount(resp.transaction.remaining_balance);
-    //   } else if (resp.remaining_tokens !== undefined) {
-    //     setTokenCount(resp.remaining_tokens);
-    //   }
-    // } catch (err) {
-    //   setErrorMessage(err.message || 'Token verification failed');
-    //   setUploading(false);
-    //   return;
-    // }
 
     const form = new FormData();
     form.append("video", file);
@@ -202,12 +177,10 @@ export default function UploadPage() {
       </div>
       const data = await res.json();
 
-      const summary = data.analysis_results?.summary ?? "Could not be found";
       const drills = data.analysis_results?.drills ?? [];
-      const observations = data.analysis_results?.observations ?? [];
-      const phase_notes = data.analysis_results?.phase_notes ?? {};
+      const observations = data.analysis_results?.observations ?? {};
 
-      setAnalysis({ summary, drills, observations, phase_notes });
+      setAnalysis({ drills, observations });
     } catch (err) {
       setAnalysis(null);
       // err.message already set in setErrorMessage above for known backend responses,
