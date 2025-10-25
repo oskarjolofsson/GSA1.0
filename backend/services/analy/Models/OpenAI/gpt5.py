@@ -45,7 +45,7 @@ class Gpt5AnalysisService(Model):
     
     def analyze(self, video_file: Video_file, prompt: str = ""):
         # Format the prompt and get result
-        keyframes = video_file.keyframes(1)     # <-- Decide how many keyframes here
+        keyframes = video_file.keyframes(15)     # <-- Decide how many keyframes here
         image_ids = self.image_ids(keyframes=keyframes)
         content = self.format_content(image_ids, prompt=prompt)
         analysis = self.ai_analysis(content, 
