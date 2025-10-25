@@ -44,7 +44,7 @@ function App() {
         {/* Protected */}
         <Route element={<RequireAuth />}>
           <Route path="/analyse" element={<Analyser />} />
-          <Route path="/settings" element={<Settings />} />
+          {/* <Route path="/settings" element={<Settings />} /> */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/past-drills" element={<PastDrills />} />
         </Route>

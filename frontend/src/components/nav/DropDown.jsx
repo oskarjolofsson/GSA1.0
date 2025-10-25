@@ -1,4 +1,4 @@
-import { User, Settings, Clock } from "lucide-react";
+import { User, Settings, Clock, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from '../../auth/authContext';
 
@@ -7,7 +7,7 @@ export default function ProfileDropdown() {
     const btnRef = useRef(null);
     const menuRef = useRef(null);
     const rootRef = useRef(null);
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
 
     // Close on outside click
     useEffect(() => {
@@ -66,8 +66,8 @@ export default function ProfileDropdown() {
                 <div className="my-1 h-px bg-gray-200" />
 
                 <MenuItem name="My Profile" href="/profile" icon={<User className="h-4 w-4" />} />
-                <MenuItem name="Settings" href="/settings" icon={<Settings className="h-4 w-4" />} />
                 <MenuItem name="Past Drills" href="/past-drills" icon={<Clock className="h-4 w-4" />} />
+                {/* <MenuItem name="Sign Out" onClick={logout} icon={<LogOut className="h-4 w-4" />} /> */}
             </div>
         </div>
     );
@@ -90,9 +90,9 @@ function ProfileIcon({ url }) {
 }
 
 
-function MenuItem({ name, href, icon }) {
+function MenuItem({ name, href, icon, onClick }) {
     return (
-        <a href={href} role="menuitem" tabIndex={0} className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-gray-50 opacity-90 hover:opacity-100 transition">
+        <a href={href} role="menuitem" tabIndex={0} className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-gray-50 opacity-90 hover:opacity-100 transition" onClick={onClick}>
             {icon}
             {name}
         </a>
