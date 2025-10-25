@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import DrillDropdown from "../components/drillDropdown/drillDropdown";
 import PastDrillService from "../services/pastDrillService";
 
@@ -31,7 +31,8 @@ export default function PastDrills() {
                     {drills.map((d) => (
                         <DrillDropdown
                             key={d.id}
-                            header={d.createdAt}
+                            header={d['title'] || d.createdAt}
+                            date={d.createdAt}
                             text={d.content}
                         />
                     ))}

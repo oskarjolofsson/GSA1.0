@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export default function DrillDropdown({ header, text }) {
+export default function DrillDropdown({ header, text, date }) {
   // we'll treat "open" as boolean here
   const [open, setOpen] = useState(false);
   const [revealed, setRevealed] = useState(false);
