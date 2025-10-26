@@ -5,7 +5,7 @@ This is the entry point for the Flask application that provides API endpoints
 for analyzing golf swing videos using AI/ChatGPT integration.
 """
 
-from flask import Flask, jsonify
+from flask import Flask, app, jsonify
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
@@ -25,10 +25,18 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
     app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+
+    FRONTENDS = [os.getenv("VITE_API_URL"), os.getenv("VITE_API_URL2")]
+    FRONTENDS = [o for o in FRONTENDS if o]  # expect ["https://trueswing.se"]
+
+    CORS(
+        app,
+        origins=FRONTENDS,                   # exact origins
+        methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+        allow_headers=["Content-Type","Authorization"],
+    )
     
-    allowed = [os.getenv("VITE_API_URL"), os.getenv("VITE_API_URL2")]
-    allowed = [o for o in allowed if o]
-    CORS(app, resources={r"/*": {"origins": allowed or "*"}})
+    print(f"Allowed CORS origins: {FRONTENDS}")
     
     # Register blueprints (route modules)
     app.register_blueprint(analysis_bp)
