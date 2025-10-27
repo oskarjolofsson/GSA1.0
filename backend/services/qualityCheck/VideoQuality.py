@@ -1,8 +1,4 @@
 from services.qualityCheck.Quality import Quality
-from typing import Dict, Any
-import cv2
-import os
-from datetime import datetime
 from services.file_handeling.Video_file import Video_file
 
 class VideoQuality(Quality):

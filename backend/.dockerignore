@@ -1,0 +1,40 @@
+# Version control
+.git
+.gitignore
+
+# Python cache / build
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# OS / IDE stuff
+.DS_Store
+.vscode/
+.idea/
+
+# Node / frontend (if in same repo)
+frontend/
+node_modules/
+dist/
+build/
+
+# Docker itself
+Dockerfile
+docker-compose.yml
+
+# Tests, notebooks, and misc
+tests/
+*.ipynb
+.pytest_cache
+.coverage
+htmlcov/
+*.log
+.env
+*.md
