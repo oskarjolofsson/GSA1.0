@@ -38,3 +38,7 @@ htmlcov/
 *.log
 .env
 *.md
+
+# Environment variables
+.env
+.env.production
