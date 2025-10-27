@@ -1,5 +1,4 @@
 from Quality import Quality
-from typing import Any
 import cv2
 from services.file_handeling.Image_file import Image_file
 

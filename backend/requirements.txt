@@ -14,11 +14,11 @@ Werkzeug==2.3.7
 
 # JSON handling (usually included with Python)
 # Development and testing
-pytest==7.4.2
-pytest-flask==1.2.0
+# pytest==7.4.2
+# pytest-flask==1.2.0
 
 # Video processing dependencies
-opencv-python>=4.8.0
+opencv-python-headless>=4.8.0
 Pillow>=10.0.0
 
 # ChatGPT API client
@@ -28,6 +28,4 @@ openai>=1.0.0
 firebase-admin
 
 # Quality check
-ultralytics==8.1.29
-opencv-python>=4.7
 numpy>=1.23
