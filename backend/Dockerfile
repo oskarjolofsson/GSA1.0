@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Add .dockerignore to exclude unnecessary files
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app", "-w", "2", "--threads", "4", "--timeout", "90", "--graceful-timeout", "30", "--keep-alive", "5"]
