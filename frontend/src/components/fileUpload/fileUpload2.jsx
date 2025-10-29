@@ -5,10 +5,9 @@ const API = import.meta.env.VITE_API_URL;
 import DropZone from "./DropZone.jsx";
 import PreviewPane from "./preview/PreviewPane.jsx";
 import ResultBox from "./result-box.jsx";
-import ErrorPopup from "../errorPopup/ErrorPopup.jsx";
+import ErrorPopup from "../popup/ErrorPopup.jsx";
 import tokenService from "../../services/tokenService.js";
 import UploadButtonZone from "./UploadButtonZone.jsx";
-import { v4 as uuidv4 } from 'uuid';
 
 function UploadHeader() {
   return (

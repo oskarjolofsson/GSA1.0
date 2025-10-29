@@ -97,7 +97,7 @@ function FAQBox(items = defaultFaqs) {
         {items.map((item, i) => {
           const active = open === i;
           return (
-            <li key={i} className="rounded-2xl bg-white/5 border border-white/10">
+            <li key={i} className="rounded-2xl bg-gray-800 border border-white/10">
               {QuestionButton(open, setOpen, active, item, i)}
               {Answer(active, item)}
             </li>
