@@ -24,13 +24,13 @@ class VideoQuality(Quality):
 
     def correct_size(self) -> bool:
         metrics = self.file.metrics()
-        return metrics["width"] >= 720 and metrics["height"] >= 720     # TODO add more precise measurements
+        return metrics["width"] >= 300 and metrics["height"] >= 300     # TODO add more precise measurements
     
     def correct_duration(self) -> bool:
         metrics = self.file.metrics()
         duration = metrics["duration"]
-        # longer than 1 second, shorter than 10 seconds
-        return duration > 1 and duration < 10
+        # longer than 1 second, shorter than 5 seconds
+        return duration > 1 and duration < 5
     
     # Add more methods to test aspects bellow
     # Also add these mehtods in self.issues dict as well self.validate 
