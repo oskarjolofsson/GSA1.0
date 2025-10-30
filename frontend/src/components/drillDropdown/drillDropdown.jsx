@@ -26,7 +26,7 @@ export default function DrillDropdown({ header, text, date }) {
   return (
     <div className={`rounded-2xl bg-gray-800 border border-white/10`}>
       {HeaderButton(open, setOpenAdapter, active, item, 0, date)}
-      {Text(active, item)}
+      {Text(active, item, date)}
     </div>
   );
 }
@@ -53,8 +53,7 @@ function HeaderButton(open, setOpen, active, item, i, date = null) {
     >
       <span className="flex items-center gap-2 min-w-0">
         <span className="text-base sm:text-lg font-semibold truncate">{item.q}</span>
-        {date ? (<span className="text-xs sm:text-sm text-white/60 whitespace-nowrap">{date}</span>
-        ) : null}
+        
       </span>
       <span
         className={`grid h-7 w-7 place-items-center rounded-full ring-1 ring-white/10 transition-colors ${active ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-white/70"
@@ -90,13 +89,15 @@ function HeaderButton(open, setOpen, active, item, i, date = null) {
   );
 }
 
-function Text(active, item) {
+function Text(active, item, date= null) {
   return (
     <div
       className={`grid transition-[grid-template-rows] duration-400 ease-out ${active ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
     >
+      
       <div className="overflow-hidden">
+        <div className="px-5 mb-1">{date ? (<span className="text-xs sm:text-sm text-white/60 whitespace-nowrap">{date}</span>) : null}</div>
         <div className="px-5 pb-5 text-slate-300">{item.a}</div>
       </div>
     </div>
