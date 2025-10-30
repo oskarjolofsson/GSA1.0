@@ -10,11 +10,11 @@ export default function Home() {
             {/* Border between hero and the rest  */}
             <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
             
-            <MarketingBox />
+            <MarketingBox id="features" />
 
             <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-            
-            <Faq />
+
+            <Faq id="faq" />
         </div>
     );
 }
