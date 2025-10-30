@@ -5,7 +5,7 @@ export default function PriceTable() {
   const [billingCycle, setBillingCycle] = useState("monthly");
 
   return (
-    <div className="mt-12 mb-12 mx-auto max-w-6xl px-12 py-12 rounded-lg" id="pricing">
+    <div className="mt-4 mb-4 mx-auto max-w-6xl  py-12 rounded-lg" id="pricing">
       {/* Billing cycle buttons */}
       <div className="flex justify-center items-center gap-2 mb-8">
         <div className="inline-flex rounded-lg bg-white/10 p-1 backdrop-blur-sm">
