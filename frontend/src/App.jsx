@@ -10,9 +10,9 @@ import About from "./pages/About.jsx";
 import NotFound from './pages/NotFound.jsx';
 import Products from './pages/Products.jsx';
 import Analyser from './pages/AnalyserPage.jsx';
-import Settings from "./pages/Settings.jsx";
 import Profile from "./pages/Profile.jsx";
 import PastDrills from "./pages/PastDrills.jsx";
+import TermsAndCond from './pages/TermsAndCond.jsx';
 
 // Import components
 import Layout from './components/layout.jsx';
@@ -40,6 +40,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/legal/terms-and-conditions" element={<TermsAndCond />} />
 
         {/* Protected */}
         <Route element={<RequireAuth />}>
