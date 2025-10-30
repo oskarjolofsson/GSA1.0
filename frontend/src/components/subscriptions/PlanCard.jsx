@@ -18,7 +18,7 @@ export default function PlanCard({
   return (
     <div
       className={`relative flex flex-col h-full w-full 
-  rounded-2xl border border-white/15 p-6 bg-white/5 backdrop-blur-sm shadow-sm text-white 
+  rounded-2xl border border-white/15 p-6 bg-white/5 backdrop-blur-sm shadow-sm text-white max-w-sm
   ${popular ? "ring-2 ring-white" : ""}`}
 
       aria-label={`${name} plan`}
@@ -27,11 +27,11 @@ export default function PlanCard({
       <div className="flex-none">
         {/* Badges */}
           <div className="flex items-center gap-2 mb-4 min-h-[28px] lg:absolute md:top-6 md:right-6">
-            {popular && (
+            {/* {popular && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white/10 text-white text-xs px-2 py-1">
                 <Star className="h-3 w-3" aria-hidden /> Most popular
               </span>
-            )}
+            )} */}
             {isCurrent && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white/10 text-white text-xs px-2 py-1">
                 Current plan
