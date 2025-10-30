@@ -29,8 +29,10 @@ function Columns() {
         <h3 className="text-sm font-semibold text-white mb-3">PRODUCT</h3>
         <ul className="space-y-2 text-sm">
           <li><a href="#" className="hover:text-white">Features</a></li>
-          <li><a href="/products" className="hover:text-white">Pricing</a></li>
-          <li><a href="/about" className="hover:text-white">About</a></li>
+          <li><a href="#" className="hover:text-white">FAQ</a></li>
+          <li><a href="#" className="hover:text-white">Pricing</a></li>
+          {/* <li><a href="/about" className="hover:text-white">About</a></li> */}
+  
         </ul>
       </div>
 
@@ -45,8 +47,8 @@ function Columns() {
       <div>
         <h3 className="text-sm font-semibold text-white mb-3">LEGAL</h3>
         <ul className="space-y-2 text-sm">
-          <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
-          <li><a href="#" className="hover:text-white">Terms</a></li>
+          <li><a href="/legal/privacy-policy" className="hover:text-white">Privacy Policy</a></li>
+          <li><a href="/legal/terms-and-conditions" className="hover:text-white">Terms</a></li>
         </ul>
       </div>
     </>
