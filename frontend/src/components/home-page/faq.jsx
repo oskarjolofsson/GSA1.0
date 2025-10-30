@@ -112,7 +112,20 @@ function FAQBox(items = defaultFaqs) {
 function QuestionButton(open, setOpen, active, item, i) {
   return (
     <button
-      className="w-full flex items-center justify-between gap-4 text-left px-5 py-4 text-white/90 hover:bg-white/7 rounded-2xl"
+      className="
+        w-full flex items-center justify-between gap-4
+        px-5 py-4 text-left rounded-2xl
+        min-w-0                 /* prevents overflow on narrow screens */
+        /* colors */
+        bg-gray-800 text-white/90 hover:bg-white/5
+        border border-gray-700/50
+        /* iOS/WebKit fixes */
+        appearance-none
+        [background-image:none]
+        bg-clip-padding
+        isolate
+        will-change-transform
+      "
       onClick={() => setOpen(active ? -1 : i)}
       aria-expanded={active}
     >
