@@ -1,5 +1,6 @@
 import Hero from '../components/home-page/Hero.jsx';
-import Faq from '../components/home-page/faq.jsx'
+import Faq from '../components/home-page/faq.jsx';
+import PricingTable from "../components/subscriptions/PricingTable.jsx";
 
 import MarketingBox from "../components/home-page/Marketingbox.jsx";
 
@@ -15,6 +16,9 @@ export default function Home() {
             <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
             <Faq id="faq" />
+
+            <PricingTable />
+            
         </div>
     );
 }
