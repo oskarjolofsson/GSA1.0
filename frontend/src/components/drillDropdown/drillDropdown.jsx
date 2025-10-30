@@ -51,10 +51,7 @@ function HeaderButton(open, setOpen, active, item, i, date = null) {
       onClick={() => setOpen(active ? -1 : i)}
       aria-expanded={active}
     >
-      <span className="flex items-center gap-2 min-w-0">
-        <span className="text-base sm:text-lg font-semibold truncate">{item.q}</span>
-        
-      </span>
+      <span className="text-base sm:text-lg font-semibold">{item.q}</span>
       <span
         className={`grid h-7 w-7 place-items-center rounded-full ring-1 ring-white/10 transition-colors ${active ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-white/70"
           }`}
