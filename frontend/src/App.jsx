@@ -13,6 +13,7 @@ import Analyser from './pages/AnalyserPage.jsx';
 import Profile from "./pages/Profile.jsx";
 import PastDrills from "./pages/PastDrills.jsx";
 import TermsAndCond from './pages/TermsAndCond.jsx';
+import Privacy from './pages/Privacy.jsx';
 
 // Import components
 import Layout from './components/layout.jsx';
@@ -38,9 +39,10 @@ function App() {
       <Route element={<Layout />}>
         {/* Public */}
         <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
+        {/* <Route path="/about" element={<About />} /> */}
         <Route path="/products" element={<Products />} />
         <Route path="/legal/terms-and-conditions" element={<TermsAndCond />} />
+        <Route path="/legal/privacy-policy" element={<Privacy />} />
 
         {/* Protected */}
         <Route element={<RequireAuth />}>
