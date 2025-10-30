@@ -35,21 +35,25 @@ function HeaderButton(open, setOpen, active, item, i, date = null) {
   return (
     <button
       className="
-        appearance-none                 /* kill iOS system button */
-        bg-gray-800 text-white
-        bg-clip-padding                 /* prevents white bleed with radius+border */
-        [background-image:none]         /* nuke default gradient on iOS */
-        isolate                         /* fix compositing if backdrop/overflow around */
-        will-change-transform           /* helps sticky/fixed repaint quirks */
-        rounded-md border border-gray-700/50
+        w-full flex items-center justify-between gap-4
+        px-5 py-4 text-left rounded-2xl
+        min-w-0                 /* prevents overflow on narrow screens */
+        /* colors */
+        bg-gray-800 text-white/90 hover:bg-white/5
+        border border-gray-700/50
+        /* iOS/WebKit fixes */
+        appearance-none
+        [background-image:none]
+        bg-clip-padding
+        isolate
+        will-change-transform
       "
       onClick={() => setOpen(active ? -1 : i)}
       aria-expanded={active}
     >
       <span className="flex items-center gap-2 min-w-0">
         <span className="text-base sm:text-lg font-semibold truncate">{item.q}</span>
-        {date ? (
-          <span className="text-xs sm:text-sm text-white/60 whitespace-nowrap">{date}</span>
+        {date ? (<span className="text-xs sm:text-sm text-white/60 whitespace-nowrap">{date}</span>
         ) : null}
       </span>
       <span
