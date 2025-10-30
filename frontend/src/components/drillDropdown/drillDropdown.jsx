@@ -18,6 +18,11 @@ export default function DrillDropdown({ header, text, date }) {
   const item = { q: header, a: text };
   const active = open;
 
+  useEffect(() => {
+    const el = document.querySelector('.headerButton');
+    if (el) console.log('BG:', getComputedStyle(el).backgroundColor);
+  }, []);
+
   return (
     <div className={`rounded-2xl bg-gray-800 border border-white/10`}>
       {HeaderButton(open, setOpenAdapter, active, item, 0, date)}
@@ -26,10 +31,18 @@ export default function DrillDropdown({ header, text, date }) {
   );
 }
 
-function HeaderButton(open, setOpen, active, item, i, date  = null) {
+function HeaderButton(open, setOpen, active, item, i, date = null) {
   return (
     <button
-      className="w-full flex items-center justify-between gap-4 text-left px-5 py-4 text-white/90 hover:bg-white/7 rounded-2xl"
+      className="
+        appearance-none                 /* kill iOS system button */
+        bg-gray-800 text-white
+        bg-clip-padding                 /* prevents white bleed with radius+border */
+        [background-image:none]         /* nuke default gradient on iOS */
+        isolate                         /* fix compositing if backdrop/overflow around */
+        will-change-transform           /* helps sticky/fixed repaint quirks */
+        rounded-md border border-gray-700/50
+      "
       onClick={() => setOpen(active ? -1 : i)}
       aria-expanded={active}
     >
@@ -40,9 +53,8 @@ function HeaderButton(open, setOpen, active, item, i, date  = null) {
         ) : null}
       </span>
       <span
-        className={`grid h-7 w-7 place-items-center rounded-full ring-1 ring-white/10 transition-colors ${
-          active ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-white/70"
-        }`}
+        className={`grid h-7 w-7 place-items-center rounded-full ring-1 ring-white/10 transition-colors ${active ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-white/70"
+          }`}
       >
         {active ? (
           // Close (x)
@@ -77,9 +89,8 @@ function HeaderButton(open, setOpen, active, item, i, date  = null) {
 function Text(active, item) {
   return (
     <div
-      className={`grid transition-[grid-template-rows] duration-400 ease-out ${
-        active ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-      }`}
+      className={`grid transition-[grid-template-rows] duration-400 ease-out ${active ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
     >
       <div className="overflow-hidden">
         <div className="px-5 pb-5 text-slate-300">{item.a}</div>
