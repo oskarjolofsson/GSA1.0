@@ -60,3 +60,37 @@ class FirebaseStripeService(FireBaseService):
     def db_save_user(self, user: dict) -> None:
         doc_ref = self.db.collection('users').document(self.user_id)
         doc_ref.set(user, merge=True)
+        
+    def update_subscription_info(self, 
+                                 subscription_id: str,
+                                 price_id: str,
+                                 current_period_end: int,
+                                 status: str = None
+                                 ) -> None:
+        user : dict = self.db_get_user(self.user_id)
+        
+        # Only update if not None
+        updates = {}
+        if subscription_id is not None:
+            updates["stripe_subscription_id"] = subscription_id
+        if price_id is not None:
+            updates["stripe_price_id"] = price_id
+        if current_period_end is not None:
+            updates["current_period_end"] = current_period_end
+        if status is not None:
+            updates["status"] = status
+
+        print("Updating user", self.user_id, "with", updates)
+        
+        if updates:
+            user.update(updates)
+        self.db_save_user(user)
+
+    def get_user_id_by_customer_id(self, customer_id: str) -> dict | None:
+        users_ref = self.self.db.collection('users')
+        query = users_ref.where('stripe_customer_id', '==', customer_id).limit(1)
+        results = query.stream()
+        for doc in results:
+            self.user_id = doc.id
+            return doc.id
+        return None

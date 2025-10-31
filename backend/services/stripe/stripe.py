@@ -1,9 +1,11 @@
+from abc import ABC
 import os
 import stripe
 from dotenv import load_dotenv
 
-class StripeService:
-    
+
+class StripeService(ABC):
+
     def __init__(self):
         load_dotenv()
         self.stripe_api_key = os.getenv("STRIPE_SECRET_KEY")
