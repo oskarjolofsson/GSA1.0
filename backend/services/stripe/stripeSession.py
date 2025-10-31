@@ -2,18 +2,18 @@ import stripe
 from dotenv import load_dotenv
 import os
 
+from services.stripe.stripe import StripeService
+
 load_dotenv()
 
-class StripeSessionService:
+class StripeSessionService(StripeService):
     
     def __init__(self, customer_email: str, customer_id: str, price_id: str, firebase_uid: str = None):
         self.customer_email = customer_email
         self.customer_id = customer_id 
         self.price_id = price_id
         self.firebase_uid = firebase_uid
-        self.stripe_api_key = os.getenv("STRIPE_SECRET_KEY")
-        self.APP_URL = os.getenv("APP_URL")
-        stripe.api_key = self.stripe_api_key
+        super().__init__()
     
     def create_checkout_session(self):
         if not all([self.customer_id, self.price_id, self.APP_URL]):
