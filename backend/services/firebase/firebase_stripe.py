@@ -28,9 +28,24 @@ class FirebaseStripeService(FireBaseService):
                 metadata={"firebase_uid": self.user_id}
             )
             customer_id = customer.id
+            
+            # Stripe status meaning:
+            
+            # free: user not paying
+            # trialing: in trial period
+            # active: paying subscriber
+            # past_due: payment failed
+            # canceled: subscription canceled
+            # inactive: expired or deactivated
+            
+            
             user.update({
                 "email": email,
-                "stripe_customer_id": customer_id
+                "stripe_customer_id": customer_id,
+                "stripe_subscription_id": None,
+                "stripe_price_id": None,
+                "status": "free",
+                "current_period_end": None
             })
             self.db_save_user(user)
             return customer_id
