@@ -48,10 +48,15 @@ def webhook():
 @stripe_bp.route('/create-portal-session', methods=['POST'])
 @require_auth
 def create_portal_session():
+    try:
+        url = (StripeSessionService(firebase_uid=request.user["uid"], 
+                                customer_id=FirebaseStripeService(request.user["uid"]).get_or_create_customer())
+                .create_portal_session())
 
-    url = (StripeSessionService(firebase_uid=request.firebase["uid"], 
-                               customer_id=FirebaseStripeService(request.user["uid"])
-                               .get_or_create_customer())
-           .create_portal_session())
-
-    return jsonify({"url": url})
+        return jsonify({"url": url})
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': "error with analysis",
+            'details': str(e)
+        }), 500
