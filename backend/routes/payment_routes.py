@@ -1,7 +1,9 @@
 from flask import Blueprint, request, jsonify
-from backend.services.firebase.firebase_auth import require_auth
-from backend.services.firebase.firebase_stripe import FirebaseStripeService
-from backend.services.stripe.stripeSession import StripeSessionService
+from services.firebase.firebase_auth import require_auth
+from services.firebase.firebase_stripe import FirebaseStripeService
+from services.stripe.stripeSession import StripeSessionService
+from services.stripe.stripeWebhook import StripeWebhookService
+
 
 # Create a Blueprint for stripe routes
 stripe_bp = Blueprint('stripe', __name__, url_prefix='/api/v1/stripe')
@@ -37,9 +39,14 @@ def create_checkout_session():
             'details': str(e)
         }), 500
 
-@stripe_bp.route('/webhook', methods=['POST'])
+@stripe_bp.route('/stripe/webhook', methods=['POST'])
 def webhook():
-    return jsonify({'message': 'This is a placeholder for handling webhooks.'}), 200
+    service = StripeWebhookService(
+        sig_header=request.headers.get("Stripe-Signature"),
+        payload=request.data
+    )
+    return service.handle_event()
+
 
 @stripe_bp.route('/create-portal-session', methods=['POST'])
 def create_portal_session():
