@@ -12,8 +12,11 @@ export default function PlanCard({
   popular = false,
   isCurrent = false,
   onSelect,
+  price_id_monthly,
+  price_id_yearly,
 }) {
   const price = cycle === "monthly" ? monthlyPrice : yearlyPrice;
+  const priceId = cycle === "monthly" ? price_id_monthly : price_id_yearly;
 
   return (
     <div
@@ -52,7 +55,7 @@ export default function PlanCard({
           <span className="text-4xl font-semibold tracking-tight">
             {formatMoney(price, currency)}
           </span>
-          <span className="text-sm text-white/70">/ {cycle === "monthly" ? "mo" : "yr"}</span>
+          <span className="text-sm text-white/70">/ mo</span>
         </div>
       </div>
 
@@ -105,3 +108,4 @@ function formatMoney(amount, currency) {
     return `${currency} ${amount}`;
   }
 }
+
