@@ -1,6 +1,6 @@
 
 
-from backend.services.stripe.stripeEvents import StripeEvents
+from services.stripe.stripeEvents import StripeEvents
 
 
 class HandleCheckoutComplete(StripeEvents):
