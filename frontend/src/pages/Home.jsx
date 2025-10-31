@@ -4,7 +4,20 @@ import PricingTable from "../components/subscriptions/PricingTable.jsx";
 
 import MarketingBox from "../components/home-page/Marketingbox.jsx";
 
+import { getAuth } from "firebase/auth";
+
 export default function Home() {
+
+    const auth = getAuth();
+    auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        const token = await user.getIdToken();
+        console.log("Firebase ID token:", token);
+    } else {
+        console.log("No user signed in");
+    }
+    });
+
     return (
         <div>
             <Hero />

@@ -22,13 +22,9 @@ def create_checkout_session():
         return jsonify({"error": "Missing priceId"}), 400
 
     uid = request.user["uid"]
-    email = request.user.get("email")
-    if not email:
-        return jsonify({"error": "User email not found"}), 400
     
     try:
-        session = StripeSessionService(customer_email=email, 
-                                    customer_id=FirebaseStripeService(uid).get_or_create_customer(), 
+        session = StripeSessionService(customer_id=FirebaseStripeService(uid).get_or_create_customer(), 
                                     price_id=price_id, 
                                     firebase_uid=uid).create_checkout_session()
         

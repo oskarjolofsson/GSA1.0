@@ -8,9 +8,8 @@ load_dotenv()
 
 class StripeSessionService(StripeService):
 
-    def __init__(self, customer_email: str = None, customer_id: str = None, price_id: str = None, firebase_uid: str = None):
-        self.customer_email = customer_email
-        self.customer_id = customer_id 
+    def __init__(self, customer_id: str = None, price_id: str = None, firebase_uid: str = None):
+        self.customer_id = customer_id
         self.price_id = price_id
         self.firebase_uid = firebase_uid
         super().__init__()
@@ -28,7 +27,6 @@ class StripeSessionService(StripeService):
             client_reference_id=self.firebase_uid,
             subscription_data={"metadata": {"firebase_uid": self.firebase_uid}},
             allow_promotion_codes=True,
-            customer_email=self.customer_email
         )   
         
         return session

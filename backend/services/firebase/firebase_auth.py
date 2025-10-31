@@ -29,7 +29,7 @@ class FirebaseAuthService(FireBaseService):
         def decorated_function(*args, **kwargs):
             auth_header = request.headers.get('Authorization', '')
             if not auth_header.startswith('Bearer '):
-                return jsonify({'error': 'Invalid authorization header'}), 401
+                return jsonify({'error': 'Invalid authorization header: ' + auth_header}), 401
 
             id_token = auth_header.split('Bearer ')[1]
             decoded_token = self.verify_token(id_token)
