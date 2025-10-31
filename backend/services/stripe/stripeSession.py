@@ -7,8 +7,8 @@ from services.stripe.stripe import StripeService
 load_dotenv()
 
 class StripeSessionService(StripeService):
-    
-    def __init__(self, customer_email: str, customer_id: str, price_id: str, firebase_uid: str = None):
+
+    def __init__(self, customer_email: str = None, customer_id: str = None, price_id: str = None, firebase_uid: str = None):
         self.customer_email = customer_email
         self.customer_id = customer_id 
         self.price_id = price_id
@@ -33,6 +33,14 @@ class StripeSessionService(StripeService):
         
         return session
     
-   
-    
+    def create_portal_session(self):
+        if not self.firebase_uid or not self.customer_id:
+            raise ValueError("Missing firebase_uid or customer_id to create portal session")
+
+        session = stripe.billing_portal.Session.create(
+            customer=self.customer_id,
+            return_url=f"{self.APP_URL}/billing",
+        )
+
+        return session.url
     

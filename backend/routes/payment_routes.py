@@ -25,9 +25,10 @@ def create_checkout_session():
     email = request.user.get("email")
     if not email:
         return jsonify({"error": "User email not found"}), 400
+    
     try:
         session = StripeSessionService(customer_email=email, 
-                                    customer_id=FirebaseStripeService(uid).get_or_create_customer(email, uid), 
+                                    customer_id=FirebaseStripeService(uid).get_or_create_customer(), 
                                     price_id=price_id, 
                                     firebase_uid=uid).create_checkout_session()
         
@@ -49,5 +50,12 @@ def webhook():
 
 
 @stripe_bp.route('/create-portal-session', methods=['POST'])
+@require_auth
 def create_portal_session():
-    return jsonify({'message': 'This is a placeholder for creating a portal session.'}), 200
+
+    url = (StripeSessionService(firebase_uid=request.firebase["uid"], 
+                               customer_id=FirebaseStripeService(request.user["uid"])
+                               .get_or_create_customer())
+           .create_portal_session())
+
+    return jsonify({"url": url})
