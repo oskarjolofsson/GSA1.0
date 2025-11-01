@@ -1,11 +1,82 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/authContext';
 import PriceTable from '../subscriptions/PricingTable.jsx';
 import { TrendingDown } from 'lucide-react';
+import { getAuth } from 'firebase/auth';
 
 
+
+const URL = import.meta.env.VITE_API_URL;
 
 export default function SubscriptionPlan() {
     const { user, loading } = useAuth();
+    const [hasSubscription, setHasSubscription] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
+
+    // Fetch subscription status to decide whether to show the cancel button
+    useEffect(() => {
+        let cancelled = false;
+        async function fetchStatus() {
+            try {
+                if (!user) {
+                    if (!cancelled) setHasSubscription(false);
+                    return;
+                }
+                const auth = getAuth();
+                const currentUser = auth.currentUser;
+                if (!currentUser) {
+                    if (!cancelled) setHasSubscription(false);
+                    return;
+                }
+                const token = await currentUser.getIdToken();
+                const res = await fetch(`${URL}/api/v1/stripe/subscription-status`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                if (!cancelled) setHasSubscription(Boolean(data?.price_id));
+            } catch (e) {
+                console.error('Failed to determine subscription status', e);
+                if (!cancelled) setHasSubscription(false);
+            }
+        }
+        fetchStatus();
+        return () => { cancelled = true; };
+    }, [user]);
+
+    const handleCancel = async () => {
+        if (!user || isCancelling) return;
+        try {
+            setIsCancelling(true);
+            const auth = getAuth();
+            const currentUser = auth.currentUser;
+            if (!currentUser) return;
+            const token = await currentUser.getIdToken();
+            const res = await fetch(`${URL}/api/v1/stripe/cancel-subscription`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data?.error || 'Failed to cancel subscription');
+            }
+            alert('Subscription will cancel at period end.');
+            // Optimistically hide the button now
+            setHasSubscription(false);
+        } catch (e) {
+            console.error(e);
+            alert('Could not cancel subscription. Please try again.');
+        } finally {
+            setIsCancelling(false);
+        }
+    };
 
     return (
         <section className="relative w-full max-w-4xl mx-auto px-4 mt-[14vh] mb-12">
@@ -13,16 +84,19 @@ export default function SubscriptionPlan() {
                 <h2 className="text-lg font-semibold text-white">Subscription plan</h2>
                 <PriceTable />
 
-                {/* Cancel subscription button */}
-                {/* {user?.isSubscribed && !loading && ( */}
-                {user && !loading && (
+                {/* Cancel subscription button: only show when user is signed in AND has an active subscription */}
+                {user && !loading && hasSubscription && (
                     <div className="flex select-none justify-center">
-                        <a
-                            onClick={() => alert('Cancel subscription')}
-                            className="flex items-center text-red-400 hover:text-red-500 cursor-pointer transition-colors duration-200"
+                        <button
+                            onClick={handleCancel}
+                            disabled={isCancelling}
+                            className="flex items-center text-red-400 hover:text-red-500 disabled:opacity-60 cursor-pointer transition-colors duration-200"
                         >
-                            <TrendingDown className="h-5 w-5 mr-2" /><span className="font-medium">Cancel Subscription</span>
-                        </a>
+                            <TrendingDown className="h-5 w-5 mr-2" />
+                            <span className="font-medium">
+                                {isCancelling ? 'Cancelling…' : 'Cancel Subscription'}
+                            </span>
+                        </button>
                     </div>
                 )}
             </div>

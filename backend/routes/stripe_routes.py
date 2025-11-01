@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from backend.services.stripe.handleSubscriptionDeleted import HandleSubscriptionDeleted
 from services.firebase.firebase_auth import require_auth
 from services.firebase.firebase_stripe import FirebaseStripeService
 from services.stripe.stripeSession import StripeSessionService
@@ -76,3 +77,24 @@ def subscription_status():
     status = user_data.get("status", "free")
     price_id = user_data.get("stripe_price_id", None)
     return jsonify({"price_id": price_id}), 200
+
+@stripe_bp.post("/cancel-subscription")
+@require_auth
+def cancel_subscription():
+    try:
+        uid = request.user["uid"]
+        user = FirebaseStripeService(uid).db_get_user()
+        
+        canceled_sub = HandleSubscriptionDeleted(
+            customer_id=user.get("stripe_customer_id"),
+            subscription_id=user.get("stripe_subscription_id")
+        ).endSubscription()
+
+        return jsonify({
+            "message": "Subscription will cancel at period end",
+            "status": canceled_sub["status"],
+            "current_period_end": canceled_sub["current_period_end"]
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

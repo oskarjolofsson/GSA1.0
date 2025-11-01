@@ -11,10 +11,7 @@ class HandleCheckoutComplete(StripeEvents):
                  price_id: str,
                  current_period_end: int
                  ):
-        super().__init__(customer_id)
-        self.subscription_id = subscription_id
-        self.price_id = price_id
-        self.current_period_end = current_period_end
+        super().__init__(customer_id, subscription_id, price_id, current_period_end)
     
     def event(self):
         self.firebase_stripe_service.update_subscription_info(

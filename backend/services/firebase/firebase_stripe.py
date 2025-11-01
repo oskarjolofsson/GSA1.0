@@ -54,7 +54,7 @@ class FirebaseStripeService(FireBaseService):
             self.db_save_user(user)
             return customer_id
             
-    def db_get_user(self, uid: str) -> dict:
+    def db_get_user(self) -> dict:
         doc = self.stripe_ref.get()
         if doc.exists:
             return doc.to_dict()
