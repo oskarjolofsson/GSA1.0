@@ -29,7 +29,7 @@ export default function SubscriptionPlan() {
                     return;
                 }
                 const token = await currentUser.getIdToken();
-                const res = await fetch(`${URL}/api/v1/stripe/subscription-status`, {
+                const res = await fetch(`${URL}/stripe/subscription-status`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ export default function SubscriptionPlan() {
             const currentUser = auth.currentUser;
             if (!currentUser) return;
             const token = await currentUser.getIdToken();
-            const res = await fetch(`${URL}/api/v1/stripe/cancel-subscription`, {
+            const res = await fetch(`${URL}/stripe/cancel-subscription`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
