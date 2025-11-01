@@ -14,7 +14,7 @@ async function createCheckoutSession(priceId) {
   // Get Firebase ID token to send to your Flask backend
   const token = await user.getIdToken();
 
-  const res = await fetch(`${URL}/api/v1/stripe/create-checkout-session`, {
+  const res = await fetch(`${URL}/stripe/create-checkout-session`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -51,7 +51,7 @@ export default function PriceTable() {
         const currentUser = auth.currentUser;
         if (!currentUser) return;
         const token = await currentUser.getIdToken();
-        const res = await fetch(`${URL}/api/v1/stripe/subscription-status`, {
+        const res = await fetch(`${URL}/stripe/subscription-status`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
