@@ -4,6 +4,8 @@ import { getAuth } from "firebase/auth";
 import SignInPopup from "../signInPopup/signInPopup";
 import { useAuth } from "../../auth/authContext";
 
+const URL = import.meta.env.VITE_API_URL;
+
 async function createCheckoutSession(priceId) {
   const auth = getAuth();
   const user = auth.currentUser;
@@ -12,7 +14,7 @@ async function createCheckoutSession(priceId) {
   // Get Firebase ID token to send to your Flask backend
   const token = await user.getIdToken();
 
-  const res = await fetch(`${import.meta.env.VITE_API_URL}/create-checkout-session`, {
+  const res = await fetch(`${URL}/api/v1/stripe/create-checkout-session`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
