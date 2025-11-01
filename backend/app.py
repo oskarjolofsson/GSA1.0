@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from routes.analysis_routes import analysis_bp
 from routes.token_routes import token_bp
 from routes.stripe_routes import stripe_bp
+from routes.user_routes import user_bp
 
 # Load environment variables
 load_dotenv()
@@ -46,6 +47,7 @@ def create_app():
     app.register_blueprint(analysis_bp)
     app.register_blueprint(token_bp)
     app.register_blueprint(stripe_bp)
+    app.register_blueprint(user_bp)
 
     # Create upload directory if it doesn't exist
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
