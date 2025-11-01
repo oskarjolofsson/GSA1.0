@@ -11,13 +11,17 @@ class FirebaseStripeService(FireBaseService):
         super().__init__(user_id=firebase_user_id)
         self.stripe_api_key = os.getenv("STRIPE_SECRET_KEY")
         stripe.api_key = self.stripe_api_key
+        self.doc_ref = self.db.collection('users').document(self.user_id)
+        self.stripe_ref = self.doc_ref.collection('stripe').document('customer')
 
     def get_or_create_customer(self) -> str:
         user: dict = self.db_get_user(self.user_id)
         email: str | None = user.get("email")
+        print("Fetching or creating Stripe customer for user:", self.user_id, "email:", email)
         
         # Check if customer already exists in Firestore
         if user.get("stripe_customer_id"):
+            print("Found existing Stripe customer for user:", self.user_id)
             customer_id = user["stripe_customer_id"]
             return customer_id
         
@@ -51,15 +55,14 @@ class FirebaseStripeService(FireBaseService):
             return customer_id
             
     def db_get_user(self, uid: str) -> dict:
-        doc_ref = self.db.collection('users').document(uid)
-        doc = doc_ref.get()
+        doc = self.stripe_ref.get()
         if doc.exists:
             return doc.to_dict()
         return {}
 
     def db_save_user(self, user: dict) -> None:
-        doc_ref = self.db.collection('users').document(self.user_id)
-        doc_ref.set(user, merge=True)
+        print("Saving user to Stripe Firestore:", user)
+        self.stripe_ref.set(user, merge=True)
         
     def update_subscription_info(self, 
                                  subscription_id: str,
@@ -87,7 +90,7 @@ class FirebaseStripeService(FireBaseService):
         self.db_save_user(user)
 
     def get_user_id_by_customer_id(self, customer_id: str) -> dict | None:
-        users_ref = self.self.db.collection('users')
+        users_ref = self.db.collection('users')
         query = users_ref.where('stripe_customer_id', '==', customer_id).limit(1)
         results = query.stream()
         for doc in results:
