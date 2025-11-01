@@ -12,8 +12,9 @@ user_bp = Blueprint('users', __name__, url_prefix='/api/v1/users')
 def register_user():
     try:
         uid = request.user["uid"]
+        email = request.user.get("email")
         FireBaseTokens(user_id=uid).initialize_user_tokens()
-        FirebaseStripeService(firebase_user_id=uid).get_or_create_customer()
+        FirebaseStripeService(firebase_user_id=uid, email=email).get_or_create_customer()
 
         return jsonify({
             "success": True,
