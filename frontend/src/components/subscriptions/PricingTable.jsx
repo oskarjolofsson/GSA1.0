@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PlanCard from "./PlanCard";
 import { getAuth } from "firebase/auth";
 import SignInPopup from "../signInPopup/signInPopup";
@@ -36,6 +36,44 @@ export default function PriceTable() {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [showPopup, setShowPopup] = useState(false);
   const { user, login } = useAuth();
+  const [activePriceId, setActivePriceId] = useState(null);
+
+  // Fetch the user's current active Stripe price_id from backend
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchStatus() {
+      try {
+        if (!user) {
+          setActivePriceId(null);
+          return;
+        }
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+        const token = await currentUser.getIdToken();
+        const res = await fetch(`${URL}/api/v1/stripe/subscription-status`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        if (!cancelled) {
+          setActivePriceId(data?.price_id || null);
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to fetch subscription status:", err);
+        if (!cancelled) setActivePriceId(null);
+      }
+    }
+    fetchStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const handlePlanSelect = async (priceIdMonthly, priceIdYearly) => {
     const priceId = billingCycle === "monthly" ? priceIdMonthly : priceIdYearly;
@@ -93,7 +131,17 @@ export default function PriceTable() {
           currency="EUR"
           cycle={billingCycle}
           popular={true}
-          isCurrent={true}
+          isCurrentPlan={
+            !!activePriceId && (
+              activePriceId === "price_1SO1QwLTYv4hoLQi2JrfexqN" ||
+              activePriceId === "price_1SO1QwLTYv4hoLQiBshbUAUV"
+            )
+          }
+          isActiveCycle={
+            activePriceId === (billingCycle === "monthly"
+              ? "price_1SO1QwLTYv4hoLQi2JrfexqN"
+              : "price_1SO1QwLTYv4hoLQiBshbUAUV")
+          }
           onSelect={() =>
             handlePlanSelect(
               "price_1SO1QwLTYv4hoLQi2JrfexqN",
@@ -114,7 +162,17 @@ export default function PriceTable() {
           currency="EUR"
           cycle={billingCycle}
           popular={false}
-          isCurrent={false}
+          isCurrentPlan={
+            !!activePriceId && (
+              activePriceId === "price_1SO1V1LTYv4hoLQihQYZtd1Y" ||
+              activePriceId === "price_1SO1V1LTYv4hoLQiUQl93mv4"
+            )
+          }
+          isActiveCycle={
+            activePriceId === (billingCycle === "monthly"
+              ? "price_1SO1V1LTYv4hoLQihQYZtd1Y"
+              : "price_1SO1V1LTYv4hoLQiUQl93mv4")
+          }
           onSelect={() =>
             handlePlanSelect(
               "price_1SO1V1LTYv4hoLQihQYZtd1Y",
