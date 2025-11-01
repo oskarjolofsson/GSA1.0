@@ -60,3 +60,19 @@ def create_portal_session():
             'error': "error with analysis",
             'details': str(e)
         }), 500
+        
+@stripe_bp.route('/subscription-status', methods=['GET'])
+@require_auth
+def subscription_status():
+    """
+    Get the subscription status of the current user.
+    """
+    uid = request.user["uid"]
+    
+    if not uid:
+        return jsonify({"status": "Inactive"}), 200
+    
+    user_data = FirebaseStripeService(uid).db_get_user(uid)
+    status = user_data.get("status", "free")
+    price_id = user_data.get("stripe_price_id", None)
+    return jsonify({"price_id": price_id}), 200

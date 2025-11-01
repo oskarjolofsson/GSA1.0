@@ -11,17 +11,19 @@ export default function PlanCard({
   currency = "EUR",
   cycle = "monthly",
   popular = false,
-  isCurrent = false,
+  isCurrentPlan = false,
+  isActiveCycle = false,
   onSelect,
   price_id_monthly,
   price_id_yearly,
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const price = cycle === "monthly" ? monthlyPrice : yearlyPrice;
-  const priceId = cycle === "monthly" ? price_id_monthly : price_id_yearly;
+  // const priceId = cycle === "monthly" ? price_id_monthly : price_id_yearly;
 
   const handleClick = async () => {
-    if (isCurrent || isLoading) return;
+    // Disable only when the currently viewed cycle matches the active subscription
+    if (isActiveCycle || isLoading) return;
     try {
       setIsLoading(true);
       const maybePromise = onSelect?.(id, cycle);
@@ -49,12 +51,12 @@ export default function PlanCard({
       <div className="flex-none">
         {/* Badges */}
           <div className="flex items-center gap-2 mb-4 min-h-[28px] lg:absolute md:top-6 md:right-6">
-            {/* {popular && (
+            {popular && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white/10 text-white text-xs px-2 py-1">
                 <Star className="h-3 w-3" aria-hidden /> Most popular
               </span>
-            )} */}
-            {isCurrent && (
+            )} 
+            {isCurrentPlan && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white/10 text-white text-xs px-2 py-1">
                 Current plan
               </span>
@@ -93,11 +95,11 @@ export default function PlanCard({
         {/* CTA */}
         <button
           onClick={handleClick}
-          disabled={isCurrent || isLoading}
-          aria-disabled={isCurrent || isLoading}
+          disabled={isActiveCycle || isLoading}
+          aria-disabled={isActiveCycle || isLoading}
           aria-busy={isLoading}
           className={`w-full rounded-xl px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition ${
-            isCurrent || isLoading
+            isActiveCycle || isLoading
               ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-50 cursor-not-allowed"
               : popular
               ? "bg-black text-white dark:bg-white dark:text-black"
@@ -109,7 +111,7 @@ export default function PlanCard({
               <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
               Loading…
             </span>
-          ) : isCurrent ? (
+          ) : isActiveCycle ? (
             "Selected"
           ) : (
             "Choose plan"
