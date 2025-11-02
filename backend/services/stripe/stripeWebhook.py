@@ -1,11 +1,23 @@
-from services.firebase.firebase_stripe import FirebaseStripeService
-from services.stripe.stripe import StripeService
-import stripe
+from __future__ import annotations
+
 import os
+from typing import Any, Dict, Optional, Tuple
+
+import stripe
 from dotenv import load_dotenv
 
+from services.firebase.firebase_stripe import FirebaseStripeService
+from services.stripe.stripe import StripeService
+
+
 class StripeWebhookService(StripeService):
-    
+    """
+    Stable, single-parse Stripe webhook handler that
+    - validates the signature once
+    - resolves the Firebase user via metadata or customer lookup
+    - updates Firestore through FirebaseStripeService consistently
+    """
+
     def __init__(self, sig_header: str, payload: bytes):
         super().__init__()
         self.sig_header = sig_header
@@ -13,118 +25,253 @@ class StripeWebhookService(StripeService):
 
         load_dotenv()
         self.webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
-        
+
+        # Parse and verify the event once
+        self.event, self.event_type, self.data = self._parse_event()
+
+        # Resolve Firebase user context (may be None at this stage and filled lazily)
+        self.firebase_user_id: Optional[str] = self._extract_firebase_uid_from_data(self.data)
+        self.firebase_stripe_service: Optional[FirebaseStripeService] = (
+            FirebaseStripeService(firebase_user_id=self.firebase_user_id)
+            if self.firebase_user_id
+            else None
+        )
+
+        # Event router
         self.events_map = {
-            "checkout.session.completed": self.handleCheckoutComplete,
-            "customer.subscription.updated": self.handleSubscriptionUpdated,
-            "customer.subscription.deleted": self.handleSubscriptionDeleted,
-            "customer.subscription.created": self.handleSubscriptionCreated,
-            "invoice.finalized": self.handleInvoiceFinalized,
-            "invoice.payment_succeeded": self.handleInvoicePaymentSucceeded,
-            "invoice.payment_failed": self.handleInvoicePaymentFailed,
-            "customer.deleted": self.handleCustomerDeleted,
-            "customer.updated": self.handleCustomerUpdated,
-            "checkout.session.expired": self.handleCheckoutSessionExpired,
-            "invoice.updated": self.handleInvoiceUpdated,
-            "invoice.created": self.handleInvoiceCreated
+            "checkout.session.completed": self.handle_checkout_session_completed,
+            "checkout.session.expired": self.handle_checkout_session_expired,
+            "customer.subscription.created": self.handle_subscription_event,
+            "customer.subscription.updated": self.handle_subscription_event,
+            "customer.subscription.deleted": self.handle_subscription_deleted,
+            "invoice.payment_succeeded": self.handle_invoice_payment_succeeded,
+            "invoice.payment_failed": self.handle_invoice_payment_failed,
+            "invoice.finalized": self.handle_invoice_finalized,
+            "invoice.updated": self.handle_invoice_updated,
+            "invoice.created": self.handle_invoice_created,
+            "customer.deleted": self.handle_customer_deleted,
+            "customer.updated": self.handle_customer_updated,
         }
-        
-        self.data = self.getData()
-        
-        self.firebase_user_id = self.data.get("metadata", {}).get("firebase_uid", None)
-        self.firebase_stripe_service = FirebaseStripeService(firebase_user_id=self.firebase_user_id)
 
-    def handle_event(self) -> None:
-        try:
-            event = stripe.Webhook.construct_event(self.payload, self.sig_header, self.webhook_secret)
-        except stripe.error.SignatureVerificationError:
-            return "Invalid signature", 400
-
-        event_type = event["type"]
-        
-        if self.events_map.get(event_type):
-            self.events_map.get(event_type)()
-            return "Success", 200
-        else:
-            print("Unhandled event type:", event_type)
+    # -----------------------------
+    # Public API
+    # -----------------------------
+    def handle_event(self) -> Tuple[str, int]:
+        handler = self.events_map.get(self.event_type)
+        if not handler:
+            # Standardized log: event type and user id (may be None if not resolvable)
+            print(f"Event: {self.event_type}, user_id: {self.firebase_user_id}")
             return "Unhandled event", 400
 
+        try:
+            handler()
+            return "Success", 200
+        except Exception as e:
+            # Ensure we never crash the webhook endpoint
+            print(f"Error handling event {self.event_type}: {e}")
+            return "Error", 500
 
-    def handleCheckoutComplete(self):
-        self.firebase_stripe_service.update_subscription_info(
-            subscription_id=self.data.get("subscription"),
-            price_id=self.data.get("display_items", [{}])[0].get("price", {}).get("id"),
-            current_period_end=stripe.Subscription.retrieve(self.data.get("subscription")).get("current_period_end"),
-            status="active"
+    # -----------------------------
+    # Event handlers
+    # -----------------------------
+    def handle_checkout_session_completed(self) -> None:
+        session = self.data
+        self._log_event_and_return()
+
+    def handle_subscription_event(self) -> None:
+        subscription = self.data
+        self._ensure_firebase_context_from_subscription(subscription)
+
+        subscription_id = subscription.get("id")
+        status = subscription.get("status")
+        current_period_end = subscription.get("current_period_end")
+        price_id = None
+
+        # Some webhooks send partial subscription data
+        if not current_period_end or not subscription.get("items"):
+            # Safely refetch full subscription to ensure we get all fields
+            try:
+                sub = stripe.Subscription.retrieve(subscription_id)
+                current_period_end = sub.get("current_period_end")
+                items = sub.get("items", {}).get("data", [])
+                price_id = items[0].get("price", {}).get("id") if items else None
+                status = sub.get("status", status)
+            except Exception as e:
+                print(f"Failed to fetch full subscription data: {e}")
+        else:
+            items = subscription.get("items", {}).get("data", [])
+            price_id = items[0].get("price", {}).get("id") if items else None
+
+        self._firebase().update_subscription_info(
+            subscription_id=subscription_id,
+            price_id=price_id,
+            current_period_end=current_period_end,
+            status=status,
         )
-        print("Updated subscription info for user:", self.firebase_user_id)
-    
-    def handleSubscriptionUpdated(self):
-        self.firebase_stripe_service.update_subscription_info(
-            subscription_id=self.data.get("subscription"),
-            price_id=self.data.get("items", {}).get("data", [{}])[0].get("price", {}).get("id"),
-            current_period_end=self.data.get("current_period_end"),
-            status=self.data.get("status")
-        )
-        print("Updated subscription info for user:", self.firebase_user_id)
-        
-    def handleSubscriptionDeleted(self):
-        self.firebase_stripe_service.update_subscription_info(
+
+        self._log_event_and_return()
+
+
+    def handle_subscription_deleted(self) -> None:
+        subscription = self.data
+        self._ensure_firebase_context_from_subscription(subscription)
+
+        self._firebase().update_subscription_info(
             subscription_id=None,
             price_id=None,
             current_period_end=None,
-            status="free"
-            )
-        print("Cleared subscription info for user:", self.firebase_user_id)
-        
-    def handleSubscriptionCreated(self):
-        self.firebase_stripe_service.update_subscription_info(
-            subscription_id=self.data.get("subscription"),
-            price_id=self.data.get("items", {}).get("data", [{}])[0].get("price", {}).get("id"),
-            current_period_end=self.data.get("current_period_end"),
-            status=self.data.get("status")
+            status="free",
         )
-        print("Created subscription info for user:", self.firebase_user_id)
-    
-    def handleInvoicePaymentSucceeded(self):
-        print("TODO : Handle invoice.payment_succeeded event")
+        self._log_event_and_return()
 
-    def handleInvoicePaymentFailed(self):
-        print("TODO : Handle invoice.payment_failed event")
-        
-    def handleInvoiceFinalized(self):
-        print("TODO : Handle invoice.finalized event")
-        
-    def handleInvoiceUpdated(self):
-        print("TODO : Handle invoice.updated event")
-        
-    def handleInvoiceCreated(self):
-        print("TODO : Handle invoice.created event")
+    def handle_invoice_payment_succeeded(self) -> None:
+        invoice = self.data
+        self._ensure_firebase_context_from_invoice(invoice)
 
-    def handleCustomerDeleted(self):
-        self.firebase_stripe_service.update_subscription_info(
+        subscription_id = invoice.get("subscription")
+        if subscription_id:
+            sub = stripe.Subscription.retrieve(subscription_id)
+            current_period_end = sub.get("current_period_end")
+            status = sub.get("status")
+            items = sub.get("items", {}).get("data", [])
+            price_id = items[0].get("price", {}).get("id") if items else None
+
+            self._firebase().update_subscription_info(
+                subscription_id=subscription_id,
+                price_id=price_id,
+                current_period_end=current_period_end,
+                status=status,
+            )
+        self._log_event_and_return()
+
+    def handle_invoice_payment_failed(self) -> None:
+        invoice = self.data
+        self._ensure_firebase_context_from_invoice(invoice)
+
+        subscription_id = invoice.get("subscription")
+        # Reflect payment issue by marking status as past_due if we can
+        current_period_end = None
+        price_id = None
+        try:
+            if subscription_id:
+                sub = stripe.Subscription.retrieve(subscription_id)
+                current_period_end = sub.get("current_period_end")
+                items = sub.get("items", {}).get("data", [])
+                price_id = items[0].get("price", {}).get("id") if items else None
+        except Exception as e:
+            print("Failed to retrieve subscription on payment_failed:", e)
+
+        self._firebase().update_subscription_info(
+            subscription_id=subscription_id,
+            price_id=price_id,
+            current_period_end=current_period_end,
+            status="past_due",
+        )
+        self._log_event_and_return()
+
+    def handle_invoice_finalized(self) -> None:
+        invoice = self.data
+        self._ensure_firebase_context_from_invoice(invoice)
+        self._log_event_and_return()
+
+    def handle_invoice_updated(self) -> None:
+        invoice = self.data
+        self._ensure_firebase_context_from_invoice(invoice)
+        self._log_event_and_return()
+
+    def handle_invoice_created(self) -> None:
+        invoice = self.data
+        self._ensure_firebase_context_from_invoice(invoice)
+        self._log_event_and_return()
+
+    def handle_customer_deleted(self) -> None:
+        customer = self.data
+        self._ensure_firebase_context_from_customer(customer)
+        self._firebase().update_subscription_info(
             subscription_id=None,
             price_id=None,
             current_period_end=None,
-            status="free"
-            )
-        print("Cleared subscription info for deleted customer:", self.firebase_user_id)
-        
-    def handleCustomerUpdated(self):
-        self.firebase_stripe_service.update_customer_info(
-            email=self.data.get("email"),
-            name=self.data.get("name"),
-            phone=self.data.get("phone")
+            status="free",
         )
-        print("Updated customer info for user:", self.firebase_user_id)
+        self._log_event_and_return()
 
-    def handleCheckoutSessionExpired(self):
-        print("TODO : Handle checkout.session.expired event")
+    def handle_customer_updated(self) -> None:
+        customer = self.data
+        self._ensure_firebase_context_from_customer(customer)
+        self._firebase().update_customer_info(
+            email=customer.get("email"),
+            name=customer.get("name"),
+            phone=customer.get("phone"),
+        )
+        self._log_event_and_return()
 
-    def getData(self):
+    def handle_checkout_session_expired(self) -> None:
+        session = self.data
+        self._ensure_firebase_context_from_session(session)
+        self._log_event_and_return()
+
+    # -----------------------------
+    # Helpers
+    # -----------------------------
+    def _parse_event(self) -> Tuple[Dict[str, Any], str, Dict[str, Any]]:
+        if not self.webhook_secret:
+            raise ValueError("STRIPE_WEBHOOK_SECRET not configured")
         try:
             event = stripe.Webhook.construct_event(self.payload, self.sig_header, self.webhook_secret)
         except stripe.error.SignatureVerificationError:
-            return "Invalid signature", 400
+            raise
+        event_type: str = event.get("type")
+        data: Dict[str, Any] = event.get("data", {}).get("object", {})
+        return event, event_type, data
 
-        return event["data"]["object"]
+    def _extract_firebase_uid_from_data(self, data: Dict[str, Any]) -> Optional[str]:
+        # Many objects include metadata; prefer it when present
+        return data.get("metadata", {}).get("firebase_uid")
+
+    def _ensure_firebase_context_from_session(self, session: Dict[str, Any]) -> None:
+        # Checkout Session may carry metadata or at least a customer id
+        if not self.firebase_user_id:
+            self.firebase_user_id = self._extract_firebase_uid_from_data(session)
+        customer_id = session.get("customer")
+        self._ensure_firebase_service(customer_id)
+
+    def _ensure_firebase_context_from_subscription(self, subscription: Dict[str, Any]) -> None:
+        if not self.firebase_user_id:
+            self.firebase_user_id = self._extract_firebase_uid_from_data(subscription)
+        customer_id = subscription.get("customer")
+        self._ensure_firebase_service(customer_id)
+
+    def _ensure_firebase_context_from_invoice(self, invoice: Dict[str, Any]) -> None:
+        if not self.firebase_user_id:
+            self.firebase_user_id = self._extract_firebase_uid_from_data(invoice)
+        customer_id = invoice.get("customer")
+        self._ensure_firebase_service(customer_id)
+
+    def _ensure_firebase_context_from_customer(self, customer: Dict[str, Any]) -> None:
+        if not self.firebase_user_id:
+            self.firebase_user_id = self._extract_firebase_uid_from_data(customer)
+        customer_id = customer.get("id")
+        self._ensure_firebase_service(customer_id)
+
+    def _ensure_firebase_service(self, customer_id: Optional[str]) -> None:
+        # If we still don't have a Firebase user id, resolve by customer id via Firestore lookup
+        if not self.firebase_stripe_service:
+            self.firebase_stripe_service = FirebaseStripeService(firebase_user_id=self.firebase_user_id)
+
+        if not self.firebase_user_id and customer_id:
+            resolved = self.firebase_stripe_service.get_user_id_by_customer_id(customer_id)
+            if resolved:
+                self.firebase_user_id = resolved
+                # Rebind service to the resolved user id
+                self.firebase_stripe_service = FirebaseStripeService(firebase_user_id=self.firebase_user_id)
+
+    def _firebase(self) -> FirebaseStripeService:
+        if not self.firebase_stripe_service:
+            # Final fallback construction; will error if user context truly missing
+            self.firebase_stripe_service = FirebaseStripeService(firebase_user_id=self.firebase_user_id)
+        return self.firebase_stripe_service
+
+    def _log_event_and_return(self) -> None:
+        # Standardized end-of-handler log: event type and user id, then return
+        print(f"Event: {self.event_type}, user_id: {self.firebase_user_id} \n")
+        return

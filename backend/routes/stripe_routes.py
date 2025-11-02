@@ -40,7 +40,6 @@ def create_checkout_session():
 
 @stripe_bp.route('/webhook', methods=['POST'])
 def webhook():
-    print("Received Stripe webhook")
     service = StripeWebhookService(
         sig_header=request.headers.get("Stripe-Signature"),
         payload=request.data
