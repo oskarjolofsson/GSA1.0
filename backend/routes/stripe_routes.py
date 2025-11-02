@@ -102,4 +102,5 @@ def cancel_subscription():
         })
 
     except Exception as e:
+        print(f"Error cancelling subscription: {e}")
         return jsonify({"error": str(e)}), 400
