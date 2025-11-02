@@ -56,7 +56,7 @@ async function switchSubscription(newPriceId) {
   return res.json();
 }
 
-export default function PriceTable() {
+export default function PriceTable({ refreshTrigger = 0 }) {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState(null);
@@ -109,7 +109,7 @@ export default function PriceTable() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, refreshTrigger]);
 
   const handlePlanSelect = async (priceIdMonthly, priceIdYearly) => {
     const priceId = billingCycle === "monthly" ? priceIdMonthly : priceIdYearly;

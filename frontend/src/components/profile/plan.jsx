@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/authContext';
 import PriceTable from '../subscriptions/PricingTable.jsx';
+import MessagePopup from '../popup/MessagePopup';
 import { TrendingDown } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
 
@@ -12,6 +13,8 @@ export default function SubscriptionPlan() {
     const { user, loading } = useAuth();
     const [hasSubscription, setHasSubscription] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [message, setMessage] = useState(null);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     // Fetch subscription status to decide whether to show the cancel button
     useEffect(() => {
@@ -46,7 +49,7 @@ export default function SubscriptionPlan() {
         }
         fetchStatus();
         return () => { cancelled = true; };
-    }, [user]);
+    }, [user, refreshTrigger]);
 
     const handleCancel = async () => {
         if (!user || isCancelling) return;
@@ -67,12 +70,14 @@ export default function SubscriptionPlan() {
             if (!res.ok) {
                 throw new Error(data?.error || 'Failed to cancel subscription');
             }
-            alert('Subscription will cancel at period end.');
-            // Optimistically hide the button now
-            setHasSubscription(false);
+            setMessage('Subscription has been cancelled.');
+            // Redirect to homepage after a short delay to show the message
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
         } catch (e) {
             console.error(e);
-            alert('Could not cancel subscription. Please try again.');
+            setMessage('Could not cancel subscription. Please try again.');
         } finally {
             setIsCancelling(false);
         }
@@ -82,7 +87,7 @@ export default function SubscriptionPlan() {
         <section className="relative w-full max-w-4xl mx-auto px-4 mt-[14vh] mb-12">
             <div className="max-w-xl rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 sm:p-10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] mx-auto">
                 <h2 className="text-lg font-semibold text-white">Subscription plan</h2>
-                <PriceTable />
+                <PriceTable refreshTrigger={refreshTrigger} />
 
                 {/* Cancel subscription button: only show when user is signed in AND has an active subscription */}
                 {user && !loading && hasSubscription && (
@@ -98,6 +103,13 @@ export default function SubscriptionPlan() {
                             </span>
                         </button>
                     </div>
+                )}
+
+                {message && (
+                    <MessagePopup
+                        message={message}
+                        onClose={() => setMessage(null)}
+                    />
                 )}
             </div>
         </section>
