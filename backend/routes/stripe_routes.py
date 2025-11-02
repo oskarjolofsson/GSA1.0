@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
-from services.stripe.handleSubscriptionDeleted import HandleSubscriptionDeleted
+from services.stripe.handleSubscriptionSwitch import HandleSubscriptionSwitch
+from services.stripe.handleCheckoutComplete import HandleCheckoutComplete
 from services.firebase.firebase_auth import require_auth
 from services.firebase.firebase_stripe import FirebaseStripeService
 from services.stripe.stripeSession import StripeSessionService
@@ -90,7 +91,7 @@ def cancel_subscription():
         email = request.user.get("email")
         user = FirebaseStripeService(uid, email=email).db_get_user()
 
-        canceled_sub = HandleSubscriptionDeleted(
+        canceled_sub = HandleCheckoutComplete(
             customer_id=user.get("stripe_customer_id"),
             subscription_id=user.get("stripe_subscription_id")
         ).endSubscription()
@@ -103,4 +104,34 @@ def cancel_subscription():
 
     except Exception as e:
         print(f"Error cancelling subscription: {e}")
+        return jsonify({"error": str(e)}), 400
+    
+@stripe_bp.post("/switch-subscription")
+@require_auth
+def switch_subscription():
+    try:
+        body = request.get_json(force=True)
+        new_price_id = body.get("newPriceId")
+        if not new_price_id:
+            return jsonify({"error": "Missing newPriceId"}), 400
+
+        uid = request.user["uid"]
+        email = request.user.get("email")
+        user = FirebaseStripeService(uid, email=email).db_get_user()
+        
+        updated_sub = HandleSubscriptionSwitch(
+            customer_id=user.get("stripe_customer_id"),
+            subscription_id=user.get("stripe_subscription_id"),
+            price_id=new_price_id,
+            current_period_end=user.get("current_period_end")
+        )
+        updated_sub.handle()
+
+        return jsonify({
+            "success": True,
+            "message": "Subscription switched successfully"
+        })
+
+    except Exception as e:
+        print(f"Error switching subscription: {e}")
         return jsonify({"error": str(e)}), 400

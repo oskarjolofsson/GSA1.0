@@ -39,6 +39,6 @@ class StripeSessionService(StripeService):
             customer=self.customer_id,
             return_url=f"{self.APP_URL}/billing",
         )
-
         return session.url
+    
     
