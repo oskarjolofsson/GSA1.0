@@ -24,4 +24,7 @@ class HandleSubscriptionDeleted(StripeEvents):
         return self.firebase_user_id
     
     def endSubscription(self):
-        stripe.Subscription.delete(self.subscription_id, cancel_at_period_end=True)
+        stripe.Subscription.modify(
+            self.subscription_id,
+            cancel_at_period_end=True,
+        )
