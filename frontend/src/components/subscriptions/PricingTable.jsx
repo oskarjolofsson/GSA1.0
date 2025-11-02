@@ -3,6 +3,7 @@ import PlanCard from "./PlanCard";
 import { getAuth } from "firebase/auth";
 import SignInPopup from "../signInPopup/signInPopup";
 import { useAuth } from "../../auth/authContext";
+import MessagePopup from "../popup/MessagePopup";
 
 const URL = import.meta.env.VITE_API_URL;
 
@@ -32,11 +33,46 @@ async function createCheckoutSession(priceId) {
   window.location.href = data.url; // redirect to Stripe Checkout
 }
 
+async function switchSubscription(newPriceId) {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) throw new Error("Not signed in");
+
+  const token = await user.getIdToken();
+  const res = await fetch(`${URL}/stripe/switch-subscription`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ newPriceId }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+
+  return res.json();
+}
+
 export default function PriceTable() {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [showPopup, setShowPopup] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { user, login } = useAuth();
   const [activePriceId, setActivePriceId] = useState(null);
+
+  // const playerMonthlyPriceId = "price_1SO1QwLTYv4hoLQi2JrfexqN";
+  const playerYearlyPriceId = "price_1SO1QwLTYv4hoLQiBshbUAUV";
+  // const proMonthlyPriceId = "price_1SO1V1LTYv4hoLQihQYZtd1Y";
+  const proYearlyPriceId = "price_1SO1V1LTYv4hoLQiUQl93mv4";
+
+  // Test price ids
+  const playerMonthlyPriceId = "price_1SOya1LTYv4hoLQivA9NcNOl";
+  const proMonthlyPriceId = "price_1SOyaOLTYv4hoLQiJptaAZlV";
 
   // Fetch the user's current active Stripe price_id from backend
   useEffect(() => {
@@ -78,15 +114,51 @@ export default function PriceTable() {
   const handlePlanSelect = async (priceIdMonthly, priceIdYearly) => {
     const priceId = billingCycle === "monthly" ? priceIdMonthly : priceIdYearly;
     if (user) {
-      try {
-        await createCheckoutSession(priceId);
-      } catch (e) {
-        // Surface minimal feedback; detailed errors are in console
-        console.error(e);
-        alert("Could not start checkout. Please try again.");
-      }
+      // Show confirmation message before proceeding
+      setMessage("Proceeding with subscription update. Click OK to confirm. \n You’ll be charged a prorated amount for the rest of your current billing period");
+      setPendingAction({
+        priceId,
+        priceIdMonthly,
+        priceIdYearly,
+      });
     } else {
       setShowPopup(true);
+    }
+  };
+
+  const handleMessageConfirm = async () => {
+    if (!pendingAction) {
+      setMessage(null);
+      return;
+    }
+
+    const { priceId } = pendingAction;
+    setIsLoading(true);
+    try {
+      // If user already has an active subscription, switch instead of creating a new checkout session
+      if (activePriceId) {
+        if (activePriceId === priceId) {
+          setMessage("You're already on this plan.");
+          setPendingAction(null);
+          setIsLoading(false);
+          return;
+        }
+        await switchSubscription(priceId);
+        // Optimistically update local state; backend will confirm on next status fetch
+        setActivePriceId(priceId);
+        setMessage("Subscription updated successfully.");
+        setPendingAction(null);
+        setIsLoading(false);
+      } else {
+        await createCheckoutSession(priceId);
+        // Note: createCheckoutSession redirects to Stripe, so we won't reach here
+      }
+    } catch (e) {
+      // Surface minimal feedback; detailed errors are in console
+      console.error(e);
+      setMessage("Could not start checkout. Please try again.");
+      setPendingAction(null);
+      setIsLoading(false);
     }
   };
 
@@ -133,24 +205,25 @@ export default function PriceTable() {
           popular={true}
           isCurrentPlan={
             !!activePriceId && (
-              activePriceId === "price_1SO1QwLTYv4hoLQi2JrfexqN" ||
-              activePriceId === "price_1SO1QwLTYv4hoLQiBshbUAUV"
+              activePriceId === playerMonthlyPriceId ||
+              activePriceId === playerYearlyPriceId
             )
           }
           isActiveCycle={
             activePriceId === (billingCycle === "monthly"
-              ? "price_1SO1QwLTYv4hoLQi2JrfexqN"
-              : "price_1SO1QwLTYv4hoLQiBshbUAUV")
+              ? playerMonthlyPriceId
+              : playerYearlyPriceId)
           }
           hasSubscription={!!activePriceId}
+          isLoading={isLoading}
           onSelect={() =>
             handlePlanSelect(
-              "price_1SO1QwLTYv4hoLQi2JrfexqN",
-              "price_1SO1QwLTYv4hoLQiBshbUAUV"
+              playerMonthlyPriceId,
+              playerYearlyPriceId
             )
           }
-          price_id_monthly={"price_1SO1QwLTYv4hoLQi2JrfexqN"}
-          price_id_yearly={"price_1SO1QwLTYv4hoLQiBshbUAUV"}
+          price_id_monthly={playerMonthlyPriceId}
+          price_id_yearly={playerYearlyPriceId}
         />
 
         <PlanCard
@@ -165,29 +238,41 @@ export default function PriceTable() {
           popular={false}
           isCurrentPlan={
             !!activePriceId && (
-              activePriceId === "price_1SO1V1LTYv4hoLQihQYZtd1Y" ||
-              activePriceId === "price_1SO1V1LTYv4hoLQiUQl93mv4"
+              activePriceId === proMonthlyPriceId ||
+              activePriceId === proYearlyPriceId
             )
           }
           isActiveCycle={
             activePriceId === (billingCycle === "monthly"
-              ? "price_1SO1V1LTYv4hoLQihQYZtd1Y"
-              : "price_1SO1V1LTYv4hoLQiUQl93mv4")
+              ? proMonthlyPriceId
+              : proYearlyPriceId)
           }
           hasSubscription={!!activePriceId}
+          isLoading={isLoading}
           onSelect={() =>
             handlePlanSelect(
-              "price_1SO1V1LTYv4hoLQihQYZtd1Y",
-              "price_1SO1V1LTYv4hoLQiUQl93mv4"
+              proMonthlyPriceId,
+              proYearlyPriceId
             )
           }
-          price_id_monthly={"price_1SO1V1LTYv4hoLQihQYZtd1Y"}
-          price_id_yearly={"price_1SO1V1LTYv4hoLQiUQl93mv4"}
+          price_id_monthly={proMonthlyPriceId}
+          price_id_yearly={proYearlyPriceId}
         />
       </div>
 
       {showPopup && !user && (
         <SignInPopup onStartSignIn={login} onClose={() => setShowPopup(false)} />
+      )}
+
+      {message && (
+        <MessagePopup
+          message={message}
+          onClose={() => {
+            setMessage(null);
+            setPendingAction(null);
+          }}
+          onConfirm={handleMessageConfirm}
+        />
       )}
     </div>
   );

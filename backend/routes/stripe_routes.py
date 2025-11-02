@@ -125,7 +125,7 @@ def switch_subscription():
             price_id=new_price_id,
             current_period_end=user.get("current_period_end")
         )
-        updated_sub.handle()
+        updated_sub.execute()
 
         return jsonify({
             "success": True,
