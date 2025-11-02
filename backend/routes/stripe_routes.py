@@ -93,7 +93,8 @@ def cancel_subscription():
 
         canceled_sub = HandleCheckoutComplete(
             customer_id=user.get("stripe_customer_id"),
-            subscription_id=user.get("stripe_subscription_id")
+            subscription_id=user.get("stripe_subscription_id"),
+            current_period_end=user.get("current_period_end")
         ).endSubscription()
 
         return jsonify({
