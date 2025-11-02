@@ -10,6 +10,7 @@ class StripeService(ABC):
         load_dotenv()
         self.stripe_api_key = os.getenv("STRIPE_SECRET_KEY")
         self.APP_URL = os.getenv("APP_URL")
+        self.VITE_API_URL = os.getenv("VITE_API_URL")
         stripe.api_key = self.stripe_api_key
         
         

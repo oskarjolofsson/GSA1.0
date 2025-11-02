@@ -142,6 +142,7 @@ export default function PriceTable() {
               ? "price_1SO1QwLTYv4hoLQi2JrfexqN"
               : "price_1SO1QwLTYv4hoLQiBshbUAUV")
           }
+          hasSubscription={!!activePriceId}
           onSelect={() =>
             handlePlanSelect(
               "price_1SO1QwLTYv4hoLQi2JrfexqN",
@@ -173,6 +174,7 @@ export default function PriceTable() {
               ? "price_1SO1V1LTYv4hoLQihQYZtd1Y"
               : "price_1SO1V1LTYv4hoLQiUQl93mv4")
           }
+          hasSubscription={!!activePriceId}
           onSelect={() =>
             handlePlanSelect(
               "price_1SO1V1LTYv4hoLQihQYZtd1Y",

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useAuth } from "../../auth/authContext";
 import { Check, Star, Loader2 } from "lucide-react";
 
 export default function PlanCard({
@@ -15,11 +14,9 @@ export default function PlanCard({
   isCurrentPlan = false,
   isActiveCycle = false,
   onSelect,
-  price_id_monthly,
-  price_id_yearly,
+  hasSubscription = false,
 }) {
   const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
   const price = cycle === "monthly" ? monthlyPrice : yearlyPrice;
   // const priceId = cycle === "monthly" ? price_id_monthly : price_id_yearly;
 
@@ -116,7 +113,7 @@ export default function PlanCard({
           ) : isActiveCycle ? (
             "Selected"
           ) : (
-            user ? "Change plan" : "Choose plan"
+            hasSubscription ? "Change plan" : "Choose plan"
           )}
         </button>
 
