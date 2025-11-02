@@ -4,10 +4,6 @@ import stripe
 import os
 from dotenv import load_dotenv
 
-from services.stripe.handleCheckoutComplete import HandleCheckoutComplete
-from services.stripe.handleSubscriptionDeleted import HandleSubscriptionDeleted
-from services.stripe.handleSubscriptionUpdated import HandleSubscriptionUpdated
-
 class StripeWebhookService(StripeService):
     
     def __init__(self, sig_header: str, payload: bytes):
@@ -34,9 +30,9 @@ class StripeWebhookService(StripeService):
         }
         
         self.data = self.getData()
-            
-        self.firebase_stripe_service = FirebaseStripeService(None)
-        self.firebase_user_id = self.firebase_stripe_service.get_user_id_by_customer_id(self.data.get("customer", None))
+        
+        self.firebase_user_id = self.data.get("metadata", {}).get("firebase_uid", None)
+        self.firebase_stripe_service = FirebaseStripeService(firebase_user_id=self.firebase_user_id)
 
     def handle_event(self) -> None:
         try:

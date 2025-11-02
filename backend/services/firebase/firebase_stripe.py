@@ -1,13 +1,14 @@
 import stripe
 from dotenv import load_dotenv
 import os
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 from services.firebase.firebase import FireBaseService
 
 load_dotenv()
 
 class FirebaseStripeService(FireBaseService):
-    def __init__(self, firebase_user_id: str, email: str = None):
+    def __init__(self, firebase_user_id: str = None, email: str = None):
         super().__init__(user_id=firebase_user_id)
         self.stripe_api_key = os.getenv("STRIPE_SECRET_KEY")
         stripe.api_key = self.stripe_api_key
@@ -110,12 +111,20 @@ class FirebaseStripeService(FireBaseService):
         if updates:
             user.update(updates)
         self.db_save_user(user) 
-
-    def get_user_id_by_customer_id(self, customer_id: str) -> dict | None:
-        users_ref = self.db.collection('users')
-        query = users_ref.where('stripe_customer_id', '==', customer_id).limit(1)
+    
+    def get_user_id_by_customer_id(self, customer_id: str) -> str | None:
+        # Query across all 'stripe' subcollections under 'users'
+        query = self.db.collection_group('stripe') \
+               .where(filter=FieldFilter('stripe_customer_id', '==', customer_id)) \
+               .limit(1)
         results = query.stream()
+
         for doc in results:
-            self.user_id = doc.id
-            return doc.id
+            # Extract user_id from the document path: users/{user_id}/stripe/{doc}
+            user_id = doc.reference.parent.parent.id
+            self.user_id = user_id
+            print("Customer ID " + str(customer_id))
+            print("Found user ID by customer ID:", user_id)
+            return user_id
+
         return None
