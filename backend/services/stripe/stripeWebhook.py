@@ -82,9 +82,12 @@ class StripeWebhookService(StripeService):
         subscription = self.data
         self._ensure_firebase_context_from_subscription(subscription)
 
+        items = subscription.get("items", {}).get("data", [])
         subscription_id = subscription.get("id")
         status = subscription.get("status")
-        current_period_end = subscription.get("current_period_end")
+        current_period_end = subscription.get("current_period_end") or (
+            items[0].get("current_period_end") if items else None
+        )
         price_id = None
 
         # Some webhooks send partial subscription data
@@ -92,8 +95,10 @@ class StripeWebhookService(StripeService):
             # Safely refetch full subscription to ensure we get all fields
             try:
                 sub = stripe.Subscription.retrieve(subscription_id)
-                current_period_end = sub.get("current_period_end")
                 items = sub.get("items", {}).get("data", [])
+                current_period_end = sub.get("current_period_end") or (
+                    items[0].get("current_period_end") if items else None
+                )
                 price_id = items[0].get("price", {}).get("id") if items else None
                 status = sub.get("status", status)
             except Exception as e:

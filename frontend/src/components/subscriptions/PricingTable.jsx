@@ -114,13 +114,31 @@ export default function PriceTable() {
   const handlePlanSelect = async (priceIdMonthly, priceIdYearly) => {
     const priceId = billingCycle === "monthly" ? priceIdMonthly : priceIdYearly;
     if (user) {
-      // Show confirmation message before proceeding
-      setMessage("Proceeding with subscription update. Click OK to confirm. \n You’ll be charged a prorated amount for the rest of your current billing period");
-      setPendingAction({
-        priceId,
-        priceIdMonthly,
-        priceIdYearly,
-      });
+      // Only show confirmation message if switching plans (not for new subscriptions)
+      if (activePriceId) {
+        setMessage("Proceeding with subscription update. Click OK to confirm. \n You'll be charged a prorated amount for the rest of your current billing period");
+        setPendingAction({
+          priceId,
+          priceIdMonthly,
+          priceIdYearly,
+        });
+      } else {
+        // For new subscriptions, go directly to checkout
+        setPendingAction({
+          priceId,
+          priceIdMonthly,
+          priceIdYearly,
+        });
+        setIsLoading(true);
+        try {
+          await createCheckoutSession(priceId);
+        } catch (e) {
+          console.error(e);
+          setMessage("Could not start checkout. Please try again.");
+          setPendingAction(null);
+          setIsLoading(false);
+        }
+      }
     } else {
       setShowPopup(true);
     }
