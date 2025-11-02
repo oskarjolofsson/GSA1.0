@@ -15,14 +15,16 @@ export default function PlanCard({
   isActiveCycle = false,
   onSelect,
   hasSubscription = false,
+  isLoading: parentIsLoading = false,
 }) {
   const [isLoading, setIsLoading] = useState(false);
+  const combinedIsLoading = isLoading || parentIsLoading;
   const price = cycle === "monthly" ? monthlyPrice : yearlyPrice;
   // const priceId = cycle === "monthly" ? price_id_monthly : price_id_yearly;
 
   const handleClick = async () => {
     // Disable only when the currently viewed cycle matches the active subscription
-    if (isActiveCycle || isLoading) return;
+    if (isActiveCycle || combinedIsLoading) return;
     try {
       setIsLoading(true);
       const maybePromise = onSelect?.(id, cycle);
@@ -94,18 +96,18 @@ export default function PlanCard({
         {/* CTA */}
         <button
           onClick={handleClick}
-          disabled={isActiveCycle || isLoading}
-          aria-disabled={isActiveCycle || isLoading}
-          aria-busy={isLoading}
+          disabled={isActiveCycle || combinedIsLoading}
+          aria-disabled={isActiveCycle || combinedIsLoading}
+          aria-busy={combinedIsLoading}
           className={`w-full rounded-xl px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition ${
-            isActiveCycle || isLoading
+            isActiveCycle || combinedIsLoading
               ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-50 cursor-not-allowed"
               : popular
               ? "bg-black text-white dark:bg-white dark:text-black"
               : "bg-slate-900/90 text-white hover:bg-slate-900 dark:bg-slate-100 dark:text-black"
           }`}
         >
-          {isLoading ? (
+          {combinedIsLoading ? (
             <span className="inline-flex items-center justify-center">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
               Loading…

@@ -11,7 +11,7 @@ class HandleSubscriptionSwitch(StripeEvents):
                  ):
         super().__init__(customer_id, subscription_id, price_id, current_period_end)
 
-    def handle(self) -> None:
+    def event(self) -> None:
         # Fetch the subscription and current price
         subscription = stripe.Subscription.retrieve(self.subscription_id)
         current_price_id = subscription["items"]["data"][0]["price"]["id"]
@@ -30,6 +30,7 @@ class HandleSubscriptionSwitch(StripeEvents):
         # Decide proration behavior (or use dashboard defaults)
         if current_amount < new_amount:
             # Upgrade → immediately
+            print("Upgrading subscription immediately.")
             stripe.Subscription.modify(
                 self.subscription_id,
                 items=[{"id": subscription["items"]["data"][0]["id"], "price": new_price_id}],
