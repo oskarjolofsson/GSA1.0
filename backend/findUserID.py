@@ -6,7 +6,6 @@ from services.firebase.firebase_stripe import FirebaseStripeService
 # Find user ID by Stripe customer ID
 firebase_stripe = FirebaseStripeService()  
 userId = firebase_stripe.get_user_id_by_customer_id("cus_TLcfGWJG4OVzP7")
-print("Found user ID:", userId)
 
 # Register purchase
 firebase_stripe.update_subscription_info(

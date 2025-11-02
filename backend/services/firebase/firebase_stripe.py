@@ -19,11 +19,8 @@ class FirebaseStripeService(FireBaseService):
     def get_or_create_customer(self) -> str:
         user: dict = self.db_get_user()
         
-        print("Fetching or creating Stripe customer for user:", self.user_id, "email:", self.email)
-        
         # Check if customer already exists in Firestore
         if user.get("stripe_customer_id"):
-            print("Found existing Stripe customer for user:", self.user_id)
             customer_id = user["stripe_customer_id"]
             return customer_id
         
@@ -63,29 +60,26 @@ class FirebaseStripeService(FireBaseService):
         return {}
 
     def db_save_user(self, user: dict) -> None:
-        print("Saving user to Stripe Firestore:", user)
         self.stripe_ref.set(user, merge=True)
         
     def update_subscription_info(self, 
-                                 subscription_id: str,
-                                 price_id: str,
-                                 current_period_end: int,
-                                 status: str = None
+                                 subscription_id: str = "",
+                                 price_id: str = "",
+                                 current_period_end: int = "",
+                                 status: str = ""
                                  ) -> None:
         user : dict = self.db_get_user()
         
-        # Only update if not None
+        # Only update if not None or empty string
         updates = {}
-        if subscription_id is not None:
+        if  subscription_id != "":
             updates["stripe_subscription_id"] = subscription_id
-        if price_id is not None:
+        if price_id != "":
             updates["stripe_price_id"] = price_id
-        if current_period_end is not None:
+        if current_period_end != "":
             updates["current_period_end"] = current_period_end
-        if status is not None:
+        if status != "":
             updates["status"] = status
-
-        print("Updating user", self.user_id, "with", updates)
         
         if updates:
             user.update(updates)
@@ -105,8 +99,6 @@ class FirebaseStripeService(FireBaseService):
             updates["name"] = name
         if phone is not None:
             updates["phone"] = phone
-
-        print("Updating customer info for user", self.user_id, "with", updates)
         
         if updates:
             user.update(updates)
@@ -123,8 +115,11 @@ class FirebaseStripeService(FireBaseService):
             # Extract user_id from the document path: users/{user_id}/stripe/{doc}
             user_id = doc.reference.parent.parent.id
             self.user_id = user_id
-            print("Customer ID " + str(customer_id))
-            print("Found user ID by customer ID:", user_id)
+            
+            # Update the doc_ref and stripe_ref to point to this user
+            self.doc_ref = self.db.collection('users').document(self.user_id)
+            self.stripe_ref = self.doc_ref.collection('stripe').document('customer')
+ 
             return user_id
 
         return None
