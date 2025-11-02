@@ -31,9 +31,31 @@ class HandleCheckoutComplete(StripeEvents):
         print("Cancelling subscription for user:", self.firebase_user_id)
         print("Subscription ID:", self.subscription_id)
         print("Current period end:", self.current_period_end)
-        
-        # Cancel the subscription at period end
-        stripe.Subscription.modify(
-            self.subscription_id,
-            cancel_at=self.current_period_end
-        )
+
+        try:
+            subscription = stripe.Subscription.cancel(self.subscription_id)
+
+            # Safely print result
+            if isinstance(subscription, dict) or hasattr(subscription, "get"):
+                print(f"✅ Subscription {subscription.get('id')} cancelled successfully.")
+            else:
+                print(f"✅ Subscription cancelled: {subscription}")
+
+            # Ensure the response has the required fields
+            if isinstance(subscription, dict):
+                if "current_period_end" not in subscription and self.current_period_end:
+                    subscription["current_period_end"] = self.current_period_end
+            else:
+                # Convert to dict if it's a Stripe object
+                subscription_dict = subscription.to_dict()
+                if "current_period_end" not in subscription_dict and self.current_period_end:
+                    subscription_dict["current_period_end"] = self.current_period_end
+                subscription = subscription_dict
+
+            return subscription
+
+        except Exception as e:
+            import traceback
+            print("❌ Error cancelling subscription:", repr(e))
+            traceback.print_exc()
+            raise

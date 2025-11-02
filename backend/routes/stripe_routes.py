@@ -5,6 +5,7 @@ from services.firebase.firebase_auth import require_auth
 from services.firebase.firebase_stripe import FirebaseStripeService
 from services.stripe.stripeSession import StripeSessionService
 from services.stripe.stripeWebhook import StripeWebhookService
+import traceback
 
 
 # Create a Blueprint for stripe routes
@@ -135,4 +136,6 @@ def switch_subscription():
 
     except Exception as e:
         print(f"Error switching subscription: {e}")
+        
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 400
