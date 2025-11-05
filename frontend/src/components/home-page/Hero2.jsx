@@ -6,8 +6,9 @@
  * - Demo preview card showing upload page screenshot
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../auth/authContext';
 
 function backgroundTexture() {
     return (
@@ -30,6 +31,22 @@ function BottomVignette() {
 }
 
 function TextBlock() {
+    const { user } = useAuth();
+    const [cta, setCta] = useState("Try for free →");
+    const [ctaSubtext, setCtaSubtext] = useState("Try it free — your first 3 videos are on us");
+
+    useEffect(() => {
+        if (user) {
+            // User is authenticated, show personalized content
+            setCta("Make your analysis →");
+            setCtaSubtext(`Welcome back, ${user.displayName}! Ready to upload your next video?`);
+        } else {
+            // User is not authenticated, show default content
+            setCta("Try for free →");
+            setCtaSubtext("Try it free — your first 3 videos are on us");
+        }
+    }, [user]);
+
     return (
         <div className="text-center max-w-2xl mx-auto px-4 mb-16">
             {/* Header */}
@@ -48,12 +65,12 @@ function TextBlock() {
                 className="inline-flex items-center gap-2 rounded-xl px-6 sm:px-8 py-3 sm:py-4 bg-emerald-500/90 hover:bg-emerald-500 text-white font-semibold shadow-md shadow-emerald-900/30 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-colors text-base sm:text-lg mb-4"
                 onClick={() => window.location.href = '/analyse'}
             >
-                Try it free →
+                {cta}
             </button>
 
             {/* Small text below CTA */}
             <p className="text-sm text-slate-400">
-                Try it free — your first 3 videos are on us
+                {ctaSubtext}
             </p>
         </div>
     );
