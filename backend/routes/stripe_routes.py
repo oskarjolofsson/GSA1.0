@@ -148,13 +148,16 @@ def verify_session():
     Called by the frontend on the success page.
     """
     session_id = request.args.get('session_id')
+    print("Verifying session ID:", session_id)
+    
     if not session_id:
         return jsonify({"error": "Missing session_id"}), 400
     
     try:
         session_status = StripeSessionService().successful_checkout_session(session_id)
+        print("Session status:", session_status)
 
-        if session_status != 'paid':
+        if not session_status:
             return jsonify({"error": "Payment not completed"}), 400
 
         return jsonify({"message": "Purchase verified successfully"}), 200

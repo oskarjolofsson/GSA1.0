@@ -43,5 +43,5 @@ class StripeSessionService(StripeService):
 
     def successful_checkout_session(self, session_id: str) -> str:
         session = stripe.checkout.Session.retrieve(session_id)
-        return session.status
+        return session.payment_status == 'paid'
     
