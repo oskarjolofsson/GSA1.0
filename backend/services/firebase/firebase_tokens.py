@@ -5,9 +5,12 @@ Handles Firebase authentication verification and Firestore operations for token 
 
 from firebase_admin import firestore
 from services.firebase.firebase import FireBaseService;
+import os
+from dotenv import load_dotenv
 
 class FireBaseTokens(FireBaseService):
     def __init__(self, user_id):
+        load_dotenv()
         super().__init__(user_id)
         
         self.tokens_ref = self.db.collection('users').document(user_id).collection('tokens').document('token_balance')
@@ -54,3 +57,17 @@ class FireBaseTokens(FireBaseService):
             'lastUpdated': firestore.SERVER_TIMESTAMP
         }, merge=True)
         return self.get_user_tokens()
+
+    def add_tokens_based_on_priceid(self, price_id: str) -> int:
+        price_to_tokens = {
+            os.getenv("PRICE_ID_PLAYER_MONTHLY"): 10,
+            os.getenv("PRICE_ID_PLAYER_YEARLY"): 120,
+            os.getenv("PRICE_ID_PRO_MONTHLY"): 30,
+            os.getenv("PRICE_ID_PRO_YEARLY"): 360,
+        }
+        if not price_to_tokens.get(price_id):
+            # TODO send some warning to monitoring service?
+            raise ValueError(f"Unknown price_id: {price_id}")
+
+        print(f"Adding {price_to_tokens.get(price_id, 0)} tokens for price_id {price_id}")
+        self.add_tokens(price_to_tokens.get(price_id, 0))

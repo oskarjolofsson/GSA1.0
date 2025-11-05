@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional, Tuple
 import stripe
 from dotenv import load_dotenv
 
+from services.firebase.firebase_tokens import FireBaseTokens
 from services.firebase.firebase_stripe import FirebaseStripeService
 from services.stripe.stripe import StripeService
 
@@ -147,6 +148,13 @@ class StripeWebhookService(StripeService):
                 current_period_end=current_period_end,
                 status=status,
             )
+        
+        # Add appropriate amount of tokens upon successful payment
+        try:
+            FireBaseTokens(self.firebase_user_id).add_tokens_based_on_priceid(price_id)
+        except ValueError as e:
+            print(f"Error adding tokens based on price_id: {e}")
+
         self._log_event_and_return()
 
     def handle_invoice_payment_failed(self) -> None:
