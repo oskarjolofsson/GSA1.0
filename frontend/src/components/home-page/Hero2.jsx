@@ -6,6 +6,9 @@
  * - Demo preview card showing upload page screenshot
  */
 
+import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 function backgroundTexture() {
     return (
         <div
@@ -57,6 +60,49 @@ function TextBlock() {
 }
 
 function DemoPreview() {
+    const [isDragging, setIsDragging] = useState(false);
+    const [error, setError] = useState('');
+    const inputRef = useRef(null);
+    const navigate = useNavigate();
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        setIsDragging(true);
+    }
+
+    function handleDragLeave() {
+        setIsDragging(false);
+    }
+
+    function handleFileSelection(file) {
+        // Validate file type
+        if (!file.type.startsWith('video/')) {
+            setError('Please select a video file');
+            return;
+        }
+
+        setError('');
+        
+        // Pass file to analyse page via state
+        navigate('/analyse', { state: { uploadedFile: file } });
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        setIsDragging(false);
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    }
+
+    function handleChange(e) {
+        const files = e.target.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    }
+
     return (
         <div className="mx-auto max-w-4xl px-4">
             {/* Mock browser window */}
@@ -102,11 +148,33 @@ function DemoPreview() {
                         </p>
 
                         {/* Upload area */}
-                        <div className="rounded-lg border-2 border-dashed border-slate-600/50 px-6 py-4 sm:px-8 sm:py-6">
+                        <input
+                            ref={inputRef}
+                            type="file"
+                            accept="video/*"
+                            onChange={handleChange}
+                            className="hidden"
+                        />
+                        <div
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            onClick={() => inputRef.current?.click()}
+                            className={`rounded-lg border-2 border-dashed px-6 py-4 sm:px-8 sm:py-6 cursor-pointer transition-all ${
+                                isDragging
+                                    ? 'border-emerald-400/60 bg-emerald-400/10'
+                                    : 'border-slate-600/50 hover:border-slate-600/70 hover:bg-slate-700/10'
+                            }`}
+                        >
                             <p className="text-slate-300 text-sm font-medium">
                                 Click or drag video here
                             </p>
                         </div>
+
+                        {/* Error message */}
+                        {error && (
+                            <p className="mt-4 text-sm text-red-400">{error}</p>
+                        )}
 
                         {/* Feature hints */}
                         <div className="mt-8 grid grid-cols-3 gap-4 w-full max-w-sm text-center">
