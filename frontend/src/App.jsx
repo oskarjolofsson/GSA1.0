@@ -41,17 +41,15 @@ function App() {
       <Route element={<Layout />}>
         {/* Public */}
         <Route path="/" element={<Home />} />
-        {/* <Route path="/about" element={<About />} /> */}
         <Route path="/products" element={<Products />} />
-        <Route path="/billing/success" element={<Success />} />
-        <Route path="/billing/cancel" element={<Cancel />} />
         <Route path="/legal/terms-and-conditions" element={<TermsAndCond />} />
         <Route path="/legal/privacy-policy" element={<Privacy />} />
 
         {/* Protected */}
         <Route element={<RequireAuth />}>
+          <Route path="/billing/success" element={<Success />} />
+          <Route path="/billing/cancel" element={<Cancel />} />
           <Route path="/analyse" element={<Analyser />} />
-          {/* <Route path="/settings" element={<Settings />} /> */}
           <Route path="/profile" element={<Profile />} />
           <Route path="/past-drills" element={<PastDrills />} />
         </Route>
