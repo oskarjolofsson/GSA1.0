@@ -30,8 +30,8 @@ class StripeSessionService(StripeService):
         )   
         
         return session
-    
-    def create_portal_session(self):
+
+    def create_portal_session(self) -> str:
         if not self.firebase_uid or not self.customer_id:
             raise ValueError("Missing firebase_uid or customer_id to create portal session")
 
@@ -40,5 +40,8 @@ class StripeSessionService(StripeService):
             return_url=f"{self.APP_URL}/billing",
         )
         return session.url
-    
+
+    def successful_checkout_session(self, session_id: str) -> str:
+        session = stripe.checkout.Session.retrieve(session_id)
+        return session.status
     
