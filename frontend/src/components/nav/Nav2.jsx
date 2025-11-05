@@ -9,7 +9,7 @@ function leftLogo() {
     <a href="/" className="flex items-center gap-2 shrink-0">
       <img src="/icons/logo.png" alt="Logo" className="h-8 w-8" />
       <span className="text-xl font-bold tracking-tight">
-        <span className="text-white">True </span>Form
+        <span className="text-white">True </span>Swing
       </span>
     </a>
   );

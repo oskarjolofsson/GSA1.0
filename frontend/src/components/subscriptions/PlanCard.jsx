@@ -43,7 +43,7 @@ export default function PlanCard({
   return (
     <div
       className={`relative flex flex-col h-full w-full 
-  rounded-2xl border border-white/15 p-6 bg-white/5 backdrop-blur-sm shadow-sm text-white max-w-sm
+  rounded-2xl border border-white/15 p-6 bg-white/5 backdrop-blur-sm shadow-sm text-white max-w-sm hover:scale-[1.02] transition-transform duration-200
   ${popular ? "ring-2 ring-white" : ""}`}
 
       aria-label={`${name} plan`}
