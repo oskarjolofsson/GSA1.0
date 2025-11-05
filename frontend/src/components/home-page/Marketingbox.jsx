@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 // Simple icon set for the feature list
 const Icon = ({ name }) => {
   const common = "h-5 w-5";
@@ -87,12 +89,11 @@ export default function MarketingBox({
       </ul>
 
       {/* CTA (optional for later) */}
-      {/* <div className="mt-4">
-        <a href="#" className="inline-flex items-center gap-2 rounded-xl px-4 py-2 ring-1 ring-slate-300 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
-          Learn more
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </a>
-      </div> */}
+      <div className="mt-4">
+        <Link to="/analyse" className="inline-flex items-center gap-2 rounded-xl px-6 py-3 bg-emerald-500/90 hover:bg-emerald-500 text-white font-semibold shadow-md shadow-emerald-900/30 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-colors">
+          Try it for free
+        </Link>
+      </div>
     </div>
   );
 }
