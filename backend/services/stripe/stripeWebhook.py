@@ -80,7 +80,7 @@ class StripeWebhookService(StripeService):
 
     def handle_subscription_event(self) -> None:
         subscription = self.data
-        self._ensure_firebase_context_from_subscription(subscription)
+        self._ensure_firebase_context(subscription)
 
         items = subscription.get("items", {}).get("data", [])
         subscription_id = subscription.get("id")
@@ -119,7 +119,7 @@ class StripeWebhookService(StripeService):
 
     def handle_subscription_deleted(self) -> None:
         subscription = self.data
-        self._ensure_firebase_context_from_subscription(subscription)
+        self._ensure_firebase_context(subscription)
 
         self._firebase().update_subscription_info(
             subscription_id=None,
@@ -131,7 +131,7 @@ class StripeWebhookService(StripeService):
 
     def handle_invoice_payment_succeeded(self) -> None:
         invoice = self.data
-        self._ensure_firebase_context_from_invoice(invoice)
+        self._ensure_firebase_context(invoice)
 
         subscription_id = invoice.get("subscription")
         if subscription_id:
@@ -151,7 +151,7 @@ class StripeWebhookService(StripeService):
 
     def handle_invoice_payment_failed(self) -> None:
         invoice = self.data
-        self._ensure_firebase_context_from_invoice(invoice)
+        self._ensure_firebase_context(invoice)
 
         subscription_id = invoice.get("subscription")
         # Reflect payment issue by marking status as past_due if we can
@@ -176,22 +176,22 @@ class StripeWebhookService(StripeService):
 
     def handle_invoice_finalized(self) -> None:
         invoice = self.data
-        self._ensure_firebase_context_from_invoice(invoice)
+        self._ensure_firebase_context(invoice)
         self._log_event_and_return()
 
     def handle_invoice_updated(self) -> None:
         invoice = self.data
-        self._ensure_firebase_context_from_invoice(invoice)
+        self._ensure_firebase_context(invoice)
         self._log_event_and_return()
 
     def handle_invoice_created(self) -> None:
         invoice = self.data
-        self._ensure_firebase_context_from_invoice(invoice)
+        self._ensure_firebase_context(invoice)
         self._log_event_and_return()
 
     def handle_customer_deleted(self) -> None:
         customer = self.data
-        self._ensure_firebase_context_from_customer(customer)
+        self._ensure_firebase_context(customer)
         self._firebase().update_subscription_info(
             subscription_id=None,
             price_id=None,
@@ -202,7 +202,7 @@ class StripeWebhookService(StripeService):
 
     def handle_customer_updated(self) -> None:
         customer = self.data
-        self._ensure_firebase_context_from_customer(customer)
+        self._ensure_firebase_context(customer)
         self._firebase().update_customer_info(
             email=customer.get("email"),
             name=customer.get("name"),
@@ -212,7 +212,7 @@ class StripeWebhookService(StripeService):
 
     def handle_checkout_session_expired(self) -> None:
         session = self.data
-        self._ensure_firebase_context_from_session(session)
+        self._ensure_firebase_context(session)
         self._log_event_and_return()
 
     # -----------------------------
@@ -233,29 +233,22 @@ class StripeWebhookService(StripeService):
         # Many objects include metadata; prefer it when present
         return data.get("metadata", {}).get("firebase_uid")
 
-    def _ensure_firebase_context_from_session(self, session: Dict[str, Any]) -> None:
-        # Checkout Session may carry metadata or at least a customer id
+    def _ensure_firebase_context(self, stripe_object: Dict[str, Any]) -> None:
+        """
+        Unified helper to resolve Firebase user context from any Stripe object.
+        Handles sessions, subscriptions, invoices, and customers by extracting
+        metadata or customer_id for Firestore lookup.
+        """
+        # Try to extract firebase_uid from metadata first
         if not self.firebase_user_id:
-            self.firebase_user_id = self._extract_firebase_uid_from_data(session)
-        customer_id = session.get("customer")
-        self._ensure_firebase_service(customer_id)
+            self.firebase_user_id = self._extract_firebase_uid_from_data(stripe_object)
 
-    def _ensure_firebase_context_from_subscription(self, subscription: Dict[str, Any]) -> None:
-        if not self.firebase_user_id:
-            self.firebase_user_id = self._extract_firebase_uid_from_data(subscription)
-        customer_id = subscription.get("customer")
-        self._ensure_firebase_service(customer_id)
+        # Extract customer_id from the object (location varies by object type)
+        # - sessions and subscriptions use "customer"
+        # - invoices use "customer"
+        # - customers use "id"
+        customer_id = stripe_object.get("customer") or stripe_object.get("id")
 
-    def _ensure_firebase_context_from_invoice(self, invoice: Dict[str, Any]) -> None:
-        if not self.firebase_user_id:
-            self.firebase_user_id = self._extract_firebase_uid_from_data(invoice)
-        customer_id = invoice.get("customer")
-        self._ensure_firebase_service(customer_id)
-
-    def _ensure_firebase_context_from_customer(self, customer: Dict[str, Any]) -> None:
-        if not self.firebase_user_id:
-            self.firebase_user_id = self._extract_firebase_uid_from_data(customer)
-        customer_id = customer.get("id")
         self._ensure_firebase_service(customer_id)
 
     def _ensure_firebase_service(self, customer_id: Optional[str]) -> None:
