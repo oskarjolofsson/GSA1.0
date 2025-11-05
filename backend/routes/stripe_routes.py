@@ -139,3 +139,29 @@ def switch_subscription():
         
         traceback.print_exc()
         return jsonify({"error": str(e)}), 400
+    
+@stripe_bp.route('/verify-session', methods=['GET'])
+@require_auth
+def verify_session():
+    """
+    Verifies the checkout session after a successful payment.
+    Called by the frontend on the success page.
+    """
+    session_id = request.args.get('session_id')
+    if not session_id:
+        return jsonify({"error": "Missing session_id"}), 400
+    
+    try:
+        session_status = StripeSessionService().successful_checkout_session(session_id)
+
+        if session_status != 'paid':
+            return jsonify({"error": "Payment not completed"}), 400
+
+        return jsonify({"message": "Purchase verified successfully"}), 200
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': "error verifying session",
+            'details': str(e)
+        }), 500
