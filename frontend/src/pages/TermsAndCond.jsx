@@ -59,6 +59,19 @@ export default function Terms() {
         text="These Terms are governed by the laws of Sweden. Disputes will be handled by the competent courts of Sweden unless otherwise required by mandatory consumer law."
       />
 
+      <LegalContentSection
+        subheader="Payments, Subscriptions & Refunds"
+        text={`Certain features of True Swing require a paid subscription or one-time purchase. By subscribing, you authorize True Swing (or its payment provider) to charge your selected payment method on a recurring basis, depending on your chosen plan (monthly or yearly).`}
+        points={[
+          "All prices are displayed in your Euros and include applicable taxes unless stated otherwise.",
+          "Subscription plans renew automatically at the end of each billing period unless cancelled prior to renewal.",
+          "You may cancel your subscription at any time via your account settings. Access will remain active until the end of the current billing period.",
+          "Payments are non-refundable, except where required by law or explicitly stated otherwise in promotional terms.",
+          "In case of failed payments, True Swing reserves the right to suspend or terminate access until payment is successfully processed.",
+        ]}
+      />
+
+
       {/* <LegalContentSection
         header="8. Contact"
         text={`Questions, support, or DMCA notices: support@trueswing.app`}
