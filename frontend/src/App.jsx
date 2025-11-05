@@ -15,6 +15,7 @@ import PastDrills from "./pages/PastDrills.jsx";
 import TermsAndCond from './pages/TermsAndCond.jsx';
 import Privacy from './pages/Privacy.jsx';
 import Success from './pages/Success.jsx';
+import Cancel from './pages/Cancel.jsx';
 
 // Import components
 import Layout from './components/layout.jsx';
@@ -43,6 +44,7 @@ function App() {
         {/* <Route path="/about" element={<About />} /> */}
         <Route path="/products" element={<Products />} />
         <Route path="/billing/success" element={<Success />} />
+        <Route path="/billing/cancel" element={<Cancel />} />
         <Route path="/legal/terms-and-conditions" element={<TermsAndCond />} />
         <Route path="/legal/privacy-policy" element={<Privacy />} />
 
