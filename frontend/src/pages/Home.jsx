@@ -4,7 +4,7 @@ import PricingTable from "../components/subscriptions/PricingTable.jsx";
 
 import MarketingBox from "../components/home-page/Marketingbox.jsx";
 
-import { getAuth } from "firebase/auth";
+import Hero2 from '../components/home-page/Hero2.jsx';
 
 export default function Home() {
 
@@ -21,7 +21,7 @@ export default function Home() {
 
     return (
         <div>
-            <Hero />
+            <Hero2 />
             {/* Border between hero and the rest  */}
             <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
             
