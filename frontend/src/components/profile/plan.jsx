@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/authContext';
 import PriceTable from '../subscriptions/PricingTable.jsx';
+import CurrentPlanBadge from '../subscriptions/CurrentPlanBadge.jsx';
 import MessagePopup from '../popup/MessagePopup';
 import { TrendingDown } from 'lucide-react';
 import { getAuth } from 'firebase/auth';
@@ -92,7 +93,14 @@ export default function SubscriptionPlan() {
     return (
         <section className="relative w-full max-w-4xl mx-auto px-4 mt-[14vh] mb-12">
             <div className="max-w-xl rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 sm:p-10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] mx-auto">
-                <h2 className="text-lg font-semibold text-white">Subscription plan</h2>
+                <h2 className="text-lg font-semibold text-white mb-4">Subscription</h2>
+                <div className="mb-6">
+                    <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wide mb-2">Current Plan</h3>
+                    <CurrentPlanBadge refreshTrigger={refreshTrigger} />
+                </div>
+                <div className="mb-4">
+                    <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wide">Switch Plan</h3>
+                </div>
                 <PriceTable refreshTrigger={refreshTrigger} />
 
                 {/* Cancel subscription button: only show when user is signed in AND has an active subscription */}

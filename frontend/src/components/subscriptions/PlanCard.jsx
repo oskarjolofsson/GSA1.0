@@ -51,7 +51,7 @@ export default function PlanCard({
       {/* Top section - will stay at top */}
       <div className="flex-none">
         {/* Badges */}
-          <div className="flex items-center gap-2 mb-4 min-h-[28px] lg:absolute md:top-6 md:right-6">
+          <div className="flex items-center gap-2 mb-4 min-h-[28px]  md:top-6 md:right-6">
             {popular && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white/10 text-white text-xs px-2 py-1">
                 <Star className="h-3 w-3" aria-hidden /> Most popular
