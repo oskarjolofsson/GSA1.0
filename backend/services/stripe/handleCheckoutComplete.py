@@ -35,12 +35,6 @@ class HandleCheckoutComplete(StripeEvents):
         try:
             subscription = stripe.Subscription.cancel(self.subscription_id)
 
-            # Safely print result
-            if isinstance(subscription, dict) or hasattr(subscription, "get"):
-                print(f"✅ Subscription {subscription.get('id')} cancelled successfully.")
-            else:
-                print(f"✅ Subscription cancelled: {subscription}")
-
             # Ensure the response has the required fields
             if isinstance(subscription, dict):
                 if "current_period_end" not in subscription and self.current_period_end:
@@ -56,6 +50,6 @@ class HandleCheckoutComplete(StripeEvents):
 
         except Exception as e:
             import traceback
-            print("❌ Error cancelling subscription:", repr(e))
+            print("Error cancelling subscription:", repr(e))
             traceback.print_exc()
             raise
