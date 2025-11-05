@@ -149,11 +149,7 @@ class StripeWebhookService(StripeService):
                 status=status,
             )
         
-        # Add appropriate amount of tokens upon successful payment
-        try:
-            FireBaseTokens(self.firebase_user_id).add_tokens_based_on_priceid(price_id)
-        except ValueError as e:
-            print(f"Error adding tokens based on price_id: {e}")
+        self._add_tokens()
 
         self._log_event_and_return()
 
@@ -281,3 +277,18 @@ class StripeWebhookService(StripeService):
         # Standardized end-of-handler log: event type and user id, then return
         print(f"Event: {self.event_type}, user_id: {self.firebase_user_id} \n")
         return
+    
+    def _add_tokens(self) -> None:
+        # get price_id based on firebase_user_id
+        price_id = None
+        try:
+            price_id = self._firebase().db_get_user().get("stripe_price_id")
+        except Exception as e:
+            print(f"Error retrieving subscription info for token addition: {e}")
+            return
+        print(price_id)
+        # Add appropriate amount of tokens upon successful payment
+        try:
+            FireBaseTokens(self.firebase_user_id).add_tokens_based_on_priceid(price_id)
+        except ValueError as e:
+            print(f"Error adding tokens based on price_id: {e}")

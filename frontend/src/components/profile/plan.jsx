@@ -14,6 +14,7 @@ export default function SubscriptionPlan() {
     const [hasSubscription, setHasSubscription] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
     const [message, setMessage] = useState(null);
+    const [showConfirmCancel, setShowConfirmCancel] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     // Fetch subscription status to decide whether to show the cancel button
@@ -51,10 +52,15 @@ export default function SubscriptionPlan() {
         return () => { cancelled = true; };
     }, [user, refreshTrigger]);
 
-    const handleCancel = async () => {
+    const handleCancelClick = () => {
+        setShowConfirmCancel(true);
+    };
+
+    const handleConfirmCancel = async () => {
         if (!user || isCancelling) return;
         try {
             setIsCancelling(true);
+            setShowConfirmCancel(false);
             const auth = getAuth();
             const currentUser = auth.currentUser;
             if (!currentUser) return;
@@ -93,7 +99,7 @@ export default function SubscriptionPlan() {
                 {user && !loading && hasSubscription && (
                     <div className="flex select-none justify-center">
                         <button
-                            onClick={handleCancel}
+                            onClick={handleCancelClick}
                             disabled={isCancelling}
                             className="flex items-center text-red-400 hover:text-red-500 disabled:opacity-60 cursor-pointer transition-colors duration-200"
                         >
@@ -109,6 +115,14 @@ export default function SubscriptionPlan() {
                     <MessagePopup
                         message={message}
                         onClose={() => setMessage(null)}
+                    />
+                )}
+
+                {showConfirmCancel && (
+                    <MessagePopup
+                        message="Are you sure you want to cancel your subscription? This action cannot be undone."
+                        onClose={() => setShowConfirmCancel(false)}
+                        onConfirm={handleConfirmCancel}
                     />
                 )}
             </div>
