@@ -159,7 +159,7 @@ export default function PriceTable({ refreshTrigger = 0 }) {
           features={["10 new tokens every month", "Save videos", "Prompt responses"]}
           currency="EUR"
           cycle={billingCycle}
-          popular={true}
+          popular={false}
           isCurrentPlan={
             !!activePriceId && (
               activePriceId === playerMonthlyPriceId ||
@@ -192,7 +192,7 @@ export default function PriceTable({ refreshTrigger = 0 }) {
           features={["50 new tokens every month", "Save videos", "Prompt responses", "Organize clients", "Priority support"]}
           currency="EUR"
           cycle={billingCycle}
-          popular={false}
+          popular={true}
           isCurrentPlan={
             !!activePriceId && (
               activePriceId === proMonthlyPriceId ||

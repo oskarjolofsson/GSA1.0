@@ -123,3 +123,8 @@ class FirebaseStripeService(FireBaseService):
             return user_id
 
         return None
+    
+    def get_subscription_status(self) -> bool:
+        user : dict = self.db_get_user()
+        status = user.get("status", "free")
+        return status in ["trialing", "active"]
