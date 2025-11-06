@@ -25,5 +25,6 @@ CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app", "-w", "2", "--threads", "4", "
 # docker buildx build --platform linux/amd64,linux/arm64   -t oskarjolofsson/true_swing_backend:latest --push .
 
 # To pull and run the image inside Hetzner Cloud, use:
+# cd /srv/trueswing
 # docker compose pull
 # docker compose up -d
