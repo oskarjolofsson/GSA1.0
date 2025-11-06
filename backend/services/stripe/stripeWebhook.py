@@ -149,7 +149,7 @@ class StripeWebhookService(StripeService):
                 status=status,
             )
         
-        self._add_tokens()
+        #self._add_tokens()
 
         self._log_event_and_return()
 

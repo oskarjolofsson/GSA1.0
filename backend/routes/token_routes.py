@@ -83,45 +83,45 @@ def spend_tokens():
             'error': str(e)
         }), 500
 
-@token_bp.route('/add', methods=['POST'])
-@require_auth
-def add_tokens():
-    """
-    Add tokens to the authenticated user's account
-    (This endpoint should be protected and only accessible by admins in production)
+# @token_bp.route('/add', methods=['POST'])
+# @require_auth
+# def add_tokens():
+#     """
+#     Add tokens to the authenticated user's account
+#     (This endpoint should be protected and only accessible by admins in production)
     
-    Request Body:
-        amount (int): Number of tokens to add
+#     Request Body:
+#         amount (int): Number of tokens to add
         
-    Returns:
-        JSON response with new token balance
-    """
-    try:
-        user_id = request.user['uid']
-        data = request.get_json()
-        amount = data.get('amount')
+#     Returns:
+#         JSON response with new token balance
+#     """
+#     try:
+#         user_id = request.user['uid']
+#         data = request.get_json()
+#         amount = data.get('amount')
         
-        # Validate amount
-        if not amount or not isinstance(amount, int) or amount <= 0:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid token amount. Must be a positive integer.'
-            }), 400
+#         # Validate amount
+#         if not amount or not isinstance(amount, int) or amount <= 0:
+#             return jsonify({
+#                 'success': False,
+#                 'error': 'Invalid token amount. Must be a positive integer.'
+#             }), 400
         
-        # Add the tokens
-        new_balance = FireBaseTokens(user_id).add_tokens(amount)
+#         # Add the tokens
+#         new_balance = FireBaseTokens(user_id).add_tokens(amount)
         
-        return jsonify({
-            'success': True,
-            'message': f'Successfully added {amount} tokens',
-            'new_balance': new_balance
-        }), 200
+#         return jsonify({
+#             'success': True,
+#             'message': f'Successfully added {amount} tokens',
+#             'new_balance': new_balance
+#         }), 200
         
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+#     except Exception as e:
+#         return jsonify({
+#             'success': False,
+#             'error': str(e)
+#         }), 500
 
 @token_bp.route('/initialize', methods=['POST'])
 @require_auth
