@@ -1,60 +1,9 @@
 import { useEffect, useState } from "react";
 import PlanCard from "./PlanCard";
-import { getAuth } from "firebase/auth";
 import SignInPopup from "../signInPopup/signInPopup";
 import { useAuth } from "../../auth/authContext";
 import MessagePopup from "../popup/MessagePopup";
-
-const URL = import.meta.env.VITE_API_URL;
-
-async function createCheckoutSession(priceId) {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  if (!user) throw new Error("Not signed in");
-
-  // Get Firebase ID token to send to your Flask backend
-  const token = await user.getIdToken();
-
-  const res = await fetch(`${URL}/stripe/create-checkout-session`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`, // backend verifies this
-    },
-    body: JSON.stringify({ priceId }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
-
-  const data = await res.json();
-  window.location.href = data.url; // redirect to Stripe Checkout
-}
-
-async function switchSubscription(newPriceId) {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  if (!user) throw new Error("Not signed in");
-
-  const token = await user.getIdToken();
-  const res = await fetch(`${URL}/stripe/switch-subscription`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ newPriceId }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
-
-  return res.json();
-}
+import SubscriptionService from "../../services/activeSubscription";
 
 export default function PriceTable({ refreshTrigger = 0 }) {
   const [billingCycle, setBillingCycle] = useState("monthly");
@@ -83,21 +32,9 @@ export default function PriceTable({ refreshTrigger = 0 }) {
           setActivePriceId(null);
           return;
         }
-        const auth = getAuth();
-        const currentUser = auth.currentUser;
-        if (!currentUser) return;
-        const token = await currentUser.getIdToken();
-        const res = await fetch(`${URL}/stripe/subscription-status`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
+        const priceId = await SubscriptionService.getActivePriceId();
         if (!cancelled) {
-          setActivePriceId(data?.price_id || null);
+          setActivePriceId(priceId);
         }
       } catch (err) {
         // eslint-disable-next-line no-console
@@ -116,7 +53,9 @@ export default function PriceTable({ refreshTrigger = 0 }) {
     if (user) {
       // Only show confirmation message if switching plans (not for new subscriptions)
       if (activePriceId) {
-        setMessage("Proceeding with subscription update. Click OK to confirm. \n You'll be charged a prorated amount for the rest of your current billing period");
+        const charge = await SubscriptionService.getUpcomingInvoicePrice(priceId);
+
+        setMessage(`Proceeding with subscription update. Click OK to confirm. \n You'll be charged ${charge} for the rest of your current billing period`);
         setPendingAction({
           priceId,
           priceIdMonthly,
@@ -131,7 +70,8 @@ export default function PriceTable({ refreshTrigger = 0 }) {
         });
         setIsLoading(true);
         try {
-          await createCheckoutSession(priceId);
+          const checkoutUrl = await SubscriptionService.createCheckoutSession(priceId);
+          window.location.href = checkoutUrl;
         } catch (e) {
           console.error(e);
           setMessage("Could not start checkout. Please try again.");
@@ -161,14 +101,15 @@ export default function PriceTable({ refreshTrigger = 0 }) {
           setIsLoading(false);
           return;
         }
-        await switchSubscription(priceId);
+        await SubscriptionService.switchSubscription(priceId);
         // Optimistically update local state; backend will confirm on next status fetch
         setActivePriceId(priceId);
         setMessage("Subscription updated successfully.");
         setPendingAction(null);
         setIsLoading(false);
       } else {
-        await createCheckoutSession(priceId);
+        const checkoutUrl = await SubscriptionService.createCheckoutSession(priceId);
+        window.location.href = checkoutUrl;
         // Note: createCheckoutSession redirects to Stripe, so we won't reach here
       }
     } catch (e) {
@@ -187,21 +128,19 @@ export default function PriceTable({ refreshTrigger = 0 }) {
         <div className="inline-flex rounded-lg bg-white/10 p-1 backdrop-blur-sm">
           <button
             onClick={() => setBillingCycle("monthly")}
-            className={`px-6 py-2 text-sm font-medium rounded-md transition-all ${
-              billingCycle === "monthly"
+            className={`px-6 py-2 text-sm font-medium rounded-md transition-all ${billingCycle === "monthly"
                 ? "bg-white text-black shadow-sm"
                 : "text-white/70 hover:text-white"
-            }`}
+              }`}
           >
             Monthly
           </button>
           <button
             onClick={() => setBillingCycle("yearly")}
-            className={`px-6 py-2 text-sm font-medium rounded-md transition-all ${
-              billingCycle === "yearly"
+            className={`px-6 py-2 text-sm font-medium rounded-md transition-all ${billingCycle === "yearly"
                 ? "bg-white text-black shadow-sm"
                 : "text-white/70 hover:text-white"
-            }`}
+              }`}
           >
             Yearly
             <span className="ml-1.5 text-xs text-green-400">Save 60€</span>

@@ -1,6 +1,7 @@
 import { useAuth } from '../../auth/authContext';
 import tokenService from '../../services/tokenService';
 import { useEffect, useState } from 'react';
+import SubscriptionService from '../../services/activeSubscription';
 
 export default function GeneralProfile() {
     const { user, loading } = useAuth();
@@ -60,9 +61,14 @@ function TokenBalance() {
 
         async function fetchBalance() {
             if (!user) return;
+            // If user is on a paid plan, we can skip fetching balance and set to unlimited
             try {
-                const res = await tokenService.getBalance(user.uid);
-                if (!cancelled) setBalance(res);
+                if (SubscriptionService.getActiveSubscription(user.uid)) {
+                    setBalance('∞');
+                } else {
+                    const res = await tokenService.getBalance(user.uid);
+                    if (!cancelled) setBalance(res);
+                }
             } catch (e) {
                 if (!cancelled) {
                     setError(true);

@@ -31,13 +31,26 @@ class HandleSubscriptionSwitch(StripeEvents):
         if current_amount < new_amount:
             # Upgrade → immediately
             print("Upgrading subscription immediately.")
-            stripe.Subscription.modify(
+            updated = stripe.Subscription.modify(
                 self.subscription_id,
-                items=[{"id": subscription["items"]["data"][0]["id"], "price": new_price_id}],
+                items=[{
+                    "id": subscription["items"]["data"][0]["id"],
+                    "price": new_price_id,
+                }],
                 proration_behavior="create_prorations",
+                payment_behavior="default_incomplete",  # replaces 'charge_automatically'
+                expand=["latest_invoice.payment_intent"]
             )
+            
+            try:
+                invoice_id = updated["latest_invoice"]
+                stripe.Invoice.pay(invoice_id)
+            except Exception as e:
+                print(f"Error paying invoice: {e}")
+
         else:
             # Downgrade → wait until next billing period
+            print("Downgrading subscription at period end.")
             stripe.Subscription.modify(
                 self.subscription_id,
                 items=[{"id": subscription["items"]["data"][0]["id"], "price": new_price_id}],

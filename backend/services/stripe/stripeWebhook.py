@@ -62,7 +62,7 @@ class StripeWebhookService(StripeService):
         if not handler:
             # Standardized log: event type and user id (may be None if not resolvable)
             print(f"Event: {self.event_type}, user_id: {self.firebase_user_id}")
-            return "Unhandled event", 400
+            return "Unhandled event", 404
 
         try:
             handler()
@@ -235,7 +235,7 @@ class StripeWebhookService(StripeService):
 
     def _extract_firebase_uid_from_data(self, data: Dict[str, Any]) -> Optional[str]:
         # Many objects include metadata; prefer it when present
-        return data.get("metadata", {}).get("firebase_uid")
+        return data.get("metadata", {}).get("firebase_uid", None)
 
     def _ensure_firebase_context(self, stripe_object: Dict[str, Any]) -> None:
         """
