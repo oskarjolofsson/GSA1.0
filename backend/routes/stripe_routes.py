@@ -5,6 +5,7 @@ from services.firebase.firebase_auth import require_auth
 from services.firebase.firebase_stripe import FirebaseStripeService
 from services.stripe.stripeSession import StripeSessionService
 from services.stripe.stripeWebhook import StripeWebhookService
+from services.stripe.stripeInvoiceService import StripeInvoiceService
 import traceback
 
 
@@ -168,3 +169,16 @@ def verify_session():
             'error': "error verifying session",
             'details': str(e)
         }), 500
+
+@stripe_bp.route('/upcoming-invoice_price', methods=['GET'])
+@require_auth
+def upcoming_invoices():
+    try:
+        uid = request.user["uid"]
+        new_price_id = request.args.get("newPriceId")
+
+        new_charge = StripeInvoiceService(uid, new_price_id).get_upcoming_invoice_price()
+        return jsonify({"new_charge": new_charge}), 200
+    except Exception as e:
+        print(f"Error fetching upcoming invoices: {e}")
+        return jsonify({"error": str(e)}), 500
