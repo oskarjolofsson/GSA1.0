@@ -3,11 +3,16 @@ import { useAuth } from '../../auth/authContext';
 import { Check } from 'lucide-react';
 import SubscriptionService from '../../services/activeSubscription';
 
+const playerMonthlyPriceId = import.meta.env.VITE_PRICE_ID_PLAYER_MONTHLY;
+  const playerYearlyPriceId = import.meta.env.VITE_PRICE_ID_PLAYER_YEARLY;
+  const proMonthlyPriceId = import.meta.env.VITE_PRICE_ID_PRO_MONTHLY;
+  const proYearlyPriceId = import.meta.env.VITE_PRICE_ID_PRO_YEARLY;
+
 const PLAN_INFO = {
-  'price_1SOya1LTYv4hoLQivA9NcNOl': { name: 'Player', cycle: 'Monthly', price: '€7' },
-  'price_1SO1QwLTYv4hoLQiBshbUAUV': { name: 'Player', cycle: 'Yearly', price: '€5/mo' },
-  'price_1SOyaOLTYv4hoLQiJptaAZlV': { name: 'Pro', cycle: 'Monthly', price: '€15' },
-  'price_1SO1V1LTYv4hoLQiUQl93mv4': { name: 'Pro', cycle: 'Yearly', price: '€10/mo' },
+  [playerMonthlyPriceId]: { name: 'Player', cycle: 'Monthly', price: '€7' },
+  [playerYearlyPriceId]: { name: 'Player', cycle: 'Yearly', price: '€5/mo' },
+  [proMonthlyPriceId]: { name: 'Pro', cycle: 'Monthly', price: '€15' },
+  [proYearlyPriceId]: { name: 'Pro', cycle: 'Yearly', price: '€10/mo' },
 };
 
 export default function CurrentPlanBadge({ refreshTrigger = 0 }) {

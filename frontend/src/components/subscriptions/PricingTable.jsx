@@ -14,14 +14,10 @@ export default function PriceTable({ refreshTrigger = 0 }) {
   const { user, login } = useAuth();
   const [activePriceId, setActivePriceId] = useState(null);
 
-  // const playerMonthlyPriceId = "price_1SO1QwLTYv4hoLQi2JrfexqN";
-  const playerYearlyPriceId = "price_1SO1QwLTYv4hoLQiBshbUAUV";
-  // const proMonthlyPriceId = "price_1SO1V1LTYv4hoLQihQYZtd1Y";
-  const proYearlyPriceId = "price_1SO1V1LTYv4hoLQiUQl93mv4";
-
-  // Test price ids
-  const playerMonthlyPriceId = "price_1SOya1LTYv4hoLQivA9NcNOl";
-  const proMonthlyPriceId = "price_1SOyaOLTYv4hoLQiJptaAZlV";
+  const playerMonthlyPriceId = import.meta.env.VITE_PRICE_ID_PLAYER_MONTHLY;
+  const playerYearlyPriceId = import.meta.env.VITE_PRICE_ID_PLAYER_YEARLY;
+  const proMonthlyPriceId = import.meta.env.VITE_PRICE_ID_PRO_MONTHLY;
+  const proYearlyPriceId = import.meta.env.VITE_PRICE_ID_PRO_YEARLY;
 
   // Fetch the user's current active Stripe price_id from backend
   useEffect(() => {
@@ -55,7 +51,7 @@ export default function PriceTable({ refreshTrigger = 0 }) {
       if (activePriceId) {
         const charge = await SubscriptionService.getUpcomingInvoicePrice(priceId);
 
-        setMessage(`Proceeding with subscription update. Click OK to confirm. \n You'll be charged ${charge} for the rest of your current billing period`);
+        setMessage(`Confirm plan change. You will will be billed on your next renewal date. Continue?`);
         setPendingAction({
           priceId,
           priceIdMonthly,
