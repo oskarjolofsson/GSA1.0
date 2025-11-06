@@ -6,6 +6,7 @@ import DropZone from "./DropZone.jsx";
 import PreviewPane from "./preview/PreviewPane.jsx";
 import ResultBox from "./result-box.jsx";
 import ErrorPopup from "../popup/ErrorPopup.jsx";
+import OutOfTokensPopup from "../popup/OutOfTokensPopup.jsx";
 import tokenService from "../../services/tokenService.js";
 import SubscriptionService from "../../services/activeSubscription.js";
 import UploadButtonZone from "./UploadButtonZone.jsx";
@@ -44,6 +45,7 @@ export default function UploadPage({ initialFile }) {
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [showOutOfTokensPopup, setShowOutOfTokensPopup] = useState(false);
 
   function onTime(start, end) {
     setStartTime(start);
@@ -123,6 +125,12 @@ export default function UploadPage({ initialFile }) {
   async function onUpload() {
     if (!file) return; // Exit if no file is selected
     if (uploading) return;
+
+    // Check if user has no tokens and no subscription
+    if (!hasSubscription && tokenCount === 0) {
+      setShowOutOfTokensPopup(true);
+      return;
+    }
 
     // Clear any previous error before starting a new upload
     setErrorMessage("");
@@ -229,6 +237,7 @@ export default function UploadPage({ initialFile }) {
 
         <AnalysisResult analysis={analysis} />
         <ErrorPopup message={errorMessage} onClose={() => setErrorMessage("")} />
+        <OutOfTokensPopup isOpen={showOutOfTokensPopup} onClose={() => setShowOutOfTokensPopup(false)} />
       </section>
     </div>
   );
