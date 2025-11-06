@@ -7,6 +7,7 @@ import PreviewPane from "./preview/PreviewPane.jsx";
 import ResultBox from "./result-box.jsx";
 import ErrorPopup from "../popup/ErrorPopup.jsx";
 import tokenService from "../../services/tokenService.js";
+import SubscriptionService from "../../services/activeSubscription.js";
 import UploadButtonZone from "./UploadButtonZone.jsx";
 
 function UploadHeader() {
@@ -42,6 +43,7 @@ export default function UploadPage({ initialFile }) {
   const [note, setNote] = useState("");
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
+  const [hasSubscription, setHasSubscription] = useState(false);
 
   function onTime(start, end) {
     setStartTime(start);
@@ -72,8 +74,13 @@ export default function UploadPage({ initialFile }) {
     let mounted = true;
     (async () => {
       try {
-        const count = await tokenService.getBalance();
-        if (mounted) setTokenCount(count);
+        const hasActive = await SubscriptionService.getActiveSubscription();
+        if (mounted) setHasSubscription(hasActive);
+        
+        if (!hasActive) {
+          const count = await tokenService.getBalance();
+          if (mounted) setTokenCount(count);
+        }
       } catch (e) {
         console.error('Error fetching token balance:', e);
         if (mounted) setErrorMessage('Could not fetch token balance');
@@ -195,7 +202,7 @@ export default function UploadPage({ initialFile }) {
               onSelect={onSelect}
               onUpload={onUpload}
               uploading={uploading}
-              tokenCount={tokenCount}
+              tokenCount={hasSubscription ? "∞" : tokenCount}
             />) : (
             <>  
               <PreviewPane
@@ -211,7 +218,7 @@ export default function UploadPage({ initialFile }) {
               <UploadButtonZone
                 onUpload={onUpload}
                 uploading={uploading}
-                tokenCount={tokenCount}
+                tokenCount={hasSubscription ? "∞" : tokenCount}
                 file={file}
               />
             </>
