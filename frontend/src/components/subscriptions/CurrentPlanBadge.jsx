@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/authContext';
-import { getAuth } from 'firebase/auth';
 import { Check } from 'lucide-react';
-
-const URL = import.meta.env.VITE_API_URL;
+import SubscriptionService from '../../services/activeSubscription';
 
 const PLAN_INFO = {
   'price_1SOya1LTYv4hoLQivA9NcNOl': { name: 'Player', cycle: 'Monthly', price: '€7' },
@@ -32,31 +30,9 @@ export default function CurrentPlanBadge({ refreshTrigger = 0 }) {
           return;
         }
 
-        const auth = getAuth();
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-          if (!cancelled) {
-            setActivePriceId(null);
-            setPlanInfo(null);
-            setFetching(false);
-          }
-          return;
-        }
-
-        const token = await currentUser.getIdToken();
-        const res = await fetch(`${URL}/stripe/subscription-status`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
+        const priceId = await SubscriptionService.getActivePriceId();
 
         if (!cancelled) {
-          const priceId = data?.price_id || null;
           setActivePriceId(priceId);
           setPlanInfo(priceId ? PLAN_INFO[priceId] : null);
         }
