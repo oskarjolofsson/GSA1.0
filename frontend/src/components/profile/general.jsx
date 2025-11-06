@@ -63,7 +63,8 @@ function TokenBalance() {
             if (!user) return;
             // If user is on a paid plan, we can skip fetching balance and set to unlimited
             try {
-                if (SubscriptionService.getActiveSubscription(user.uid)) {
+                const hasActiveSubscription = await SubscriptionService.getActiveSubscription();
+                if (hasActiveSubscription) {
                     setBalance('∞');
                 } else {
                     const res = await tokenService.getBalance(user.uid);
