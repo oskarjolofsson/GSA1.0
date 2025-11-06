@@ -1,3 +1,4 @@
+from services.firebase.firebase_stripe import FirebaseStripeService
 from services.analy.Sports.sportInstructions import SportAnalysis
 from services.analy.Models.model import Model
 from services.firebase.firebase_tokens import FireBaseTokens
@@ -43,8 +44,7 @@ class Analysis():
                 user_id: str = "") -> dict:
         
         # Check current balance first
-        current_balance = FireBaseTokens(user_id).get_user_tokens()
-        if current_balance < 1:
+        if not self.user_has_subscription(user_id) or FireBaseTokens(user_id).get_user_tokens() < 1:
             raise ValueError("Insufficient tokens to perform analysis.")
 
         # Create analysis
@@ -64,3 +64,6 @@ class Analysis():
         FireBasePastAnalysis(user_id, sport_name).add_drills(return_dict["drills"])
         
         return return_dict
+    
+    def user_has_subscription(self, user_id: str) -> bool:
+        return FirebaseStripeService(user_id).get_subscription_status()

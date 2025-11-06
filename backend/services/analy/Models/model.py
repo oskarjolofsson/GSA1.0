@@ -1,3 +1,4 @@
+from services.firebase.firebase_stripe import FirebaseStripeService
 from services.keyframes.Keyframes import Keyframes
 from services.file_handeling.Video_file import Video_file
 from services.qualityCheck.VideoQuality import VideoQuality
@@ -26,7 +27,8 @@ class Model(ABC):
         data = self.analyze(video_file, prompt=prompt)
         
         # spend one token after successful analysis
-        FireBaseTokens(user_id).spend_tokens(amount=1)
+        if not FirebaseStripeService(user_id).get_subscription_status():
+            FireBaseTokens(user_id).spend_tokens(amount=1)
 
         # Returns a formated dict that can be directly returned
         return data
