@@ -14,7 +14,7 @@ function Brand() {
   return (
     <div className="col-span-2 sm:col-span-1">
       <Link to="/" className="flex items-center gap-2">
-        <img src="/icons/logo.png" alt="Logo" className="h-8 w-8" />
+        <img src="/icons/true_swing_logo3.png" alt="Logo" className="h-8 w-8" />
         <span className="text-xl font-bold tracking-tight">
           <span className="text-white">True </span>Swing
         </span>
