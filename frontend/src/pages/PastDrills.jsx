@@ -1,11 +1,27 @@
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DrillDropdown from "../components/drillDropdown/drillDropdown";
 import PastDrillService from "../services/pastDrillService";
+import SubscriptionService from "../services/activeSubscription";
 
 export default function PastDrills() {
 
+    const navigate = useNavigate();
     const [drills, setDrills] = useState([]);
+    const [isSubscribed, setIsSubscribed] = useState(null);
+    const [currentPlan, setCurrentPlan] = useState(null);
+
+    // Price ID constants
+    const playerMonthlyPriceId = import.meta.env.VITE_PRICE_ID_PLAYER_MONTHLY;
+    const playerYearlyPriceId = import.meta.env.VITE_PRICE_ID_PLAYER_YEARLY;
+
+    const getPlanName = (priceId) => {
+        if (priceId === playerMonthlyPriceId || priceId === playerYearlyPriceId) {
+            return "player";
+        }
+        return "pro";
+    };
 
     useEffect(() => {
         const fetchDrills = async () => {
@@ -13,6 +29,23 @@ export default function PastDrills() {
             setDrills(fetchedDrills);
         };
 
+        const checkSubscription = async () => {
+            try {
+                const hasSubscription = await SubscriptionService.getActiveSubscription();
+                setIsSubscribed(hasSubscription);
+                
+                if (hasSubscription) {
+                    const priceId = await SubscriptionService.getActivePriceId();
+                    setCurrentPlan(getPlanName(priceId));
+                    console.log("Current plan:", getPlanName(priceId));
+                }
+            } catch (error) {
+                console.error('Failed to check subscription:', error);
+                setIsSubscribed(false);
+            }
+        };
+
+        checkSubscription();
         fetchDrills();
     }, []);
 
@@ -23,21 +56,47 @@ export default function PastDrills() {
             >
                 <h1 className="text-2xl font-bold text-white mb-6">Past Drills</h1>
 
-                {drills.length === 0 ? (
-                    <p className="text-white/70">No past drills found.</p>
-                ) : (
-
-                <div className="space-y-4">
-                    {drills.map((d) => (
-                        <DrillDropdown
-                            key={d.id}
-                            header={d['title'] || d.createdAt}
-                            date={d.createdAt}
-                            text={d.content}
-                        />
-                    ))}
-                </div>
+                {!isSubscribed && (
+                    <div className="rounded-2xl bg-yellow-500/10 border border-yellow-500/30 p-6 mb-6 text-center">
+                        <p className="text-yellow-100 mb-4">
+                            You are not subscribed. Subscribe to view past analyses.
+                        </p>
+                        <button
+                            onClick={() => navigate('/products')}
+                            className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg transition-colors"
+                        >
+                            View Plans
+                        </button>
+                    </div>
                 )}
+
+                {isSubscribed && drills.length === 0 ? (
+                    <p className="text-white/70">No past drills found.</p>
+                ) : isSubscribed ? (
+                    <>
+                        <div className="space-y-4">
+                            {drills.map((d) => (
+                                <DrillDropdown
+                                    key={d.id}
+                                    header={d['title'] || d.createdAt}
+                                    date={d.createdAt}
+                                    text={d.content}
+                                />
+                            ))}
+                        </div>
+                        
+                        {currentPlan === "player" && drills.length >= 5 && (
+                            <div className="mt-6 text-center">
+                                <button
+                                    onClick={() => navigate('/products')}
+                                    className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors"
+                                >
+                                    To see more drills, upgrade to <span className="font-bold">Pro</span>
+                                </button>
+                            </div>
+                        )}
+                    </>
+                ) : null}
             </div>
         </section>
     );

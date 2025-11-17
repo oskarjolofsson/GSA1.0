@@ -154,7 +154,7 @@ export default function PriceTable({ refreshTrigger = 0 }) {
           yearlyPrice={5}
           features={[{ label: "Unlimited swing analyses", comingSoon: false }, 
                      { label: "Basic AI swing Breakdown", comingSoon: false }, 
-                     { label: "Access to last 5 analyses", comingSoon: false },
+                     { label: "Access to last 5 drills", comingSoon: false },
                      { label: "Add prompt to video", comingSoon: false }, 
                      { label: "Downloaded basic reports", comingSoon: true }
                      ]}
@@ -192,7 +192,7 @@ export default function PriceTable({ refreshTrigger = 0 }) {
           yearlyPrice={10}
           features={[{ label: "Unlimited swing analyses", comingSoon: false },
                      { label: "Advanced AI swing Breakdown", comingSoon: false },
-                     { label: "Access to all past analyses", comingSoon: false },
+                     { label: "Access to all past drills", comingSoon: false },
                      { label: "Add prompt to video", comingSoon: false },
                      { label: "Download tailored reports", comingSoon: true },
                      { label: "Organize among clients", comingSoon: true },
