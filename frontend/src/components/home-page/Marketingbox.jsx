@@ -37,13 +37,13 @@ const Icon = ({ name }) => {
  * <MarketingBox header="Lightning-fast insights" subtext="AI-powered feedback in seconds" />
  */
 export default function MarketingBox({
-  header = "Get instant results",
+  header = "Stop Guessing. Start Improving",
   subtext = "",
   className = "",
   features = [
-    { icon: "bolt", title: "Fast Uploads", desc: "Fast quality — Get your results in under a minute." },
-    { icon: "target", title: "Pro‑Grade Insights", desc: "Actionable feedback on mechanics, rotation, balance, plus tailored drills." },
-    { icon: "shield", title: "Private by Design", desc: "Secure upload, temporary processing, and auto‑delete after analysis." },
+    { icon: "target", title: "No more guessing what went wrong.", desc: "Frame-by-frame analysis pinpoints the ONE thing you need to fix with tailored drills from our AI coach" },
+    { icon: "bolt", title: "Analysis in 60 Seconds", desc: "From phone video to personalized report in less than a minute. No more waiting." },
+    { icon: "shield", title: "Practice Without Judgment", desc: "Your video is for your eyes only. Secure processing and auto-deletion ensures your swing is completely private." },
   ],
 }) {
   return (
@@ -59,12 +59,12 @@ export default function MarketingBox({
       </span>
 
       {/* Heading */}
-      <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight !text-slate-900 !text-white">
+      <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight !text-slate-900 !text-white mt-2">
         {header}
       </h2>
 
       {/* Subtext */}
-      <p className="mt-3 text-base sm:text-lg md:text-xl leading-relaxed !text-slate-600 !text-slate-300">
+      <p className="mt-3 text-base sm:text-lg md:text-xl leading-relaxed !text-slate-600">
         {subtext}
       </p>
 

@@ -35,6 +35,13 @@ function TextBlock() {
     const [cta, setCta] = useState("Try for free →");
     const [ctaSubtext, setCtaSubtext] = useState("Try it free — your first 3 videos are on us");
 
+    const titles = [
+        "Your Phone is Now Your Swing Coach: Instant AI Analysis",
+        "Upload. Analyze. Improve. The Fastest Path to a Better Swing",
+        "The Only Golf Lesson You Can Take in Your Living Room",
+        "Expert Swing Analysis, No Appointment Required. Turn Video into Pro-Level Feedback",
+    ]
+
     useEffect(() => {
         if (user) {
             // User is authenticated, show personalized content
@@ -51,12 +58,12 @@ function TextBlock() {
         <div className="text-center max-w-2xl mx-auto px-4 mb-16">
             {/* Header */}
             <h2 className="text-3xl sm:text-5xl font-bold leading-tight tracking-tight mb-4 text-slate-100">
-                Turn any video into instant insights.
+                Stop the Slice. Add 20 Yards. Instant AI Golf Swing Analysis
             </h2>
 
             {/* Subtitle */}
             <p className="text-base sm:text-lg text-slate-300 mb-8">
-                Upload your content and get AI-powered analytics.
+                Upload any video, get a pro-level, frame-by-frame report and personalized drills—all without leaving the driving range
             </p>
 
             {/* CTA Button */}
