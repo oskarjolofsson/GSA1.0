@@ -63,7 +63,7 @@ def get_golf_drills():
         # Extract user_id from the decoded token
         user_id = decoded_token['uid']
         sport = request.form.get('sport', 'golf')
-        drills = FireBasePastAnalysis(user_id, sport).get_drills()
+        drills = FireBasePastAnalysis(user_id, sport).get_drills_by_tier()
         return jsonify({'drills': drills}), 200
 
     except Exception as e:
