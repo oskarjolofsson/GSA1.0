@@ -86,7 +86,14 @@ export default function PlanCard({
         {features.map((f, i) => (
           <li key={i} className="flex items-start gap-2 text-sm">
             <Check className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
-            <span>{f}</span>
+            <div className="flex items-center gap-2">
+              <span>{typeof f === "string" ? f : f.label}</span>
+              {typeof f === "object" && f.comingSoon && (
+                <span className="inline-flex items-center rounded-full bg-white/10 text-white text-xs px-2 py-0.5">
+                  Coming soon
+                </span>
+              )}
+            </div>
           </li>
         ))}
       </ul>

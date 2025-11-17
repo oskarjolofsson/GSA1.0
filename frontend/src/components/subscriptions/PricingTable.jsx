@@ -149,10 +149,15 @@ export default function PriceTable({ refreshTrigger = 0 }) {
         <PlanCard
           id="player"
           name="Player"
-          description="For players who need more features."
+          description="For the average player."
           monthlyPrice={7}
           yearlyPrice={5}
-          features={["10 new tokens every month", "Save videos", "Prompt responses"]}
+          features={[{ label: "Unlimited swing analyses", comingSoon: false }, 
+                     { label: "Basic AI swing Breakdown", comingSoon: false }, 
+                     { label: "Access to last 5 analyses", comingSoon: false },
+                     { label: "Add prompt to video", comingSoon: false }, 
+                     { label: "Downloaded basic reports", comingSoon: true }
+                     ]}
           currency="EUR"
           cycle={billingCycle}
           popular={false}
@@ -185,7 +190,15 @@ export default function PriceTable({ refreshTrigger = 0 }) {
           description="For professionals with many clients."
           monthlyPrice={15}
           yearlyPrice={10}
-          features={["50 new tokens every month", "Save videos", "Prompt responses", "Organize clients", "Priority support"]}
+          features={[{ label: "Unlimited swing analyses", comingSoon: false },
+                     { label: "Advanced AI swing Breakdown", comingSoon: false },
+                     { label: "Access to all past analyses", comingSoon: false },
+                     { label: "Add prompt to video", comingSoon: false },
+                     { label: "Download tailored reports", comingSoon: true },
+                     { label: "Organize among clients", comingSoon: true },
+                     { label: "Coach workspace", comingSoon: true }
+
+          ]}
           currency="EUR"
           cycle={billingCycle}
           popular={true}
