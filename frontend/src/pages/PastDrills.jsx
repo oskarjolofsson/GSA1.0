@@ -11,6 +11,7 @@ export default function PastDrills() {
     const [drills, setDrills] = useState([]);
     const [isSubscribed, setIsSubscribed] = useState(null);
     const [currentPlan, setCurrentPlan] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     // Price ID constants
     const playerMonthlyPriceId = import.meta.env.VITE_PRICE_ID_PLAYER_MONTHLY;
@@ -42,6 +43,8 @@ export default function PastDrills() {
             } catch (error) {
                 console.error('Failed to check subscription:', error);
                 setIsSubscribed(false);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -56,7 +59,12 @@ export default function PastDrills() {
             >
                 <h1 className="text-2xl font-bold text-white mb-6">Past Drills</h1>
 
-                {!isSubscribed && (
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                        <p className="text-white/70 mt-4">Loading...</p>
+                    </div>
+                ) : !isSubscribed ? (
                     <div className="rounded-2xl bg-yellow-500/10 border border-yellow-500/30 p-6 mb-6 text-center">
                         <p className="text-yellow-100 mb-4">
                             You are not subscribed. Subscribe to view past analyses.
@@ -68,11 +76,9 @@ export default function PastDrills() {
                             View Plans
                         </button>
                     </div>
-                )}
-
-                {isSubscribed && drills.length === 0 ? (
+                ) : drills.length === 0 ? (
                     <p className="text-white/70">No past drills found.</p>
-                ) : isSubscribed ? (
+                ) : (
                     <>
                         <div className="space-y-4">
                             {drills.map((d) => (
@@ -96,7 +102,7 @@ export default function PastDrills() {
                             </div>
                         )}
                     </>
-                ) : null}
+                )}
             </div>
         </section>
     );
