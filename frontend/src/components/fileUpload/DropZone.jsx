@@ -15,7 +15,7 @@ export default function DropZone({
   }
 
   function handleChange(e) {
-    if (!file) onSelect(e.target.files);
+    onSelect(e.target.files);
   }
 
   return (
