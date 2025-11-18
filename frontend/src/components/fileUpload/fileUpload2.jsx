@@ -57,15 +57,22 @@ export default function UploadPage({ initialFile }) {
     if (initialFile && !previewUrl) {
       const url = URL.createObjectURL(initialFile);
       setPreviewUrl(url);
+      setFile(initialFile);
+      return () => {
+        // Only revoke if we're unmounting or if we create a new URL
+        if (url) URL.revokeObjectURL(url);
+      };
     }
-  }, [initialFile, previewUrl]);
+  }, [initialFile]);
 
   useEffect(() => {
-    // cleanup preview URL
+    // Cleanup preview URL only when component unmounts or file changes
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
     };
-  }, [previewUrl]);
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 30);

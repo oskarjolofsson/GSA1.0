@@ -14,9 +14,17 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
     const [start, setStart] = useState(0);
     const [end, setEnd] = useState(0);
 
+    // Reset times when previewUrl changes
+    useEffect(() => {
+        setDuration(0);
+        setCurrent(0);
+        setStart(0);
+        setEnd(0);
+    }, [previewUrl]);
+
     useEffect(() => {
         onTime(start, end);
-    }, [start, end]);
+    }, [start, end, onTime]);
 
     useEffect(() => {
         const v = videoRef.current;
@@ -37,15 +45,29 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
                 onLoaded();
             }
         };
+        const onPlay = () => {
+            // Another fallback - when video starts playing
+            if (v.duration && v.duration > 0) {
+                onLoaded();
+            }
+        };
 
         v.addEventListener("loadedmetadata", onLoaded);
         v.addEventListener("durationchange", onLoaded);
         v.addEventListener("canplay", onCanPlay);
+        v.addEventListener("play", onPlay);
         v.addEventListener("timeupdate", onTime);
+        
+        // Try to load metadata immediately if already available
+        if (v.duration && v.duration > 0) {
+            onLoaded();
+        }
+        
         return () => {
             v.removeEventListener("loadedmetadata", onLoaded);
             v.removeEventListener("durationchange", onLoaded);
             v.removeEventListener("canplay", onCanPlay);
+            v.removeEventListener("play", onPlay);
             v.removeEventListener("timeupdate", onTime);
         };
     }, [previewUrl]);
