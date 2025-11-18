@@ -24,21 +24,31 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
 
         const onLoaded = () => {
             const d = Number.isFinite(v.duration) ? v.duration : 0;
-            setDuration(d);
-            setEnd((prev) => (prev === 0 ? d : Math.min(prev, d)));
-            setStart((prev) => Math.max(0, Math.min(prev, d)));
+            if (d > 0) {
+                setDuration(d);
+                setEnd((prev) => (prev === 0 ? d : Math.min(prev, d)));
+                setStart((prev) => Math.max(0, Math.min(prev, d)));
+            }
         };
         const onTime = () => setCurrent(v.currentTime || 0);
+        const onCanPlay = () => {
+            // Fallback for mobile devices that may not fire loadedmetadata
+            if (v.duration && v.duration > 0) {
+                onLoaded();
+            }
+        };
 
         v.addEventListener("loadedmetadata", onLoaded);
         v.addEventListener("durationchange", onLoaded);
+        v.addEventListener("canplay", onCanPlay);
         v.addEventListener("timeupdate", onTime);
         return () => {
             v.removeEventListener("loadedmetadata", onLoaded);
             v.removeEventListener("durationchange", onLoaded);
+            v.removeEventListener("canplay", onCanPlay);
             v.removeEventListener("timeupdate", onTime);
         };
-    }, []);
+    }, [previewUrl]);
 
     const jumpVideo = (t) => {
         const v = videoRef.current;
@@ -69,7 +79,8 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
                     ref={videoRef}
                     className="max-h-64 w-full rounded-2xl ring-1 ring-white/10 object-contain"
                     src={previewUrl}
-                    controls
+                    crossOrigin="anonymous"
+                    playsInline
                 />
             </div>
 
