@@ -40,8 +40,8 @@ function Columns() {
       <div>
         <h3 className="text-sm font-semibold text-white mb-3">RESOURCES</h3>
         <ul className="space-y-2 text-sm">
-          <li><Link to="/" className="hover:text-white">Support</Link></li>
-          <li><Link to="/" className="hover:text-white">Contact</Link></li>
+          <li><a href="mailto:trueswing25@gmail.com" className="hover:text-white">Contact</a></li>
+          <li><a href="mailto:trueswing25@gmail.com" className="hover:text-white">Support</a></li>
         </ul>
       </div>
 

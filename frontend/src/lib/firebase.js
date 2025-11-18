@@ -1,7 +1,7 @@
 // Firebase
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+//import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
@@ -26,7 +26,7 @@ export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
 
 // Optionally guard analytics for non-browser environments
-export const analytics =
-  typeof window !== "undefined" && firebaseConfig.measurementId
-    ? getAnalytics(app)
-    : undefined;
+// export const analytics =
+//   typeof window !== "undefined" && firebaseConfig.measurementId
+//     ? getAnalytics(app)
+//     : undefined;
