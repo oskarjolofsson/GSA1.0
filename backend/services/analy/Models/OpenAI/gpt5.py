@@ -48,6 +48,11 @@ class Gpt5AnalysisService(Model):
         keyframes = video_file.keyframes(15)     # <-- Decide how many keyframes here
         image_ids = self.image_ids(keyframes=keyframes)
         content = self.format_content(image_ids, prompt=prompt)
+        
+        # Delete image and video-files from memory
+        keyframes.removeAll()
+        video_file.remove()
+        
         analysis = self.ai_analysis(content, 
                                     system_instructions=self.system_instructions.get()
                                     )
@@ -55,9 +60,5 @@ class Gpt5AnalysisService(Model):
         # format result
         raw_text = analysis.output_text
         data = json.loads(raw_text)
-        
-        # Delete image and video-files from memory
-        keyframes.removeAll()
-        video_file.remove()
         
         return data
