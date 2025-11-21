@@ -65,6 +65,7 @@ class Video_file(File):
                 ret, frame = cap.read()
                 if ret:
                     img_obj = Image_file(frame, filename=f"keyframe_{idx}.jpg")
+                    img_obj.pixelate_face()
                     keyframe_images.append(img_obj)
             
             cap.release()

@@ -44,4 +44,36 @@ class Image_file(File):
                 purpose="vision",
             )
             return result.id
+    
+    def pixelate_face(self, pixel_size: int = 20) -> None:
+        # Load image
+        img = cv2.imread(self.path())
+
+        # Load face detector (bundled with cv2)
+        face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+
+        # Convert to grayscale for detection
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        # Detect faces
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+
+        pixel_size = 20  # Increase for bigger blocks
+
+        # Pixelate each detected face
+        for (x, y, w, h) in faces:
+            face = img[y:y+h, x:x+w]
+
+            # shrink then expand to create pixelation
+            small = cv2.resize(face, (w // pixel_size, h // pixel_size))
+            pixelated = cv2.resize(small, (w, h), interpolation=cv2.INTER_NEAREST)
+
+            img[y:y+h, x:x+w] = pixelated
+
+        # Save output
+        cv2.imwrite(self.path(), img)
+        print("Done!")
+
 
