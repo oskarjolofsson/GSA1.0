@@ -9,30 +9,12 @@ import EmblaCarousel from '../components/carousel/EmblaCarousel.jsx';
 
 export default function Home() {   
 
-    
-    const OPTIONS = { loop: true }
-    const IMAGES = [
-        {
-            source: "/media/pose2.jpg",
-            title: 'Sunset over the mountains'
-        },
-        {
-            source: '/media/pose2.jpg',
-            title: 'City skyline at night'
-        },
-        {
-            source: '/media/klittor.jpg',
-            title: 'City skyline at night'
-        },
-    ]
         
     return (
         <div>
             <Hero2 />
             {/* Border between hero and the rest  */}
             <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-
-            <EmblaCarousel images={IMAGES} options={OPTIONS} />
 
             <MarketingBox id="features" />
 

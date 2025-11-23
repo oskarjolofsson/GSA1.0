@@ -27,7 +27,7 @@ const EmblaCarousel = ({ images = [], options }) => {
   const scrollToIndex = (index) => emblaApi && emblaApi.scrollTo(index)
 
   return (
-    <div className="max-w-4xl mx-auto mt-16 px-4">
+    <div className="max-w-4xl mx-auto mt-16 px-4 mb-20">
 
       {/* Carousel */}
       <div className="overflow-hidden rounded-3xl" ref={emblaRef}>
@@ -38,26 +38,34 @@ const EmblaCarousel = ({ images = [], options }) => {
               key={index}
             >
               <div className="relative rounded-3xl overflow-hidden shadow-[0_12px_40px_-12px_rgba(0,0,0,0.45)]" onClick={() => scrollToIndex(index)}>
-                <img
-                  src={image.source}
-                  alt={image.title}
-                  className="block h-[19rem] w-full object-cover"
-                />
+                <div className="relative">  
+                  <img
+                    src={image.source}
+                    alt={image.title}
+                    className="block h-[19rem] w-full object-cover"
+                  />
 
-                {/* Soft Gradient */}
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/50" />
+                  {/* Soft Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-black via-black/20 to-transparent" />
+                </div>
+
+                {/* Title Inside Image - Centered Vertically */}
+                <div className="absolute top-1/2 left-6 sm:left-8 right-6 sm:right-8 -translate-y-1/2 z-20">
+                  <h3 className="text-xl sm:text-3xl font-bold text-white">
+                    {image.title}
+                  </h3>
+                </div>
 
                 {/* CTA Button */}
-                
                 <button className="
-                  absolute bottom-4 left-1/2 sm:bottom-4 -translate-x-1/2
-                  bg-white/90 text-gray-900
-                  font-medium py-2 px-5 rounded-full
-                  shadow hover:bg-white transition-colors
-                  backdrop-blur-md
+                  absolute bottom-8 sm:bottom-10 left-6 sm:left-8 right-6 sm:right-8
+                  bg-white/80 hover:bg-white text-gray-900
+                  font-medium py-1.5 sm:py-2 px-4 sm:px-6 rounded-full
+                  shadow-lg hover:shadow-xl transition-all
+                  backdrop-blur-sm
                   text-xs sm:text-sm whitespace-nowrap
+                  z-20
                 ">
-              
                   Improve your game today →
                 </button>
               </div>
@@ -76,14 +84,7 @@ const EmblaCarousel = ({ images = [], options }) => {
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="text-center mt-10"
         >
-          <h3 className="
-        text-2xl sm:text-5xl font-semibold 
-        tracking-tight text-white
-      ">
-            {images[currentIndex]?.title}
-          </h3>
-
-          <p className="mt-3 text-gray-400 text-sm sm:text-base max-w-lg mx-auto">
+          <p className="text-gray-400 text-sm sm:text-base max-w-lg mx-auto">
             {images[currentIndex]?.description}
           </p>
         </motion.div>
