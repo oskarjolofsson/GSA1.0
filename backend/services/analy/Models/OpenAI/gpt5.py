@@ -25,19 +25,26 @@ class Gpt5AnalysisService(Model):
         return keyframes.open_ai_id(self.client)
     
     def format_content(self, ids: list[str], prompt: str) -> list[dict[str, str]]:
-        content = [{"type": "input_text", "text": prompt}]
+        final_prompt = """Here are the user's personal notes about their swing. 
+        Use them as additional context only. 
+        Do NOT blindly assume they are correct. 
+        If their interpretation is wrong or incomplete, gently correct it in a supportive way.
+
+        User's notes:""" + prompt
+        
+        content = [{"type": "input_text", "text": final_prompt}]
         for id in ids:
             image_prompt = {"type": "input_image", "file_id": id}
             content.append(image_prompt)
         
         return content
 
-    def ai_analysis(self, content: list[dict[str, str]], system_instructions: str):
+    def ai_analysis(self, content: list[dict[str, str]]):
         # Response is a string response
         response = self.client.responses.create(
             model="gpt-5",
             input=[
-                {"role": "system", "content": system_instructions},
+                {"role": "system", "content": self.system_instructions.get()},
                 {"role": "user", "content": content,}
             ],
         )
@@ -53,12 +60,12 @@ class Gpt5AnalysisService(Model):
         keyframes.removeAll()
         video_file.remove()
         
-        analysis = self.ai_analysis(content, 
-                                    system_instructions=self.system_instructions.get()
-                                    )
+        analysis = self.ai_analysis(content)
 
         # format result
         raw_text = analysis.output_text
         data = json.loads(raw_text)
+        
+        print("GPT-5 Analysis Result:", data)
         
         return data
