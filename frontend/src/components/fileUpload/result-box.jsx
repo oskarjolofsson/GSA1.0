@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ListChevronsUpDown, LandPlot, AlertTriangle, AlertCircle, Info, Search, Lightbulb, Brain } from "lucide-react";
+import { ListChevronsUpDown, LandPlot, AlertTriangle, AlertCircle, Info, Search, Lightbulb, Brain, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"
 
 export default function InfoBox({ analysis }) {
@@ -30,7 +30,7 @@ export default function InfoBox({ analysis }) {
     >
 
       {/* Summary Header */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="gap-2 mb-4 justify-center flex items-center">
         <span
           aria-hidden
           className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15"
@@ -47,35 +47,59 @@ export default function InfoBox({ analysis }) {
       {/* Two cards: side-by-side on md+, stacked on small */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Card Diagnosis */}
-        <section className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <header className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white/90">Diagnosis</h3>
+
+        {/* Card Key Fix */}
+        <section className="relative rounded-xl border border-white/10 bg-white/5 p-5">
+
+          <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl 
+                  bg-gradient-to-b from-purple-400/40 to-purple-300/40" />
+
+          <header className="mb-3 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-white/95">
+              <Clock className="w-4 h-4 text-purple-300" />
+              Diagnosis
+            </h3>
+
             <span className="text-[10px] uppercase tracking-wide text-white/50">
-              Quick take
+              Quick Take
             </span>
           </header>
-          <p className="text-base leading-relaxed text-white/90">
-            {diagnosis}
+
+          <p className="text-[15px] text-white/85 leading-relaxed">
+            {key_fix}
           </p>
         </section>
 
         {/* Card Key Fix */}
-        <section className="rounded-xl border border-white/10 bg-white/5 p-4">
-          <header className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white/90">Key Fix</h3>
+        <section className="relative rounded-xl border border-white/10 bg-white/5 p-5">
+
+          <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl 
+                  bg-gradient-to-b from-sky-400/40 to-sky-300/40" />
+
+          <header className="mb-3 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-white/95">
+              <Lightbulb className="w-4 h-4 text-sky-300" />
+              Key Fix
+            </h3>
+
             <span className="text-[10px] uppercase tracking-wide text-white/50">
               Action
             </span>
           </header>
-          <p className="text-base leading-relaxed text-white/90">
+
+          <p className="text-[15px] text-white/85 leading-relaxed">
             {key_fix}
           </p>
         </section>
       </div>
 
+      {/* Line */}
+      <div className="my-6 h-px w-full bg-white/10 rounded-full" />
+
       {/* Advanced */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-6 items-center">
-        <div className="flex items-center gap-2">
+      <div className="mt-6">
+
+        <div className="gap-2 mb-4 justify-center flex items-center">
           <span
             aria-hidden
             className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15"
@@ -85,14 +109,12 @@ export default function InfoBox({ analysis }) {
             </span>
           </span>
           <div className="text-xs uppercase tracking-wide text-white/60">
-            Key fix
+            Problems Found With Recommendations
           </div>
         </div>
 
-        {/* <div></div> */}
-
         {/* Number Row */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 justify-center ">
           {key_findings.map((_, i) => (
             <button
               key={i}
@@ -110,17 +132,10 @@ export default function InfoBox({ analysis }) {
           ))}
 
         </div>
-
-        {/* <div></div>  */}
-
-        {/* Text to explain that the buttons toggle the expandable content below */}
-        <div className="text-xs text-white/60">
-          Tap numbers to see key findings
-        </div>
       </div>
 
       {/* Key insights */}
-      <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 ">
+      <div className="mt-8">
         <div
           className={`
           overflow-hidden transition-all duration-300 
@@ -129,11 +144,14 @@ export default function InfoBox({ analysis }) {
         >
           {activeProblem !== null && (
             <div className="space-y-3">
-              <div className="relative mb-4">
+              <div className="flex flex-col items-center mb-4">
 
-                {/* Top-right severity icon */}
-                <div className="absolute top-0 left-0">
-                  {headerIcon({ severity: key_findings[activeProblem].severity })}
+                {/* Severity icon row */}
+                <div className="mb-2">
+                  {headerIcon({
+                    severity: key_findings[activeProblem].severity,
+                    key: activeProblem
+                  })}
                 </div>
 
 
@@ -148,7 +166,7 @@ export default function InfoBox({ analysis }) {
                       transition={{ duration: 0.25, ease: "easeOut" }}
                       className="
                         text-lg font-semibold text-white/90 text-center
-                        max-w-[80%] md:max-w-[60%] break-words
+                        
                       "
                     >
                       {key_findings[activeProblem].title}
@@ -161,45 +179,151 @@ export default function InfoBox({ analysis }) {
               </div>
 
               {/* Cards showing what you did, why it matters, try this */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeProblem}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="grid grid-cols-3 gap-3 mt-6">
 
-                {/* What you did */}
-                <div className="relative rounded-lg border border-white/10 bg-white/5 p-4 space-y-2 text-center">
-                  {/* Icon */}
-                  <div className="absolute top-2 right-2 text-xs text-white/50 italic">
-                    <Search />
+                    {/* WHAT */}
+                    <button
+                      onClick={() => setActiveTab("what")}
+                      className={`
+                    flex flex-col items-center justify-center gap-1 py-3 rounded-lg border
+                    transition-all duration-200
+                    ${activeTab === "what"
+                          ? "border-white/20 bg-white/10"
+                          : "border-white/5 bg-white/0 hover:bg-white/5"
+                        }
+                  `}
+                    >
+                      <Search className="w-4 h-4 text-white/70" />
+                      <span className="text-xs text-white/70">What you did</span>
+                    </button>
+
+                    {/* WHY */}
+                    <button
+                      onClick={() => setActiveTab("why")}
+                      className={`
+                    flex flex-col items-center justify-center gap-1 py-3 rounded-lg border
+                    transition-all duration-200
+                    ${activeTab === "why"
+                          ? "border-white/20 bg-white/10"
+                          : "border-white/5 bg-white/0 hover:bg-white/5"
+                        }
+                  `}
+                    >
+                      <Brain className="w-4 h-4 text-white/70" />
+                      <span className="text-xs text-white/70">Why it matters</span>
+                    </button>
+
+                    {/* TRY */}
+                    <button
+                      onClick={() => setActiveTab("try")}
+                      className={`
+                    flex flex-col items-center justify-center gap-1 py-3 rounded-lg border
+                    transition-all duration-200
+                    ${activeTab === "try"
+                          ? "border-white/20 bg-white/10"
+                          : "border-white/5 bg-white/0 hover:bg-white/5"
+                        }
+                  `}
+                    >
+                      <Lightbulb className="w-4 h-4 text-white/70" />
+                      <span className="text-xs text-white/70">Try this</span>
+                    </button>
+
                   </div>
 
-                  <p className="text-xs font-semibold text-white/60">What you did</p>
-                  <p className="text-sm text-white/80 leading-relaxed">
-                    {key_findings[activeProblem].what_you_did}
-                  </p>
-                </div>
-            
-                {/* Why it matters */}
-                <div className="relative rounded-lg border border-white/10 bg-white/5 p-4 space-y-2 text-center">
-                  <div className="absolute top-2 right-2 text-xs text-white/50 italic">
-                    <Brain />
+                  <div className="mt-4 relative text-center">
+                    <AnimatePresence mode="wait">
+                      {activeTab === "what" && (
+                        <motion.div
+                          key="what"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.25 }}
+                          className="rounded-lg border border-white/10 bg-white/5 p-4 text-white/80"
+                        >
+                          {key_findings[activeProblem].what_you_did}
+                        </motion.div>
+                      )}
+
+                      {activeTab === "why" && (
+                        <motion.div
+                          key="why"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.25 }}
+                          className="rounded-lg border border-white/10 bg-white/5 p-4 text-white/80"
+                        >
+                          {key_findings[activeProblem].why_it_matters}
+                        </motion.div>
+                      )}
+
+                      {activeTab === "try" && (
+                        <motion.div
+                          key="try"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.25 }}
+                          className="rounded-lg border border-white/10 bg-white/5 p-4 text-white/80"
+                        >
+                          {key_findings[activeProblem].try_this}
+                        </motion.div>
+
+
+                      )}
+                    </AnimatePresence>
                   </div>
 
-                  <p className="text-xs font-semibold text-white/60">Why it matters</p>
-                  <p className="text-sm text-white/80 leading-relaxed">
-                    {key_findings[activeProblem].why_it_matters}
-                  </p>
-                </div>
+                </motion.div>
 
-                {/* Try this */}
-                <div className="relative rounded-lg border border-white/10 bg-white/5 p-4 space-y-2 text-center">
-                  <div className="absolute top-2 right-2 text-xs text-white/50 italic">
-                    <Lightbulb />
-                  </div>
-                  <p className="text-xs font-semibold text-white/60">Try this</p>
-                  <p className="text-sm text-white/90 leading-relaxed font-medium">
-                    {key_findings[activeProblem].try_this}
-                  </p>
-                </div>
+                <motion.div
+                  layout
+                  className="flex justify-center mt-4"
+                >
+                  {activeTab !== "try" && (
+                    <motion.button
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{
+                        scale: 1,
+                        opacity: 1,
+                        // Spring physics usually doesn't need duration, 
+                        // it uses stiffness and damping
+                        transition: {
+                          type: "spring",
+                          stiffness: 200,
+                          damping: 15
+                        }
+                      }}
+                      exit={{ scale: 0.5, opacity: 0 }}
 
-              </div>
+                      onClick={() => {
+                        if (activeTab === "what") setActiveTab("why");
+                        if (activeTab === "why") setActiveTab("try");
+                      }}
+
+                      className={`
+                        text-xs px-4 py-2 rounded-full
+                        bg-white/10 border border-white/10 text-white/80
+                        backdrop-blur-md
+                        hover:bg-white/20 transition
+                      `}
+                    >
+                      Next →
+                    </motion.button>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+
 
             </div>
           )}
@@ -210,24 +334,35 @@ export default function InfoBox({ analysis }) {
   );
 }
 
-function headerIcon({ severity }) {
+function headerIcon({ severity, key }) {
   return (
-    <div className="flex items-center gap-2 mb-3">
-      <span className="inline-block px-2 py-1 rounded text-xs font-medium uppercase tracking-wide"
-        style={{
-          backgroundColor: severity === "high" ? "rgba(239, 68, 68, 0.2)" :
-            severity === "medium" ? "rgba(245, 158, 11, 0.2)" :
-              "rgba(34, 197, 94, 0.2)",
-          color: severity === "high" ? "rgb(248, 113, 113)" :
-            severity === "medium" ? "rgb(251, 191, 36)" :
-              "rgb(74, 222, 128)"
-        }}
-      >
-        {severity === "high" ? <AlertTriangle className="inline w-4 h-4 mr-1" /> :
-          severity === "medium" ? <AlertCircle className="inline w-4 h-4 mr-1" /> :
-            <Info className="inline w-4 h-4 mr-1" />
-        }
-      </span>
-    </div>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={key}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ duration: 0.25 }}>
+        <div
+          className={`
+            inline-flex items-center justify-center
+            w-10 h-10 rounded-lg border 
+            backdrop-blur-md shadow-md
+            ${severity === "high" ? "border-red-500/20 bg-red-500/10" :
+              severity === "medium" ? "border-yellow-500/20 bg-yellow-500/10" :
+                "border-green-500/20 bg-green-500/10"}
+          `}
+        >
+          {severity === "high" ? (
+            <AlertTriangle className="w-5 h-5 text-red-400" />
+          ) : severity === "medium" ? (
+            <AlertCircle className="w-5 h-5 text-yellow-400" />
+          ) : (
+            <Info className="w-5 h-5 text-green-400" />
+          )}
+        </div>
+      </motion.div>
+    </AnimatePresence>
+
   )
 }
