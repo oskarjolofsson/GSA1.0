@@ -94,16 +94,12 @@ export default function Hero2() {
             title: 'Find Your Perfect Swing Position'
         },
         {
-            source: '/media/drill.png',
-            title: 'Build a More Powerful Setup'
+            source: '/media/Summary.png',
+            title: 'Find out your flaws instantly'
         },
         {
-            source: '/media/klittor.jpg',
-            title: 'Unlock Effortless Distance'
-        },
-        {
-            source: '/media/observations.png',
-            title: 'Master the Art of Consistency'
+            source: '/media/probAndRec.png',
+            title: 'Get Personalized Drills and Exercises'
         },
 
     ]
