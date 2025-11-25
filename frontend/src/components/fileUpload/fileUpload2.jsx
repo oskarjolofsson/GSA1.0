@@ -83,7 +83,7 @@ export default function UploadPage({ initialFile }) {
       try {
         const hasActive = await SubscriptionService.getActiveSubscription();
         if (mounted) setHasSubscription(hasActive);
-        
+
         if (!hasActive) {
           const count = await tokenService.getBalance();
           if (mounted) setTokenCount(count);
@@ -166,7 +166,7 @@ export default function UploadPage({ initialFile }) {
         method: "GET",
       });
 
-      
+
 
       if (!res.ok) {
         let backendMessage = "Upload failed";
@@ -208,45 +208,49 @@ export default function UploadPage({ initialFile }) {
   return (
     <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
-        <UploadHeader />
-        <div className="gap-12">
-          {!file ? (
-            <DropZone
-              file={file}
-              dragActive={dragActive}
-              setDragActive={setDragActive}
-              ready={ready}
-              inputRef={inputRef}
-              onDrop={onDrop}
-              onSelect={onSelect}
-              onUpload={onUpload}
-              uploading={uploading}
-              tokenCount={hasSubscription ? "∞" : tokenCount}
-            />) : (
-            <>  
-              <PreviewPane
-                previewUrl={previewUrl}
-                ready={ready}
-                uploading={uploading}
-                onRemove={onRemove}
-                file={file}
-                note={note}
-                setNote={setNote}
-                onTime={onTime}
-              />
-              <UploadButtonZone
-                onUpload={onUpload}
-                uploading={uploading}
-                tokenCount={hasSubscription ? "∞" : tokenCount}
-                file={file}
-              />
-            </>
-          )}
+        {!analysis ? (
+          <>
+            <UploadHeader />
+            <div className="gap-12">
+              {!file ? (
+                <DropZone
+                  file={file}
+                  dragActive={dragActive}
+                  setDragActive={setDragActive}
+                  ready={ready}
+                  inputRef={inputRef}
+                  onDrop={onDrop}
+                  onSelect={onSelect}
+                  onUpload={onUpload}
+                  uploading={uploading}
+                  tokenCount={hasSubscription ? "∞" : tokenCount}
+                />) : (
+                <>
+                  <PreviewPane
+                    previewUrl={previewUrl}
+                    ready={ready}
+                    uploading={uploading}
+                    onRemove={onRemove}
+                    file={file}
+                    note={note}
+                    setNote={setNote}
+                    onTime={onTime}
+                  />
+                  <UploadButtonZone
+                    onUpload={onUpload}
+                    uploading={uploading}
+                    tokenCount={hasSubscription ? "∞" : tokenCount}
+                    file={file}
+                  />
+                </>
+              )}
 
-        </div>
+            </div>
+          </>
+        ) : (
+          <AnalysisResult analysis={analysis} />
+        )}
 
-
-        <AnalysisResult analysis={analysis} />
         <ErrorPopup message={errorMessage} onClose={() => setErrorMessage("")} />
         <OutOfTokensPopup isOpen={showOutOfTokensPopup} onClose={() => setShowOutOfTokensPopup(false)} />
       </section>
