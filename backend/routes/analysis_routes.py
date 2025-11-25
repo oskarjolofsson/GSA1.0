@@ -154,3 +154,5 @@ def test_analysis_output():
             "biggest_leak": "Club swinging left with a closing face.",
         },
     }
+    
+    return jsonify({"analysis_results": analysis}), 200

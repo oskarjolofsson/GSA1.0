@@ -24,9 +24,7 @@ function AnalysisResult({ analysis }) {
   if (!analysis) return null;
   return (
     <ResultBox
-      title="Analysis Results"
-      drills={analysis?.drills}
-      observations={analysis?.observations}
+      analysis={analysis}
     />
   );
 }
@@ -157,10 +155,18 @@ export default function UploadPage({ initialFile }) {
     form.append("user_id", userId);
 
     try {
-      const res = await fetch(API + "/api/v1/analysis/upload_video", {
-        method: "POST",
-        body: form,
+      // const res = await fetch(API + "/api/v1/analysis/upload_video", {
+      //   method: "POST",
+      //   body: form,
+      // });
+
+      ///////////////// ONLY FOR TESTING - MOCK request /////////////////
+
+      const res = await fetch(API + "/api/v1/analysis/test_analysis_output", {
+        method: "GET",
       });
+
+      
 
       if (!res.ok) {
         let backendMessage = "Upload failed";
@@ -187,10 +193,8 @@ export default function UploadPage({ initialFile }) {
 
       const data = await res.json();
 
-      const drills = data.analysis_results?.drills ?? [];
-      const observations = data.analysis_results?.observations ?? {};
-
-      setAnalysis({ drills, observations });
+      setAnalysis(data.analysis_results);
+      console.log("Analysis results:", data.analysis_results);
     } catch (err) {
       setAnalysis(null);
       // err.message already set in setErrorMessage above for known backend responses,
