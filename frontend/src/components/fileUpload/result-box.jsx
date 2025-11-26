@@ -76,7 +76,7 @@ export default function InfoBox({ analysis }) {
             </header>
 
             <p className="text-[15px] text-white/85 leading-relaxed">
-              {key_fix}
+              {diagnosis}
             </p>
           </section>
 
