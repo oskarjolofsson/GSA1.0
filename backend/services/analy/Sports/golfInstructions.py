@@ -26,7 +26,7 @@ class GolfAnalysis(SportAnalysis):
             "key_findings": [
                 {
                 "title": "Short title (ex: Early Extension)",
-                "severity": "3 | 2 | 1" (where 3 = high, 2 = medium, 1 = low),
+                "severity": "high | medium | low",
                 "icon": "Choose one of: setup, alignment, grip, takeaway, top, plane, over_the_top, shallow, impact, rotation, balance, tempo, contact, distance, slice, hook, drill, good",
                 "what_you_did": "1–2 sentence observation",
                 "why_it_matters": "1 sentence explaining impact on contact/consistency/power.",
