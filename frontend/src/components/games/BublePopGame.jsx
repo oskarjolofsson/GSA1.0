@@ -97,6 +97,11 @@ export default function BubblePopGame() {
     lastSpawnRef.current = Date.now();
   };
 
+  // Stop game handler
+  const stopGame = () => {
+    setIsPlaying(false);
+  };
+
   // Bubble pop handler
   const popBubble = (id) => {
     bubblesRef.current = bubblesRef.current.filter((b) => b.id !== id);
@@ -109,7 +114,15 @@ export default function BubblePopGame() {
       <div className="w-full max-w-md bg-gray-900 p-4 rounded-xl shadow-lg border border-gray-700">
         
         {/* Game Header */}
-        <div className="text-center mb-3">
+        <div className="text-center mb-3 relative">
+          {isPlaying && (
+            <button
+              onClick={stopGame}
+              className="absolute right-0 top-0 text-xs font-medium text-gray-400 hover:text-white transition-colors px-2 py-1 rounded hover:bg-white/5"
+            >
+              Cancel
+            </button>
+          )}
           <div className="flex items-center justify-center gap-2">
             <h2 className="text-lg font-semibold text-white">Bubble Pop</h2>
           </div>

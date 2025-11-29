@@ -25,10 +25,10 @@ export default function DrillDropdown({ header, text, date, analysis }) {
   }, []);
 
   return (
-    <div className={`rounded-2xl bg-gray-800 border border-white/10`}>
+    <>
       {HeaderButton(open, setOpenAdapter, active, item, 0, date)}
       {Text(active, item, date, analysis)}
-    </div>
+    </>
   );
 }
 
