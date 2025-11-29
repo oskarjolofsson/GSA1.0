@@ -26,7 +26,7 @@ export default function PastDrills() {
 
     useEffect(() => {
         const fetchDrills = async () => {
-            const fetchedDrills = await PastDrillService.getPastDrills();
+            const fetchedDrills = await PastDrillService.getPastAnalyses();
             setDrills(fetchedDrills);
         };
 
@@ -84,9 +84,9 @@ export default function PastDrills() {
                             {drills.map((d) => (
                                 <DrillDropdown
                                     key={d.id}
-                                    header={d['title'] || d.createdAt}
+                                    header={d.quick_summary?.diagnosis || d['title'] || "Analysis"}
                                     date={d.createdAt}
-                                    text={d.content}
+                                    text={d.quick_summary?.key_fix || d.content || "No details available."}
                                 />
                             ))}
                         </div>

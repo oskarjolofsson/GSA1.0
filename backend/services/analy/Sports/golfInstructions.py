@@ -45,7 +45,7 @@ class GolfAnalysis(SportAnalysis):
             "premium_suggestions": {
                 "progress_tracking": "1 sentence about what would be useful to track.",
                 "before_after": "If relevant, what improvement you’d expect visually.",
-                "personal_drill_pack": ["Drill 1", "Drill 2", "Drill 3"],
+                "personal_drill_pack": ["Drill 1", "Drill 2", "Drill 3"], (give all drills that were given in key_findings)
                 "biggest_leak": "The one issue that costs them the most strokes."
             }
         }

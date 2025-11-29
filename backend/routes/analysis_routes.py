@@ -50,8 +50,8 @@ def golf():
         )
 
 
-@analysis_bp.route("/get_previous_drills", methods=["GET", "POST"])
-def get_golf_drills():
+@analysis_bp.route("/get_previous_analyses", methods=["GET", "POST"])
+def get_past_analyses():
     try:
         # Get the token from Authorization header
         auth_header = request.headers.get("Authorization")
@@ -67,18 +67,18 @@ def get_golf_drills():
         # Extract user_id from the decoded token
         user_id = decoded_token["uid"]
         sport = request.form.get("sport", "golf")
-        drills = FireBasePastAnalysis(user_id, sport).get_drills_by_tier()
-        return jsonify({"drills": drills}), 200
+        analyses = FireBasePastAnalysis(user_id, sport).get_analyses_by_tier()
+        return jsonify({"analyses": analyses}), 200
 
     except Exception as e:
         traceback.print_exc()
-        print(f"Error retrieving previous drills: {str(e)}")
+        print(f"Error retrieving previous analyses: {str(e)}")
 
         return (
             jsonify(
                 {
                     "success": False,
-                    "error": "error with retrieving previous drills",
+                    "error": "error with retrieving previous analyses",
                     "details": str(e),
                 }
             ),
