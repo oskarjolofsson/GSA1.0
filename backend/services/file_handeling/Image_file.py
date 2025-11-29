@@ -74,6 +74,5 @@ class Image_file(File):
 
         # Save output
         cv2.imwrite(self.path(), img)
-        print("Done!")
 
 

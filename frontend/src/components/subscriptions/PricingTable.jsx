@@ -145,95 +145,95 @@ export default function PriceTable({ refreshTrigger = 0 }) {
       </div>
 
       {/* Pricing cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 gap-6 justify-items-center max-w-3xl mx-auto">
-        <PlanCard
-          id="player"
-          name="Player"
-          description="For the average player."
-          monthlyPrice={7}
-          yearlyPrice={5}
-          features={[{ label: "Unlimited swing analyses", comingSoon: false }, 
-                     { label: "Basic AI swing Breakdown", comingSoon: false }, 
-                     { label: "Access to last 5 drills", comingSoon: false },
-                     { label: "Add prompt to video", comingSoon: false }, 
-                     { label: "Downloaded basic reports", comingSoon: true }
-                     ]}
-          currency="EUR"
-          cycle={billingCycle}
-          popular={false}
-          isCurrentPlan={
-            !!activePriceId && (
-              activePriceId === playerMonthlyPriceId ||
-              activePriceId === playerYearlyPriceId
-            )
-          }
-          isActiveCycle={
-            activePriceId === (billingCycle === "monthly"
-              ? playerMonthlyPriceId
-              : playerYearlyPriceId)
-          }
-          hasSubscription={!!activePriceId}
-          isLoading={isLoading}
-          onSelect={() =>
-            handlePlanSelect(
-              playerMonthlyPriceId,
-              playerYearlyPriceId
-            )
-          }
-          price_id_monthly={playerMonthlyPriceId}
-          price_id_yearly={playerYearlyPriceId}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center max-w-3xl mx-auto px-4">
+          <PlanCard
+            id="player"
+            name="Player"
+            description="For the average player."
+            monthlyPrice={7}
+            yearlyPrice={5}
+            features={[{ label: "Unlimited swing analyses", comingSoon: false }, 
+               { label: "Basic AI swing Breakdown", comingSoon: false }, 
+               { label: "Access to last 5 drills", comingSoon: false },
+               { label: "Add prompt to video", comingSoon: false }, 
+               { label: "Downloaded basic reports", comingSoon: true }
+               ]}
+            currency="EUR"
+            cycle={billingCycle}
+            popular={false}
+            isCurrentPlan={
+          !!activePriceId && (
+            activePriceId === playerMonthlyPriceId ||
+            activePriceId === playerYearlyPriceId
+          )
+            }
+            isActiveCycle={
+          activePriceId === (billingCycle === "monthly"
+            ? playerMonthlyPriceId
+            : playerYearlyPriceId)
+            }
+            hasSubscription={!!activePriceId}
+            isLoading={isLoading}
+            onSelect={() =>
+          handlePlanSelect(
+            playerMonthlyPriceId,
+            playerYearlyPriceId
+          )
+            }
+            price_id_monthly={playerMonthlyPriceId}
+            price_id_yearly={playerYearlyPriceId}
+          />
 
-        <PlanCard
-          id="pro"
-          name="Pro"
-          description="For professionals with many clients."
-          monthlyPrice={15}
-          yearlyPrice={10}
-          features={[{ label: "Unlimited swing analyses", comingSoon: false },
-                     { label: "Advanced AI swing Breakdown", comingSoon: false },
-                     { label: "Access to all past drills", comingSoon: false },
-                     { label: "Add prompt to video", comingSoon: false },
-                     { label: "Download tailored reports", comingSoon: true },
-                     { label: "Organize among clients", comingSoon: true },
-                     { label: "Coach workspace", comingSoon: true }
+          <PlanCard
+            id="pro"
+            name="Pro"
+            description="For professionals with many clients."
+            monthlyPrice={15}
+            yearlyPrice={10}
+            features={[{ label: "Unlimited swing analyses", comingSoon: false },
+               { label: "Advanced AI swing Breakdown", comingSoon: false },
+               { label: "Access to all past drills", comingSoon: false },
+               { label: "Add prompt to video", comingSoon: false },
+               { label: "Download tailored reports", comingSoon: true },
+               { label: "Organize among clients", comingSoon: true },
+               { label: "Coach workspace", comingSoon: true }
 
-          ]}
-          currency="EUR"
-          cycle={billingCycle}
-          popular={true}
-          isCurrentPlan={
-            !!activePriceId && (
-              activePriceId === proMonthlyPriceId ||
-              activePriceId === proYearlyPriceId
-            )
-          }
-          isActiveCycle={
-            activePriceId === (billingCycle === "monthly"
-              ? proMonthlyPriceId
-              : proYearlyPriceId)
-          }
-          hasSubscription={!!activePriceId}
-          isLoading={isLoading}
-          onSelect={() =>
-            handlePlanSelect(
-              proMonthlyPriceId,
-              proYearlyPriceId
-            )
-          }
-          price_id_monthly={proMonthlyPriceId}
-          price_id_yearly={proYearlyPriceId}
-        />
-      </div>
+            ]}
+            currency="EUR"
+            cycle={billingCycle}
+            popular={true}
+            isCurrentPlan={
+          !!activePriceId && (
+            activePriceId === proMonthlyPriceId ||
+            activePriceId === proYearlyPriceId
+          )
+            }
+            isActiveCycle={
+          activePriceId === (billingCycle === "monthly"
+            ? proMonthlyPriceId
+            : proYearlyPriceId)
+            }
+            hasSubscription={!!activePriceId}
+            isLoading={isLoading}
+            onSelect={() =>
+          handlePlanSelect(
+            proMonthlyPriceId,
+            proYearlyPriceId
+          )
+            }
+            price_id_monthly={proMonthlyPriceId}
+            price_id_yearly={proYearlyPriceId}
+          />
+        </div>
 
-      {showPopup && !user && (
-        <SignInPopup onStartSignIn={login} onClose={() => setShowPopup(false)} />
-      )}
+        {showPopup && !user && (
+          <SignInPopup onStartSignIn={login} onClose={() => setShowPopup(false)} />
+        )}
 
-      {message && (
-        <MessagePopup
-          message={message}
-          onClose={() => {
+        {message && (
+          <MessagePopup
+            message={message}
+            onClose={() => {
             setMessage(null);
             setPendingAction(null);
           }}
