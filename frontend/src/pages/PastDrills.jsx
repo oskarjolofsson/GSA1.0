@@ -57,7 +57,7 @@ export default function PastDrills() {
             <div
                 className="rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 sm:p-10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]"
             >
-                <h1 className="text-2xl font-bold text-white mb-6">Past Drills</h1>
+                <h1 className="text-2xl font-bold text-white mb-6">Past Analyses</h1>
 
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-12">
@@ -87,6 +87,7 @@ export default function PastDrills() {
                                     header={d.quick_summary?.diagnosis || d['title'] || "Analysis"}
                                     date={d.createdAt}
                                     text={d.quick_summary?.key_fix || d.content || "No details available."}
+                                    analysis={d}
                                 />
                             ))}
                         </div>
