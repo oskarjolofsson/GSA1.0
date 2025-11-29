@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { fileTransferService } from '../../services/fileTransferService';
 
 export default function DemoPreview() {
     const [isDragging, setIsDragging] = useState(false);
@@ -25,8 +26,9 @@ export default function DemoPreview() {
 
         setError('');
         
-        // Pass file to analyse page via state
-        navigate('/analyse', { state: { uploadedFile: file } });
+        // Pass file to analyse page via service
+        fileTransferService.setFile(file);
+        navigate('/analyse');
     }
 
     function handleDrop(e) {
