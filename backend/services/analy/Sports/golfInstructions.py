@@ -59,9 +59,11 @@ class GolfAnalysis(SportAnalysis):
 
         Never overwhelm the user—prioritize one main focus.
 
-        If the user has multiple swing issues, choose the most important 3–6.
+        If the user has multiple swing issues, choose the most important 3-5.
 
         If something is uncertain from the video, say so gently.
+        
+        Only include things that are to be fixed or improved upon, no praise for things that are good.
         
         dont return any explanations outside of the JSON structure, only return the JSON. THIS IS VERY IMPORTANT.
 
