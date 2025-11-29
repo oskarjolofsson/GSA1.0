@@ -1,4 +1,4 @@
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 const API = import.meta.env.VITE_API_URL;
 
 function formatTime(s, digits = 2) {
@@ -9,7 +9,6 @@ function formatTime(s, digits = 2) {
 export default function VideoWithStartEnd({ previewUrl, onTime }) {
     const videoRef = useRef(null);
     const [duration, setDuration] = useState(0);
-    const [current, setCurrent] = useState(0);
 
     const [start, setStart] = useState(0);
     const [end, setEnd] = useState(0);
@@ -17,7 +16,6 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
     // Reset times when previewUrl changes
     useEffect(() => {
         setDuration(0);
-        setCurrent(0);
         setStart(0);
         setEnd(0);
     }, [previewUrl]);
@@ -38,7 +36,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
                 setStart((prev) => Math.max(0, Math.min(prev, d)));
             }
         };
-        const onTime = () => setCurrent(v.currentTime || 0);
+        
         const onCanPlay = () => {
             // Fallback for mobile devices that may not fire loadedmetadata
             if (v.duration && v.duration > 0) {
@@ -56,7 +54,6 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
         v.addEventListener("durationchange", onLoaded);
         v.addEventListener("canplay", onCanPlay);
         v.addEventListener("play", onPlay);
-        v.addEventListener("timeupdate", onTime);
         
         // Try to load metadata immediately if already available
         if (v.duration && v.duration > 0) {
@@ -68,7 +65,6 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
             v.removeEventListener("durationchange", onLoaded);
             v.removeEventListener("canplay", onCanPlay);
             v.removeEventListener("play", onPlay);
-            v.removeEventListener("timeupdate", onTime);
         };
     }, [previewUrl]);
 
@@ -76,7 +72,6 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
         const v = videoRef.current;
         if (!v) return;
         v.currentTime = t;
-        setCurrent(t);
     };
 
     // Only clamp the value being changed. Do NOT alter the other slider’s range/props.
