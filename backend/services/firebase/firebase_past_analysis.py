@@ -10,44 +10,36 @@ class FireBasePastAnalysis(FireBaseService):
     def __init__(self, user_id: str, sport: str):
         super().__init__(user_id=user_id)
         self.sport = sport
-        self.doc_ref = (self.db.
+        self.analyses_ref = (self.db.
                         collection('users').
                         document(user_id).
                         collection('past_analysis').
                         document(sport).
-                        collection('drills'))
+                        collection('analyses'))
 
-    def add_drills(self, drills: list[dict[str, str]]):
-        col = self.doc_ref
-        batch = self.db.batch()
-        for drill in drills:
-            ref = col.document()
-            batch.set(ref, {
-                "title": drill.get("drill-title", ""),
-                "content": drill.get("drill-description", ""),
-                "youtubeLink": drill.get("drill-youtube-video-link", ""),
-                "sport": self.sport,
-                "createdAt": firestore.SERVER_TIMESTAMP,
-                "updatedAt": firestore.SERVER_TIMESTAMP,
-                "editedBy": self.user_id,
-            })
-        batch.commit()
+    def add_analysis(self, analysis_data: dict):
+        """
+        Adds a new analysis document.
+        """
+        # Add metadata
+        data = analysis_data.copy()
+        data.update({
+            "sport": self.sport,
+            "createdAt": firestore.SERVER_TIMESTAMP,
+            "updatedAt": firestore.SERVER_TIMESTAMP,
+        })
         
-    def update_drill(self, drill_id: str, data: dict):
-        ref = self.doc_ref.document(drill_id)
-        data["updatedAt"] = firestore.SERVER_TIMESTAMP
-        ref.set(data, merge=True)
+        self.analyses_ref.add(data)
 
-    def get_drills(self, limit: int = None) -> list[dict]:
-        col = self.doc_ref
-        query = col.order_by("createdAt", direction=firestore.Query.DESCENDING)
+    def get_analyses(self, limit: int = None) -> list[dict]:
+        query = self.analyses_ref.order_by("createdAt", direction=firestore.Query.DESCENDING)
         if limit:
             query = query.limit(limit)
         return [d.to_dict() | {"id": d.id} for d in query.stream()]
     
-    def get_drills_by_tier(self) -> list[dict]:
-        """Get drills based on user's subscription tier.
-        Player tier users get last 5 drills, Pro tier gets all drills."""
+    def get_analyses_by_tier(self) -> list[dict]:
+        """Get analyses based on user's subscription tier.
+        Player tier users get last 5 analyses, Pro tier gets all analyses."""
         # Check user's subscription tier
         stripe_service = FirebaseStripeService(self.user_id)
         user_stripe_info = stripe_service.db_get_user()
@@ -63,6 +55,6 @@ class FireBasePastAnalysis(FireBaseService):
             # No subscription, return empty list
             return []
         
-        # If user has player plan, limit to last 5 drills
+        # If user has player plan, limit to last 5 analyses
         limit = 5 if price_id in player_price_ids else None
-        return self.get_drills(limit=limit)
+        return self.get_analyses(limit=limit)

@@ -63,8 +63,8 @@ class Analysis():
                                                   end_time=end_time, 
                                                   user_id=user_id)
         
-        # Log past drills
-        FireBasePastAnalysis(user_id, sport_name).add_drills(return_dict["drills"])
+        # Log past analysis
+        FireBasePastAnalysis(user_id, sport_name).add_analysis(return_dict)
         
         return return_dict
     

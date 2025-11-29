@@ -3,14 +3,14 @@ import { auth } from '../lib/firebase';
 const API = (import.meta.env.VITE_API_URL || ''); 
 
 class PastDrillService {
-  async getPastDrills() {
+  async getPastAnalyses() {
     try {
       const user = auth.currentUser;
       if (!user) throw new Error('Not signed in');
       
       const idToken = await user.getIdToken();
       
-      const response = await fetch(`${API}/api/v1/analysis/get_previous_drills`, {
+      const response = await fetch(`${API}/api/v1/analysis/get_previous_analyses`, {
         method: 'GET',
         headers: { 
           'Content-Type': 'application/json',
@@ -24,10 +24,10 @@ class PastDrillService {
       }
 
       const data = await response.json();      
-      return Array.isArray(data?.drills) ? data.drills : [];
+      return Array.isArray(data?.analyses) ? data.analyses : [];
 
     } catch (error) {
-      throw new Error("Could not load past drills. Please try again later.");
+      throw new Error("Could not load past analyses. Please try again later.");
     }
   }
 }
