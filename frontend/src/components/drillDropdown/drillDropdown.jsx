@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import InfoBox from "../fileUpload/result-box";
 
-export default function DrillDropdown({ header, text, date }) {
+export default function DrillDropdown({ header, text, date, analysis }) {
   // we'll treat "open" as boolean here
   const [open, setOpen] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -26,7 +27,7 @@ export default function DrillDropdown({ header, text, date }) {
   return (
     <div className={`rounded-2xl bg-gray-800 border border-white/10`}>
       {HeaderButton(open, setOpenAdapter, active, item, 0, date)}
-      {Text(active, item, date)}
+      {Text(active, item, date, analysis)}
     </div>
   );
 }
@@ -86,7 +87,7 @@ function HeaderButton(open, setOpen, active, item, i, date = null) {
   );
 }
 
-function Text(active, item, date= null) {
+function Text(active, item, date= null, analysis = null) {
   return (
     <div
       className={`grid transition-[grid-template-rows] duration-400 ease-out ${active ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
@@ -95,7 +96,9 @@ function Text(active, item, date= null) {
       
       <div className="overflow-hidden">
         <div className="px-5 mb-1">{date ? (<span className="text-xs sm:text-sm text-white/60 whitespace-nowrap">{date}</span>) : null}</div>
-        <div className="px-5 pb-5 text-slate-300">{item.a}</div>
+        <div className="px-5 pb-5 text-slate-300">
+          {analysis ? <InfoBox analysis={analysis} /> : item.a}
+        </div>
       </div>
     </div>
   );
