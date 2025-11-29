@@ -1,6 +1,35 @@
 import { useEffect, useState } from "react";
-import { ListChevronsUpDown, LandPlot, AlertTriangle, AlertCircle, Info, Search, Lightbulb, Brain, Clock } from "lucide-react";
+import { ListChevronsUpDown, LandPlot, AlertTriangle, AlertCircle, Info, Search, Lightbulb, Brain, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"
+
+const SEVERITY_COLORS = {
+  border: {
+    high: "border-red-400",
+    medium: "border-yellow-400",
+    low: "border-green-400"
+  },
+  borderInactive: {
+    high: "border-red-400/25",
+    medium: "border-yellow-400/25",
+    low: "border-green-400/25"
+  },
+  header: {
+    high: { border: "border-red-500/20", bg: "bg-red-500/10", text: "text-red-400" },
+    medium: { border: "border-yellow-500/20", bg: "bg-yellow-500/10", text: "text-yellow-400" },
+    low: { border: "border-green-500/20", bg: "bg-green-500/10", text: "text-green-400" }
+  },
+  gradient: {
+    high: "from-red-400/40 to-red-300/40",
+    medium: "from-yellow-400/40 to-yellow-300/40",
+    low: "from-green-400/40 to-green-300/40"
+  }
+};
+
+const TAB_CONFIGS = {
+  what: { icon: Search, label: "What you did" },
+  why: { icon: Brain, label: "Why it matters" },
+  try: { icon: Lightbulb, label: "Try this" }
+};
 
 export default function InfoBox({ analysis }) {
   console.log("from inside result-box.jsx", analysis);
@@ -19,26 +48,104 @@ export default function InfoBox({ analysis }) {
     setActiveTab("what");
   }, [activeProblem]);
 
+  const getSeverityBorder = (severity, isActive) => {
+    return isActive ? SEVERITY_COLORS.border[severity] : SEVERITY_COLORS.borderInactive[severity];
+  };
+
+  const renderSummaryCard = (title, icon, content, gradient) => (
+    <section className="relative rounded-xl border border-white/10 bg-white/5 p-5">
+      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl bg-gradient-to-b ${gradient}`} />
+      <header className="mb-3 flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-base font-semibold text-white/95">
+          {icon}
+          {title}
+        </h3>
+        <span className="text-[10px] uppercase tracking-wide text-white/50">
+          {title === "Diagnosis" ? "Quick Take" : "Action"}
+        </span>
+      </header>
+      <p className="text-[15px] text-white/85 leading-relaxed">{content}</p>
+    </section>
+  );
+
+  const renderProblemButton = (index, severity) => (
+    <button
+      key={index}
+      onClick={() => setActiveProblem(index)}
+      className={`
+        inline-flex h-8 w-8 items-center justify-center rounded-full border
+        transition-all duration-300
+        ${activeProblem === index
+          ? `${getSeverityBorder(severity, true)} bg-white/20 text-white`
+          : `${getSeverityBorder(severity, false)} bg-white/5 text-white/70 hover:bg-white/10`
+        }
+      `}
+    >
+      {index + 1}
+    </button>
+  );
+
+  const renderTabButton = (tabName, isActive) => {
+    const { icon: Icon, label } = TAB_CONFIGS[tabName];
+    return (
+      <button
+        key={tabName}
+        onClick={() => setActiveTab(tabName)}
+        className={`
+          flex flex-col items-center justify-center gap-1 py-3 rounded-lg border
+          transition-all duration-200
+          ${isActive
+            ? "border-white/20 bg-white/10"
+            : "border-white/5 bg-white/0 hover:bg-white/5"
+          }
+        `}
+      >
+        <Icon className="w-4 h-4 text-white/70" />
+        <span className="text-xs text-white/70">{label}</span>
+      </button>
+    );
+  };
+
+  const renderTabContent = (tabName) => {
+    const contentKey = tabName === "what" ? "what_you_did" : tabName === "why" ? "why_it_matters" : "try_this";
+    const content = key_findings[activeProblem][contentKey];
+
+    return (
+      <motion.div
+        key={tabName}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 10 }}
+        transition={{ duration: 0.25 }}
+        className="rounded-lg border border-white/10 bg-white/5 p-4 text-white/80"
+      >
+        {content}
+      </motion.div>
+    );
+  };
+
+  const handlePreviousProblem = () => {
+    setActiveProblem((prev) => (prev > 0 ? prev - 1 : key_findings.length - 1));
+  };
+
+  const handleNextProblem = () => {
+    setActiveProblem((prev) => (prev < key_findings.length - 1 ? prev + 1 : 0));
+  };
+
 
 
   return (
-
-    // Header
     <>
       <h1 className="text-3xl sm:text-4xl font-bold mb-6 text-center">Analysis Results</h1>
 
       <section
         aria-label="Quick Summary"
         className={[
-          // container
           "rounded-2xl border shadow-lg",
-          // minimal, dark-friendly palette
           "bg-white/5 border-white/10 text-white/90",
-          // roomy
           "p-6 md:p-8",
         ].join(" ")}
       >
-
         {/* Summary Header */}
         <div className="gap-2 mb-4 justify-center flex items-center">
           <span
@@ -56,51 +163,18 @@ export default function InfoBox({ analysis }) {
 
         {/* Two cards: side-by-side on md+, stacked on small */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Card Diagnosis */}
-
-          {/* Card Key Fix */}
-          <section className="relative rounded-xl border border-white/10 bg-white/5 p-5">
-
-            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl 
-                  bg-gradient-to-b from-purple-400/40 to-purple-300/40" />
-
-            <header className="mb-3 flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-base font-semibold text-white/95">
-                <Clock className="w-4 h-4 text-purple-300" />
-                Diagnosis
-              </h3>
-
-              <span className="text-[10px] uppercase tracking-wide text-white/50">
-                Quick Take
-              </span>
-            </header>
-
-            <p className="text-[15px] text-white/85 leading-relaxed">
-              {diagnosis}
-            </p>
-          </section>
-
-          {/* Card Key Fix */}
-          <section className="relative rounded-xl border border-white/10 bg-white/5 p-5">
-
-            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl 
-                  bg-gradient-to-b from-sky-400/40 to-sky-300/40" />
-
-            <header className="mb-3 flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-base font-semibold text-white/95">
-                <Lightbulb className="w-4 h-4 text-sky-300" />
-                Key Fix
-              </h3>
-
-              <span className="text-[10px] uppercase tracking-wide text-white/50">
-                Action
-              </span>
-            </header>
-
-            <p className="text-[15px] text-white/85 leading-relaxed">
-              {key_fix}
-            </p>
-          </section>
+          {renderSummaryCard(
+            "Diagnosis",
+            <Clock className="w-4 h-4 text-purple-300" />,
+            diagnosis,
+            "from-purple-400/40 to-purple-300/40"
+          )}
+          {renderSummaryCard(
+            "Key Fix",
+            <Lightbulb className="w-4 h-4 text-sky-300" />,
+            key_fix,
+            "from-sky-400/40 to-sky-300/40"
+          )}
         </div>
 
         {/* Line */}
@@ -123,42 +197,40 @@ export default function InfoBox({ analysis }) {
             </div>
           </div>
 
-          {/* Number Row */}
-          <div className="flex items-center gap-2 justify-center ">
-            {key_findings.map((_, i) => {
-              const severityBorder = {
-                high: "border-red-400",
-                medium: "border-yellow-400",
-                low: "border-green-400"
-              };
+          {/* Number Row and Navigation */}
+          <div className="flex flex-col gap-4 items-center justify-center">
 
-              const severityBorderInactive = {
-                high: "border-red-400/75",
-                medium: "border-yellow-400/75",
-                low: "border-green-400/75"
-              };
+            {/* Problem Indicators */}
+            <div className="flex items-center gap-2">
+              {key_findings.map((_, i) => renderProblemButton(i, key_findings[i].severity))}
+            </div>
 
-              const sev = key_findings[i].severity; // "high" | "medium" | "low"
+            {/* Navigation Buttons */}
+            <div className="flex items-center gap-4 md:gap-6">
+              <motion.button
+                onClick={handlePreviousProblem}
+                className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80
+                           transition-all duration-200 hover:bg-white/10 flex-shrink-0"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-label="Previous problem"
+                type="button"
+              >
+                <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+              </motion.button>
 
-
-              return (
-                <button
-                  key={i}
-                  onClick={() => setActiveProblem(i)}
-                  className={`
-          inline-flex h-8 w-8 items-center justify-center rounded-full border
-          transition-all duration-300
-          ${activeProblem === i
-                      ? `${severityBorder[sev]} bg-white/20 text-white`
-                      : `${severityBorderInactive[sev]} bg-white/5 text-white/70 hover:bg-white/10`
-                    }
-        `}
-                >
-                  {i + 1}
-                </button>
-              );
-            })}
-
+              <motion.button
+                onClick={handleNextProblem}
+                className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80
+                           transition-all duration-200 hover:bg-white/10 flex-shrink-0"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-label="Next problem"
+                type="button"
+              >
+                <ChevronRight className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+              </motion.button>
+            </div>
           </div>
         </div>
 
@@ -215,99 +287,16 @@ export default function InfoBox({ analysis }) {
                     transition={{ duration: 0.5 }}
                   >
                     <div className="grid grid-cols-3 gap-3 mt-6">
-
-                      {/* WHAT */}
-                      <button
-                        onClick={() => setActiveTab("what")}
-                        className={`
-                    flex flex-col items-center justify-center gap-1 py-3 rounded-lg border
-                    transition-all duration-200
-                    ${activeTab === "what"
-                            ? "border-white/20 bg-white/10"
-                            : "border-white/5 bg-white/0 hover:bg-white/5"
-                          }
-                  `}
-                      >
-                        <Search className="w-4 h-4 text-white/70" />
-                        <span className="text-xs text-white/70">What you did</span>
-                      </button>
-
-                      {/* WHY */}
-                      <button
-                        onClick={() => setActiveTab("why")}
-                        className={`
-                    flex flex-col items-center justify-center gap-1 py-3 rounded-lg border
-                    transition-all duration-200
-                    ${activeTab === "why"
-                            ? "border-white/20 bg-white/10"
-                            : "border-white/5 bg-white/0 hover:bg-white/5"
-                          }
-                  `}
-                      >
-                        <Brain className="w-4 h-4 text-white/70" />
-                        <span className="text-xs text-white/70">Why it matters</span>
-                      </button>
-
-                      {/* TRY */}
-                      <button
-                        onClick={() => setActiveTab("try")}
-                        className={`
-                    flex flex-col items-center justify-center gap-1 py-3 rounded-lg border
-                    transition-all duration-200
-                    ${activeTab === "try"
-                            ? "border-white/20 bg-white/10"
-                            : "border-white/5 bg-white/0 hover:bg-white/5"
-                          }
-                  `}
-                      >
-                        <Lightbulb className="w-4 h-4 text-white/70" />
-                        <span className="text-xs text-white/70">Try this</span>
-                      </button>
-
+                      {renderTabButton("what", activeTab === "what")}
+                      {renderTabButton("why", activeTab === "why")}
+                      {renderTabButton("try", activeTab === "try")}
                     </div>
 
                     <div className="mt-4 relative text-center">
                       <AnimatePresence mode="wait">
-                        {activeTab === "what" && (
-                          <motion.div
-                            key="what"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            transition={{ duration: 0.25 }}
-                            className="rounded-lg border border-white/10 bg-white/5 p-4 text-white/80"
-                          >
-                            {key_findings[activeProblem].what_you_did}
-                          </motion.div>
-                        )}
-
-                        {activeTab === "why" && (
-                          <motion.div
-                            key="why"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            transition={{ duration: 0.25 }}
-                            className="rounded-lg border border-white/10 bg-white/5 p-4 text-white/80"
-                          >
-                            {key_findings[activeProblem].why_it_matters}
-                          </motion.div>
-                        )}
-
-                        {activeTab === "try" && (
-                          <motion.div
-                            key="try"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            transition={{ duration: 0.25 }}
-                            className="rounded-lg border border-white/10 bg-white/5 p-4 text-white/80"
-                          >
-                            {key_findings[activeProblem].try_this}
-                          </motion.div>
-
-
-                        )}
+                        {activeTab === "what" && renderTabContent("what")}
+                        {activeTab === "why" && renderTabContent("why")}
+                        {activeTab === "try" && renderTabContent("try")}
                       </AnimatePresence>
                     </div>
 

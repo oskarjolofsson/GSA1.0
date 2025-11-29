@@ -7,6 +7,7 @@ import PreviewPane from "./preview/PreviewPane.jsx";
 import ResultBox from "./result-box.jsx";
 import ErrorPopup from "../popup/ErrorPopup.jsx";
 import OutOfTokensPopup from "../popup/OutOfTokensPopup.jsx";
+import BubblePopGame from "../games/BublePopGame.jsx";
 import tokenService from "../../services/tokenService.js";
 import SubscriptionService from "../../services/activeSubscription.js";
 import UploadButtonZone from "./UploadButtonZone.jsx";
@@ -155,18 +156,16 @@ export default function UploadPage({ initialFile }) {
     form.append("user_id", userId);
 
     try {
-      // const res = await fetch(API + "/api/v1/analysis/upload_video", {
-      //   method: "POST",
-      //   body: form,
-      // });
-
-      ///////////////// ONLY FOR TESTING - MOCK request /////////////////
-
-      const res = await fetch(API + "/api/v1/analysis/test_analysis_output", {
-        method: "GET",
+      const res = await fetch(API + "/api/v1/analysis/upload_video", {
+        method: "POST",
+        body: form,
       });
 
-
+      // ///////////////// ONLY FOR TESTING - MOCK request ///////////////// //
+      // const res = await fetch(API + "/api/v1/analysis/test_analysis_output", {
+      //   method: "GET",
+      // });
+      // ///////////////// ONLY FOR TESTING - MOCK request ///////////////// //
 
       if (!res.ok) {
         let backendMessage = "Upload failed";
@@ -208,7 +207,27 @@ export default function UploadPage({ initialFile }) {
   return (
     <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
-        {!analysis ? (
+        {uploading ? (
+          <>
+            <div className="text-center mb-6">
+              <div className ="flex items-center justify-center gap-2">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Analyzing Your Video</h1>
+              <div className="animate-spin h-6 w-6 border-2 border-teal-400 border-t-transparent rounded-full"></div>
+              </div>
+              <p className="text-slate-400">While we process your video, play a quick game!</p>
+            </div>
+            <BubblePopGame />
+            <div className="text-center mt-8">
+              <button
+                onClick={() => setUploading(false)}
+                className="px-6 py-2 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm
+                           hover:bg-red-500/30 transition-all duration-200"
+              >
+                Cancel Upload
+              </button>
+            </div>
+          </>
+        ) : !analysis ? (
           <>
             <UploadHeader />
             <div className="gap-12">
