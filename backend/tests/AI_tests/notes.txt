@@ -1,1 +1,2 @@
 Video upload and analysis took 138.51600217819214 seconds
+Video upload and analysis took 141.27697014808655 seconds
