@@ -24,10 +24,11 @@ def golf():
         start_time = float(start_time_str) if start_time_str is not None else None
         end_time = float(end_time_str) if end_time_str is not None else None
         user_id = request.form.get("user_id")
+        model = request.form.get("model", "gpt-5")
 
         analysis = Analysis()
         data = analysis.execute(
-            model_name="gpt-5",
+            model_name=model,
             sport_name="golf",
             video_FileStorage=video,
             prompt=note,
