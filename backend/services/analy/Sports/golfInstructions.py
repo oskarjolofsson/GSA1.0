@@ -66,6 +66,8 @@ class GolfAnalysis(SportAnalysis):
         Only include things that are to be fixed or improved upon, no praise for things that are good.
         
         dont return any explanations outside of the JSON structure, only return the JSON. THIS IS VERY IMPORTANT.
+        Never output code blocks. Never use ```json or any Markdown fences. Return ONLY the raw JSON.
+
 
         """
         return system_prompt
