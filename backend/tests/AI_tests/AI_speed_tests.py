@@ -18,7 +18,8 @@ def test_video_upload():
             "note": "This is a test note.",
             "start_time": "0",
             "end_time": "2",
-            "user_id": "8oAXCb0Th2OohAOy96kFT3zMeCC2"
+            "user_id": "8oAXCb0Th2OohAOy96kFT3zMeCC2",
+            "model": "gpt-5-nano",
         }
         
         t1 = time.time()
