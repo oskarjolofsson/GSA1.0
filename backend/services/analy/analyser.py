@@ -1,3 +1,4 @@
+from services.analy.Models.OpenAI.gpt5_nano import Gpt5_nano_AnalysisService
 from services.firebase.firebase_stripe import FirebaseStripeService
 from services.analy.Sports.sportInstructions import SportAnalysis
 from services.analy.Models.model import Model
@@ -12,6 +13,7 @@ from services.firebase.firebase_past_analysis import FireBasePastAnalysis
 # Factory
 models = {
     "gpt-5": Gpt5AnalysisService,
+    "gpt-5-nano": Gpt5_nano_AnalysisService,
 }
 
 sports = {
