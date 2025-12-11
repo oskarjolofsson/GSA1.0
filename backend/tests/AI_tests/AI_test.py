@@ -20,7 +20,11 @@ def flask_app():
     app.config["TESTING"] = True
     return app
 
-@pytest.fixture(scope="module", params=["gpt-5-nano", "gpt-5"])
+@pytest.fixture(scope="module", params=[
+    # "gpt-5-nano", 
+    # "gpt-5",
+    "gemini-1.5-pro",
+    ])
 def video_upload_result(request, flask_app):
     """Run the /upload_video endpoint with different models."""
     test_video_path = os.path.join(os.path.dirname(__file__), "test_video.mp4")
@@ -126,3 +130,5 @@ def test_premium_suggestions_exists(video_upload_result):
     assert "premium_suggestions" in analysis_results, f"[{model}] premium_suggestions section is missing."
     assert "personal_drill_pack" in analysis_results["premium_suggestions"], f"[{model}] personal_drill_pack key is missing in premium_suggestions."
     assert isinstance(analysis_results["premium_suggestions"]["personal_drill_pack"], list), f"[{model}] personal_drill_pack is not a list."
+    
+# Test non golf video 

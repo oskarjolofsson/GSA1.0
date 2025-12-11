@@ -9,11 +9,13 @@ from services.firebase.firebase_tokens import FireBaseTokens
 from services.analy.Models.OpenAI.gpt5 import Gpt5AnalysisService
 from services.analy.Sports.golfInstructions import GolfAnalysis
 from services.firebase.firebase_past_analysis import FireBasePastAnalysis
+from services.analy.Models.Gemini.gemini25flash import Gemini_25_flash
 
 # Factory
 models = {
     "gpt-5": Gpt5AnalysisService,
     "gpt-5-nano": Gpt5_nano_AnalysisService,
+    "gemini-2.5-flash": Gemini_25_flash,
 }
 
 sports = {
