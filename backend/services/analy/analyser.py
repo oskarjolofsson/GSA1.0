@@ -10,12 +10,18 @@ from services.analy.Models.OpenAI.gpt5 import Gpt5AnalysisService
 from services.analy.Sports.golfInstructions import GolfAnalysis
 from services.firebase.firebase_past_analysis import FireBasePastAnalysis
 from services.analy.Models.Gemini.gemini25flash import Gemini_25_flash
+from services.analy.Models.Gemini.gemini25flashlite import Gemini_25_flash_lite
+from services.analy.Models.Gemini.gemini25pro import Gemini_25_pro
+from services.analy.Models.Gemini.gemini3propreview import Gemini_3_pro_preview
 
 # Factory
 models = {
     "gpt-5": Gpt5AnalysisService,
     "gpt-5-nano": Gpt5_nano_AnalysisService,
     "gemini-2.5-flash": Gemini_25_flash,
+    "gemini-2.5-flash-lite": Gemini_25_flash_lite,
+    "gemini-2.5-pro": Gemini_25_pro,
+    "gemini-3-pro-preview": Gemini_3_pro_preview,
 }
 
 sports = {
