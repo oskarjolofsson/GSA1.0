@@ -23,7 +23,7 @@ def flask_app():
 @pytest.fixture(scope="module", params=[
     # "gpt-5-nano", 
     # "gpt-5",
-    "gemini-1.5-pro",
+    "gemini-2.5-flash",
     ])
 def video_upload_result(request, flask_app):
     """Run the /upload_video endpoint with different models."""
