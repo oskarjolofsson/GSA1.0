@@ -35,6 +35,9 @@ def flask_app():
     "gpt-5-nano", 
     "gpt-5",
     "gemini-2.5-flash",
+    #"gemini-2.5-flash-lite",   # Broken formatting
+    #"gemini-2.5-pro",          # Broken formatting
+    "gemini-3-pro-preview",
     ])
 def video_upload_result(request, flask_app):
     """Run the /upload_video endpoint with different models."""

@@ -69,12 +69,26 @@ class GeminiTemplate(Model, ABC):
         
         # Remove uploaded file from Gemini
         self.client.files.delete(name=video.name)
+        
+        if not analysis or not analysis.text:
+            raise ValueError("No analysis returned from AI model.")
 
         # format result
-        raw_text = analysis.text
-        print("Raw Gemini Response:" + raw_text)
-        data = json.loads(raw_text) # Make into dict
+        raw_text = analysis.text if hasattr(analysis, 'text') else str(analysis)
+        raw_text = raw_text.strip()
         
+        # Debug: Log what we got
+        if not raw_text:
+            print(f"ERROR: Empty response from API")
+            raise ValueError("AI analysis returned empty response")
+        
+        try:
+            data = json.loads(raw_text)
+        except json.JSONDecodeError as e:
+            print(f"ERROR: Invalid JSON response: {raw_text[:200]}")
+            raise
+        
+        print("Raw Gemini Response:" + raw_text)
         pprint(data)
         
         return data

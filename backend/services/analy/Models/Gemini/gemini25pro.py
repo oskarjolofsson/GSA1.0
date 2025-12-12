@@ -1,6 +1,6 @@
 from services.analy.Sports.sportInstructions import SportAnalysis
 from services.analy.Models.Gemini.geminiTemplate import GeminiTemplate
-
+from google.genai import types
 
 class Gemini_25_pro(GeminiTemplate):
 
@@ -10,10 +10,12 @@ class Gemini_25_pro(GeminiTemplate):
     def ai_analysis(self, content: list[dict[str, str]]):
         response = self.client.models.generate_content(
             model="gemini-2.5-pro",
+            config=types.GenerateContentConfig(
+                system_instruction=[
+                    {"text": self.system_instructions.get()}
+                ]
+            ),
             contents=[
-                {
-                    "role": "user",
-                    "parts": [{"text": self.system_instructions.get()}]},
                 {
                     "role": "user",
                     "parts": content,
@@ -23,3 +25,5 @@ class Gemini_25_pro(GeminiTemplate):
         
         return response
 
+
+# NOTE gemini 2.5-pro does not handle system_instructions well as it fomrats the answer poorly, not as json
