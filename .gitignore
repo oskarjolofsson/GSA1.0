@@ -116,3 +116,4 @@ pip-delete-this-directory.txt
 .coverage
 .pytest_cache/
 uploads
+results/
