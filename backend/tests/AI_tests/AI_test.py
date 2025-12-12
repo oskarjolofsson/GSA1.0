@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from sympy import pprint
 from datetime import datetime
+import json
 
 # Add the backend directory to the Python path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -39,9 +40,6 @@ def video_upload_result(request, flask_app):
     """Run the /upload_video endpoint with different models."""
     test_video_path = os.path.join(os.path.dirname(__file__), "test_video.mp4")
     
-    # Write model header to results file
-    write_model_header(request.param)
-    
     model = request.param
 
     with open(test_video_path, "rb") as video_file:
@@ -67,6 +65,9 @@ def video_upload_result(request, flask_app):
     json_data = response.get_json()
     analysis_text = json_data.get("analysis_results", "")
     analysis_results = json_data.get("analysis_results", {})
+    
+    # Store analysis results for output
+    write_model_analysis_results(model, analysis_results)
     
     print_analysis_results(analysis_results, model)
 
@@ -191,7 +192,7 @@ def test_premium_suggestions_exists(video_upload_result):
 
 # Global variables to buffer test results
 _test_results = []
-_model_headers = {}
+_model_analysis_results = {}  # Store analysis results by model
 _results_file = None
 
 def initialize_results_file():
@@ -209,11 +210,11 @@ def get_results_file():
     return _results_file
 
 
-def write_model_header(model):
-    """Buffer a header for each model being tested."""
-    global _model_headers
-    if model not in _model_headers:
-        _model_headers[model] = len(_test_results)
+def write_model_analysis_results(model, analysis_results):
+    """Store analysis results for a model."""
+    global _model_analysis_results
+    if model not in _model_analysis_results:
+        _model_analysis_results[model] = analysis_results
 
 
 def write_test_result(test_name, model, status, details=""):
@@ -229,7 +230,7 @@ def write_test_result(test_name, model, status, details=""):
 
 def write_all_results():
     """Write all buffered test results to the file at once."""
-    global _test_results, _model_headers
+    global _test_results, _model_analysis_results
     
     results_file = get_results_file()
     
@@ -252,6 +253,16 @@ def write_all_results():
             
             with open(results_file, "a") as f:
                 f.write(model_header)
+            
+            # Write analysis results for this model (only once per model)
+            if model in _model_analysis_results:
+                analysis_output = f"\n--- ANALYSIS RESULTS ---\n"
+                analysis_output += json.dumps(_model_analysis_results[model], indent=2)
+                analysis_output += "\n\n--- TEST RESULTS ---\n"
+                
+                with open(results_file, "a") as f:
+                    f.write(analysis_output)
+            
             current_model = model
         
         # Write result
