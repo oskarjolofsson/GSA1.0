@@ -7,14 +7,14 @@ from typing import Dict, Any, Optional
 class RequestTemplate:
     """Template for creating API requests with customizable inputs."""
 
-    def __init__(self, base_dir: Path):
+    def __init__(self, base_dir: Path, video_filename = "test_video.mp4"):
         """Initialize the request template.
         
         Args:
             base_dir: Base directory for test files.
         """
         self.base_dir = base_dir
-        self.test_video_path = base_dir / "tests" / "AI_tests" / "test_video.mp4"
+        self.test_video_path = base_dir / "tests" / "AI_tests" / video_filename
 
     def create_upload_video_request(
         self,
