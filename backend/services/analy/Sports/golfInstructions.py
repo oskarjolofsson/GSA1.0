@@ -48,6 +48,7 @@ class GolfAnalysis(SportAnalysis):
                 "personal_drill_pack": ["Drill 1", "Drill 2", "Drill 3"], (give all drills that were given in key_findings)
                 "biggest_leak": "The one issue that costs them the most strokes."
             }
+            "success": if analysis was successful true, else if not or the video did not show a golf swing false
         }
 
 
