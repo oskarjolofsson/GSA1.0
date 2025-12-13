@@ -19,8 +19,8 @@ models = {
     "gpt-5": Gpt5AnalysisService,
     "gpt-5-nano": Gpt5_nano_AnalysisService,
     "gemini-2.5-flash": Gemini_25_flash,
-    "gemini-2.5-flash-lite": Gemini_25_flash_lite,
-    "gemini-2.5-pro": Gemini_25_pro,
+    "gemini-2.5-flash-lite": Gemini_25_flash_lite,  # Broken model
+    "gemini-2.5-pro": Gemini_25_pro,    # Broken model
     "gemini-3-pro-preview": Gemini_3_pro_preview,
 }
 

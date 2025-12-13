@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from services.firebase.firebase_auth import require_auth
 import traceback
 from firebase_admin import auth as firebase_auth
+import time
 
 from services.analy.analyser import Analysis
 from services.firebase.firebase_past_analysis import FireBasePastAnalysis
@@ -24,7 +25,7 @@ def golf():
         start_time = float(start_time_str) if start_time_str is not None else None
         end_time = float(end_time_str) if end_time_str is not None else None
         user_id = request.form.get("user_id")
-        model = request.form.get("model", "gpt-5")
+        model = request.form.get("model", "gemini-2.5-flash")
 
         analysis = Analysis()
         data = analysis.execute(

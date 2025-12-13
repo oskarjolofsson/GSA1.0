@@ -11,6 +11,7 @@ import BubblePopGame from "../games/BublePopGame.jsx";
 import tokenService from "../../services/tokenService.js";
 import SubscriptionService from "../../services/activeSubscription.js";
 import UploadButtonZone from "./UploadButtonZone.jsx";
+import Loading from "./loading.jsx";
 
 function UploadHeader() {
   return (
@@ -208,25 +209,7 @@ export default function UploadPage({ initialFile }) {
     <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
         {uploading ? (
-          <>
-            <div className="text-center mb-6">
-              <div className ="flex items-center justify-center gap-2">
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Analyzing Your Video</h1>
-              <div className="animate-spin h-6 w-6 border-2 border-teal-400 border-t-transparent rounded-full"></div>
-              </div>
-              <p className="text-slate-400">While we process your video, play a quick game!</p>
-            </div>
-            <BubblePopGame />
-            <div className="text-center mt-8">
-              <button
-                onClick={() => setUploading(false)}
-                className="px-6 py-2 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm
-                           hover:bg-red-500/30 transition-all duration-200"
-              >
-                Cancel Upload
-              </button>
-            </div>
-          </>
+          <Loading time={35} full={!uploading} />   // Change time depending on model
         ) : !analysis ? (
           <>
             <UploadHeader />
