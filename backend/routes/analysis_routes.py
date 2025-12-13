@@ -25,7 +25,7 @@ def golf():
         start_time = float(start_time_str) if start_time_str is not None else None
         end_time = float(end_time_str) if end_time_str is not None else None
         user_id = request.form.get("user_id")
-        model = request.form.get("model", "gemini-2.5-flash")
+        model = request.form.get("model", "gemini-3-pro-preview")
 
         analysis = Analysis()
         data = analysis.execute(
