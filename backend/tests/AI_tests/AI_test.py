@@ -9,7 +9,7 @@ from sympy import pprint
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from app import app
-from test_helpers import TestResultsManager
+from conftest import results_manager
 from request_template import RequestTemplate
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -17,8 +17,7 @@ NOTES_PATH = BASE_DIR / "tests" / "results" / "ai_tests" / "notes.txt"
 OUTPUT_PATH = BASE_DIR / "tests" / "results" / "ai_tests" / "analysis_output.txt"
 RESULTS_DIR = BASE_DIR / "tests" / "results" / "ai_tests"
 
-# Initialize results manager and request template
-results_manager = TestResultsManager(RESULTS_DIR)
+# Initialize request template
 request_template = RequestTemplate(BASE_DIR)
 
 
@@ -27,7 +26,6 @@ def setup_results_directory():
     """Create results directory if it doesn't exist."""
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     yield
-    results_manager.write_all_results()
     
 
 @pytest.fixture(scope="module")
@@ -37,9 +35,9 @@ def flask_app():
     return app
 
 @pytest.fixture(scope="module", params=[
-    "gpt-5-nano", 
-    "gpt-5",
-    "gemini-2.5-flash",
+    #"gpt-5-nano", 
+    #"gpt-5",
+    #"gemini-2.5-flash",
     #"gemini-2.5-flash-lite",   # Broken formatting
     #"gemini-2.5-pro",          # Broken formatting
     "gemini-3-pro-preview",

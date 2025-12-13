@@ -20,11 +20,13 @@ class TestResultsManager:
         self._test_results = []
         self._model_analysis_results = {}
         self._results_file = None
+        self._test_file_name = None  # Track which test file is running
 
     def initialize_results_file(self):
-        """Initialize the results file path."""
+        """Initialize the results file path based on the test file that ran."""
+        file_name_part = f"_{self._test_file_name}" if self._test_file_name else ""
         self._results_file = (
-            self.results_dir / f"test_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            self.results_dir / f"test_results{file_name_part}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         )
         return self._results_file
 
@@ -44,7 +46,7 @@ class TestResultsManager:
         if model not in self._model_analysis_results:
             self._model_analysis_results[model] = analysis_results
 
-    def add_test_result(self, test_name: str, model: str, status: str, details: str = ""):
+    def add_test_result(self, test_name: str, model: str, status: str, details: str = "", test_file: str = ""):
         """Buffer a single test result.
         
         Args:
@@ -57,15 +59,25 @@ class TestResultsManager:
         if details:
             result_line += f" - {details}"
 
-        self._test_results.append((model, result_line))
+        self._test_results.append((model, result_line, test_file))
+
+    def set_test_file_name(self, file_name: str):
+        """Set the name of the test file being run.
+        
+        Args:
+            file_name: Name of the test file (e.g., 'AI_test', 'fake_swing_text').
+        """
+        self._test_file_name = file_name
 
     def write_all_results(self):
         """Write all buffered test results to the file at once."""
         results_file = self.get_results_file()
 
-        # Write header
+        # Write header with test file information
         header = f"{'='*80}\n"
         header += f"TEST RESULTS - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        if self._test_file_name:
+            header += f"TEST FILE: {self._test_file_name}\n"
         header += f"{'='*80}\n\n"
 
         with open(results_file, "w") as f:
@@ -73,12 +85,15 @@ class TestResultsManager:
 
         # Write results grouped by model
         current_model = None
-        for model, result_line in self._test_results:
+        current_file = None
+        
+        for model, result_line, test_file in self._test_results:
             # Write model header when switching models
-            if model != current_model:
+            if model != current_model or current_file != test_file:
                 model_header = f"\n{'-'*80}\n"
                 model_header += f"MODEL: {model}\n"
                 model_header += f"{'-'*80}\n"
+                model_header += f"TEST FILE: {test_file}\n\n"
 
                 with open(results_file, "a") as f:
                     f.write(model_header)
@@ -93,6 +108,7 @@ class TestResultsManager:
                         f.write(analysis_output)
 
                 current_model = model
+                current_file = test_file
 
             # Write result
             with open(results_file, "a") as f:
@@ -100,7 +116,7 @@ class TestResultsManager:
 
         # Write summary
         total_tests = len(self._test_results)
-        passed_tests = sum(1 for _, line in self._test_results if "[PASSED]" in line)
+        passed_tests = sum(1 for _, line, _ in self._test_results if "[PASSED]" in line)
 
         summary = f"\n{'='*80}\n"
         summary += f"SUMMARY: {passed_tests}/{total_tests} tests passed\n"

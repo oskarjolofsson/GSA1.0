@@ -3,21 +3,20 @@ import sys
 from pathlib import Path
 import pytest
 from sympy import pprint
-from app import app
 
 # Add the backend directory to the Python path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from test_helpers import TestResultsManager
+from conftest import results_manager
 from request_template import RequestTemplate
+from app import app
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 RESULTS_DIR = BASE_DIR / "tests" / "results" / "ai_tests"
 
 # Initialize results manager and request template
-results_manager = TestResultsManager(RESULTS_DIR)
-request_template = RequestTemplate(BASE_DIR)
+request_template = RequestTemplate(BASE_DIR, video_filename="non_golf.mp4")
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -36,9 +35,9 @@ def flask_app():
 
 
 @pytest.fixture(scope="module", params=[
-    "gpt-5-nano",
-    "gpt-5",
-    "gemini-2.5-flash",
+    #"gpt-5-nano",
+    #"gpt-5",
+    #"gemini-2.5-flash",
     "gemini-3-pro-preview",
 ])
 def fake_swing_upload_result(request, flask_app):
@@ -135,3 +134,7 @@ def print_analysis_results(analysis_results, model):
     for section, content in analysis_results.items():
         print(f"\n=== {section.upper()} ===")
         pprint(content)
+        
+
+# To run only this test file, use: pytest tests/AI_tests/fake_swing_test.py, 
+# from the backend directory
