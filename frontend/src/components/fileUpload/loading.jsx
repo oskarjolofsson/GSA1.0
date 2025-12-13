@@ -105,7 +105,7 @@ export default function CircularWithValueLabel({ time=30, full=false }) {
         
 
         <p className="text-center text-gray-500 text-xs mt-4">
-          This may take a few moments
+          This may take up to {time} seconds depending on the length of your video and server load.
         </p>
       </div>
     </div>
