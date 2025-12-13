@@ -209,7 +209,7 @@ export default function UploadPage({ initialFile }) {
     <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
         {uploading ? (
-          <Loading time={35} full={!uploading} />   // Change time depending on model
+          <Loading time={40} full={!uploading} />   // Change time depending on model
         ) : !analysis ? (
           <>
             <UploadHeader />

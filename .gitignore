@@ -117,3 +117,4 @@ pip-delete-this-directory.txt
 .pytest_cache/
 uploads
 results/
+*.mp4
