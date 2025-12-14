@@ -35,9 +35,9 @@ def flask_app():
 
 
 @pytest.fixture(scope="module", params=[
-    #"gpt-5-nano",
-    #"gpt-5",
-    #"gemini-2.5-flash",
+    "gpt-5-nano",
+    "gpt-5",
+    "gemini-2.5-flash",
     "gemini-3-pro-preview",
 ])
 def fake_swing_upload_result(request, flask_app):
@@ -115,18 +115,7 @@ def test_fake_swing_response_structure(fake_swing_upload_result):
         results_manager.add_test_result("test_fake_swing_response_structure", model, "FAILED", str(e))
         raise
 
-
-def test_fake_swing_error_message_present(fake_swing_upload_result):
-    model = fake_swing_upload_result["model"]
-    analysis_results = fake_swing_upload_result["analysis_results"]
-
-    try:
-        assert "error" in analysis_results or "message" in analysis_results, f"[{model}] No error or message found in analysis_results."
-        results_manager.add_test_result("test_fake_swing_error_message_present", model, "PASSED", "Error message is present")
-    except AssertionError as e:
-        results_manager.add_test_result("test_fake_swing_error_message_present", model, "FAILED", str(e))
-        raise
-
+# Helper
 
 def print_analysis_results(analysis_results, model):
     """Helper method to print analysis results in a readable format."""

@@ -1,6 +1,7 @@
 """Helper class for AI model testing."""
 
 import json
+import inspect
 from pathlib import Path
 from datetime import datetime
 
@@ -18,13 +19,26 @@ class TestResultsManager:
         self.results_dir.mkdir(parents=True, exist_ok=True)
         
         self._test_results = []
-        self._model_analysis_results = {}
+        self._model_analysis_results = {}  # Now keyed by (model, test_file)
         self._results_file = None
         self._test_file_name = None  # Track which test file is running
 
     def initialize_results_file(self):
-        """Initialize the results file path based on the test file that ran."""
-        file_name_part = f"_{self._test_file_name}" if self._test_file_name else ""
+        """Initialize the results file path based on the test files that ran."""
+        # Determine the test file names from results
+        test_files = set()
+        for _, _, test_file in self._test_results:
+            if test_file:
+                test_files.add(test_file)
+        
+        # Use the first test file name if available, otherwise use the set test file name
+        if test_files:
+            file_name_part = "_" + "_".join(sorted(test_files))
+        elif self._test_file_name:
+            file_name_part = f"_{self._test_file_name}"
+        else:
+            file_name_part = ""
+        
         self._results_file = (
             self.results_dir / f"test_results{file_name_part}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         )
@@ -36,15 +50,25 @@ class TestResultsManager:
             self.initialize_results_file()
         return self._results_file
 
-    def store_analysis_results(self, model: str, analysis_results: dict):
-        """Store analysis results for a model.
+    def store_analysis_results(self, model: str, analysis_results: dict, test_file: str = ""):
+        """Store analysis results for a model and test file.
         
         Args:
             model: Model name.
             analysis_results: Analysis results dictionary.
+            test_file: Optional test file name. If not provided, it will be auto-detected.
         """
-        if model not in self._model_analysis_results:
-            self._model_analysis_results[model] = analysis_results
+        # Auto-detect test file if not provided
+        if not test_file:
+            frame = inspect.currentframe()
+            caller_frame = frame.f_back
+            caller_file = Path(caller_frame.f_code.co_filename).stem
+            test_file = caller_file
+        
+        # Store results keyed by (model, test_file) tuple
+        key = (model, test_file)
+        if key not in self._model_analysis_results:
+            self._model_analysis_results[key] = analysis_results
 
     def add_test_result(self, test_name: str, model: str, status: str, details: str = "", test_file: str = ""):
         """Buffer a single test result.
@@ -54,7 +78,15 @@ class TestResultsManager:
             model: Model name.
             status: Test status (PASSED or FAILED).
             details: Optional details about the test.
+            test_file: Optional test file name. If not provided, it will be auto-detected.
         """
+        # Auto-detect test file if not provided
+        if not test_file:
+            frame = inspect.currentframe()
+            caller_frame = frame.f_back
+            caller_file = Path(caller_frame.f_code.co_filename).stem
+            test_file = caller_file
+        
         result_line = f"  [{status}] {test_name}"
         if details:
             result_line += f" - {details}"
@@ -98,10 +130,11 @@ class TestResultsManager:
                 with open(results_file, "a") as f:
                     f.write(model_header)
 
-                # Write analysis results for this model (only once per model)
-                if model in self._model_analysis_results:
+                # Write analysis results for this model and test file (only once per model+test_file combo)
+                key = (model, test_file)
+                if key in self._model_analysis_results:
                     analysis_output = f"\n--- ANALYSIS RESULTS ---\n"
-                    analysis_output += json.dumps(self._model_analysis_results[model], indent=2)
+                    analysis_output += json.dumps(self._model_analysis_results[key], indent=2)
                     analysis_output += "\n\n--- TEST RESULTS ---\n"
 
                     with open(results_file, "a") as f:
