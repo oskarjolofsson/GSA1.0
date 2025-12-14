@@ -35,9 +35,9 @@ def flask_app():
     return app
 
 @pytest.fixture(scope="module", params=[
-    #"gpt-5-nano", 
-    #"gpt-5",
-    #"gemini-2.5-flash",
+    "gpt-5-nano", 
+    "gpt-5",
+    "gemini-2.5-flash",
     #"gemini-2.5-flash-lite",   # Broken formatting
     #"gemini-2.5-pro",          # Broken formatting
     "gemini-3-pro-preview",
