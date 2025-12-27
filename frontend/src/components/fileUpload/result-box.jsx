@@ -32,7 +32,6 @@ const TAB_CONFIGS = {
 };
 
 export default function InfoBox({ analysis }) {
-  console.log("from inside result-box.jsx", analysis);
 
   if (!analysis) return null;
 
@@ -180,61 +179,64 @@ export default function InfoBox({ analysis }) {
         {/* Line */}
         <div className="my-6 h-px w-full bg-white/10 rounded-full" />
 
-        {/* Advanced */}
-        <div className="mt-6">
+        {/* Advanced - Only show if key_findings has items */}
+        {key_findings && key_findings.length > 0 ? (
+          <div className="mt-6">
 
-          <div className="gap-2 mb-4 justify-center flex items-center">
-            <span
-              aria-hidden
-              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15"
-            >
-              <span className="text-xs">
-                <ListChevronsUpDown className="w-3 h-3" />
+            <div className="gap-2 mb-4 justify-center flex items-center">
+              <span
+                aria-hidden
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15"
+              >
+                <span className="text-xs">
+                  <ListChevronsUpDown className="w-3 h-3" />
+                </span>
               </span>
-            </span>
-            <div className="text-xs uppercase tracking-wide text-white/60">
-              Problems Found With Recommendations
+              <div className="text-xs uppercase tracking-wide text-white/60">
+                Problems Found With Recommendations
+              </div>
+            </div>
+
+            {/* Number Row and Navigation */}
+            <div className="flex flex-col gap-4 items-center justify-center">
+
+              {/* Problem Indicators */}
+              <div className="flex items-center gap-2">
+                {key_findings.map((_, i) => renderProblemButton(i, key_findings[i].severity))}
+              </div>
+
+              {/* Navigation Buttons */}
+              <div className="flex items-center gap-4 md:gap-6">
+                <motion.button
+                  onClick={handlePreviousProblem}
+                  className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80
+                             transition-all duration-200 hover:bg-white/10 flex-shrink-0"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label="Previous problem"
+                  type="button"
+                >
+                  <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                </motion.button>
+
+                <motion.button
+                  onClick={handleNextProblem}
+                  className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80
+                             transition-all duration-200 hover:bg-white/10 flex-shrink-0"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label="Next problem"
+                  type="button"
+                >
+                  <ChevronRight className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                </motion.button>
+              </div>
             </div>
           </div>
+        ) : null}
 
-          {/* Number Row and Navigation */}
-          <div className="flex flex-col gap-4 items-center justify-center">
-
-            {/* Problem Indicators */}
-            <div className="flex items-center gap-2">
-              {key_findings.map((_, i) => renderProblemButton(i, key_findings[i].severity))}
-            </div>
-
-            {/* Navigation Buttons */}
-            <div className="flex items-center gap-4 md:gap-6">
-              <motion.button
-                onClick={handlePreviousProblem}
-                className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80
-                           transition-all duration-200 hover:bg-white/10 flex-shrink-0"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Previous problem"
-                type="button"
-              >
-                <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-              </motion.button>
-
-              <motion.button
-                onClick={handleNextProblem}
-                className="h-8 w-8 md:h-10 md:w-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/80
-                           transition-all duration-200 hover:bg-white/10 flex-shrink-0"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                aria-label="Next problem"
-                type="button"
-              >
-                <ChevronRight className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
-              </motion.button>
-            </div>
-          </div>
-        </div>
-
-        {/* Key insights */}
+        {/* Key insights - Only show if key_findings has items */}
+        {key_findings && key_findings.length > 0 && (
         <div className="mt-8">
           <div
             className={`
@@ -347,6 +349,7 @@ export default function InfoBox({ analysis }) {
           </div>
 
         </div>
+        )}
       </section>
     </>
   );
