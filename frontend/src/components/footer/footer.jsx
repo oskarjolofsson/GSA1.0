@@ -81,7 +81,7 @@ function LowerLeft() {
 function LowerRight() {
   return (
     <div className="flex items-center gap-4 text-slate-400">
-      <a href="https://github.com/oskarjolofsson/GSA1.0" className="hover:text-white">
+      <a href="https://www.instagram.com/trueswing25/" className="hover:text-white">
         <svg
           className="h-4 w-4"
           fill="currentColor"
