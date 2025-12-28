@@ -49,7 +49,7 @@ export default function PriceTable({ refreshTrigger = 0 }) {
     if (user) {
       // Only show confirmation message if switching plans (not for new subscriptions)
       if (activePriceId) {
-        const charge = await SubscriptionService.getUpcomingInvoicePrice(priceId);
+        void await SubscriptionService.getUpcomingInvoicePrice(priceId); //const charge = (add this when needed)
 
         setMessage(`Confirm plan change. You will will be billed on your next renewal date. Continue?`);
         setPendingAction({
