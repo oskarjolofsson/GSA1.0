@@ -169,7 +169,7 @@ export default function UploadPage({ initialFile }) {
             setUploading(false);
         })
         .catch((err) => {
-            setErrorMessage(err.message);
+            setErrorMessage("Upload failed, try again");
             setUploading(false);
         });
   }
@@ -204,7 +204,7 @@ export default function UploadPage({ initialFile }) {
             setUploading(false);
         })
         .catch((err) => {
-            setErrorMessage(err.message);
+            setErrorMessage("Upload failed, try again");
             setUploading(false);
         });
   }
