@@ -1,6 +1,51 @@
 import { useState, useRef, useEffect } from "react";
 const API = import.meta.env.VITE_API_URL;
 
+// Helper to validate file integrity and format (prevents mobile corruption)
+async function validateAndPrepareFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = () => {
+      const arrayBuffer = reader.result;
+      
+      // Check for valid MP4 signature (ftyp box starts with 0x66747970)
+      const view = new Uint8Array(arrayBuffer);
+      const isMp4 = view.length > 8 && 
+                    view[4] === 0x66 && view[5] === 0x74 && 
+                    view[6] === 0x79 && view[7] === 0x70;
+      
+      // Check for WebM signature
+      const isWebM = view.length > 4 && 
+                     view[0] === 0x1A && view[1] === 0x45 && 
+                     view[2] === 0xDF && view[3] === 0xA3;
+      
+      if (!isMp4 && !isWebM) {
+        reject(new Error("Invalid video format. Please upload an MP4 or WebM file."));
+        return;
+      }
+      
+      // Create a fresh blob to ensure integrity
+      const blob = new Blob([arrayBuffer], { type: file.type });
+      const validatedFile = new File([blob], file.name, { 
+        type: file.type,
+        lastModified: file.lastModified 
+      });
+      resolve(validatedFile);
+    };
+    
+    reader.onerror = () => {
+      reject(new Error("Failed to read video file. Please try again."));
+    };
+    
+    reader.onabort = () => {
+      reject(new Error("File reading was cancelled."));
+    };
+    
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 // Components
 import DropZone from "./DropZone.jsx";
 import PreviewPane from "./preview/PreviewPane.jsx";
@@ -101,22 +146,67 @@ export default function UploadPage({ initialFile }) {
   function onSelect(files) {
     if (!files || !files.length) return;
     const f = files[0];
+    
+    // Validate file type
     if (!f.type.startsWith("video/")) {
-      alert("Please select a video file.");
-      return;
+        setErrorMessage("Please select a video file.");
+        return;
     }
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setFile(f);
-    setPreviewUrl(URL.createObjectURL(f));
-    setNote("");
+
+    setUploading(true);
+    setErrorMessage("");
+
+    // Validate file before preview
+    validateAndPrepareFile(f)
+        .then((validatedFile) => {
+            setFile(validatedFile);
+            
+            // Create preview URL from validated file
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            const url = URL.createObjectURL(validatedFile);
+            setPreviewUrl(url);
+            setNote("");
+            setUploading(false);
+        })
+        .catch((err) => {
+            setErrorMessage(err.message);
+            setUploading(false);
+        });
   }
 
   function onDrop(e) {
     e.preventDefault();
+    e.stopPropagation();
     setDragActive(false);
-    if (uploading) return; // ignore drops while uploading
-    if (file) return; // max one file
-    onSelect(e.dataTransfer.files);
+    
+    const files = e.dataTransfer?.files;
+    if (!files || !files.length) return;
+    
+    const f = files[0];
+    if (!f.type.startsWith("video/")) {
+        setErrorMessage("Please select a video file.");
+        return;
+    }
+
+    setUploading(true);
+    setErrorMessage("");
+
+    // Validate file before preview
+    validateAndPrepareFile(f)
+        .then((validatedFile) => {
+            setFile(validatedFile);
+            
+            // Create preview URL from validated file
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            const url = URL.createObjectURL(validatedFile);
+            setPreviewUrl(url);
+            setNote("");
+            setUploading(false);
+        })
+        .catch((err) => {
+            setErrorMessage(err.message);
+            setUploading(false);
+        });
   }
 
   // Remove the selected file and clear state
@@ -143,20 +233,23 @@ export default function UploadPage({ initialFile }) {
     setErrorMessage("");
     setUploading(true);
 
-    const form = new FormData();
-    form.append("video", file);
-    // include optional user note/caption when present
-    if (note && note.trim().length) {
-      form.append("note", note.trim());
-    }
-    form.append("start_time", String(startTime));
-    form.append("end_time", String(endTime));
-
-    // Get user_id from tokenService (adjust this line to your actual implementation)
-    const userId = tokenService.getUserId(); // Make sure this returns the user ID
-    form.append("user_id", userId);
-
     try {
+      // Validate file integrity before upload (prevents mobile corruption)
+      const validatedFile = await validateAndPrepareFile(file);
+
+      const form = new FormData();
+      form.append("video", validatedFile);
+      // include optional user note/caption when present
+      if (note && note.trim().length) {
+        form.append("note", note.trim());
+      }
+      form.append("start_time", String(startTime));
+      form.append("end_time", String(endTime));
+
+      // Get user_id from tokenService (adjust this line to your actual implementation)
+      const userId = tokenService.getUserId(); // Make sure this returns the user ID
+      form.append("user_id", userId);
+
       const res = await fetch(API + "/api/v1/analysis/upload_video", {
         method: "POST",
         body: form,
@@ -197,9 +290,8 @@ export default function UploadPage({ initialFile }) {
       console.log("Analysis results:", data.analysis_results);
     } catch (err) {
       setAnalysis(null);
-      // err.message already set in setErrorMessage above for known backend responses,
-      // but ensure we show something if parsing failed
-      if (!errorMessage) setErrorMessage(err.message || "Upload failed");
+      // Show error message - either from backend response or file validation failure
+      setErrorMessage(err.message || "Upload failed");
     }
 
     setUploading(false);
