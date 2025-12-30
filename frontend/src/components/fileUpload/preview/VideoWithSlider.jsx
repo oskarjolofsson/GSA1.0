@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-const API = import.meta.env.VITE_API_URL;
+import { useEffect, useRef, useState, useCallback } from "react";
+import ErrorPopup from "../../popup/ErrorPopup.jsx";
 
 function formatTime(s, digits = 2) {
     if (!Number.isFinite(s)) return "0.00";
@@ -12,6 +12,10 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
 
     const [start, setStart] = useState(0);
     const [end, setEnd] = useState(0);
+    const [errorMessage, setErrorMessage] = useState("");
+    // For debounced seeking on mobile
+    const seekTimeoutRef = useRef(null);
+    const [isSeeking, setIsSeeking] = useState(false);
 
     // Reset times when previewUrl changes
     useEffect(() => {
@@ -28,51 +32,94 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
         const v = videoRef.current;
         if (!v) return;
 
-        const onLoaded = () => {
+        const onLoadedMetadata = () => {
+            const d = Number.isFinite(v.duration) ? v.duration : 0;
+            if (d > 0) {
+                setDuration(d);
+                setEnd(d);
+                setStart(0);
+            }
+        };
+
+        const onDurationChange = () => {
             const d = Number.isFinite(v.duration) ? v.duration : 0;
             if (d > 0) {
                 setDuration(d);
                 setEnd((prev) => (prev === 0 ? d : Math.min(prev, d)));
-                setStart((prev) => Math.max(0, Math.min(prev, d)));
-            }
-        };
-        
-        const onCanPlay = () => {
-            // Fallback for mobile devices that may not fire loadedmetadata
-            if (v.duration && v.duration > 0) {
-                onLoaded();
-            }
-        };
-        const onPlay = () => {
-            // Another fallback - when video starts playing
-            if (v.duration && v.duration > 0) {
-                onLoaded();
             }
         };
 
-        v.addEventListener("loadedmetadata", onLoaded);
-        v.addEventListener("durationchange", onLoaded);
+        const onCanPlay = () => {
+            // Video is ready to play
+        };
+
+        const onError = (e) => {
+            console.error("Video error:", v.error?.code, v.error?.message);
+            // Show that there was an error loading the video
+            setErrorMessage("Error loading video preview.");
+        };
+
+        v.addEventListener("loadedmetadata", onLoadedMetadata);
+        v.addEventListener("durationchange", onDurationChange);
         v.addEventListener("canplay", onCanPlay);
-        v.addEventListener("play", onPlay);
-        
-        // Try to load metadata immediately if already available
-        if (v.duration && v.duration > 0) {
-            onLoaded();
+        v.addEventListener("error", onError);
+
+        // Force load on mobile
+        v.load();
+
+        // If metadata is already loaded
+        if (v.readyState >= 1) {
+            onLoadedMetadata();
         }
-        
+
         return () => {
-            v.removeEventListener("loadedmetadata", onLoaded);
-            v.removeEventListener("durationchange", onLoaded);
+            v.removeEventListener("loadedmetadata", onLoadedMetadata);
+            v.removeEventListener("durationchange", onDurationChange);
             v.removeEventListener("canplay", onCanPlay);
-            v.removeEventListener("play", onPlay);
+            v.removeEventListener("error", onError);
         };
     }, [previewUrl]);
 
-    const jumpVideo = (t) => {
+    // Cleanup seek timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (seekTimeoutRef.current) {
+                clearTimeout(seekTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    // Debounced seek with seeked event - fixes frame preview on mobile
+    const jumpVideo = useCallback((t) => {
         const v = videoRef.current;
         if (!v) return;
-        v.currentTime = t;
-    };
+        
+        // Clear any pending seek
+        if (seekTimeoutRef.current) {
+            clearTimeout(seekTimeoutRef.current);
+        }
+        
+        // Debounce seeks (50ms delay) to prevent overwhelming mobile browsers
+        seekTimeoutRef.current = setTimeout(() => {
+            if (isSeeking) return;
+            setIsSeeking(true);
+            
+            const onSeeked = () => {
+                v.removeEventListener('seeked', onSeeked);
+                setIsSeeking(false);
+            };
+            
+            v.addEventListener('seeked', onSeeked);
+            v.currentTime = t;
+            
+            // Fallback: clear seeking state after timeout in case seeked doesn't fire
+            setTimeout(() => {
+                if (isSeeking) {
+                    setIsSeeking(false);
+                }
+            }, 1000);
+        }, 50);
+    }, [isSeeking]);
 
     // Only clamp the value being changed. Do NOT alter the other slider’s range/props.
     const onStartChange = (e) => {
@@ -98,6 +145,8 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
                     src={previewUrl}
                     crossOrigin="anonymous"
                     playsInline
+                    muted
+                    preload="auto"
                 />
             </div>
 
@@ -136,7 +185,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
 
 function Slider({ min, max, value, onChange, text }) {
     return (
-        <div className="mt-4">
+        <div className="mt-4 py-2">
             <div className="mb-1 flex justify-between text-[11px] text-white/70">
                 <span>{text}</span>
             </div>
@@ -147,7 +196,10 @@ function Slider({ min, max, value, onChange, text }) {
                 step="0.01"
                 value={value}
                 onChange={onChange}
-                className="w-full h-2 rounded-full bg-white/10 accent-white/80 focus:outline-none focus-visible:ring-2"
+                className="w-full h-6 rounded-full bg-white/10 accent-white/80 focus:outline-none focus-visible:ring-2 cursor-pointer
+                           [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5
+                           [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5"
+                style={{ touchAction: 'manipulation' }}
             />
         </div>
     )
