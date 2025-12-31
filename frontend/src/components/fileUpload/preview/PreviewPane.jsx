@@ -13,52 +13,12 @@ export default function PreviewPane({ previewUrl, ready, uploading, onRemove, fi
         <div className="text-slate-400 text-sm">No video selected</div>
       ) : (
         <div className="w-full h-full flex flex-col">
-          <VideoWithSlider previewUrl={previewUrl} onTime={onTime} />
-          {/* Show a small text input only when a video is present
-          {previewUrl && file?.type?.startsWith("video/") && (
-            <div className="mt-4">
-              <label htmlFor="preview-note" className="sr-only">Video note</label>
-              <input
-                id="preview-note"
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Add a short note or caption..."
-                className="w-full rounded-xl bg-white/5 ring-1 ring-white/10 px-4 py-2 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
-              />
-            </div>
-          )} */}
+          <VideoWithSlider previewUrl={previewUrl} onTime={onTime} onRemove={onRemove} />
 
           {/* Dropdown for advanced settings */}
           <Dropdown icon={<Settings className="w-4 h-4 text-white/70" />} name="Advanced Settings">
             <p>Hellop</p>
           </Dropdown>
-
-
-
-          <div className="mt-4 flex items-center justify-between">
-            <div className="text-xs text-slate-400 truncate">{file?.name}</div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onRemove}
-                disabled={uploading}
-                className="inline-flex items-center gap-1 rounded-xl bg-white/5 px-3 py-1.5 text-sm ring-1 ring-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <path d="M6 6l12 12M18 6l-12 12" />
-                </svg>
-                Remove
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>
