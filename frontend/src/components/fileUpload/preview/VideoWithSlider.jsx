@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Scissors } from "lucide-react";
+import { Scissors, Trash2 } from "lucide-react";
 import Dropdown from "../Dropdown";
 
 // Add keyframe animations for blinking and sliding
@@ -49,7 +49,7 @@ function formatTime(s, digits = 2) {
     return s.toFixed(digits);
 }
 
-export default function VideoWithStartEnd({ previewUrl, onTime, onRemove }) {
+export default function VideoWithStartEnd({ previewUrl, onTime, onRemove}) {
     const videoRef = useRef(null);
     const [duration, setDuration] = useState(0);
 
@@ -181,35 +181,28 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove }) {
 
     return (
         <div className="w-full">
-            <div className="flex-1 flex items-center justify-center relative">
-                <video
-                    ref={videoRef}
-                    className="max-h-64 rounded-2xl ring-1 ring-white/10 object-contain border border-white/10 bg-black/30"
-                    src={previewUrl}
-                    crossOrigin="anonymous"
-                    playsInline
-                    muted
-                    preload="auto"
-                />
-                {/* Delete button overlaid on bottom-right corner */}
-                {onRemove && (
-                    <button
-                        onClick={onRemove}
-                        className="absolute bottom-3 right-3 p-2 rounded-lg bg-red-500/80 hover:bg-red-600 text-white shadow-lg transition-colors"
-                        title="Delete video"
-                    >
-                        <svg
-                            viewBox="0 0 24 24"
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
+            <div className="flex items-center justify-center">
+                <div className="relative inline-block">
+                    <video
+                        ref={videoRef}
+                        className="max-h-64 rounded-2xl ring-1 ring-white/10 object-contain border border-white/10 bg-black/30"
+                        src={previewUrl}
+                        crossOrigin="anonymous"
+                        playsInline
+                        muted
+                        preload="auto"
+                    />
+                    {/* Delete button overlaid on bottom-right corner */}
+                    {onRemove && (
+                        <button
+                            onClick={onRemove}
+                            className="absolute bottom-3 right-3 px-3 py-2 rounded-lg bg-red-500/80 hover:bg-red-600 text-white shadow-lg transition-colors flex items-center gap-2"
+                            title="Delete video"
                         >
-                            <path d="M6 6l12 12M18 6l-12 12" />
-                        </svg>
-                    </button>
-                )}
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
             </div>
 
 
