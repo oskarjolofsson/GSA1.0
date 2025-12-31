@@ -1,19 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings } from "lucide-react";
 
-export default function AdvancedSettings({ advancedInput, setAdvancedInput }) {
+export default function AdvancedSettings({ advancedInput, setAdvancedInput, shouldOpen = false }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+
+  // Auto-open when parent signals (e.g., when trimming closes)
+  const handleAutoOpen = () => {
+    setIsOpen(true);
+    setIsVisible(true);
+  };
 
   const handleToggle = () => {
     if (isOpen) {
       setIsVisible(false);
       setTimeout(() => setIsOpen(false), 300);
     } else {
-      setIsOpen(true);
-      setIsVisible(true);
+      handleAutoOpen();
     }
   };
+
+  // Watch for shouldOpen prop change
+  useEffect(() => {
+    if (shouldOpen && !isOpen) {
+      handleAutoOpen();
+    }
+  }, [shouldOpen, isOpen]);
 
   const handleInputChange = (field, value) => {
     setAdvancedInput((prev) => ({
@@ -30,13 +42,13 @@ export default function AdvancedSettings({ advancedInput, setAdvancedInput }) {
     <div className="mt-4">
       <button
         onClick={handleToggle}
-        className={`w-full px-4 py-3 border border-white/30 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/90 font-medium shadow-md transition-all duration-200 flex items-center justify-between hover:border-white/50 ${
+        className={`w-full px-4 py-3 border ${isOpen ? "border-emerald-500/90" : "border-white/30"} bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/90 font-medium shadow-md transition-all duration-200 flex items-center justify-between hover:border-white/50 ${
           !isOpen ? "blink-dropdown rounded-lg" : "rounded-t-lg border-b-0"
         }`}
       >
         <span className="flex items-center gap-2">
           <Settings className="w-4 h-4 text-white/70" />
-          <span className="font-bold">Advanced Settings</span>
+          <span className="font-bold">Step 2: Additional Context (Optional)</span>
           {hasFilledFields && (
             <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
               {Object.values(advancedInput).filter((v) => v).length} filled
@@ -55,7 +67,7 @@ export default function AdvancedSettings({ advancedInput, setAdvancedInput }) {
       {/* Dropdown Content */}
       {isOpen && (
         <div
-          className={`p-6 rounded border border-t-0 border-white/20 bg-white/5 backdrop-blur-md shadow-lg space-y-6 ${
+          className={`p-6 rounded border border-t-0 border-emerald-500/90 bg-white/5 backdrop-blur-md shadow-lg space-y-6 ${
             isVisible ? "dropdown-slide-down" : "dropdown-slide-up"
           }`}
         >

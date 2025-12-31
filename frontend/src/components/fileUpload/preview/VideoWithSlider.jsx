@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Scissors, Trash2 } from "lucide-react";
+import { Scissors, Trash2, ArrowRight } from "lucide-react";
 import Dropdown from "../Dropdown";
 
 // Add keyframe animations for blinking and sliding
@@ -49,8 +49,9 @@ function formatTime(s, digits = 2) {
     return s.toFixed(digits);
 }
 
-export default function VideoWithStartEnd({ previewUrl, onTime, onRemove}) {
+export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrimClose = null}) {
     const videoRef = useRef(null);
+    const dropdownRef = useRef(null);
     const [duration, setDuration] = useState(0);
 
     const [start, setStart] = useState(0);
@@ -209,7 +210,19 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove}) {
 
             {/* Dropdown for trim controls */}
             <div className="mt-4">
-                <Dropdown icon={<Scissors className="w-4 h-4 text-white/70" />} name="Trim for accurate results">
+                <Dropdown 
+                  ref={dropdownRef}
+                  icon={<Scissors className="w-4 h-4 text-white/70" />} 
+                  name="Step 1: Trim your swing"
+                  isStep1={true}
+                  isInitiallyOpen={true}
+                  onClose={onTrimClose}
+                >
+                    {/* Helper text */}
+                    <div className="text-xs text-white/60 mb-3">
+                      Select only the swing motion. This is required for accurate analysis.
+                    </div>
+
                     {/* Readout */}
                     <div className="flex justify-between text-xs text-white/80 tabular-nums">
                         <span>Start: {formatTime(start)}</span>
@@ -236,6 +249,35 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove}) {
 
                     {/* visualization of selected window */}
                     <VisualizationSlider start={start} end={end} duration={duration} />
+
+                    {/* Trimmed length display and recommendation */}
+                    <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
+                        <div className="flex justify-between items-center text-xs text-white/80">
+                            <span className="font-medium">Total length of trimmed video:</span>
+                            <span className="text-emerald-400 font-semibold">{formatTime(Math.max(0, end - start))}</span>
+                        </div>
+                        <div className="text-xs text-white/50">
+                            Recommended length: 2 to 3 seconds
+                        </div>
+                    </div>
+
+                    {/* Next button */}
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            onClick={() => {
+                                if (dropdownRef.current) {
+                                    dropdownRef.current.close();
+                                }
+                                if (onTrimClose) {
+                                    onTrimClose();
+                                }
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/90 hover:bg-emerald-500 rounded-lg text-white text-sm font-medium transition-colors"
+                        >
+                            Next
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </Dropdown>
             </div>
         </div>
@@ -244,7 +286,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove}) {
 
 function Slider({ min, max, value, onChange, text }) {
     return (
-        <div className="mt-4 py-2">
+        <div className="mt-2 ">
             <div className="mb-1 flex justify-between text-[11px] text-white/70">
                 <span>{text}</span>
             </div>
