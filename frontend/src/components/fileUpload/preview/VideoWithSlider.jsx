@@ -1,6 +1,48 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import ErrorPopup from "../../popup/ErrorPopup.jsx";
 
+// Add keyframe animations for blinking and sliding
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes pulse-border {
+    0%, 100% { border-color: rgba(255, 255, 255, 0.3); }
+    50% { border-color: rgba(255, 255, 255, 0.7); }
+  }
+  @keyframes slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes slide-up {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+  .blink-dropdown {
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+  .dropdown-slide-down {
+    animation: slide-down 0.3s ease-out forwards;
+  }
+  .dropdown-slide-up {
+    animation: slide-up 0.3s ease-out forwards;
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  document.head.appendChild(style);
+}
+
 function formatTime(s, digits = 2) {
     if (!Number.isFinite(s)) return "0.00";
     return s.toFixed(digits);
@@ -13,6 +55,8 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
     const [start, setStart] = useState(0);
     const [end, setEnd] = useState(0);
     const [errorMessage, setErrorMessage] = useState("");
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isDropdownVisible, setIsDropdownVisible] = useState(false);
     // For debounced seeking on mobile
     const seekTimeoutRef = useRef(null);
     const [isSeeking, setIsSeeking] = useState(false);
@@ -150,35 +194,64 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
                 />
             </div>
 
-            {/* Readout */}
-            <div className="flex justify-between text-xs text-white/80 tabular-nums mt-2">
-                <span>Start: {formatTime(start)}</span>
-                <span className="mt-3 inline-block px-4 py-1 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-white/90 font-medium shadow-inner">
-                    Trim for accurate results
-                </span>
-                <span>End: {formatTime(end || duration)}</span>
+            {/* Dropdown for trim controls */}
+            <div className="mt-4">
+                <button
+                    onClick={() => {
+                        if (isDropdownOpen) {
+                            setIsDropdownVisible(false);
+                            setTimeout(() => setIsDropdownOpen(false), 300);
+                        } else {
+                            setIsDropdownOpen(true);
+                            setIsDropdownVisible(true);
+                        }
+                    }}
+                    className={`w-full px-4 py-3 rounded-lg border border-white/30 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/90 font-medium shadow-md transition-all duration-200 flex items-center justify-between hover:border-white/50 ${!isDropdownOpen ? 'blink-dropdown' : ''}`}
+                >
+                    <span className="flex items-center gap-2">
+                        <span>Trim for accurate results</span>
+                    </span>
+                    <span
+                        className={`transition-transform duration-300 text-white/60 ${
+                            isDropdownOpen ? "rotate-180" : ""
+                        }`}
+                    >
+                        ▼
+                    </span>
+                </button>
+
+                {/* Dropdown Content */}
+                {isDropdownOpen && (
+                    <div className={`mt-3 p-4 rounded-lg border border-white/20 bg-white/5 backdrop-blur-md shadow-lg space-y-4 ${isDropdownVisible ? 'dropdown-slide-down' : 'dropdown-slide-up'}`}>
+                        {/* Readout */}
+                        <div className="flex justify-between text-xs text-white/80 tabular-nums">
+                            <span>Start: {formatTime(start)}</span>
+                            <span>End: {formatTime(end || duration)}</span>
+                        </div>
+
+                        {/* Start Slider */}
+                        <Slider
+                            min={0}
+                            max={duration || 0}
+                            value={start}
+                            onChange={onStartChange}
+                            text="Start"
+                        />
+
+                        {/* End Slider */}
+                        <Slider
+                            min={0}
+                            max={duration || 0}
+                            value={end}
+                            onChange={onEndChange}
+                            text="End"
+                        />
+
+                        {/* visualization of selected window */}
+                        <VisualizationSlider start={start} end={end} duration={duration} />
+                    </div>
+                )}
             </div>
-
-            {/* Start Slider (fixed range 0..duration) */}
-            <Slider
-                min={0}
-                max={duration || 0}
-                value={start}
-                onChange={onStartChange}
-                text="Start"
-            />
-
-            {/* End Slider (fixed range 0..duration) */}
-            <Slider
-                min={0}
-                max={duration || 0}
-                value={end}
-                onChange={onEndChange}
-                text="End"
-            />
-
-            {/* visualization of selected window */}
-            <VisualizationSlider start={start} end={end} duration={duration} />
         </div>
     );
 }
