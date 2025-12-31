@@ -234,7 +234,12 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                 </div>
             </div>
 
-
+            {/* Helpful tip for first-time users */}
+            <div className="mt-3 text-center">
+                <p className="text-xs text-white/60">
+                    Tip: Trim the video so only the swing motion remains.
+                </p>
+            </div>
 
             {/* Dropdown for trim controls */}
             <div className="mt-4">
