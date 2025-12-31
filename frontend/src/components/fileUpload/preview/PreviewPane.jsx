@@ -1,6 +1,8 @@
 import VideoWithSlider from "./VideoWithSlider";
+import Dropdown from "../Dropdown";
+import { Settings } from "lucide-react";
 
-export default function PreviewPane({ previewUrl, ready, uploading, onRemove, file, note, setNote, onTime }) {
+export default function PreviewPane({ previewUrl, ready, uploading, onRemove, file, note, setNote, onTime, advancedInput, setAdvancedInput }) {
   return (
     <div
       className={`rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 min-h-[280px] max-w-[700px] mx-auto flex items-center justify-center transition-all duration-700 ease-out will-change-transform transform ${
@@ -12,7 +14,7 @@ export default function PreviewPane({ previewUrl, ready, uploading, onRemove, fi
       ) : (
         <div className="w-full h-full flex flex-col">
           <VideoWithSlider previewUrl={previewUrl} onTime={onTime} />
-          {/* Show a small text input only when a video is present */}
+          {/* Show a small text input only when a video is present
           {previewUrl && file?.type?.startsWith("video/") && (
             <div className="mt-4">
               <label htmlFor="preview-note" className="sr-only">Video note</label>
@@ -25,7 +27,15 @@ export default function PreviewPane({ previewUrl, ready, uploading, onRemove, fi
                 className="w-full rounded-xl bg-white/5 ring-1 ring-white/10 px-4 py-2 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/50"
               />
             </div>
-          )}
+          )} */}
+
+          {/* Dropdown for advanced settings */}
+          <Dropdown icon={<Settings className="w-4 h-4 text-white/70" />} name="Advanced Settings">
+            <p>Hellop</p>
+          </Dropdown>
+
+
+
           <div className="mt-4 flex items-center justify-between">
             <div className="text-xs text-slate-400 truncate">{file?.name}</div>
             <div className="flex items-center gap-2">

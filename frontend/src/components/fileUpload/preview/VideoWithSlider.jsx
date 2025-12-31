@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import ErrorPopup from "../../popup/ErrorPopup.jsx";
+import { Scissors } from "lucide-react";
+import Dropdown from "../Dropdown";
 
 // Add keyframe animations for blinking and sliding
 const style = document.createElement('style');
 style.textContent = `
   @keyframes pulse-border {
     0%, 100% { border-color: rgba(255, 255, 255, 0.3); }
-    50% { border-color: rgba(255, 255, 255, 0.7); }
+    70% { border-color: rgba(255, 255, 255, 1); }
   }
   @keyframes slide-down {
     from {
@@ -40,7 +41,7 @@ style.textContent = `
 `;
 
 if (typeof document !== 'undefined') {
-  document.head.appendChild(style);
+    document.head.appendChild(style);
 }
 
 function formatTime(s, digits = 2) {
@@ -55,8 +56,6 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
     const [start, setStart] = useState(0);
     const [end, setEnd] = useState(0);
     const [errorMessage, setErrorMessage] = useState("");
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [isDropdownVisible, setIsDropdownVisible] = useState(false);
     // For debounced seeking on mobile
     const seekTimeoutRef = useRef(null);
     const [isSeeking, setIsSeeking] = useState(false);
@@ -137,25 +136,25 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
     const jumpVideo = useCallback((t) => {
         const v = videoRef.current;
         if (!v) return;
-        
+
         // Clear any pending seek
         if (seekTimeoutRef.current) {
             clearTimeout(seekTimeoutRef.current);
         }
-        
+
         // Debounce seeks (50ms delay) to prevent overwhelming mobile browsers
         seekTimeoutRef.current = setTimeout(() => {
             if (isSeeking) return;
             setIsSeeking(true);
-            
+
             const onSeeked = () => {
                 v.removeEventListener('seeked', onSeeked);
                 setIsSeeking(false);
             };
-            
+
             v.addEventListener('seeked', onSeeked);
             v.currentTime = t;
-            
+
             // Fallback: clear seeking state after timeout in case seeked doesn't fire
             setTimeout(() => {
                 if (isSeeking) {
@@ -185,7 +184,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
             <div className="flex-1 flex items-center justify-center">
                 <video
                     ref={videoRef}
-                    className="max-h-64 w-full rounded-2xl ring-1 ring-white/10 object-contain"
+                    className="max-h-64 rounded-2xl ring-1 ring-white/10 object-contain border border-white/10 bg-black/30"
                     src={previewUrl}
                     crossOrigin="anonymous"
                     playsInline
@@ -194,63 +193,38 @@ export default function VideoWithStartEnd({ previewUrl, onTime }) {
                 />
             </div>
 
+
+
             {/* Dropdown for trim controls */}
             <div className="mt-4">
-                <button
-                    onClick={() => {
-                        if (isDropdownOpen) {
-                            setIsDropdownVisible(false);
-                            setTimeout(() => setIsDropdownOpen(false), 300);
-                        } else {
-                            setIsDropdownOpen(true);
-                            setIsDropdownVisible(true);
-                        }
-                    }}
-                    className={`w-full px-4 py-3 rounded-lg border border-white/30 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/90 font-medium shadow-md transition-all duration-200 flex items-center justify-between hover:border-white/50 ${!isDropdownOpen ? 'blink-dropdown' : ''}`}
-                >
-                    <span className="flex items-center gap-2">
-                        <span>Trim for accurate results</span>
-                    </span>
-                    <span
-                        className={`transition-transform duration-300 text-white/60 ${
-                            isDropdownOpen ? "rotate-180" : ""
-                        }`}
-                    >
-                        ▼
-                    </span>
-                </button>
-
-                {/* Dropdown Content */}
-                {isDropdownOpen && (
-                    <div className={`mt-3 p-4 rounded-lg border border-white/20 bg-white/5 backdrop-blur-md shadow-lg space-y-4 ${isDropdownVisible ? 'dropdown-slide-down' : 'dropdown-slide-up'}`}>
-                        {/* Readout */}
-                        <div className="flex justify-between text-xs text-white/80 tabular-nums">
-                            <span>Start: {formatTime(start)}</span>
-                            <span>End: {formatTime(end || duration)}</span>
-                        </div>
-
-                        {/* Start Slider */}
-                        <Slider
-                            min={0}
-                            max={duration || 0}
-                            value={start}
-                            onChange={onStartChange}
-                            text="Start"
-                        />
-
-                        {/* End Slider */}
-                        <Slider
-                            min={0}
-                            max={duration || 0}
-                            value={end}
-                            onChange={onEndChange}
-                            text="End"
-                        />
-
-                        {/* visualization of selected window */}
-                        <VisualizationSlider start={start} end={end} duration={duration} />
+                <Dropdown icon={<Scissors className="w-4 h-4 text-white/70" />} name="Trim for accurate results">
+                    {/* Readout */}
+                    <div className="flex justify-between text-xs text-white/80 tabular-nums">
+                        <span>Start: {formatTime(start)}</span>
+                        <span>End: {formatTime(end || duration)}</span>
                     </div>
-                )}
+
+                    {/* Start Slider */}
+                    <Slider
+                        min={0}
+                        max={duration || 0}
+                        value={start}
+                        onChange={onStartChange}
+                        text="Start"
+                    />
+
+                    {/* End Slider */}
+                    <Slider
+                        min={0}
+                        max={duration || 0}
+                        value={end}
+                        onChange={onEndChange}
+                        text="End"
+                    />
+
+                    {/* visualization of selected window */}
+                    <VisualizationSlider start={start} end={end} duration={duration} />
+                </Dropdown>
             </div>
         </div>
     );
