@@ -91,6 +91,9 @@ export default function UploadPage({ initialFile }) {
   const [endTime, setEndTime] = useState(0);
   const [hasSubscription, setHasSubscription] = useState(false);
   const [showOutOfTokensPopup, setShowOutOfTokensPopup] = useState(false);
+  const [advancedInput, setAdvancedInput] = useState({
+
+  });
 
   function onTime(start, end) {
     setStartTime(start);
@@ -329,6 +332,8 @@ export default function UploadPage({ initialFile }) {
                     note={note}
                     setNote={setNote}
                     onTime={onTime}
+                    advancedInput={advancedInput}
+                    setAdvancedInput={setAdvancedInput}
                   />
                   <UploadButtonZone
                     onUpload={onUpload}
