@@ -285,7 +285,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                             <span className="text-emerald-400 font-semibold">{formatTime(Math.max(0, end - start))}</span>
                         </div>
                         <div className="text-xs text-white/50">
-                            Recommended length: 2 to 3 seconds
+                            Recommended length: 2 to 3 seconds. Must be ≤ 5 seconds.
                         </div>
                     </div>
 
