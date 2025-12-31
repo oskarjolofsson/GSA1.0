@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Scissors, Trash2, ArrowRight } from "lucide-react";
 import Dropdown from "../Dropdown";
+import { useValidation } from "../../../context/ValidationContext";
 
 // Add keyframe animations for blinking and sliding
 const style = document.createElement('style');
@@ -52,6 +53,7 @@ function formatTime(s, digits = 2) {
 export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrimClose = null}) {
     const videoRef = useRef(null);
     const dropdownRef = useRef(null);
+    const validation = useValidation();
     const [duration, setDuration] = useState(0);
 
     const [start, setStart] = useState(0);
@@ -71,6 +73,32 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
     useEffect(() => {
         onTime(start, end);
     }, [start, end, onTime]);
+
+    // Validation logic: Check if video needs trimming or is too long
+    useEffect(() => {
+        const trimmedLength = Math.max(0, end - start);
+        
+        // If video is longer than 5 seconds
+        if (duration > 5) {
+            // If not trimmed (start and end are at default), show trim error
+            if (start === 0 && end === duration) {
+                validation.setValidationError('trim', 'Video must be trimmed before upload');
+            } else {
+                validation.clearValidationError('trim');
+            }
+            
+            // If trimmed video is longer than 5 seconds, show duration error
+            if (trimmedLength > 5) {
+                validation.setValidationError('duration', 'Trimmed video must be ≤ 5 seconds');
+            } else {
+                validation.clearValidationError('duration');
+            }
+        } else {
+            // Video is short enough, clear all validation errors
+            validation.clearValidationError('trim');
+            validation.clearValidationError('duration');
+        }
+    }, [start, end, duration, validation]);
 
     useEffect(() => {
         const v = videoRef.current;

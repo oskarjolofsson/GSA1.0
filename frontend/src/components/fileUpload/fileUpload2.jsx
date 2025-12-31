@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import { useValidationState } from "../../hooks/useValidationState.js";
+import { ValidationProvider } from "../../context/ValidationContext.jsx";
 const API = import.meta.env.VITE_API_URL;
 
 // Helper to validate file integrity and format (prevents mobile corruption)
@@ -94,6 +96,9 @@ export default function UploadPage({ initialFile }) {
   const [advancedInput, setAdvancedInput] = useState({
 
   });
+
+  // Validation state for form validation
+  const validationState = useValidationState();
 
   function onTime(start, end) {
     setStartTime(start);
@@ -301,7 +306,8 @@ export default function UploadPage({ initialFile }) {
   }
 
   return (
-    <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
+    <ValidationProvider validationState={validationState}>
+      <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
         {uploading ? (
           <Loading time={40} full={!uploading} />   // Change time depending on model
@@ -354,5 +360,6 @@ export default function UploadPage({ initialFile }) {
         <OutOfTokensPopup isOpen={showOutOfTokensPopup} onClose={() => setShowOutOfTokensPopup(false)} />
       </section>
     </div>
+    </ValidationProvider>
   );
 }
