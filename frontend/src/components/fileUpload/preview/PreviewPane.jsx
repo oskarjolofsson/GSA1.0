@@ -1,6 +1,5 @@
 import VideoWithSlider from "./VideoWithSlider";
-import Dropdown from "../Dropdown";
-import { Settings } from "lucide-react";
+import AdvancedSettings from "./AdvancedSettings";
 
 export default function PreviewPane({ previewUrl, ready, uploading, onRemove, file, note, setNote, onTime, advancedInput, setAdvancedInput }) {
   return (
@@ -15,10 +14,8 @@ export default function PreviewPane({ previewUrl, ready, uploading, onRemove, fi
         <div className="w-full h-full flex flex-col">
           <VideoWithSlider previewUrl={previewUrl} onTime={onTime} onRemove={onRemove} />
 
-          {/* Dropdown for advanced settings */}
-          <Dropdown icon={<Settings className="w-4 h-4 text-white/70" />} name="Advanced Settings">
-            <p>Hellop</p>
-          </Dropdown>
+          {/* Advanced Settings with structured fields */}
+          <AdvancedSettings advancedInput={advancedInput} setAdvancedInput={setAdvancedInput} />
         </div>
       )}
     </div>
