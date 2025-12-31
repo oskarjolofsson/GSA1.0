@@ -36,7 +36,7 @@ export default function UploadButtonZone({ onUpload, uploading, tokenCount }) {
                             Uploading...
                         </span>
                     ) : (
-                        "Upload"
+                        "Start Analysis"
                     )}
                 </button>
                 
