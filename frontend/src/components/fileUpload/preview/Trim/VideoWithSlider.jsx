@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Scissors, Trash2, ArrowRight } from "lucide-react";
 import { Range } from "react-range";
-import Dropdown from "../Dropdown";
-import { useValidation } from "../../../context/ValidationContext";
+import Dropdown from "../../Dropdown";
+import { useValidation } from "../../../../context/ValidationContext";
 
 // Add keyframe animations for blinking and sliding
 const style = document.createElement('style');

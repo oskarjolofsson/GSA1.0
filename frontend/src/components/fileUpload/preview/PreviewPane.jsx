@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import VideoWithSlider from "./VideoWithSlider";
-import AdvancedSettings from "./AdvancedSettings";
+import VideoWithSlider from "./Trim/VideoWithSlider";
+import AdvancedSettings from "./Advanced/AdvancedSettings";
 
 export default function PreviewPane({ previewUrl, ready, uploading, onRemove, file, note, setNote, onTime, advancedInput, setAdvancedInput }) {
   const [shouldOpenAdvanced, setShouldOpenAdvanced] = useState(false);

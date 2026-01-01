@@ -1,4 +1,4 @@
-import { useState, useImperativeHandle, forwardRef } from "react";
+import { useState, useImperativeHandle, forwardRef, useEffect } from "react";
 import { Settings } from "lucide-react";
 
 const Dropdown = forwardRef(({
@@ -12,6 +12,13 @@ const Dropdown = forwardRef(({
   const [isDropdownOpen, setIsDropdownOpen] = useState(isInitiallyOpen);
   const [isDropdownVisible, setIsDropdownVisible] = useState(isInitiallyOpen);
 
+  useEffect(() => {
+    if (isInitiallyOpen) {
+      setIsDropdownOpen(true);
+      setIsDropdownVisible(true);
+    }
+  }, [isInitiallyOpen]);
+
   // Expose close method via ref
   useImperativeHandle(ref, () => ({
     close: () => {
@@ -21,6 +28,7 @@ const Dropdown = forwardRef(({
       }, 300);
     }
   }), []);
+  
 
   const handleToggleDropdown = () => {
     if (isDropdownOpen) {
