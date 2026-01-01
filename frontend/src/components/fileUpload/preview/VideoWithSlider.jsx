@@ -297,20 +297,50 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                                     </div>
                                 </div>
                             )}
-                            renderThumb={({ props, isDragged }) => (
-                                <div
-                                    {...props}
-                                    className={`h-5 w-5 rounded-full transition-colors ${
-                                        isDragged
-                                            ? "bg-white shadow-lg shadow-white/50"
-                                            : "bg-white/80 hover:bg-white"
-                                    }`}
-                                    style={{
-                                        ...props.style,
-                                        boxShadow: isDragged ? "0 0 8px rgba(255, 255, 255, 0.5)" : "none",
-                                    }}
-                                />
-                            )}
+                            renderThumb={({ props, isDragged, index }) => {
+                                const value = index === 0 ? start : end;
+                                const percentage = (value / (duration || 1)) * 100;
+                                // Determine label position to keep it within bounds
+                                let labelAlignment = "center";
+                                if (percentage < 15) {
+                                    labelAlignment = "left";
+                                } else if (percentage > 85) {
+                                    labelAlignment = "right";
+                                }
+
+                                return (
+                                    <div
+                                        {...props}
+                                        className="relative"
+                                        style={{
+                                            ...props.style,
+                                        }}
+                                    >
+                                        <div
+                                            className={`h-5 w-5 rounded-full transition-colors ${
+                                                isDragged
+                                                    ? "bg-white shadow-lg shadow-white/50"
+                                                    : "bg-white/80 hover:bg-white"
+                                            }`}
+                                            style={{
+                                                boxShadow: isDragged ? "0 0 8px rgba(255, 255, 255, 0.5)" : "none",
+                                            }}
+                                        />
+                                        {/* Value label inside slider area */}
+                                        <div
+                                            className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-white/90 whitespace-nowrap pointer-events-none ${
+                                                labelAlignment === "left"
+                                                    ? "left-full ml-2"
+                                                    : labelAlignment === "right"
+                                                    ? "right-full mr-2"
+                                                    : "left-1/2 -translate-x-1/2 -top-4"
+                                            }`}
+                                        >
+                                            {formatTime(value)}
+                                        </div>
+                                    </div>
+                                );
+                            }}
                         />
                     </div>
 
