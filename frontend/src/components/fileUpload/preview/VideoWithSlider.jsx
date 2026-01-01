@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Scissors, Trash2, ArrowRight } from "lucide-react";
+import { Range } from "react-range";
 import Dropdown from "../Dropdown";
 import { useValidation } from "../../../context/ValidationContext";
 
@@ -193,20 +194,23 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
         }, 50);
     }, [isSeeking]);
 
-    // Only clamp the value being changed. Do NOT alter the other slider’s range/props.
-    const onStartChange = (e) => {
-        const raw = Number(e.target.value);
-        const next = Math.max(0, Math.min(raw, end)); // 0 ≤ start ≤ end
-        setStart(next);
-        jumpVideo(next);
-    };
-
-    const onEndChange = (e) => {
-        const raw = Number(e.target.value);
-        const next = Math.max(start, Math.min(raw, duration)); // start ≤ end ≤ duration
-        setEnd(next);
-        jumpVideo(next);
-    };
+    // Handle range slider change with both handles
+    const onRangeChange = useCallback((values) => {
+        const prevStart = start;
+        const prevEnd = end;
+        
+        setStart(values[0]);
+        setEnd(values[1]);
+        
+        // Jump to whichever handle moved
+        if (Math.abs(values[0] - prevStart) > Math.abs(values[1] - prevEnd)) {
+            // Start handle moved
+            jumpVideo(values[0]);
+        } else {
+            // End handle moved
+            jumpVideo(values[1]);
+        }
+    }, [jumpVideo, start, end]);
 
     return (
         <div className="w-full">
@@ -262,26 +266,55 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                         <span>End: {formatTime(end || duration)}</span>
                     </div>
 
-                    {/* Start Slider */}
-                    <Slider
-                        min={0}
-                        max={duration || 0}
-                        value={start}
-                        onChange={onStartChange}
-                        text="Start"
-                    />
+                    {/* Dual-handle Range Slider */}
+                    <div className="mt-4 px-2">
+                        <Range
+                            step={0.01}
+                            min={0}
+                            max={Math.max(duration, 0.01)}
+                            values={[start, end]}
+                            onChange={onRangeChange}
+                            renderTrack={({ props, children }) => (
+                                <div
+                                    onMouseDown={props.onMouseDown}
+                                    onTouchStart={props.onTouchStart}
+                                    className="h-6 flex w-full rounded-full"
+                                    style={props.style}
+                                >
+                                    <div
+                                        ref={props.ref}
+                                        className="h-2 w-full rounded-full bg-white/10 self-center relative"
+                                    >
+                                        {/* Filled track between handles */}
+                                        <div
+                                            className="absolute h-2 rounded-full bg-white/40"
+                                            style={{
+                                                left: `${(start / (duration || 1)) * 100}%`,
+                                                right: `${100 - (end / (duration || 1)) * 100}%`,
+                                            }}
+                                        />
+                                        {children}
+                                    </div>
+                                </div>
+                            )}
+                            renderThumb={({ props, isDragged }) => (
+                                <div
+                                    {...props}
+                                    className={`h-5 w-5 rounded-full transition-colors ${
+                                        isDragged
+                                            ? "bg-white shadow-lg shadow-white/50"
+                                            : "bg-white/80 hover:bg-white"
+                                    }`}
+                                    style={{
+                                        ...props.style,
+                                        boxShadow: isDragged ? "0 0 8px rgba(255, 255, 255, 0.5)" : "none",
+                                    }}
+                                />
+                            )}
+                        />
+                    </div>
 
-                    {/* End Slider */}
-                    <Slider
-                        min={0}
-                        max={duration || 0}
-                        value={end}
-                        onChange={onEndChange}
-                        text="End"
-                    />
-
-                    {/* visualization of selected window */}
-                    <VisualizationSlider start={start} end={end} duration={duration} />
+                    
 
                     {/* Trimmed length display and recommendation */}
                     <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
@@ -315,43 +348,4 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
             </div>
         </div>
     );
-}
-
-function Slider({ min, max, value, onChange, text }) {
-    return (
-        <div className="mt-2 ">
-            <div className="mb-1 flex justify-between text-[11px] text-white/70">
-                <span>{text}</span>
-            </div>
-            <input
-                type="range"
-                min={min}
-                max={max}
-                step="0.01"
-                value={value}
-                onChange={onChange}
-                className="w-full h-6 rounded-full bg-white/10 accent-white/80 focus:outline-none focus-visible:ring-2 cursor-pointer
-                           [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5
-                           [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5"
-                style={{ touchAction: 'manipulation' }}
-            />
-        </div>
-    )
-}
-
-function VisualizationSlider({ start, end, duration }) {
-    return (
-        <div className="relative mt-3 h-2 rounded-full bg-white/10">
-            <div
-                className="absolute top-0 h-2 rounded-full bg-white/30"
-                style={{
-                    left: duration ? `${(start / duration) * 100}%` : "0%",
-                    width:
-                        duration && end >= start
-                            ? `${((end - start) / duration) * 100}%`
-                            : "0%",
-                }}
-            />
-        </div>
-    )
 }
