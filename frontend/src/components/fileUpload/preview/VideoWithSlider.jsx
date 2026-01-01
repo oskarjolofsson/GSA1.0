@@ -370,7 +370,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                             }}
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-500/90 hover:bg-emerald-500 rounded-lg text-white text-sm font-medium transition-colors"
                         >
-                            Next
+                            Confirm Trim
                             <ArrowRight className="w-4 h-4" />
                         </button>
                     </div>
