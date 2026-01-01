@@ -78,7 +78,7 @@ function LowerBar() {
 function LowerLeft() {
   return (
     <p>
-      Shipped from 🇸🇪 • © 2025 Oskar O.
+      Shipped from 🇸🇪 • © 2025 True Swing.
     </p>
   );
 }
