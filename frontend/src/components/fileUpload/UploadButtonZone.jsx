@@ -7,7 +7,7 @@ export default function UploadButtonZone({ onUpload, uploading, tokenCount }) {
 
     return (
         <div className="flex items-center justify-center gap-3 mt-6">
-            <div className="text-xs text-slate-300 mr-2">
+            {/* <div className="text-xs text-slate-300 mr-2">
                 <span className="font-medium inline-flex items-center gap-1">
                     <span
                         role="img"
@@ -20,7 +20,7 @@ export default function UploadButtonZone({ onUpload, uploading, tokenCount }) {
                     />
                     {tokenCount ?? '—'}
                 </span>
-            </div>
+            </div> */}
             <div className="relative group">
                 <button
                     type="button"
