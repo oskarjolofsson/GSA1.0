@@ -254,6 +254,8 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                     isStep1={true}
                     isInitiallyOpen={true}
                     onClose={onTrimClose}
+                    done={duration > 0 && Math.max(0, end - start) <= 5}
+                    requirement={"Video too long, please trim"}
                 >
                     {/* Helper text */}
                     <div className="text-xs text-white/60 mb-3">
@@ -261,10 +263,10 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                     </div>
 
                     {/* Readout */}
-                    <div className="flex justify-between text-xs text-white/80 tabular-nums">
+                    {/* <div className="flex justify-between text-xs text-white/80 tabular-nums">
                         <span>Start: {formatTime(start)}</span>
                         <span>End: {formatTime(end || duration)}</span>
-                    </div>
+                    </div> */}
 
                     {/* Dual-handle Range Slider */}
                     <div className="mt-4 px-2">
@@ -285,9 +287,10 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                                         ref={props.ref}
                                         className="h-2 w-full rounded-full bg-white/10 self-center relative"
                                     >
-                                        {/* Filled track between handles */}
+                                        {/* Filled track between handles  */}
                                         <div
-                                            className="absolute h-2 rounded-full bg-white/40"
+                                            className={`absolute h-2 rounded-full ${Math.max(0, end - start) > 5 ? 'bg-red-500/60' : 'bg-emerald-500/60'
+                                                }`}
                                             style={{
                                                 left: `${(start / (duration || 1)) * 100}%`,
                                                 right: `${100 - (end / (duration || 1)) * 100}%`,
@@ -311,28 +314,23 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                                 return (
                                     <div
                                         {...props}
-                                        className="relative"
+                                        className="relative "
                                         style={{
                                             ...props.style,
                                         }}
                                     >
                                         <div
                                             className={`h-5 w-5 rounded-full transition-colors ${isDragged
-                                                    ? "bg-white shadow-lg shadow-white/50"
-                                                    : "bg-white/80 hover:bg-white"
+                                                ? "bg-white shadow-lg shadow-white/50"
+                                                : "bg-white/80 hover:bg-white"
                                                 }`}
                                             style={{
                                                 boxShadow: isDragged ? "0 0 8px rgba(255, 255, 255, 0.5)" : "none",
                                             }}
                                         />
-                                        {/* Value label inside slider area */}
+                                        {/* Value label underneath thumb */}
                                         <div
-                                            className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-white/90 whitespace-nowrap pointer-events-none ${labelAlignment === "left"
-                                                    ? "left-full ml-2"
-                                                    : labelAlignment === "right"
-                                                        ? "right-full mr-2"
-                                                        : "left-1/2 -translate-x-1/2 -top-4"
-                                                }`}
+                                            className="absolute left-1/2 -translate-x-1/2 top-full mt-1 text-xs font-semibold text-white/90 whitespace-nowrap pointer-events-none"
                                         >
                                             {formatTime(value)}
                                         </div>
@@ -368,7 +366,8 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                                     onTrimClose();
                                 }
                             }}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/90 hover:bg-emerald-500 rounded-lg text-white text-sm font-medium transition-colors"
+                            disabled={Math.max(0, end - start) > 5}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/90 hover:bg-emerald-500 rounded-lg text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Confirm Trim
                             <ArrowRight className="w-4 h-4" />
