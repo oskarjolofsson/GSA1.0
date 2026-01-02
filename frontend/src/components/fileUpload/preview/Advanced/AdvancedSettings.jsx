@@ -7,13 +7,14 @@ export default function AdvancedSettings({ setAdvancedInput, shouldOpen = false 
   const dropdownRef = useRef(null);             // Ref to control Dropdown
 
   const [state, setState] = useState({
-    activeCategory: "ShotShape",
+    activeCategory: "DesiredShot",
     shape: 'unsure',
+    height: 'unsure',
     miss: 'unsure',
     extra: '',
   });
 
-  const [category, setCategory] = useState("ShotShape");
+  const [category, setCategory] = useState("DesiredShot");
 
   // Sync state to parent
   useEffect(() => {
@@ -47,9 +48,9 @@ export default function AdvancedSettings({ setAdvancedInput, shouldOpen = false 
       {/* Category Selector Tabs */}
       <div className="flex gap-2 mb-4">
         <CategoryTab
-          label="Shape"
-          isActive={category === "ShotShape"}
-          onClick={() => setCategory("ShotShape")}
+          label="Desired Shot"
+          isActive={category === "DesiredShot"}
+          onClick={() => setCategory("DesiredShot")}
         />
         <CategoryTab
           label="Miss"
@@ -63,16 +64,16 @@ export default function AdvancedSettings({ setAdvancedInput, shouldOpen = false 
         />
       </div>
 
-      {/* Answers Section Header */}
-      <div className="text-xs text-white/60 font-medium mb-3 pb-2 border-b border-white/10">
-        Answers
-      </div>
+      {/* Divider line */}
+      <div className="border-t border-white/10 mb-4" />
 
       {/* Category Content */}
-      {category === "ShotShape" && (
-        <ShotShapeOptions
-          value={state.shape || 'unsure'}
-          onChange={(shape) => setState({ ...state, shape })}
+      {category === "DesiredShot" && (
+        <DesiredShotOptions
+          shape={state.shape || 'unsure'}
+          height={state.height || 'unsure'}
+          onShapeChange={(shape) => setState({ ...state, shape })}
+          onHeightChange={(height) => setState({ ...state, height })}
         />
       )}
 
@@ -98,7 +99,7 @@ export default function AdvancedSettings({ setAdvancedInput, shouldOpen = false 
           }
 
           // Move to next step or close if none left
-          if (category === "ShotShape") {
+        if (category === "DesiredShot") {
             setCategory("TypicalMiss");
           } else if (category === "TypicalMiss") {
             setCategory("ExtraFocus");
@@ -131,29 +132,64 @@ function CategoryTab({ label, isActive, onClick }) {
   );
 }
 
-// Shot Shape Options
-function ShotShapeOptions({ value, onChange }) {
-  const options = [
+// Desired Shot Options (Shape and Height)
+function DesiredShotOptions({ shape, height, onShapeChange, onHeightChange }) {
+  const shapeOptions = [
     { key: 'straight', label: 'Straight' },
     { key: 'fade', label: 'Fade' },
     { key: 'draw', label: 'Draw' },
-    { key: 'unsure', label: 'Unsure' },
+    { key: 'unsure', label: "Don't Know" },
+  ];
+
+  const heightOptions = [
+    { key: 'low', label: 'Low' },
+    { key: 'mid', label: 'Mid' },
+    { key: 'high', label: 'High' },
+    { key: 'unsure', label: "Don't Know" },
   ];
 
   return (
-    <div className="space-y-2">
-      {options.map((opt) => (
-        <button
-          key={opt.key}
-          onClick={() => onChange(opt.key)}
-          className={`w-full px-4 py-2 rounded-lg text-sm text-left transition-colors ${value === opt.key
-              ? "bg-emerald-500/30 border border-emerald-500/50 text-white"
-              : "bg-white/10 border border-white/20 text-white/70 hover:bg-white/15"
-            }`}
-        >
-          {opt.label}
-        </button>
-      ))}
+    <div className="space-y-4">
+      {/* Shape Section */}
+      <div>
+        <div className="text-xs text-white/60 font-medium mb-3 text-center">Shape</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {shapeOptions.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => onShapeChange(opt.key)}
+              className={`px-4 py-2 rounded-lg text-sm transition-colors text-center h-auto ${shape === opt.key
+                  ? "bg-emerald-500/30 border border-emerald-500/50 text-white"
+                  : "bg-white/10 border border-white/20 text-white/70 hover:bg-white/15"
+                }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Height Section */}
+      <div>
+        <div className="text-xs text-white/60 font-medium mb-3 text-center">Height</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {heightOptions.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => onHeightChange(opt.key)}
+              className={`px-4 py-2 rounded-lg text-sm transition-colors text-center h-auto ${height === opt.key
+                  ? "bg-emerald-500/30 border border-emerald-500/50 text-white"
+                  : "bg-white/10 border border-white/20 text-white/70 hover:bg-white/15"
+                }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Add more details about your desired shot later if needed. */}
+      
     </div>
   );
 }
