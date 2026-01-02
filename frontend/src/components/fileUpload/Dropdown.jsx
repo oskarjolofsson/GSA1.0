@@ -14,13 +14,6 @@ const Dropdown = forwardRef(({
   const [isDropdownOpen, setIsDropdownOpen] = useState(isInitiallyOpen);
   const [isDropdownVisible, setIsDropdownVisible] = useState(isInitiallyOpen);
 
-  useEffect(() => {
-    if (isInitiallyOpen) {
-      setIsDropdownOpen(true);
-      setIsDropdownVisible(true);
-    }
-  }, [isInitiallyOpen]);
-
   // Expose close method via ref
   useImperativeHandle(ref, () => ({
     close: () => {
@@ -28,6 +21,10 @@ const Dropdown = forwardRef(({
       setTimeout(() => {
         setIsDropdownOpen(false);
       }, 300);
+    },
+    open: () => {
+      setIsDropdownOpen(true);
+      setIsDropdownVisible(true);
     }
   }), []);
   
