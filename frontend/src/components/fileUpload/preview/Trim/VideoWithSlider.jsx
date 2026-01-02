@@ -250,7 +250,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                 <Dropdown
                     ref={dropdownRef}
                     icon={<Scissors className="w-4 h-4 text-white/70" />}
-                    name="Step 1: Trim your swing"
+                    name="Step 1: Trim Your Swing"
                     isStep1={true}
                     isInitiallyOpen={true}
                     onClose={onTrimClose}
