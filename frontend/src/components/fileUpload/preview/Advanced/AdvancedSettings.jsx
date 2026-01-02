@@ -1,18 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import { Settings, ArrowRight, SkipForward } from "lucide-react";
 import Dropdown from "../../Dropdown";
 
-/**
- * @typedef {object} Step2State
- * @property {'ShotShape' | 'TypicalMiss' | 'ExtraFocus'} activeCategory
- * @property {'straight' | 'fade' | 'draw' | 'unsure'} [shape]
- * @property {'slice' | 'hook' | 'thin' | 'fat' | 'inconsistent' | 'unsure'} [miss]
- * @property {string} [extra]
- */
-
-export default function AdvancedSettings({ advancedInput, setAdvancedInput, shouldOpen = false }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+export default function AdvancedSettings({ setAdvancedInput, shouldOpen = false }) {
+  const [isOpen, setIsOpen] = useState(false);  // Track if dropdown is open
+  const dropdownRef = useRef(null);             // Ref to control Dropdown
 
   const [state, setState] = useState({
     activeCategory: "ShotShape",
@@ -22,6 +14,13 @@ export default function AdvancedSettings({ advancedInput, setAdvancedInput, shou
   });
 
   const [category, setCategory] = useState("ShotShape");
+
+  // Sync state to parent
+  useEffect(() => {
+    if (setAdvancedInput) {
+      setAdvancedInput(state);
+    }
+  }, [state]);
 
   // Auto-open when parent signals (e.g., when trimming closes)
   const handleAutoOpen = () => {
@@ -42,6 +41,8 @@ export default function AdvancedSettings({ advancedInput, setAdvancedInput, shou
       ref={dropdownRef}
       name="Step 2: Advanced Settings"
       icon={<Settings className="w-4 h-4 text-white/70" />}
+      done={false}
+      requirement={"Optional: Provide advanced shot details"}
     >
       {/* Category Selector Tabs */}
       <div className="flex gap-2 mb-4">
@@ -95,6 +96,16 @@ export default function AdvancedSettings({ advancedInput, setAdvancedInput, shou
           if (setAdvancedInput) {
             setAdvancedInput(state);
           }
+
+          // Move to next step or close if none left
+          if (category === "ShotShape") {
+            setCategory("TypicalMiss");
+          } else if (category === "TypicalMiss") {
+            setCategory("ExtraFocus");
+          } else if (category === "ExtraFocus") {
+            dropdownRef.current.close();
+          }
+
         }}
         onSkip={() => {
           // Reset and close
@@ -110,11 +121,10 @@ function CategoryTab({ label, isActive, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-        isActive
+      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
           ? "bg-white/20 text-white"
           : "bg-white/10 text-white/60 hover:bg-white/15"
-      }`}
+        }`}
     >
       {label}
     </button>
@@ -136,11 +146,10 @@ function ShotShapeOptions({ value, onChange }) {
         <button
           key={opt.key}
           onClick={() => onChange(opt.key)}
-          className={`w-full px-4 py-2 rounded-lg text-sm text-left transition-colors ${
-            value === opt.key
+          className={`w-full px-4 py-2 rounded-lg text-sm text-left transition-colors ${value === opt.key
               ? "bg-emerald-500/30 border border-emerald-500/50 text-white"
               : "bg-white/10 border border-white/20 text-white/70 hover:bg-white/15"
-          }`}
+            }`}
         >
           {opt.label}
         </button>
@@ -166,11 +175,10 @@ function TypicalMissOptions({ value, onChange }) {
         <button
           key={opt.key}
           onClick={() => onChange(opt.key)}
-          className={`w-full px-4 py-2 rounded-lg text-sm text-left transition-colors ${
-            value === opt.key
+          className={`w-full px-4 py-2 rounded-lg text-sm text-left transition-colors ${value === opt.key
               ? "bg-emerald-500/30 border border-emerald-500/50 text-white"
               : "bg-white/10 border border-white/20 text-white/70 hover:bg-white/15"
-          }`}
+            }`}
         >
           {opt.label}
         </button>
