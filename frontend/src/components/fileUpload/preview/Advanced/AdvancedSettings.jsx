@@ -65,7 +65,7 @@ export default function AdvancedSettings({ setAdvancedInput, shouldOpen = false 
       requirement={allTabsComplete ? "" : "Optional: Provide advanced shot details"}
     >
       {/* Category Selector Tabs */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 justify-center">
         <CategoryTab
           label="Desired Shot"
           isActive={category === "DesiredShot"}
