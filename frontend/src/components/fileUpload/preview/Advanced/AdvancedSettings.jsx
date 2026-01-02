@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Settings, ArrowRight, SkipForward } from "lucide-react";
 import Dropdown from "../../Dropdown";
 
@@ -12,7 +12,7 @@ import Dropdown from "../../Dropdown";
 
 export default function AdvancedSettings({ advancedInput, setAdvancedInput, shouldOpen = false }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const dropdownRef = useRef(null);
 
   const [state, setState] = useState({
     activeCategory: "ShotShape",
@@ -25,8 +25,8 @@ export default function AdvancedSettings({ advancedInput, setAdvancedInput, shou
 
   // Auto-open when parent signals (e.g., when trimming closes)
   const handleAutoOpen = () => {
+    dropdownRef.current.open();
     setIsOpen(true);
-    setIsVisible(true);
   };
 
   // Watch for shouldOpen prop change
@@ -39,8 +39,7 @@ export default function AdvancedSettings({ advancedInput, setAdvancedInput, shou
 
   return (
     <Dropdown
-      isInitiallyOpen={isOpen}
-      isVisible={isVisible}
+      ref={dropdownRef}
       name="Step 2: Advanced Settings"
       icon={<Settings className="w-4 h-4 text-white/70" />}
     >
@@ -99,7 +98,7 @@ export default function AdvancedSettings({ advancedInput, setAdvancedInput, shou
         }}
         onSkip={() => {
           // Reset and close
-          setIsOpen(false);
+          dropdownRef.current.close();
         }}
       />
     </Dropdown>

@@ -262,12 +262,6 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                         Select only the swing motion. This is required for accurate analysis.
                     </div>
 
-                    {/* Readout */}
-                    {/* <div className="flex justify-between text-xs text-white/80 tabular-nums">
-                        <span>Start: {formatTime(start)}</span>
-                        <span>End: {formatTime(end || duration)}</span>
-                    </div> */}
-
                     {/* Dual-handle Range Slider */}
                     <div className="mt-4 px-2">
                         <Range
