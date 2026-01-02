@@ -51,7 +51,7 @@ function formatTime(s, digits = 2) {
     return s.toFixed(digits);
 }
 
-export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrimClose = null}) {
+export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrimClose = null }) {
     const videoRef = useRef(null);
     const dropdownRef = useRef(null);
     const validation = useValidation();
@@ -78,7 +78,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
     // Validation logic: Check if video needs trimming or is too long
     useEffect(() => {
         const trimmedLength = Math.max(0, end - start);
-        
+
         // If video is longer than 5 seconds
         if (duration > 5) {
             // If not trimmed (start and end are at default), show trim error
@@ -87,7 +87,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
             } else {
                 validation.clearValidationError('trim');
             }
-            
+
             // If trimmed video is longer than 5 seconds, show duration error
             if (trimmedLength > 5) {
                 validation.setValidationError('duration', 'Trimmed video must be ≤ 5 seconds');
@@ -172,7 +172,7 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
             clearTimeout(seekTimeoutRef.current);
         }
 
-        // Debounce seeks (50ms delay) to prevent overwhelming mobile browsers
+        // Debounce seeks (16ms delay) to prevent overwhelming mobile browsers
         seekTimeoutRef.current = setTimeout(() => {
             if (isSeeking) return;
             setIsSeeking(true);
@@ -191,17 +191,17 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                     setIsSeeking(false);
                 }
             }, 1000);
-        }, 50);
+        }, 16);
     }, [isSeeking]);
 
     // Handle range slider change with both handles
     const onRangeChange = useCallback((values) => {
         const prevStart = start;
         const prevEnd = end;
-        
+
         setStart(values[0]);
         setEnd(values[1]);
-        
+
         // Jump to whichever handle moved
         if (Math.abs(values[0] - prevStart) > Math.abs(values[1] - prevEnd)) {
             // Start handle moved
@@ -247,17 +247,17 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
 
             {/* Dropdown for trim controls */}
             <div className="mt-4">
-                <Dropdown 
-                  ref={dropdownRef}
-                  icon={<Scissors className="w-4 h-4 text-white/70" />} 
-                  name="Step 1: Trim your swing"
-                  isStep1={true}
-                  isInitiallyOpen={true}
-                  onClose={onTrimClose}
+                <Dropdown
+                    ref={dropdownRef}
+                    icon={<Scissors className="w-4 h-4 text-white/70" />}
+                    name="Step 1: Trim your swing"
+                    isStep1={true}
+                    isInitiallyOpen={true}
+                    onClose={onTrimClose}
                 >
                     {/* Helper text */}
                     <div className="text-xs text-white/60 mb-3">
-                      Select only the swing motion. This is required for accurate analysis.
+                        Select only the swing motion. This is required for accurate analysis.
                     </div>
 
                     {/* Readout */}
@@ -317,24 +317,22 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                                         }}
                                     >
                                         <div
-                                            className={`h-5 w-5 rounded-full transition-colors ${
-                                                isDragged
+                                            className={`h-5 w-5 rounded-full transition-colors ${isDragged
                                                     ? "bg-white shadow-lg shadow-white/50"
                                                     : "bg-white/80 hover:bg-white"
-                                            }`}
+                                                }`}
                                             style={{
                                                 boxShadow: isDragged ? "0 0 8px rgba(255, 255, 255, 0.5)" : "none",
                                             }}
                                         />
                                         {/* Value label inside slider area */}
                                         <div
-                                            className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-white/90 whitespace-nowrap pointer-events-none ${
-                                                labelAlignment === "left"
+                                            className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-white/90 whitespace-nowrap pointer-events-none ${labelAlignment === "left"
                                                     ? "left-full ml-2"
                                                     : labelAlignment === "right"
-                                                    ? "right-full mr-2"
-                                                    : "left-1/2 -translate-x-1/2 -top-4"
-                                            }`}
+                                                        ? "right-full mr-2"
+                                                        : "left-1/2 -translate-x-1/2 -top-4"
+                                                }`}
                                         >
                                             {formatTime(value)}
                                         </div>
@@ -344,13 +342,15 @@ export default function VideoWithStartEnd({ previewUrl, onTime, onRemove, onTrim
                         />
                     </div>
 
-                    
+
 
                     {/* Trimmed length display and recommendation */}
                     <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
                         <div className="flex justify-between items-center text-xs text-white/80">
                             <span className="font-medium">Total length of trimmed video:</span>
-                            <span className="text-emerald-400 font-semibold">{formatTime(Math.max(0, end - start))}</span>
+                            <span className={`font-semibold ${Math.max(0, end - start) > 5 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                {formatTime(Math.max(0, end - start))}
+                            </span>
                         </div>
                         <div className="text-xs text-white/50">
                             Recommended length: 2 to 3 seconds. Must be ≤ 5 seconds.
