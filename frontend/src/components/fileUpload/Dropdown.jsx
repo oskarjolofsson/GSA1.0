@@ -1,5 +1,5 @@
 import { useState, useImperativeHandle, forwardRef, useEffect } from "react";
-import { Settings } from "lucide-react";
+import { Settings, CheckCircle2 } from "lucide-react";
 
 const Dropdown = forwardRef(({
   children,
@@ -8,6 +8,8 @@ const Dropdown = forwardRef(({
   isStep1 = false,
   isInitiallyOpen = false,
   onClose = null,
+  done = false,
+  requirement = "",
 }, ref) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(isInitiallyOpen);
   const [isDropdownVisible, setIsDropdownVisible] = useState(isInitiallyOpen);
@@ -62,15 +64,23 @@ const Dropdown = forwardRef(({
         }`}
       >
         <span className="flex items-center gap-2">
-          {icon || <Settings className="w-4 h-4 text-white/70" />}
+          {(icon || <Settings className="w-4 h-4 text-white/70" />)}
           <span className="font-bold" >{name || "Name Error"}</span>
         </span>
-        <span
-          className={`transition-transform duration-300 text-white/60 ${
-            isDropdownOpen ? "rotate-180" : ""
-          }`}
-        >
-          ▼
+        <span className="flex items-center gap-2">
+          {done ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+          ) : (
+            // Small text saying video is too long and needs to be trimmed
+            <span className="text-xs text-white/60 mr-2">{isStep1 && requirement ? requirement : ""}</span>
+          )}
+            <span
+              className={`transition-transform duration-300 text-white/60 ${
+                isDropdownOpen ? "rotate-180" : ""
+              }`}
+            >
+              ▼
+            </span>
         </span>
       </button>
 
