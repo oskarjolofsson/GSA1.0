@@ -40,7 +40,7 @@ export default function AdvancedSettings({ setAdvancedInput, shouldOpen = false 
   return (
     <Dropdown
       ref={dropdownRef}
-      name="Step 2: Advanced Settings"
+      name="Step 2: Tailor Your Feedback"
       icon={<Settings className="w-4 h-4 text-white/70" />}
       done={false}
       requirement={"Optional: Provide advanced shot details"}
