@@ -69,7 +69,7 @@ const Dropdown = forwardRef(({
             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
           ) : (
             // Small text saying video is too long and needs to be trimmed
-            <span className="text-xs text-white/60 mr-2">{isStep1 && requirement ? requirement : ""}</span>
+            <span className="text-xs text-white/60 mr-2">{requirement ? requirement : ""}</span>
           )}
             <span
               className={`transition-transform duration-300 text-white/60 ${
