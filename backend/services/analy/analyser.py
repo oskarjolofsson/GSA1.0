@@ -48,10 +48,14 @@ class Analysis():
                 model_name: str, 
                 sport_name: str, 
                 video_FileStorage, 
-                prompt: str = "", 
                 start_time: float = None, 
                 end_time: float = None, 
-                user_id: str = "") -> dict:
+                user_id: str = "",
+                shape: str = "unsure",
+                height: str = "unsure",
+                misses: str = "unsure",
+                extra: str = ""
+                ) -> dict:
         
         # Check current balance first
         print(self.user_has_subscription(user_id))
@@ -68,10 +72,14 @@ class Analysis():
         model_instance = model_class(system_instructions=sport_analysis)
         
         return_dict = model_instance.get_response(video_FileStorage=video_FileStorage, 
-                                                  prompt=prompt, 
                                                   start_time=start_time, 
                                                   end_time=end_time, 
-                                                  user_id=user_id)
+                                                  user_id=user_id,
+                                                  shape=shape,
+                                                  height=height,
+                                                  misses=misses,
+                                                  extra=extra
+                                                    )
         
         # Log past analysis
         FireBasePastAnalysis(user_id, sport_name).add_analysis(return_dict)

@@ -26,13 +26,18 @@ class GeminiTemplate(Model, ABC):
         self.client = genai.Client(api_key=api_key)
         
     
-    def format_content(self, video, prompt: str) -> list[dict[str, str]]:
-        final_prompt = """Here are the user's personal notes about their swing. 
+    def format_content(self, video, shape: str = "unsure", height: str = "unsure", misses: str = "unsure", extra: str = "") -> list[dict[str, str]]:
+        final_prompt = f"""Here are the user's personal notes about their swing. 
         Use them as additional context only. 
         Do NOT blindly assume they are correct. 
         If their interpretation is wrong or incomplete, gently correct it in a supportive way.
 
-        User's notes:""" + prompt
+        User's notes:
+        wanted shape: {shape}
+        wanted height: {height}
+        Things that were bad with the result: {misses}
+        Extra notes about the swing: {extra}
+        """
         
         content = [
             {"text": final_prompt},
@@ -45,7 +50,7 @@ class GeminiTemplate(Model, ABC):
     def ai_analysis(self, content: list[dict[str, str]]):
         ...
     
-    def analyze(self, video_file: Video_file, prompt: str = ""):
+    def analyze(self, video_file: Video_file, shape: str = "unsure", height: str = "unsure", misses: str = "unsure", extra: str = "") -> dict:
         
         # Upload video to Gemini
         video = self.client.files.upload(file=video_file.path())
@@ -60,7 +65,7 @@ class GeminiTemplate(Model, ABC):
         
         
         
-        user_prompt_content = self.format_content(prompt=prompt, video=video)
+        user_prompt_content = self.format_content(video=video, shape=shape, height=height, misses=misses, extra=extra)
         
         # Delete image and video-files from memory
         video_file.remove()

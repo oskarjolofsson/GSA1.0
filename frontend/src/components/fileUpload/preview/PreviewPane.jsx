@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import VideoWithSlider from "./Trim/VideoWithSlider";
 import AdvancedSettings from "./Advanced/AdvancedSettings";
 
-export default function PreviewPane({ previewUrl, ready, uploading, onRemove, file, note, setNote, onTime, advancedInput, setAdvancedInput }) {
+export default function PreviewPane({ previewUrl, ready, uploading, onRemove, onTime, advancedInput, setAdvancedInput }) {
   const [shouldOpenAdvanced, setShouldOpenAdvanced] = useState(false);
 
   const handleTrimClose = () => {
