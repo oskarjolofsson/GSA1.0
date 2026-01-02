@@ -73,12 +73,3 @@ class GolfAnalysis(SportAnalysis):
         """
         return system_prompt
 
-
-# Single instance of main method of class
-def get_response(
-    video_FileStorage: FileStorage,
-    prompt: str = "",
-    start_time: float = None,
-    end_time: float = None,
-):
-    return GolfAnalysis().get_response(video_FileStorage, prompt, start_time, end_time)

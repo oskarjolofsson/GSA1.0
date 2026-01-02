@@ -246,16 +246,26 @@ export default function UploadPage({ initialFile }) {
       const validatedFile = await validateAndPrepareFile(file);
 
       const form = new FormData();
+      // Append the validated file
       form.append("video", validatedFile);
-      // include optional user note/caption when present
-      if (note && note.trim().length) {
-        form.append("note", note.trim());
+
+      // Include advanced settings
+      // Should be: 
+      // - shape: straight, fade, draw, unsure 
+      // - height: low, mid, high, unsure
+      // - miss: thin, fat, slice, hook, inconsistent, unsure
+      // - extra: string
+
+      for (const [key, value] of Object.entries(advancedInput)) {
+        form.append(key, String(value)); 
       }
+
+      // Append trim times
       form.append("start_time", String(startTime));
       form.append("end_time", String(endTime));
 
       // Get user_id from tokenService (adjust this line to your actual implementation)
-      const userId = tokenService.getUserId(); // Make sure this returns the user ID
+      const userId = tokenService.getUserId(); 
       form.append("user_id", userId);
 
       const res = await fetch(API + "/api/v1/analysis/upload_video", {
@@ -334,9 +344,6 @@ export default function UploadPage({ initialFile }) {
                     ready={ready}
                     uploading={uploading}
                     onRemove={onRemove}
-                    file={file}
-                    note={note}
-                    setNote={setNote}
                     onTime={onTime}
                     advancedInput={advancedInput}
                     setAdvancedInput={setAdvancedInput}

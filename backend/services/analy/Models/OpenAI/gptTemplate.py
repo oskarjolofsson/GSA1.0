@@ -26,13 +26,18 @@ class GptTemplate(Model, ABC):
     def image_ids(self, keyframes: Keyframes) -> list[str]:
         return keyframes.open_ai_id(self.client)
     
-    def format_content(self, ids: list[str], prompt: str) -> list[dict[str, str]]:
-        final_prompt = """Here are the user's personal notes about their swing. 
+    def format_content(self, ids: list[str], shape: str = "unsure", height: str = "unsure", misses: str = "unsure", extra: str = "") -> list[dict[str, str]]:
+        final_prompt = f"""Here are the user's personal notes about their swing. 
         Use them as additional context only. 
         Do NOT blindly assume they are correct. 
         If their interpretation is wrong or incomplete, gently correct it in a supportive way.
 
-        User's notes:""" + prompt
+        User's notes:
+        wanted shape: {shape}
+        wanted height: {height}
+        Things that were bad with the result: {misses}
+        Extra notes about the swing: {extra}
+        """
         
         content = [{"type": "input_text", "text": final_prompt}]
         for id in ids:
@@ -45,11 +50,11 @@ class GptTemplate(Model, ABC):
     def ai_analysis(self, content: list[dict[str, str]]):
         ...
     
-    def analyze(self, video_file: Video_file, prompt: str = ""):
+    def analyze(self, video_file: Video_file, shape: str = "unsure", height: str = "unsure", misses: str = "unsure", extra: str = "") -> dict:
         # Format the prompt and get result
         keyframes = video_file.keyframes(15)     # <-- Decide how many keyframes here
         image_ids = self.image_ids(keyframes=keyframes)
-        content = self.format_content(image_ids, prompt=prompt)
+        content = self.format_content(image_ids, shape=shape, height=height, misses=misses, extra=extra)
         
         # Delete image and video-files from memory
         keyframes.removeAll()
