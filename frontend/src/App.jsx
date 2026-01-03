@@ -41,7 +41,7 @@ function App() {
       <Route element={<Layout />}>
         {/* Public */}
         <Route path="/" element={<Home />} />
-        <Route path="/products" element={<Products />} />
+        {/* <Route path="/products" element={<Products />} /> */}
         <Route path="/legal/terms-and-conditions" element={<TermsAndCond />} />
         <Route path="/legal/privacy-policy" element={<Privacy />} />
 

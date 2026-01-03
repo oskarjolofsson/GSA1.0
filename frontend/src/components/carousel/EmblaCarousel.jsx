@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from 'react-router-dom';
 
 
 const EmblaCarousel = ({ images = [], options }) => {
@@ -57,6 +58,7 @@ const EmblaCarousel = ({ images = [], options }) => {
                 </div>
 
                 {/* CTA Button */}
+                <Link to="/analyse">
                 <button className="
                   absolute bottom-8 sm:bottom-10 left-6 sm:left-8 right-6 sm:right-8
                   bg-white/80 hover:bg-white text-gray-900
@@ -68,6 +70,7 @@ const EmblaCarousel = ({ images = [], options }) => {
                 ">
                   Improve your game today →
                 </button>
+                </Link>
               </div>
             </div>
           ))}

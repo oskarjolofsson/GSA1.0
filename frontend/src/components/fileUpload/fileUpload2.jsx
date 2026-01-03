@@ -84,27 +84,29 @@ export default function UploadPage({ initialFile }) {
     if (!file) return;
     if (isUploading) return;
 
-    if (!hasSubscription && tokenCount === 0) {
-      setShowOutOfTokensPopup(true);
-      return;
-    }
+    // Check for tokens and subscription is currently removed
+    // if (!hasSubscription && tokenCount === 0) {
+    //   setShowOutOfTokensPopup(true);
+    //   return;
+    // }
 
     try {
       await uploadVideo(file, advancedInput, startTime, endTime, tokenCount, hasSubscription);
 
       // Update token count after successful upload
-      try {
-        const updatedCount = await tokenService.getBalance();
-        setTokenCount(updatedCount);
-      } catch (e) {
-        console.error('Error updating token balance:', e);
-      }
+      // try {
+      //   const updatedCount = await tokenService.getBalance();
+      //   setTokenCount(updatedCount);
+      // } catch (e) {
+      //   console.error('Error updating token balance:', e);
+      // }
     } catch (err) {
-      if (err.message === 'OUT_OF_TOKENS') {
-        setShowOutOfTokensPopup(true);
-      } else {
-        setErrorMessage(err.message || "Upload failed");
-      }
+      // if (err.message === 'OUT_OF_TOKENS') {
+      //   setShowOutOfTokensPopup(true);
+      // } else {
+      //   setErrorMessage(err.message || "Upload failed");
+      // }
+      setErrorMessage(err.message || "Upload failed");
     }
   }
 
