@@ -57,12 +57,12 @@ class Analysis():
                 extra: str = ""
                 ) -> dict:
         
-        # Check current balance first
-        print(self.user_has_subscription(user_id))
-        print(type(FireBaseTokens(user_id).get_user_tokens()))
+        # # Check current balance first
+        # print(self.user_has_subscription(user_id))
+        # print(type(FireBaseTokens(user_id).get_user_tokens()))
         
-        if not self.user_has_subscription(user_id) and FireBaseTokens(user_id).get_user_tokens() < 1:
-            raise ValueError("Insufficient tokens to perform analysis.")
+        # if not self.user_has_subscription(user_id) and FireBaseTokens(user_id).get_user_tokens() < 1:
+        #     raise ValueError("Insufficient tokens to perform analysis.")
 
         # Create analysis
         sport_class = self.__get_sport_analysis(sport_name)
