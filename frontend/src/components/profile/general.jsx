@@ -28,11 +28,11 @@ export default function GeneralProfile() {
 
                 {/* Helper text */}
                 <p className="text-sm text-gray-400 mb-4">
-                    To change your email, please contact us
+                    For any questions regarding your account, please contact support at <a href="mailto:trueswing25@gmail.com">trueswing25@gmail.com</a>.
                 </p>
 
 
-                <TokenBalance />
+                {/* <TokenBalance /> */}
             </div>
         </section>
     );

@@ -17,9 +17,9 @@ export const useVideoUpload = () => {
     if (uploading) return;
 
     // Check if user has no tokens and no subscription
-    if (!hasSubscription && tokenCount === 0) {
-      throw new Error('OUT_OF_TOKENS');
-    }
+    // if (!hasSubscription && tokenCount === 0) {
+    //   throw new Error('OUT_OF_TOKENS');
+    // }
 
     setErrorMessage('');
     setUploading(true);

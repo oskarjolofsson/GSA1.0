@@ -32,7 +32,7 @@ function Columns() {
         <ul className="space-y-2 text-sm">
           <li><Link to="/#features" className="hover:text-white">Features</Link></li>
           <li><Link to="/#faq" className="hover:text-white">FAQ</Link></li>
-          <li><Link to="/products" className="hover:text-white">Products</Link></li>
+          {/* <li><Link to="/products" className="hover:text-white">Products</Link></li> */}
 
         </ul>
       </div>

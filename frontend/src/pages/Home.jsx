@@ -24,7 +24,7 @@ export default function Home() {
 
             <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
-            <div className="text-center mb-6 mt-16">
+            {/* <div className="text-center mb-6 mt-16">
                 <span className="inline-flex items-center gap-2 text-emerald-400/90 text-sm ring-1 ring-emerald-400/20 rounded-full px-3 py-1 bg-emerald-400/5">
                     Products
                 </span>
@@ -34,9 +34,9 @@ export default function Home() {
                 <p className="mt-2 text-lg text-slate-400">
                     Transform your videos into measurable intelligence — instantly.
                 </p>
-            </div>
+            </div> */}
 
-            <PricingTable />
+            {/* <PricingTable /> */}
 
         </div>
     );
