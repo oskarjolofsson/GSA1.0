@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useValidationState } from "../../hooks/useValidationState.js";
+import { useSubscriptionAndTokens } from "../../hooks/useSubscriptionAndTokens.js";
+import { useVideoUpload } from "../../hooks/useVideoUpload.js";
 import { ValidationProvider } from "../../context/ValidationContext.jsx";
+import tokenService from "../../services/tokenService.js";
 const API = import.meta.env.VITE_API_URL;
 
 // Helper to validate file integrity and format (prevents mobile corruption)
@@ -55,8 +58,6 @@ import ResultBox from "./result-box.jsx";
 import ErrorPopup from "../popup/ErrorPopup.jsx";
 import OutOfTokensPopup from "../popup/OutOfTokensPopup.jsx";
 import BubblePopGame from "../games/BublePopGame.jsx";
-import tokenService from "../../services/tokenService.js";
-import SubscriptionService from "../../services/activeSubscription.js";
 import UploadButtonZone from "./UploadButtonZone.jsx";
 import Loading from "./loading.jsx";
 
@@ -84,14 +85,9 @@ export default function UploadPage({ initialFile }) {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef(null);
   const [ready, setReady] = useState(false);
-  const [analysis, setAnalysis] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [tokenCount, setTokenCount] = useState(null);
   const [note, setNote] = useState("");
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
-  const [hasSubscription, setHasSubscription] = useState(false);
   const [showOutOfTokensPopup, setShowOutOfTokensPopup] = useState(false);
   const [advancedInput, setAdvancedInput] = useState({
 
@@ -99,6 +95,12 @@ export default function UploadPage({ initialFile }) {
 
   // Validation state for form validation
   const validationState = useValidationState();
+
+  // Subscription and tokens hook
+  const { tokenCount, hasSubscription, setTokenCount } = useSubscriptionAndTokens();
+
+  // Video upload hook
+  const { analysis, uploading, errorMessage, uploadVideo, setAnalysis, setErrorMessage } = useVideoUpload();
 
   function onTime(start, end) {
     setStartTime(start);
@@ -130,25 +132,6 @@ export default function UploadPage({ initialFile }) {
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 30);
     return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const hasActive = await SubscriptionService.getActiveSubscription();
-        if (mounted) setHasSubscription(hasActive);
-
-        if (!hasActive) {
-          const count = await tokenService.getBalance();
-          if (mounted) setTokenCount(count);
-        }
-      } catch (e) {
-        console.error('Error fetching token balance:', e);
-        if (mounted) setErrorMessage('Could not fetch token balance');
-      }
-    })();
-    return () => { mounted = false; };
   }, []);
 
   function onSelect(files) {
@@ -237,62 +220,12 @@ export default function UploadPage({ initialFile }) {
       return;
     }
 
-    // Clear any previous error before starting a new upload
-    setErrorMessage("");
-    setUploading(true);
-
     try {
       // Validate file integrity before upload (prevents mobile corruption)
       const validatedFile = await validateAndPrepareFile(file);
 
-      const form = new FormData();
-      // Append the validated file
-      form.append("video", validatedFile);
-
-      // Include advanced settings
-      // Should be: 
-      // - shape: straight, fade, draw, unsure 
-      // - height: low, mid, high, unsure
-      // - miss: thin, fat, slice, hook, inconsistent, unsure
-      // - extra: string
-
-      for (const [key, value] of Object.entries(advancedInput)) {
-        form.append(key, String(value)); 
-      }
-
-      // Append trim times
-      form.append("start_time", String(startTime));
-      form.append("end_time", String(endTime));
-
-      // Get user_id from tokenService (adjust this line to your actual implementation)
-      const userId = tokenService.getUserId(); 
-      form.append("user_id", userId);
-
-      const res = await fetch(API + "/api/v1/analysis/upload_video", {
-        method: "POST",
-        body: form,
-      });
-
-      // ///////////////// ONLY FOR TESTING - MOCK request ///////////////// //
-      // const res = await fetch(API + "/api/v1/analysis/test_analysis_output", {
-      //   method: "GET",
-      // });
-      // ///////////////// ONLY FOR TESTING - MOCK request ///////////////// //
-
-      if (!res.ok) {
-        let backendMessage = "Upload failed";
-        try {
-          const errorData = await res.json();
-          // backend returns { success: false, error: 'message' }
-          backendMessage = errorData.message || errorData.error || backendMessage;
-        } catch {
-          const text = await res.text();
-          if (text) backendMessage = text;
-        }
-        // surface error to the user via popup
-        setErrorMessage(backendMessage);
-        throw new Error(backendMessage);
-      }
+      // Call the upload hook
+      await uploadVideo(validatedFile, advancedInput, startTime, endTime, tokenCount, hasSubscription);
 
       // Update the token count after successful upload
       try {
@@ -301,18 +234,14 @@ export default function UploadPage({ initialFile }) {
       } catch (e) {
         console.error('Error updating token balance after upload:', e);
       }
-
-      const data = await res.json();
-
-      setAnalysis(data.analysis_results);
-      console.log("Analysis results:", data.analysis_results);
     } catch (err) {
-      setAnalysis(null);
-      // Show error message - either from backend response or file validation failure
-      setErrorMessage(err.message || "Upload failed");
+      // Check if it's the out of tokens error
+      if (err.message === 'OUT_OF_TOKENS') {
+        setShowOutOfTokensPopup(true);
+      } else {
+        setErrorMessage(err.message || "Upload failed");
+      }
     }
-
-    setUploading(false);
   }
 
   return (
