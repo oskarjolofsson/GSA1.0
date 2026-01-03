@@ -139,11 +139,11 @@ export default function InfoBox({ analysis }) {
 
       <section
         aria-label="Quick Summary"
-        className={[
-          "rounded-2xl border shadow-lg",
-          "bg-white/5 border-white/10 text-white/90",
-          "p-6 md:p-8",
-        ].join(" ")}
+        // className={[
+        //   "rounded-2xl border shadow-lg",
+        //   "bg-white/5 border-white/10 text-white/90",
+        //   "p-6 md:p-8",
+        // ].join(" ")}
       >
         {/* Summary Header */}
         <div className="gap-2 mb-4 justify-center flex items-center">

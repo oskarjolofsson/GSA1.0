@@ -110,6 +110,7 @@ export default function PastDrills() {
                     <>
                         <div className="space-y-4">
                              {drills.map((d) => (
+                                <>
                                  <DrillDropdown
                                      key={d.id}
                                      header={d.quick_summary?.diagnosis || d['title'] || "Analysis"}
@@ -117,6 +118,11 @@ export default function PastDrills() {
                                      text={d.quick_summary?.key_fix || d.content || "No details available."}
                                      analysis={d}
                                  />
+                                {/* // Seperator */}
+                                <div className="border-b border-white/50 my-4"></div>
+                                </>
+                                
+
                              ))}
                          </div> 
                     </>
