@@ -51,10 +51,12 @@ class FireBasePastAnalysis(FireBaseService):
             os.getenv('PRICE_ID_PLAYER_YEARLY')
         ]
         
-        if not price_id:
-            # No subscription, return empty list
-            return []
+        # if not price_id:
+        #     # No subscription, return empty list
+        #     return []
         
         # If user has player plan, limit to last 5 analyses
-        limit = 5 if price_id in player_price_ids else None
+        # limit = 5 if price_id in player_price_ids else None
+        limit = None    # TEMPORARY: Return all analyses for all tiers
+        print(f"User {self.user_id} with price ID {price_id} fetching analyses with limit={limit}")
         return self.get_analyses(limit=limit)
