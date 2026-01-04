@@ -31,32 +31,25 @@ class FireBasePastAnalysis(FireBaseService):
         
         self.analyses_ref.add(data)
 
-    def get_analyses(self, limit: int = None) -> list[dict]:
+    def get_analyses(self, limit: int = None, offset: int = 0) -> list[dict]:
         query = self.analyses_ref.order_by("createdAt", direction=firestore.Query.DESCENDING)
+        if offset:
+            query = query.offset(offset)
         if limit:
             query = query.limit(limit)
         return [d.to_dict() | {"id": d.id} for d in query.stream()]
     
-    def get_analyses_by_tier(self) -> list[dict]:
-        """Get analyses based on user's subscription tier.
-        Player tier users get last 5 analyses, Pro tier gets all analyses."""
-        # Check user's subscription tier
-        stripe_service = FirebaseStripeService(self.user_id)
-        user_stripe_info = stripe_service.db_get_user()
-        price_id = user_stripe_info.get('stripe_price_id', '')
+    def get_analyses_by_tier(self, limit: int = 10, offset: int = 0) -> dict:
+        """Get analyses with pagination.
+        Returns dict with 'analyses' list and 'total' count."""
         
-        # Player tier price IDs from environment
-        player_price_ids = [
-            os.getenv('PRICE_ID_PLAYER_MONTHLY'),
-            os.getenv('PRICE_ID_PLAYER_YEARLY')
-        ]
+        # Get all analyses to get total count
+        all_analyses = [d.to_dict() | {"id": d.id} for d in self.analyses_ref.order_by("createdAt", direction=firestore.Query.DESCENDING).stream()]
+        total = len(all_analyses)
         
-        # if not price_id:
-        #     # No subscription, return empty list
-        #     return []
+        # Get paginated analyses
+        analyses = self.get_analyses(limit=limit, offset=offset)
         
-        # If user has player plan, limit to last 5 analyses
-        # limit = 5 if price_id in player_price_ids else None
-        limit = None    # TEMPORARY: Return all analyses for all tiers
-        print(f"User {self.user_id} with price ID {price_id} fetching analyses with limit={limit}")
-        return self.get_analyses(limit=limit)
+        print(f"User {self.user_id} fetching analyses with offset={offset}, limit={limit}, total={total}")
+        
+        return {"analyses": analyses, "total": total}

@@ -77,9 +77,12 @@ def get_past_analyses():
 
         # Extract user_id from the decoded token
         user_id = decoded_token["uid"]
-        sport = request.form.get("sport", "golf")
-        analyses = FireBasePastAnalysis(user_id, sport).get_analyses_by_tier()
-        return jsonify({"analyses": analyses}), 200
+        sport = request.form.get("sport") or request.args.get("sport", "golf")
+        offset = int(request.form.get("offset") or request.args.get("offset", 0))
+        limit = int(request.form.get("limit") or request.args.get("limit", 10))
+        
+        result = FireBasePastAnalysis(user_id, sport).get_analyses_by_tier(limit=limit, offset=offset)
+        return jsonify(result), 200
 
     except Exception as e:
         traceback.print_exc()
