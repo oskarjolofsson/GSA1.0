@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import ResultBox from "../components/fileUpload/result-box.jsx";
 import ErrorPopup from "../components/popup/ErrorPopup.jsx";
 import Loading from "../components/fileUpload/loading.jsx";
@@ -10,16 +10,21 @@ const API = import.meta.env.VITE_API_URL;
 
 export default function ResultsPage() {
   const { analysisId } = useParams();
+  const [searchParams] = useSearchParams();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  const share_user_id = searchParams.get("share_user_id");
 
   useEffect(() => {
+
     const fetchAnalysis = async () => {
       try {
         setLoading(true);
         setError("");
-        const data = await pastDrillService.getAnalysisById(analysisId);
+        console.log("Fetching analysis with ID:", analysisId, "and share_user_id:", share_user_id);
+        const data = await pastDrillService.getAnalysisById(analysisId, share_user_id);
         setAnalysis(data);
       } catch (err) {
         console.error("Error fetching analysis:", err);

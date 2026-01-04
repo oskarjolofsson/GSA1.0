@@ -118,14 +118,19 @@ def get_analysis_by_id():
 
         # Extract the token (remove 'Bearer ' prefix)
         id_token = auth_header.split("Bearer ")[1]
-
-        # Verify the token with Firebase Admin SDK
         decoded_token = firebase_auth.verify_id_token(id_token)
-
-        # Extract user_id from the decoded token
-        user_id = decoded_token["uid"]
+        sender_user_id = decoded_token["uid"]
+        
+        share_user_id = request.args.get("share_user_id")
+        print(f"Share user ID from request: {share_user_id}")
+        if not share_user_id:
+            user_id = sender_user_id
+        else:
+            user_id = share_user_id
         
         analysis_id = request.args.get("id") 
+        
+        print(f"Fetching analysis ID: {analysis_id} for user ID: {user_id}")
         
         if not analysis_id:
             return jsonify({"error": "Missing analysis ID parameter"}), 400
