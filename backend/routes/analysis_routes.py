@@ -47,7 +47,10 @@ def golf():
             extra=details.get("extra", "")
         )
 
-        return jsonify({"analysis_results": data}), 200
+        # Extract the analysis ID if it was added
+        analysis_id = data.pop("_id", None)
+        
+        return jsonify({"analysis_results": data, "id": analysis_id}), 200
 
     except Exception as e:
         traceback.print_exc()
@@ -93,6 +96,56 @@ def get_past_analyses():
                 {
                     "success": False,
                     "error": "error with retrieving previous analyses",
+                    "details": str(e),
+                }
+            ),
+            500,
+        )
+
+@analysis_bp.route("/share", methods=["GET"])
+def get_analysis_by_id():
+    """
+    Fetch a single analysis by its ID via query parameter.
+    This is a public endpoint - anyone with the ID can view the analysis.
+    Usage: GET /api/v1/analysis/share?id={analysis_id}
+    """
+    try:
+        
+        # Get the token from Authorization header
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return jsonify({"error": "No authorization token provided"}), 401
+
+        # Extract the token (remove 'Bearer ' prefix)
+        id_token = auth_header.split("Bearer ")[1]
+
+        # Verify the token with Firebase Admin SDK
+        decoded_token = firebase_auth.verify_id_token(id_token)
+
+        # Extract user_id from the decoded token
+        user_id = decoded_token["uid"]
+        
+        analysis_id = request.args.get("id") 
+        
+        if not analysis_id:
+            return jsonify({"error": "Missing analysis ID parameter"}), 400
+        
+        analysis = FireBasePastAnalysis(user_id, "golf").get_analysis_by_id(analysis_id=analysis_id)
+        
+        if not analysis:
+            return jsonify({"error": "Analysis not found"}), 404
+        
+        return jsonify({"analysis_results": analysis}), 200
+    
+    except Exception as e:
+        traceback.print_exc()
+        print(f"Error retrieving analysis {request.args.get('id')}: {str(e)}")
+        
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "error with retrieving analysis",
                     "details": str(e),
                 }
             ),

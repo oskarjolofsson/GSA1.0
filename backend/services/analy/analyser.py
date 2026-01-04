@@ -81,8 +81,9 @@ class Analysis():
                                                   extra=extra
                                                     )
         
-        # Log past analysis
-        FireBasePastAnalysis(user_id, sport_name).add_analysis(return_dict)
+        # Log past analysis and get the document ID
+        analysis_id = FireBasePastAnalysis(user_id, sport_name).add_analysis(return_dict)
+        return_dict["_id"] = analysis_id
         
         return return_dict
     
