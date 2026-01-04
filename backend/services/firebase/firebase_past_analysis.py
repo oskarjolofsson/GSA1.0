@@ -20,6 +20,7 @@ class FireBasePastAnalysis(FireBaseService):
     def add_analysis(self, analysis_data: dict):
         """
         Adds a new analysis document.
+        Returns the document ID of the created analysis.
         """
         # Add metadata
         data = analysis_data.copy()
@@ -29,7 +30,8 @@ class FireBasePastAnalysis(FireBaseService):
             "updatedAt": firestore.SERVER_TIMESTAMP,
         })
         
-        self.analyses_ref.add(data)
+        doc_ref = self.analyses_ref.add(data)
+        return doc_ref[1].id
 
     def get_analyses(self, limit: int = None, offset: int = 0) -> list[dict]:
         query = self.analyses_ref.order_by("createdAt", direction=firestore.Query.DESCENDING)
@@ -53,3 +55,20 @@ class FireBasePastAnalysis(FireBaseService):
         print(f"User {self.user_id} fetching analyses with offset={offset}, limit={limit}, total={total}")
         
         return {"analyses": analyses, "total": total}
+
+    def get_analysis_by_id(self, analysis_id: str):
+        """
+        Fetch a single analysis by its document ID for the current user.
+        """
+        try:
+            # Only query the current user's analyses
+            doc = self.analyses_ref.document(analysis_id).get()
+            if doc.exists:
+                return doc.to_dict() | {"id": doc.id}
+            
+            # Not found
+            return None
+            
+        except Exception as e:
+            print(f"Error fetching analysis by ID {analysis_id}: {str(e)}")
+            return None

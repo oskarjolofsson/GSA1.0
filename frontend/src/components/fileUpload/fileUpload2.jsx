@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useValidationState } from "../../hooks/useValidationState.js";
 import { useSubscriptionAndTokens } from "../../hooks/useSubscriptionAndTokens.js";
 import { useVideoUpload } from "../../hooks/useVideoUpload.js";
@@ -18,6 +19,7 @@ import Loading from "./loading.jsx";
 // [Keep all other imports and component functions the same]
 
 export default function UploadPage({ initialFile }) {
+  const navigate = useNavigate();
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -38,7 +40,7 @@ export default function UploadPage({ initialFile }) {
     useFileHandling({ allowedTypes: ['video/mp4', 'video/webm'] });
 
   // Video upload
-  const { analysis, uploading: isUploading, errorMessage, uploadVideo, setAnalysis, setErrorMessage } =
+  const { analysis, analysisId, uploading: isUploading, errorMessage, uploadVideo, setAnalysis, setErrorMessage } =
     useVideoUpload();
 
   function onTime(start, end) {
@@ -57,6 +59,17 @@ export default function UploadPage({ initialFile }) {
     const t = setTimeout(() => setReady(true), 30);
     return () => clearTimeout(t);
   }, []);
+
+  // Redirect to results page after successful upload
+  useEffect(() => {
+    if (analysis && analysisId && !isUploading) {
+      // Small delay to ensure smooth transition
+      const timer = setTimeout(() => {
+        navigate(`/results/${analysisId}`);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [analysis, analysisId, isUploading, navigate]);
 
   function onSelect(files) {
     try {

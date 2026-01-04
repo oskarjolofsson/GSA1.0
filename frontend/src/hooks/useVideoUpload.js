@@ -9,6 +9,7 @@ const API = import.meta.env.VITE_API_URL;
  */
 export const useVideoUpload = () => {
   const [analysis, setAnalysis] = useState(null);
+  const [analysisId, setAnalysisId] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -62,8 +63,9 @@ export const useVideoUpload = () => {
 
       const data = await res.json();
       setAnalysis(data.analysis_results);
+      setAnalysisId(data.id);
       
-      return data.analysis_results;
+      return { analysis: data.analysis_results, id: data.id };
     } catch (err) {
       setAnalysis(null);
       const errorMsg = err.message || 'Upload failed';
@@ -76,6 +78,7 @@ export const useVideoUpload = () => {
 
   return {
     analysis,
+    analysisId,
     uploading,
     errorMessage,
     uploadVideo,

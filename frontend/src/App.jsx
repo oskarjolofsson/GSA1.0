@@ -12,6 +12,7 @@ import Products from './pages/Products.jsx';
 import Analyser from './pages/AnalyserPage.jsx';
 import Profile from "./pages/Profile.jsx";
 import PastDrills from "./pages/PastDrills.jsx";
+import ResultsPage from "./pages/ResultsPage.jsx";
 import TermsAndCond from './pages/TermsAndCond.jsx';
 import Privacy from './pages/Privacy.jsx';
 import Success from './pages/Success.jsx';
@@ -44,6 +45,7 @@ function App() {
         {/* <Route path="/products" element={<Products />} /> */}
         <Route path="/legal/terms-and-conditions" element={<TermsAndCond />} />
         <Route path="/legal/privacy-policy" element={<Privacy />} />
+        <Route path="/results/:analysisId" element={<ResultsPage />} />
 
         {/* Protected */}
         <Route element={<RequireAuth />}>
