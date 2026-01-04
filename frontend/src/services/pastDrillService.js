@@ -40,10 +40,19 @@ class PastDrillService {
     }
   }
 
-  async getAnalysisById(analysisId) {
+  async getAnalysisById(analysisId, share_user_id = null) {
     try {
       await this.ensureUserReady(); // Wait for auth to be ready
-      const data = await this.fetchWithAuth(`/api/v1/analysis/share?id=${analysisId}`);
+
+      // Construct URL with optional user_id parameter
+      let url = `/api/v1/analysis/share?id=${analysisId}`;
+      if (share_user_id) {
+        url += `&share_user_id=${share_user_id}`;
+      }
+
+      console.log(`Fetching analysis from URL: ${url}`);
+
+      const data = await this.fetchWithAuth(url);
       return data.analysis_results || null;
     } catch (error) {
       console.error("Error in getAnalysisById:", error);
