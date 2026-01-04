@@ -4,6 +4,7 @@ import ResultBox from "../components/fileUpload/result-box.jsx";
 import ErrorPopup from "../components/popup/ErrorPopup.jsx";
 import Loading from "../components/fileUpload/loading.jsx";
 import pastDrillService from "../services/pastDrillService.js";
+import Loading1 from "../components/loading/loading1.jsx";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -34,7 +35,7 @@ export default function ResultsPage() {
   }, [analysisId]);
 
   if (loading) {
-    return <Loading time={40} full={true} />;
+    return <Loading1 />;
   }
 
   return (

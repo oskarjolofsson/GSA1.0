@@ -6,6 +6,7 @@ import { useVideoUpload } from "../../hooks/useVideoUpload.js";
 import { useFileHandling } from "../../hooks/useFileHandling.js";
 import { ValidationProvider } from "../../context/ValidationContext.jsx";
 import tokenService from "../../services/tokenService.js";
+import Loading1 from "../loading/loading1.jsx";
 
 // Component imports
 import DropZone from "./DropZone.jsx";
@@ -171,7 +172,8 @@ export default function UploadPage({ initialFile }) {
               </div>
             </>
           ) : (
-            <AnalysisResult analysis={analysis} />
+            // Loading state while redirecting
+            <Loading1 />
           )}
 
           <ErrorPopup message={errorMessage} onClose={() => setErrorMessage("")} />
