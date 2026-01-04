@@ -12,7 +12,7 @@ export const useVideoUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const uploadVideo = async (file, advancedInput, startTime, endTime, tokenCount, hasSubscription) => {
+  const uploadVideo = async (file, advancedInput, startTime, endTime, tokenCount, hasSubscription, AImodel) => {
     if (!file) return;
     if (uploading) return;
 
@@ -36,6 +36,7 @@ export const useVideoUpload = () => {
       // Append trim times
       form.append('start_time', String(startTime));
       form.append('end_time', String(endTime));
+      form.append('model', AImodel);
 
       // Get user_id from tokenService
       const userId = tokenService.getUserId();

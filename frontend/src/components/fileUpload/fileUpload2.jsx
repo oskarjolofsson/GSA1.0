@@ -25,6 +25,7 @@ export default function UploadPage({ initialFile }) {
   const [endTime, setEndTime] = useState(0);
   const [showOutOfTokensPopup, setShowOutOfTokensPopup] = useState(false);
   const [advancedInput, setAdvancedInput] = useState({});
+  const [AImodel, setAImodel] = useState("gemini-3-pro-preview");
 
   // Validation state
   const validationState = useValidationState();
@@ -33,11 +34,11 @@ export default function UploadPage({ initialFile }) {
   const { tokenCount, hasSubscription, setTokenCount } = useSubscriptionAndTokens();
 
   // File handling with error throwing
-  const { file, previewUrl, isLoading, handleFileSelection, handleDrop, removeFile, setFile } = 
+  const { file, previewUrl, isLoading, handleFileSelection, handleDrop, removeFile, setFile } =
     useFileHandling({ allowedTypes: ['video/mp4', 'video/webm'] });
 
   // Video upload
-  const { analysis, uploading: isUploading, errorMessage, uploadVideo, setAnalysis, setErrorMessage } = 
+  const { analysis, uploading: isUploading, errorMessage, uploadVideo, setAnalysis, setErrorMessage } =
     useVideoUpload();
 
   function onTime(start, end) {
@@ -91,7 +92,7 @@ export default function UploadPage({ initialFile }) {
     // }
 
     try {
-      await uploadVideo(file, advancedInput, startTime, endTime, tokenCount, hasSubscription);
+      await uploadVideo(file, advancedInput, startTime, endTime, tokenCount, hasSubscription, AImodel);
 
       // Update token count after successful upload
       // try {
@@ -143,6 +144,8 @@ export default function UploadPage({ initialFile }) {
                       onTime={onTime}
                       advancedInput={advancedInput}
                       setAdvancedInput={setAdvancedInput}
+                      selectedAI={AImodel}
+                      setAI={setAImodel}
                     />
                     <UploadButtonZone
                       onUpload={onUpload}
