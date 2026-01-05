@@ -62,8 +62,10 @@ export default function ResultsPage() {
             <ResultBox analysis={analysis} />
           </>
         ) : null}
+        {!analysis && error && (
 
         <TextBox header={"Analysis Not Found 😩"} text={error} />
+        )}
         {showSharePopup && (
         <SharePopup
           shareUrl={`${window.location.origin}/results/${analysisId}${share_user_id ? `?share_user_id=${share_user_id}` : ""}`}
