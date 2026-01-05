@@ -6,6 +6,7 @@ import SharePopup from "../components/popup/SharePopup.jsx";
 import pastDrillService from "../services/pastDrillService.js";
 import Loading1 from "../components/loading/loading1.jsx";
 import TextBox from "../components/textBox/textBox.jsx";
+import tokenService from "../services/tokenService.js";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -18,6 +19,10 @@ export default function ResultsPage() {
   const [showSharePopup, setShowSharePopup] = useState(false);
   
   const share_user_id = searchParams.get("share_user_id");
+
+  // Fetch user_id from firebase
+  const user_id = tokenService.getUserId();; // TODO: get user id from auth context or similar
+  const share_button_url = window.location.origin + "/results/" + analysisId + "?share_user_id=" + user_id;
 
   useEffect(() => {
 
@@ -50,6 +55,8 @@ export default function ResultsPage() {
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
         {analysis ? (
           <>
+            {/* Only show share-button if there is no share_user_id in URL */}
+            {!share_user_id && (
             <div className="flex justify-end mb-6">
               <button
                 onClick={() => setShowSharePopup(true)}
@@ -59,6 +66,7 @@ export default function ResultsPage() {
                 Share
               </button>
             </div>
+            )}
             <ResultBox analysis={analysis} />
           </>
         ) : null}
@@ -68,7 +76,7 @@ export default function ResultsPage() {
         )}
         {showSharePopup && (
         <SharePopup
-          shareUrl={`${window.location.origin}/results/${analysisId}${share_user_id ? `?share_user_id=${share_user_id}` : ""}`}
+          shareUrl={share_button_url}
           onClose={() => setShowSharePopup(false)}
         />
         )}
