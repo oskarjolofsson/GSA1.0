@@ -68,11 +68,12 @@ export default function ResultsPage() {
           message={error}
           onClose={() => setError("")}
         />
-
+        {showSharePopup && (
         <SharePopup
           shareUrl={`${window.location.origin}/results/${analysisId}${share_user_id ? `?share_user_id=${share_user_id}` : ""}`}
           onClose={() => setShowSharePopup(false)}
         />
+        )}
       </section>
     </div>
   );
