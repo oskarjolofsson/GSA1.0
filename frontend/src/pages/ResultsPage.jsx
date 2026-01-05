@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { Share2 } from "lucide-react";
 import ResultBox from "../components/fileUpload/result-box.jsx";
-import ErrorPopup from "../components/popup/ErrorPopup.jsx";
 import SharePopup from "../components/popup/SharePopup.jsx";
-import Loading from "../components/fileUpload/loading.jsx";
 import pastDrillService from "../services/pastDrillService.js";
 import Loading1 from "../components/loading/loading1.jsx";
+import TextBox from "../components/textBox/textBox.jsx";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -31,7 +30,7 @@ export default function ResultsPage() {
         setAnalysis(data);
       } catch (err) {
         console.error("Error fetching analysis:", err);
-        setError("An error occurred while loading the analysis. Please try again.");
+        setError("An error occurred while loading the analysis");
       } finally {
         setLoading(false);
       }
@@ -64,10 +63,7 @@ export default function ResultsPage() {
           </>
         ) : null}
 
-        <ErrorPopup
-          message={error}
-          onClose={() => setError("")}
-        />
+        <TextBox header={"Analysis Not Found 😩"} text={error} />
         {showSharePopup && (
         <SharePopup
           shareUrl={`${window.location.origin}/results/${analysisId}${share_user_id ? `?share_user_id=${share_user_id}` : ""}`}
