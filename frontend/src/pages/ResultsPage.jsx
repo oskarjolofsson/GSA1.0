@@ -58,8 +58,8 @@ export default function ResultsPage() {
 
         {analysis ? (
           <>
-            {/* Only show share-button if there is no share_user_id in URL */}
-            {!share_user_id && (
+            {/* Only show share button if there is no share_user_id in URL or share_user_id is not the same as the current user */}
+            {( share_user_id === user_id || !share_user_id ) &&  (
             <div className="flex justify-end mb-6">
               <button
                 onClick={() => setShowSharePopup(true)}
