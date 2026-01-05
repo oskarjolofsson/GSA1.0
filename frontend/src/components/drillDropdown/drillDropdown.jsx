@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import InfoBox from "../fileUpload/result-box";
 
-export default function DrillDropdown({ header, text, date, analysis }) {
+export default function DrillDropdown({ header, text, date, analysis, onViewMore }) {
   // we'll treat "open" as boolean here
   const [open, setOpen] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -26,13 +26,20 @@ export default function DrillDropdown({ header, text, date, analysis }) {
 
   return (
     <>
-      {HeaderButton(open, setOpenAdapter, active, item, 0, date)}
+      {HeaderButton(open, setOpenAdapter, active, item, 0, date, onViewMore)}
       {Text(active, item, date, analysis)}
     </>
   );
 }
 
-function HeaderButton(open, setOpen, active, item, i, date = null) {
+function HeaderButton(open, setOpen, active, item, i, date = null, onViewMore = null) {
+  const handleViewMore = (e) => {
+    e.stopPropagation();
+    if (onViewMore) {
+      onViewMore();
+    }
+  };
+
   return (
     <button
       className="
@@ -52,7 +59,24 @@ function HeaderButton(open, setOpen, active, item, i, date = null) {
       onClick={() => setOpen(active ? -1 : i)}
       aria-expanded={active}
     >
-      <span className="text-base sm:text-lg font-semibold">{item.q}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          onClick={handleViewMore}
+          className="flex-shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors group"
+          title="More info"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-4 w-4 text-white/70 group-hover:text-white/90"
+            fill="currentColor"
+          >
+            <circle cx="12" cy="5" r="2" />
+            <circle cx="12" cy="12" r="2" />
+            <circle cx="12" cy="19" r="2" />
+          </svg>
+        </button>
+        <span className="text-base sm:text-lg font-semibold truncate">{item.q}</span>
+      </div>
       <span
         className={`grid h-7 w-7 place-items-center rounded-full ring-1 ring-white/10 transition-colors ${active ? "bg-emerald-500/15 text-emerald-400" : "bg-white/5 text-white/70"
           }`}

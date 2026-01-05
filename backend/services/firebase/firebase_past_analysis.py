@@ -52,8 +52,6 @@ class FireBasePastAnalysis(FireBaseService):
         # Get paginated analyses
         analyses = self.get_analyses(limit=limit, offset=offset)
         
-        print(f"User {self.user_id} fetching analyses with offset={offset}, limit={limit}, total={total}")
-        
         return {"analyses": analyses, "total": total}
 
     def get_analysis_by_id(self, analysis_id: str):

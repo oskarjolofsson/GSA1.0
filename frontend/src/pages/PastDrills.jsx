@@ -76,6 +76,7 @@ export default function PastDrills() {
                                      date={d.createdAt}
                                      text={d.quick_summary?.key_fix || d.content || "No details available."}
                                      analysis={d}
+                                     onViewMore={() => navigate(`/results/${d.id}`)}
                                  />
                                 {/* Separator */}
                                 <div className="border-b border-white/50 my-4"></div>
