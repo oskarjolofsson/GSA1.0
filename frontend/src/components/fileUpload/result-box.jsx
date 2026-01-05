@@ -135,7 +135,6 @@ export default function InfoBox({ analysis }) {
 
   return (
     <>
-      <h1 className="text-3xl sm:text-4xl font-bold mb-6 text-center">Analysis Results</h1>
 
       <section
         aria-label="Quick Summary"

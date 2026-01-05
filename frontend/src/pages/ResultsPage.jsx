@@ -19,6 +19,7 @@ export default function ResultsPage() {
   const [showSharePopup, setShowSharePopup] = useState(false);
   
   const share_user_id = searchParams.get("share_user_id");
+  const share_name = "";
 
   // Fetch user_id from firebase
   const user_id = tokenService.getUserId();; // TODO: get user id from auth context or similar
@@ -53,6 +54,8 @@ export default function ResultsPage() {
   return (
     <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-3 text-center">Analysis Results</h1>
+
         {analysis ? (
           <>
             {/* Only show share-button if there is no share_user_id in URL */}
