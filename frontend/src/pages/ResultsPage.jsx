@@ -7,6 +7,8 @@ import pastDrillService from "../services/pastDrillService.js";
 import Loading1 from "../components/loading/loading1.jsx";
 import TextBox from "../components/textBox/textBox.jsx";
 import tokenService from "../services/tokenService.js";
+import SignInPopup from "../components/signInPopup/signInPopup.jsx";
+import { useAuth } from "../auth/authContext.jsx";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -17,21 +19,43 @@ export default function ResultsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showSharePopup, setShowSharePopup] = useState(false);
+  const [cta, setCta] = useState({
+    text: null,
+    onClick: null,
+  });
+  const [showSignInPopup, setShowSignInPopup] = useState(false);
+  const { user, login } = useAuth();
   
   const share_user_id = searchParams.get("share_user_id");
-  const share_name = "";
 
   // Fetch user_id from firebase
   const user_id = tokenService.getUserId();; // TODO: get user id from auth context or similar
+  useEffect(() => {
+    if (!user) {
+      setCta({
+        text: "Log in to view this analysis",
+        onClick: () => {
+          setShowSignInPopup(true);
+        }
+      });
+      setError("You must be logged in to view this analysis.");
+    }
+  }, [user]);
+
+
   const share_button_url = window.location.origin + "/results/" + analysisId + "?share_user_id=" + user_id;
 
   useEffect(() => {
-
     const fetchAnalysis = async () => {
+      // Don't fetch if user is not logged in and there's no share_user_id
+      if (!user && !share_user_id) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        setLoading(true);
+        setLoading(true); 
         setError("");
-        console.log("Fetching analysis with ID:", analysisId, "and share_user_id:", share_user_id);
         const data = await pastDrillService.getAnalysisById(analysisId, share_user_id);
         setAnalysis(data);
       } catch (err) {
@@ -45,7 +69,7 @@ export default function ResultsPage() {
     if (analysisId) {
       fetchAnalysis();
     }
-  }, [analysisId]);
+  }, [analysisId, user, share_user_id]);
 
   if (loading) {
     return <Loading1 />;
@@ -75,12 +99,18 @@ export default function ResultsPage() {
         ) : null}
         {!analysis && error && (
 
-        <TextBox header={"Analysis Not Found 😩"} text={error} />
+        <TextBox header={"Analysis Not Found 😩"} text={error} ctaText={cta.text} ctaOnClick={cta.onClick} />
         )}
         {showSharePopup && (
         <SharePopup
           shareUrl={share_button_url}
           onClose={() => setShowSharePopup(false)}
+        />
+        )}
+        {showSignInPopup && (
+        <SignInPopup
+          onClose={() => setShowSignInPopup(false)}
+          onStartSignIn={login}
         />
         )}
       </section>

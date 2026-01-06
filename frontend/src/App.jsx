@@ -54,6 +54,7 @@ function App() {
           <Route path="/analyse" element={<Analyser />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/past-drills" element={<PastDrills />} />
+          
         </Route>
 
         {/* 404 */}
