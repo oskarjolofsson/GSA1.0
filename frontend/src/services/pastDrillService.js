@@ -50,8 +50,6 @@ class PastDrillService {
         url += `&share_user_id=${share_user_id}`;
       }
 
-      console.log(`Fetching analysis from URL: ${url}`);
-
       const data = await this.fetchWithAuth(url);
       return data.analysis_results || null;
     } catch (error) {
