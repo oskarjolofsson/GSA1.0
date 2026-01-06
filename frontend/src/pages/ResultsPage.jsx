@@ -9,6 +9,8 @@ import TextBox from "../components/textBox/textBox.jsx";
 import tokenService from "../services/tokenService.js";
 import SignInPopup from "../components/signInPopup/signInPopup.jsx";
 import { useAuth } from "../auth/authContext.jsx";
+import FeedbackBubble from "../components/popup/FeedbackBubble.jsx";
+import FeedbackPopup from "../components/popup/FeedbackPopup.jsx";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -25,7 +27,8 @@ export default function ResultsPage() {
   });
   const [showSignInPopup, setShowSignInPopup] = useState(false);
   const { user, login } = useAuth();
-  
+  const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
+
   const share_user_id = searchParams.get("share_user_id");
 
   // Fetch user_id from firebase
@@ -54,7 +57,7 @@ export default function ResultsPage() {
       }
 
       try {
-        setLoading(true); 
+        setLoading(true);
         setError("");
         const data = await pastDrillService.getAnalysisById(analysisId, share_user_id);
         setAnalysis(data);
@@ -83,36 +86,39 @@ export default function ResultsPage() {
         {analysis ? (
           <>
             {/* Only show share button if there is no share_user_id in URL or share_user_id is not the same as the current user */}
-            {( share_user_id === user_id || !share_user_id ) &&  (
-            <div className="flex justify-end mb-6">
-              <button
-                onClick={() => setShowSharePopup(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-              >
-                <Share2 size={20} />
-                Share
-              </button>
-            </div>
+            {(share_user_id === user_id || !share_user_id) && (
+              <div className="flex justify-end mb-6">
+                <button
+                  onClick={() => setShowSharePopup(true)}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                >
+                  <Share2 size={20} />
+                  Share
+                </button>
+              </div>
             )}
             <ResultBox analysis={analysis} />
           </>
         ) : null}
         {!analysis && error && (
 
-        <TextBox header={"Analysis Not Found 😩"} text={error} ctaText={cta.text} ctaOnClick={cta.onClick} />
+          <TextBox header={"Analysis Not Found 😩"} text={error} ctaText={cta.text} ctaOnClick={cta.onClick} />
         )}
         {showSharePopup && (
-        <SharePopup
-          shareUrl={share_button_url}
-          onClose={() => setShowSharePopup(false)}
-        />
+          <SharePopup
+            shareUrl={share_button_url}
+            onClose={() => setShowSharePopup(false)}
+          />
         )}
         {showSignInPopup && (
-        <SignInPopup
-          onClose={() => setShowSignInPopup(false)}
-          onStartSignIn={login}
-        />
+          <SignInPopup
+            onClose={() => setShowSignInPopup(false)}
+            onStartSignIn={login}
+          />
         )}
+
+        <FeedbackBubble onOpenFeedback={() => setShowFeedbackPopup(true)} />
+        <FeedbackPopup isOpen={showFeedbackPopup} onClose={() => setShowFeedbackPopup(false)} />
       </section>
     </div>
   );
