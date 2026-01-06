@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import FeedbackService from '../../services/feedbackService.js';
 
 export default function FeedbackPopup({ isOpen, onClose }) {
   const [entered, setEntered] = useState(false);
@@ -39,8 +40,13 @@ export default function FeedbackPopup({ isOpen, onClose }) {
   }
 
   function handleSubmit() {
-    // TODO: Connect to backend
-    console.log('Feedback submitted:', { rating: selectedRating, explanation });
+    FeedbackService.submitFeedback(selectedRating, explanation)
+      .then((response) => {
+        console.log('Feedback successfully sent:', response);
+      })
+      .catch((error) => {
+        console.error('Error submitting feedback:', error);
+      });
     handleClose();
   }
 
