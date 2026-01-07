@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import InfoBox from "../fileUpload/result-box";
+import InfoBox from "../result/result-box";
 
 export default function DrillDropdown({ header, text, date, analysis, onViewMore }) {
   // we'll treat "open" as boolean here

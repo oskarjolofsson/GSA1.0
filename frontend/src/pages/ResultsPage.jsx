@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { Share2 } from "lucide-react";
-import ResultBox from "../components/fileUpload/result-box.jsx";
+import ResultBox from "../components/result/result-box.jsx";
 import SharePopup from "../components/popup/SharePopup.jsx";
 import pastDrillService from "../services/pastDrillService.js";
 import Loading1 from "../components/loading/loading1.jsx";
@@ -81,7 +81,7 @@ export default function ResultsPage() {
   return (
     <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
       <section className="relative mx-auto max-w-6xl px-4 mt-16">
-        <h1 className="text-3xl sm:text-4xl font-bold mb-3 text-center">Analysis Results</h1>
+        {/* <h1 className="text-3xl sm:text-4xl font-bold mb-3 text-center">Analysis Results</h1> */}
 
         {analysis ? (
           <>

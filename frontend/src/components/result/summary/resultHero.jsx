@@ -1,0 +1,78 @@
+import { Eye, TrendingDown } from "lucide-react";
+
+export default function ResultHeroCard({
+  prioNumber = 1,
+  problemName = "Hanging Back",
+  diagnosis = "You keep your weight on your trail foot instead of shifting forward.",
+  impactLine = "This typically reduces compression and consistency.",
+}) {
+  return (
+    <section className="w-full px-4 py-6 flex justify-center" aria-label="Top priority summary">
+      <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl">
+        {/* Card */}
+        <div className="relative rounded-3xl bg-[#0e1428]/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] p-6 sm:p-8">
+          {/* Top row */}
+          <div className="flex items-center justify-between gap-3 mb-4">
+            {/* Kicker */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <span
+                className="h-2 w-2 rounded-full bg-emerald-500"
+                aria-hidden="true"
+              />
+              <span className="text-xs uppercase tracking-widest text-slate-300">
+                Summary
+              </span>
+            </div>
+
+            {/* Priority pill */}
+            <div className="inline-flex items-baseline gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+              <span className="text-xs uppercase tracking-widest text-slate-400">
+                Priority
+              </span>
+              <span className="text-sm font-semibold text-slate-100">
+                #{prioNumber}
+              </span>
+            </div>
+          </div>
+
+          {/* Title */}
+          <h2 className="text-2xl sm:text-3xl leading-tight font-bold text-slate-100 mb-4 text-center">
+            {problemName}
+          </h2>
+
+          {/* Body */}
+          <div className="mb-6 space-y-5">
+            <div className="inline-flex items-center gap-2 text-sm text-slate-400">
+              <Eye size={20} />
+              <p className="text-sm sm:text-base leading-relaxed text-slate-400">
+                {diagnosis}
+              </p>
+            </div>
+            
+            <div className="inline-flex items-center gap-2 text-sm text-slate-400">
+              <TrendingDown size={20} />
+              <p className="text-sm sm:text-base leading-relaxed text-slate-400 border-t border-white/5 pt-4">
+                {impactLine}
+              </p>
+            </div>
+            
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-6 max-sm:flex-col max-sm:items-stretch">
+            <button
+              type="button"
+              className="whitespace-nowrap rounded-xl bg-emerald-500/90 hover:bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-300"
+            >
+              Start Fix #{prioNumber}
+            </button>
+
+            <div className="text-xs text-slate-400 max-sm:text-left text-right">
+              Do this first — then unlock the next.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
