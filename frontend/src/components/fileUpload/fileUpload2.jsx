@@ -11,7 +11,6 @@ import Loading1 from "../loading/loading1.jsx";
 // Component imports
 import DropZone from "./DropZone.jsx";
 import PreviewPane from "./preview/PreviewPane.jsx";
-import ResultBox from "./result-box.jsx";
 import ErrorPopup from "../popup/ErrorPopup.jsx";
 import OutOfTokensPopup from "../popup/OutOfTokensPopup.jsx";
 import UploadButtonZone from "./UploadButtonZone.jsx";
@@ -193,11 +192,3 @@ function UploadHeader() {
   );
 }
 
-function AnalysisResult({ analysis }) {
-  if (!analysis) return null;
-  return (
-    <ResultBox
-      analysis={analysis}
-    />
-  );
-}
