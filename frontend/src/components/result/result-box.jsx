@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 // Import Components
 import ResultHeroCard from "./summary/resultHero";
 import VideoDemo from "./summary/videoDemo";
+import { fileTransferService } from "../../services/fileTransferService";
 
 const SEVERITY_COLORS = {
   border: {
@@ -40,6 +41,7 @@ export default function InfoBox({ analysis }) {
   if (!analysis) return null;
 
   const { quick_summary, key_findings } = analysis;
+  const file = fileTransferService.getFile();
 
   const [activeProblem, setActiveProblem] = useState(0);
   const [activeTab, setActiveTab] = useState("what");
@@ -63,7 +65,7 @@ export default function InfoBox({ analysis }) {
         />
 
         {/* Placeholder for video player */}
-        <VideoDemo file={key_findings[activeProblem].video} />
+        <VideoDemo file={file} />
 
       </div>
       
