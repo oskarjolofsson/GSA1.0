@@ -7,8 +7,8 @@ export default function ResultHeroCard({
   impactLine = "This typically reduces compression and consistency.",
 }) {
   return (
-    <section className="w-full px-4 py-6 flex justify-center" aria-label="Top priority summary">
-      <div className="relative w-full max-w-3xl overflow-hidden rounded-3xl">
+    <section className="w-full px-4 py-6 flex justify-center max-sm:px-0" aria-label="Top priority summary">
+      <div className="relative w-full overflow-hidden rounded-3xl">
         {/* Card */}
         <div className="relative rounded-3xl bg-[#0e1428]/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] p-6 sm:p-8">
           {/* Top row */}
