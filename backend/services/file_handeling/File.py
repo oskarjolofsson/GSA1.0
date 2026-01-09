@@ -4,12 +4,11 @@ import os
 from typing import Any
 from datetime import datetime
 import uuid
+import filetype
 
 class File(ABC):
-    def __init__(self, f: FileStorage):
-        self._path: str | None = None
-        if isinstance(f, FileStorage):
-            self._path = self.saveFileStorage(f)
+    def __init__(self, file_blob: bytes):
+        self._path = self.saveFile(file_blob)
 
     @property
     @abstractmethod
@@ -21,15 +20,19 @@ class File(ABC):
     def folder(self) -> str:
         ...
 
-    def saveFileStorage(self, f: FileStorage):
-        filename = self._generate_unique_filename(f.filename)
+    def saveFile(self, file_blob: bytes) -> str:
+        file_extension = self._detect_file_extension(file_blob) 
+        filename = self._generate_unique_filename(f"video.{file_extension}")
         print(f"filename is: {filename}")
         if not self.allowed_file(filename):
-            raise ValueError("Invalid file type")
+            raise ValueError(f"Invalid file type: .{file_extension} not allowed")
         
         os.makedirs(self.folder, exist_ok=True)
         file_path = os.path.join(self.folder, filename)
-        f.save(file_path)
+        
+        with open(file_path, 'wb') as f:
+            f.write(file_blob)
+            
         return file_path
 
     
@@ -43,6 +46,13 @@ class File(ABC):
     
     def allowed_file(self, filename: str) -> bool:
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in self.allowed_extensions
+    
+    def _detect_file_extension(self, file_blob: bytes) -> str:
+        """Detect file extension from magic bytes using filetype library"""
+        kind = filetype.guess(file_blob)
+        if kind is None:
+            raise ValueError("Unable to determine file type from blob")
+        return kind.extension
     
     def remove(self):
         if os.path.exists(self.path()):

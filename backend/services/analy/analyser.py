@@ -45,17 +45,19 @@ class Analysis():
     
     # public method
     def execute(self, 
-                model_name: str, 
-                sport_name: str, 
-                video_FileStorage, 
-                start_time: float = None, 
-                end_time: float = None, 
-                user_id: str = "",
-                shape: str = "unsure",
-                height: str = "unsure",
-                misses: str = "unsure",
-                extra: str = ""
+                data: dict,
+                video_blob
                 ) -> dict:
+        
+        start_time = data.get("video").get("start_time", None)
+        end_time = data.get("video").get("end_time", None)
+        shape = data.get("prompts").get("shape", "unsure")
+        height = data.get("prompts").get("height", "unsure")
+        misses = data.get("prompts").get("misses", "unsure")
+        extra = data.get("prompts").get("extra", "")
+        user_id = data.get("user_id")
+        sport_name = data.get("sport", "golf")
+        model_name = data.get("video").get("model", "gemini-3-pro-preview")
         
         # # Check current balance first
         # print(self.user_has_subscription(user_id))
@@ -71,7 +73,7 @@ class Analysis():
         model_class = self.__get_model(model_name)
         model_instance = model_class(system_instructions=sport_analysis)
         
-        return_dict = model_instance.get_response(video_FileStorage=video_FileStorage, 
+        return_dict = model_instance.get_response(video_blob=video_blob, 
                                                   start_time=start_time, 
                                                   end_time=end_time, 
                                                   user_id=user_id,
@@ -89,3 +91,6 @@ class Analysis():
     
     def user_has_subscription(self, user_id: str) -> bool:
         return FirebaseStripeService(user_id).get_subscription_status()
+    
+# Singleton instance    
+analyser = Analysis()

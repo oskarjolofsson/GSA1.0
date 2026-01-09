@@ -15,14 +15,14 @@ class Model(ABC):
     
     def get_response(self, 
                      user_id: str, 
-                     video_FileStorage: FileStorage, 
+                     video_blob: FileStorage, 
                      start_time: float = None, 
                      end_time: float = None, 
                      shape: str = "unsure", 
                      height: str = "unsure", 
                      misses: str = "unsure", 
                      extra: str = "") -> dict:
-        video_file = Video_file(video_FileStorage)
+        video_file = Video_file(video_blob)
 
         # Trim video if start and end times are provided
         if start_time is not None and end_time is not None:
