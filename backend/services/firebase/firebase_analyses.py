@@ -1,4 +1,4 @@
-from backend.services.firebase.firebase import FireBaseService
+from services.firebase.firebase import FireBaseService
 from google.cloud import firestore
 
 class FireBaseAnalyses(FireBaseService):
