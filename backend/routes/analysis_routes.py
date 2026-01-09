@@ -1,68 +1,73 @@
 from flask import Blueprint, request, jsonify
-from services.firebase.firebase_auth import require_auth
 import traceback
-from firebase_admin import auth as firebase_auth
-import time
 import uuid
 
-from services.analy.analyser import Analysis
+# Analysis Service
+from services.analy.analyser import analyser
+
+# Firebase
 from services.firebase.firebase_past_analysis import FireBasePastAnalysis
+from firebase_admin import auth as firebase_auth
+from services.firebase.firebase_auth import require_auth
+from services.firebase.firebase_analyses import firebase_analyses
+
+# Cloudflare R2
+from services.cloudflare.videoStorageService import video_storage_service
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint("analysis", __name__, url_prefix="/api/v1/analysis")
 
 
-@analysis_bp.route("/upload_video", methods=["POST"])
-def golf():
-    try:
-        # Get the file
-        if "video" not in request.files:
-            return jsonify({"error": "No video file provided"}), 400
+# @analysis_bp.route("/upload_video", methods=["POST"])
+# def golf():
+#     try:
+#         # Get the file
+#         if "video" not in request.files:
+#             return jsonify({"error": "No video file provided"}), 400
 
-        video = request.files["video"]
-        start_time_str = request.form.get("start_time")
-        end_time_str = request.form.get("end_time")
-        start_time = float(start_time_str) if start_time_str is not None else None
-        end_time = float(end_time_str) if end_time_str is not None else None
-        user_id = request.form.get("user_id")
-        model = request.form.get("model", "gemini-3-pro-preview")
+#         video = request.files["video"]
+#         start_time_str = request.form.get("start_time")
+#         end_time_str = request.form.get("end_time")
+#         start_time = float(start_time_str) if start_time_str is not None else None
+#         end_time = float(end_time_str) if end_time_str is not None else None
+#         user_id = request.form.get("user_id")
+#         model = request.form.get("model", "gemini-3-pro-preview")
         
-        details = {
-            "shape": request.form.get("shape", "unsure"),
-            "height": request.form.get("height", "unsure"),
-            "misses": request.form.get("miss", "unsure"),
-            "extra": request.form.get("extra", ""),
-        }
+#         details = {
+#             "shape": request.form.get("shape", "unsure"),
+#             "height": request.form.get("height", "unsure"),
+#             "misses": request.form.get("miss", "unsure"),
+#             "extra": request.form.get("extra", ""),
+#         }
 
-        analysis = Analysis()
-        data = analysis.execute(
-            model_name=model,
-            sport_name="golf",
-            video_FileStorage=video,
-            start_time=start_time,
-            end_time=end_time,
-            user_id=user_id,
-            shape=details.get("shape", "unsure"),
-            height=details.get("height", "unsure"),
-            misses=details.get("misses", "unsure"),
-            extra=details.get("extra", "")
-        )
+#         data = analysis.execute(
+#             model_name=model,
+#             sport_name="golf",
+#             video_FileStorage=video,
+#             start_time=start_time,
+#             end_time=end_time,
+#             user_id=user_id,
+#             shape=details.get("shape", "unsure"),
+#             height=details.get("height", "unsure"),
+#             misses=details.get("misses", "unsure"),
+#             extra=details.get("extra", "")
+#         )
 
-        # Extract the analysis ID if it was added
-        analysis_id = data.pop("_id", None)
+#         # Extract the analysis ID if it was added
+#         analysis_id = data.pop("_id", None)
         
-        return jsonify({"analysis_results": data, "id": analysis_id}), 200
+#         return jsonify({"analysis_results": data, "id": analysis_id}), 200
 
-    except Exception as e:
-        traceback.print_exc()
-        print(f"Error during analysis: {str(e)}")
+#     except Exception as e:
+#         traceback.print_exc()
+#         print(f"Error during analysis: {str(e)}")
 
-        return (
-            jsonify(
-                {"success": False, "error": "error with analysis", "details": str(e)}
-            ),
-            500,
-        )
+#         return (
+#             jsonify(
+#                 {"success": False, "error": "error with analysis", "details": str(e)}
+#             ),
+#             500,
+#         )
 
 
 @analysis_bp.route("/get_previous_analyses", methods=["GET", "POST"])
@@ -103,6 +108,7 @@ def get_past_analyses():
             500,
         )
 
+@require_auth
 @analysis_bp.route("/share", methods=["GET"])
 def get_analysis_by_id():
     """
@@ -158,6 +164,7 @@ def get_analysis_by_id():
             500,
         )
         
+@require_auth
 @analysis_bp.route("/create", methods=["POST"])
 def create_analysis():
     """
@@ -175,41 +182,46 @@ def create_analysis():
         - upload_url
     """
     try:
-        # 1. Validate input
-        data = request.get_json()
-        user_id = data.get("user_id")
-        sport = data.get("sport", "golf")
-        user_prompts = data.get("user_prompts", {})
+        
+        start_time = float(request.form.get("start_time")) if request.form.get("start_time") else None
+        end_time = float(request.form.get("end_time")) if request.form.get("end_time") else None
+        user_id = request.user["uid"]
+        model = request.form.get("model", "gemini-3-pro-preview")
+        
+        details = {
+            "shape": request.form.get("shape", "unsure"),
+            "height": request.form.get("height", "unsure"),
+            "misses": request.form.get("miss", "unsure"),
+            "extra": request.form.get("extra", ""),
+        }
         
         if not user_id:
             return jsonify({"success": False, "error": "missing user_id"}), 400
 
-        # Generate unique analysis ID
         analysis_id = str(uuid.uuid4())
-
-        # 3. Derive R2 object key
         video_key = f"videos/{user_id}/{analysis_id}/original.mp4"
-
-        # # 4. Create signed upload URL (R2)
-        # upload_url = generate_r2_signed_upload_url(video_key)
+        upload_url = video_storage_service.generate_upload_url(video_key)
 
         # # 5. Persist analysis record (example)
-        # save_analysis(
-        #     analysis_id=analysis_id,
-        #     user_id=user_id,
-        #     sport=sport,
-        #     user_prompts=user_prompts,
-        #     video_key=video_key,
-        #     status="awaiting_upload",
-        # )
+        firebase_analyses(user_id=user_id, sport="golf").save_analysis(
+            analysis_id=analysis_id,
+            details=details,
+            video_key=video_key,
+            
+            video_data={
+                "model": model,
+                "start_time": start_time,
+                "end_time": end_time,
+            }
+        )
 
-        # return jsonify(
-        #     {
-        #         "success": True,
-        #         "analysis_id": analysis_id,
-        #         "upload_url": upload_url,
-        #     }
-        # ), 200
+        return jsonify(
+            {
+                "success": True,
+                "analysis_id": analysis_id,
+                "upload_url": upload_url,
+            }
+        ), 200
 
     except Exception as e:
         traceback.print_exc()
@@ -221,6 +233,7 @@ def create_analysis():
             }
         ), 500
 
+@require_auth
 @analysis_bp.route("/<analysis_id>/uploaded", methods=["POST"])
 def confirm_upload(analysis_id):
     try:
@@ -234,26 +247,32 @@ def confirm_upload(analysis_id):
         Returns:
             JSON response with success status
         """
-
-        # 1. Fetch analysis
-        analysis = get_analysis_by_id(analysis_id)
-
+        user_id = request.user["uid"]
+        
+        # Check that analysis exists
+        analysis = firebase_analyses(user_id=user_id, sport="golf").get_analysis_by_id(analysis_id=analysis_id)
         if not analysis:
             return jsonify({"success": False, "error": "analysis not found"}), 404
-
-        # 2. Verify object exists in R2
-        # verify_r2_object_exists(analysis["video_key"])
         
-        # 3. Trigger the analysis processing using the uploaded video that is now in R2 and accessed with analysis_id
-        # ....
+        # set status on analysis to processing
+        firebase_analyses(user_id=user_id, sport="golf").set_processing(analysis_id=analysis_id)
+        video_storage_service.verify_object_exists(analysis["video_key"])
+        video_blob = video_storage_service.get_video_mp4(analysis["video_key"])
         
-        # 4. Save analysis results to DB
-        # ....
+        analysis_result = analyser.execute(data=analysis, video_blob=video_blob)       
+        firebase_analyses(user_id=user_id, sport="golf").set_completed(analysis_id=analysis_id, results=analysis_result)
 
         return jsonify({"success": True}), 200
 
     except Exception as e:
+        # Set error in analysis record
+        firebase_analyses(user_id=user_id, sport="golf").set_failed(
+            analysis_id=analysis_id,
+            error_message=str(e)
+        )
+        
         traceback.print_exc()
+        
         return jsonify(
             {
                 "success": False,
@@ -262,6 +281,7 @@ def confirm_upload(analysis_id):
             }
         ), 500
 
+@require_auth
 @analysis_bp.route("/<analysis_id>", methods=["GET"])
 def get_analysis(analysis_id):
     try:
@@ -278,21 +298,25 @@ def get_analysis(analysis_id):
             - signed video URL
         """
 
-        analysis = get_analysis_by_id(analysis_id)
-
+        user_id = request.user["uid"]
+        analysis = firebase_analyses(user_id=user_id, sport="golf").get_analysis_by_id(analysis_id=analysis_id)
         if not analysis:
             return jsonify({"success": False, "error": "analysis not found"}), 404
+        
+        firebase_analyses(user_id=user_id, sport="golf").mark_user_as_viewer(   # Only marks if not the owner
+            analysis_id=analysis_id,
+            viewer_user_id=user_id
+        )
 
-        # Generate signed read URL
-        # video_url = generate_r2_signed_read_url(analysis["video_key"])
+        video_url = video_storage_service.generate_read_url(analysis["video_key"])
 
-        # return jsonify(
-        #     {
-        #         "success": True,
-        #         "analysis": analysis,
-        #         "video_url": video_url,
-        #     }
-        # ), 200
+        return jsonify(
+            {
+                "success": True,
+                "analysis": analysis,
+                "video_url": video_url,
+            }
+        ), 200
 
     except Exception as e:
         traceback.print_exc()
