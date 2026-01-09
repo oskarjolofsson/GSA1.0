@@ -36,7 +36,7 @@ const TAB_CONFIGS = {
   try: { icon: Lightbulb, label: "Try this" }
 };
 
-export default function InfoBox({ analysis }) {
+export default function InfoBox({ analysis, video_url }) {
 
   if (!analysis) return null;
 
@@ -65,7 +65,7 @@ export default function InfoBox({ analysis }) {
         />
 
         {/* Placeholder for video player */}
-        <VideoDemo />
+        <VideoDemo url={video_url} />
 
       </div>
       

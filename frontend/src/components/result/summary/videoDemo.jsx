@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Play, Pause } from "lucide-react"
 
-export default function VideoDemo({ file }) {
+export default function VideoDemo({ url }) {
   const videoRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -45,7 +45,7 @@ export default function VideoDemo({ file }) {
 
   return (
     <>
-      {file ? (
+      {url ? (
         <div className="w-full px-4 py-6 flex justify-center max-sm:px-0">
           <div
             ref={containerRef}
@@ -54,7 +54,7 @@ export default function VideoDemo({ file }) {
           >
             <video
               ref={videoRef}
-              src={file}
+              src={url}
               playsInline
               onTimeUpdate={handleTimeUpdate}
               className="w-full h-auto"

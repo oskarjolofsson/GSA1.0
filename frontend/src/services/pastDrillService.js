@@ -44,7 +44,7 @@ class PastDrillService {
     try {
       await this.ensureUserReady(); // Wait for auth to be ready
       const data = await this.fetchWithAuth(`/api/v1/analysis/${analysisId}`);
-      return data.analysis || null;
+      return data || null;
     } catch (error) {
       console.error("Error in getAnalysisById:", error);
       throw new Error("Could not fetch analysis. Please try again later.");
