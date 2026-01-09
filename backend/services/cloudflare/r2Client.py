@@ -43,3 +43,6 @@ class R2Client:
             Key=key,
         )
         return response["Body"].read()
+    
+# Instantiate a single global R2 client
+r2_client = R2Client()
