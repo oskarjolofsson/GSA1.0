@@ -4,10 +4,12 @@ import { Play, Pause } from "lucide-react"
 export default function VideoDemo({ url }) {
   const videoRef = useRef(null)
   const containerRef = useRef(null)
+  const progressBarRef = useRef(null)
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [showControls, setShowControls] = useState(true)
+  const [isDragging, setIsDragging] = useState(false)
 
   useEffect(() => {
     let timeout
@@ -43,6 +45,34 @@ export default function VideoDemo({ url }) {
     video.currentTime = percent * video.duration
   }
 
+  const handleMouseDown = () => {
+    setIsDragging(true)
+  }
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return
+    const video = videoRef.current
+    const rect = progressBarRef.current.getBoundingClientRect()
+    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    setProgress(percent * 100)
+    video.currentTime = percent * video.duration
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove)
+      document.addEventListener("mouseup", handleMouseUp)
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove)
+        document.removeEventListener("mouseup", handleMouseUp)
+      }
+    }
+  }, [isDragging])
+
   return (
     <>
       {url ? (
@@ -75,8 +105,10 @@ export default function VideoDemo({ url }) {
 
             {/* Progress Bar */}
             <div
+              ref={progressBarRef}
               className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/20 cursor-pointer"
               onClick={handleSeek}
+              onMouseDown={handleMouseDown}
             >
               <div
                 className="h-full bg-white"
