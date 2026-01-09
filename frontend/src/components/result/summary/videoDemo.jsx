@@ -49,7 +49,7 @@ export default function VideoDemo({ url }) {
         <div className="w-full px-4 py-6 flex justify-center max-sm:px-0">
           <div
             ref={containerRef}
-            className="relative w-full overflow-hidden rounded-3xl bg-black/40 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]"
+            className="relative w-full max-h-[400px] overflow-hidden rounded-3xl bg-black/40 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]"
             onClick={togglePlay}
           >
             <video
@@ -57,7 +57,7 @@ export default function VideoDemo({ url }) {
               src={url}
               playsInline
               onTimeUpdate={handleTimeUpdate}
-              className="w-full h-auto"
+              className="w-full h-full object-cover"
             />
 
             {/* Center Play / Pause */}
