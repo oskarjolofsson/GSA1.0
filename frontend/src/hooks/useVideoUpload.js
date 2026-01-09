@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import tokenService from '../services/tokenService.js';
+import { auth } from '../lib/firebase';
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -15,9 +16,13 @@ export const useVideoUpload = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const getAuthHeader = async () => {
-    const token = await tokenService.getToken();
+    const user = auth.currentUser;
+    if (!user) throw new Error('Not signed in');
+    
+    const idToken = await user.getIdToken();
+
     return {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${idToken}`,
     };
   };
 

@@ -164,8 +164,9 @@ def get_analysis_by_id():
             500,
         )
         
-@require_auth
+
 @analysis_bp.route("/create", methods=["POST"])
+@require_auth
 def create_analysis():
     """
     Create an analysis and return a signed upload URL.
@@ -198,7 +199,7 @@ def create_analysis():
         if not user_id:
             return jsonify({"success": False, "error": "missing user_id"}), 400
 
-        analysis_id = str(uuid.uuid4())
+        analysis_id = "analysis_" + str(uuid.uuid4())
         video_key = f"videos/{user_id}/{analysis_id}/original.mp4"
         upload_url = video_storage_service.generate_upload_url(video_key)
 
@@ -233,8 +234,9 @@ def create_analysis():
             }
         ), 500
 
-@require_auth
+
 @analysis_bp.route("/<analysis_id>/uploaded", methods=["POST"])
+@require_auth
 def confirm_upload(analysis_id):
     try:
         """
@@ -281,8 +283,9 @@ def confirm_upload(analysis_id):
             }
         ), 500
 
-@require_auth
+
 @analysis_bp.route("/<analysis_id>", methods=["GET"])
+@require_auth
 def get_analysis(analysis_id):
     try:
         """
