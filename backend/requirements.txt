@@ -34,3 +34,5 @@ numpy>=1.23
 stripe==13.1.2
 
 google-genai
+
+boto3>=1.34.0
