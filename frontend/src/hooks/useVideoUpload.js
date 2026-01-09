@@ -6,6 +6,7 @@ const API = import.meta.env.VITE_API_URL;
 /**
  * Custom hook for handling video upload and analysis
  * Manages upload state, error handling, and result storage
+ * Flow: 1) Create analysis 2) Upload video to signed URL 3) Confirm upload
  */
 export const useVideoUpload = () => {
   const [analysis, setAnalysis] = useState(null);
@@ -13,59 +14,95 @@ export const useVideoUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const getAuthHeader = async () => {
+    const token = await tokenService.getToken();
+    return {
+      'Authorization': `Bearer ${token}`,
+    };
+  };
+
   const uploadVideo = async (file, advancedInput, startTime, endTime, tokenCount, hasSubscription, AImodel) => {
     if (!file) return;
     if (uploading) return;
-
-    // Check if user has no tokens and no subscription
-    // if (!hasSubscription && tokenCount === 0) {
-    //   throw new Error('OUT_OF_TOKENS');
-    // }
 
     setErrorMessage('');
     setUploading(true);
 
     try {
-      const form = new FormData();
-      form.append('video', file);
+      const authHeader = await getAuthHeader();
+
+      // Step 1: Create analysis and get signed upload URL
+      const createForm = new FormData();
+      createForm.append('start_time', String(startTime));
+      createForm.append('end_time', String(endTime));
+      createForm.append('model', AImodel);
 
       // Include advanced settings
       for (const [key, value] of Object.entries(advancedInput)) {
-        form.append(key, String(value));
+        createForm.append(key, String(value));
       }
 
-      // Append trim times
-      form.append('start_time', String(startTime));
-      form.append('end_time', String(endTime));
-      form.append('model', AImodel);
-
-      // Get user_id from tokenService
-      const userId = tokenService.getUserId();
-      form.append('user_id', userId);
-
-      const res = await fetch(API + '/api/v1/analysis/upload_video', {
+      const createRes = await fetch(API + '/api/v1/analysis/create', {
         method: 'POST',
-        body: form,
+        headers: authHeader,
+        body: createForm,
       });
 
-      if (!res.ok) {
-        let backendMessage = 'Upload failed';
+      if (!createRes.ok) {
+        let backendMessage = 'Failed to create analysis';
         try {
-          const errorData = await res.json();
-          backendMessage = errorData.message || errorData.error || backendMessage;
+          const errorData = await createRes.json();
+          backendMessage = errorData.error || backendMessage;
         } catch {
-          const text = await res.text();
+          const text = await createRes.text();
           if (text) backendMessage = text;
         }
         setErrorMessage(backendMessage);
         throw new Error(backendMessage);
       }
 
-      const data = await res.json();
-      setAnalysis(data.analysis_results);
-      setAnalysisId(data.id);
-      
-      return { analysis: data.analysis_results, id: data.id };
+      const createData = await createRes.json();
+      const newAnalysisId = createData.analysis_id;
+      const uploadUrl = createData.upload_url;
+
+      setAnalysisId(newAnalysisId);
+
+      // Step 2: Upload video to signed R2 URL
+      const uploadRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type || 'video/mp4',
+        },
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error('Failed to upload video to storage');
+      }
+
+      // Step 3: Confirm upload and trigger analysis
+      const confirmRes = await fetch(API + `/api/v1/analysis/${newAnalysisId}/uploaded`, {
+        method: 'POST',
+        headers: authHeader,
+      });
+
+      if (!confirmRes.ok) {
+        let backendMessage = 'Failed to confirm upload';
+        try {
+          const errorData = await confirmRes.json();
+          backendMessage = errorData.error || backendMessage;
+        } catch {
+          const text = await confirmRes.text();
+          if (text) backendMessage = text;
+        }
+        setErrorMessage(backendMessage);
+        throw new Error(backendMessage);
+      }
+
+      const confirmData = await confirmRes.json();
+      setAnalysis(confirmData);
+
+      return { analysis: confirmData, id: newAnalysisId };
     } catch (err) {
       setAnalysis(null);
       const errorMsg = err.message || 'Upload failed';
