@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Share2 } from "lucide-react";
 import ResultBox from "../components/result/result-box.jsx";
 import SharePopup from "../components/popup/SharePopup.jsx";
@@ -12,11 +12,8 @@ import { useAuth } from "../auth/authContext.jsx";
 import FeedbackBubble from "../components/popup/FeedbackBubble.jsx";
 import FeedbackPopup from "../components/popup/FeedbackPopup.jsx";
 
-const API = import.meta.env.VITE_API_URL;
-
 export default function ResultsPage() {
   const { analysisId } = useParams();
-  const [searchParams] = useSearchParams();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,29 +26,11 @@ export default function ResultsPage() {
   const { user, login } = useAuth();
   const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
 
-  const share_user_id = searchParams.get("share_user_id");
-
-  // Fetch user_id from firebase
-  const user_id = tokenService.getUserId();; // TODO: get user id from auth context or similar
-  useEffect(() => {
-    if (!user) {
-      setCta({
-        text: "Log in to view this analysis",
-        onClick: () => {
-          setShowSignInPopup(true);
-        }
-      });
-      setError("You must be logged in to view this analysis.");
-    }
-  }, [user]);
-
-
-  const share_button_url = window.location.origin + "/results/" + analysisId + "?share_user_id=" + user_id;
+  const share_button_url = window.location.origin + "/results/" + analysisId;
 
   useEffect(() => {
     const fetchAnalysis = async () => {
-      // Don't fetch if user is not logged in and there's no share_user_id
-      if (!user && !share_user_id) {
+      if (!user) {
         setLoading(false);
         return;
       }
@@ -59,7 +38,7 @@ export default function ResultsPage() {
       try {
         setLoading(true);
         setError("");
-        const data = await pastDrillService.getAnalysisById(analysisId, share_user_id);
+        const data = await pastDrillService.getAnalysisById(analysisId);
         setAnalysis(data);
       } catch (err) {
         console.error("Error fetching analysis:", err);
@@ -72,7 +51,7 @@ export default function ResultsPage() {
     if (analysisId) {
       fetchAnalysis();
     }
-  }, [analysisId, user, share_user_id]);
+  }, [analysisId, user]);
 
   if (loading) {
     return <Loading1 />;
@@ -85,18 +64,16 @@ export default function ResultsPage() {
 
         {analysis ? (
           <>
-            {/* Only show share button if there is no share_user_id in URL or share_user_id is not the same as the current user */}
-            {(share_user_id === user_id || !share_user_id) && (
-              <div className="flex justify-end mb-6">
-                <button
-                  onClick={() => setShowSharePopup(true)}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                >
-                  <Share2 size={20} />
-                  Share
-                </button>
-              </div>
-            )}
+            {/* Show share button for viewing own analysis */}
+            <div className="flex justify-end mb-6">
+              <button
+                onClick={() => setShowSharePopup(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                <Share2 size={20} />
+                Share
+              </button>
+            </div>
             <ResultBox analysis={analysis} />
           </>
         ) : null}

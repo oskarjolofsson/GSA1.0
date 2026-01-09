@@ -65,7 +65,7 @@ export default function InfoBox({ analysis }) {
         />
 
         {/* Placeholder for video player */}
-        <VideoDemo file={file} />
+        <VideoDemo />
 
       </div>
       

@@ -15,7 +15,6 @@ import ErrorPopup from "../popup/ErrorPopup.jsx";
 import OutOfTokensPopup from "../popup/OutOfTokensPopup.jsx";
 import UploadButtonZone from "./UploadButtonZone.jsx";
 import Loading from "./loading.jsx";
-import { fileTransferService } from "../../services/fileTransferService.js";
 
 // [Keep all other imports and component functions the same]
 
@@ -66,7 +65,6 @@ export default function UploadPage({ initialFile }) {
     if (analysis && analysisId && !isUploading) {
       // Small delay to ensure smooth transition
       const timer = setTimeout(() => {
-        fileTransferService.setFile(file); 
         navigate(`/results/${analysisId}`);
       }, 500);
       return () => clearTimeout(timer);
