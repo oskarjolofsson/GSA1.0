@@ -55,8 +55,8 @@ export default function InfoBox({ analysis, video_url }) {
 
   return (
     <>
-      {/* Grid with Hero Card to the left and Video Player to the right. if to small screen stack vertically */}
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Asymmetric grid: 2fr card, 1fr video. Stacks on mobile */}
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
         <ResultHeroCard
           prioNumber={activeProblem + 1}
           problemName={key_findings[activeProblem].title}
@@ -64,7 +64,7 @@ export default function InfoBox({ analysis, video_url }) {
           impactLine={key_findings[activeProblem].why_it_matters}
         />
 
-        {/* Placeholder for video player */}
+        {/* Video constrained to match card height */}
         <VideoDemo url={video_url} />
 
       </div>
