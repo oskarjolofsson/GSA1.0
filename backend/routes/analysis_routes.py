@@ -3,6 +3,7 @@ from services.firebase.firebase_auth import require_auth
 import traceback
 from firebase_admin import auth as firebase_auth
 import time
+import uuid
 
 from services.analy.analyser import Analysis
 from services.firebase.firebase_past_analysis import FireBasePastAnalysis
@@ -156,3 +157,150 @@ def get_analysis_by_id():
             ),
             500,
         )
+        
+@analysis_bp.route("/create", methods=["POST"])
+def create_analysis():
+    """
+    Create an analysis and return a signed upload URL.
+
+    Arguments (JSON body):
+        user_id (str): ID of the authenticated user
+        sport (str): Sport type (default: "golf")
+        user_prompts (dict): User prompts for analysis
+
+    Returns:
+        JSON response with:
+        - success
+        - analysis_id
+        - upload_url
+    """
+    try:
+        # 1. Validate input
+        data = request.get_json()
+        user_id = data.get("user_id")
+        sport = data.get("sport", "golf")
+        user_prompts = data.get("user_prompts", {})
+        
+        if not user_id:
+            return jsonify({"success": False, "error": "missing user_id"}), 400
+
+        # Generate unique analysis ID
+        analysis_id = str(uuid.uuid4())
+
+        # 3. Derive R2 object key
+        video_key = f"videos/{user_id}/{analysis_id}/original.mp4"
+
+        # # 4. Create signed upload URL (R2)
+        # upload_url = generate_r2_signed_upload_url(video_key)
+
+        # # 5. Persist analysis record (example)
+        # save_analysis(
+        #     analysis_id=analysis_id,
+        #     user_id=user_id,
+        #     sport=sport,
+        #     user_prompts=user_prompts,
+        #     video_key=video_key,
+        #     status="awaiting_upload",
+        # )
+
+        # return jsonify(
+        #     {
+        #         "success": True,
+        #         "analysis_id": analysis_id,
+        #         "upload_url": upload_url,
+        #     }
+        # ), 200
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify(
+            {
+                "success": False,
+                "error": "error creating analysis",
+                "details": str(e),
+            }
+        ), 500
+
+@analysis_bp.route("/<analysis_id>/uploaded", methods=["POST"])
+def confirm_upload(analysis_id):
+    try:
+        """
+        Confirm that the video upload has completed.
+        Now the analysis processing can be triggered.
+
+        Arguments:
+            analysis_id (str): Analysis identifier
+
+        Returns:
+            JSON response with success status
+        """
+
+        # 1. Fetch analysis
+        analysis = get_analysis_by_id(analysis_id)
+
+        if not analysis:
+            return jsonify({"success": False, "error": "analysis not found"}), 404
+
+        # 2. Verify object exists in R2
+        # verify_r2_object_exists(analysis["video_key"])
+        
+        # 3. Trigger the analysis processing using the uploaded video that is now in R2 and accessed with analysis_id
+        # ....
+        
+        # 4. Save analysis results to DB
+        # ....
+
+        return jsonify({"success": True}), 200
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify(
+            {
+                "success": False,
+                "error": "error confirming upload",
+                "details": str(e),
+            }
+        ), 500
+
+@analysis_bp.route("/<analysis_id>", methods=["GET"])
+def get_analysis(analysis_id):
+    try:
+        """
+        Retrieve analysis details and signed video URL.
+
+        Arguments:
+            analysis_id (str): The ID of the analysis
+
+        Returns:
+            JSON response with:
+            - success
+            - analysis data
+            - signed video URL
+        """
+
+        analysis = get_analysis_by_id(analysis_id)
+
+        if not analysis:
+            return jsonify({"success": False, "error": "analysis not found"}), 404
+
+        # Generate signed read URL
+        # video_url = generate_r2_signed_read_url(analysis["video_key"])
+
+        # return jsonify(
+        #     {
+        #         "success": True,
+        #         "analysis": analysis,
+        #         "video_url": video_url,
+        #     }
+        # ), 200
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify(
+            {
+                "success": False,
+                "error": "error retrieving analysis",
+                "details": str(e),
+                "analysis": {},
+            }
+        ), 500
