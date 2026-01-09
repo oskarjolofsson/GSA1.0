@@ -43,10 +43,10 @@ export default function PreviewPane({ previewUrl, ready, uploading, onRemove, on
           {/* Advanced Settings with structured fields */}
           <AdvancedSettings advancedInput={advancedInput} setAdvancedInput={setAdvancedInput} shouldOpen={shouldOpenAdvanced} />
 
-          <AIdropdown options={AImodels} selectedOption={selectedAI} onSelect={(value) => {
+          {/* <AIdropdown options={AImodels} selectedOption={selectedAI} onSelect={(value) => {
             setAI(value);
             setSelectedAI(value);
-          }} />
+          }} /> */}
         </div>
 
 
