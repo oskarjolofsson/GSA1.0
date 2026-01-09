@@ -15,6 +15,7 @@ import FeedbackPopup from "../components/popup/FeedbackPopup.jsx";
 export default function ResultsPage() {
   const { analysisId } = useParams();
   const [analysis, setAnalysis] = useState(null);
+  const [videoURL, setVideoURL] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showSharePopup, setShowSharePopup] = useState(false);
@@ -39,7 +40,8 @@ export default function ResultsPage() {
         setLoading(true);
         setError("");
         const data = await pastDrillService.getAnalysisById(analysisId);
-        setAnalysis(data);
+        setAnalysis(data.analysis.analysis_results);
+        setVideoURL(data.video_url);
       } catch (err) {
         console.error("Error fetching analysis:", err);
         setError("An error occurred while loading the analysis");
@@ -74,7 +76,7 @@ export default function ResultsPage() {
                 Share
               </button>
             </div>
-            <ResultBox analysis={analysis} />
+            <ResultBox analysis={analysis} video_url={videoURL} />
           </>
         ) : null}
         {!analysis && error && (
