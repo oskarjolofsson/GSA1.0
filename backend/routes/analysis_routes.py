@@ -154,7 +154,7 @@ def confirm_upload(analysis_id):
         video_blob = video_storage_service.get_video_mp4(analysis["video_key"])
         
         analysis_result = analyser.execute(data=analysis, video_blob=video_blob)     
-        analysis_result = FirebaseDrillService(user_id=user_id).extract_drill_from_analysis(analysis_result)
+        analysis_result = FirebaseDrillService(user_id=user_id).extract_drill_from_analysis(analysis=analysis_result, analysis_id=analysis_id)
         firebase_analyses(user_id=user_id, sport="golf").set_completed(analysis_id=analysis_id, results=analysis_result)
 
         return jsonify({"success": True}), 200
