@@ -9,6 +9,7 @@ from services.analy.analyser import analyser
 from firebase_admin import auth as firebase_auth
 from services.firebase.firebase_auth import require_auth
 from services.firebase.firebase_analyses import firebase_analyses
+from services.firebase.firebase_drill import FirebaseDrillService
 
 # Cloudflare R2
 from services.cloudflare.videoStorageService import video_storage_service
@@ -152,7 +153,8 @@ def confirm_upload(analysis_id):
         video_storage_service.verify_object_exists(analysis["video_key"])
         video_blob = video_storage_service.get_video_mp4(analysis["video_key"])
         
-        analysis_result = analyser.execute(data=analysis, video_blob=video_blob)       
+        analysis_result = analyser.execute(data=analysis, video_blob=video_blob)     
+        analysis_result = FirebaseDrillService(user_id=user_id).extract_drill_from_analysis(analysis_result)
         firebase_analyses(user_id=user_id, sport="golf").set_completed(analysis_id=analysis_id, results=analysis_result)
 
         return jsonify({"success": True}), 200
