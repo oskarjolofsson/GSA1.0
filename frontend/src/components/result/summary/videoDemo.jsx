@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react"
-import { Play, Pause } from "lucide-react"
+import { useEffect, useRef, useState, useCallback } from "react"
+import { Play, Pause, RotateCcw } from "lucide-react"
 
 export default function VideoDemo({ url }) {
   const videoRef = useRef(null)
@@ -10,6 +10,8 @@ export default function VideoDemo({ url }) {
   const [progress, setProgress] = useState(0)
   const [showControls, setShowControls] = useState(true)
   const [isDragging, setIsDragging] = useState(false)
+  const [isSeeking, setIsSeeking] = useState(false)
+  const seekTimeoutRef = useRef(null)
 
   useEffect(() => {
     let timeout
@@ -18,6 +20,15 @@ export default function VideoDemo({ url }) {
     }
     return () => clearTimeout(timeout)
   }, [isPlaying])
+
+  // Cleanup seek timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (seekTimeoutRef.current) {
+        clearTimeout(seekTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const togglePlay = () => {
     if (!videoRef.current) return
@@ -34,29 +45,66 @@ export default function VideoDemo({ url }) {
 
   const handleTimeUpdate = () => {
     const video = videoRef.current
-    if (!video) return
+    if (!video || isSeeking) return
     setProgress((video.currentTime / video.duration) * 100 || 0)
+
+    if (video.ended) {
+      setIsPlaying(false)
+      setShowControls(true)
+    }
   }
 
+  // Debounced seek with seeked event - fixes frame preview on mobile
+  const jumpVideo = useCallback((t) => {
+    const v = videoRef.current
+    if (!v) return
+
+    // Clear any pending seek
+    if (seekTimeoutRef.current) {
+      clearTimeout(seekTimeoutRef.current)
+    }
+
+    // Debounce seeks (16ms delay) to prevent overwhelming mobile browsers
+    seekTimeoutRef.current = setTimeout(() => {
+      if (isSeeking) return
+      setIsSeeking(true)
+
+      const onSeeked = () => {
+        v.removeEventListener('seeked', onSeeked)
+        setIsSeeking(false)
+      }
+
+      v.addEventListener('seeked', onSeeked)
+      v.currentTime = t
+
+      // Fallback: clear seeking state after timeout in case seeked doesn't fire
+      setTimeout(() => {
+        if (isSeeking) {
+          setIsSeeking(false)
+        }
+      }, 1000)
+    }, 5)
+  }, [isSeeking])
+
   const handleSeek = (e) => {
-    const video = videoRef.current
     const rect = e.currentTarget.getBoundingClientRect()
     const percent = (e.clientX - rect.left) / rect.width
-    video.currentTime = percent * video.duration
+    const time = percent * videoRef.current.duration
+    setProgress(percent * 100)
+    jumpVideo(time)
   }
 
   const handleMouseDown = () => {
     setIsDragging(true)
   }
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     if (!isDragging) return
-    const video = videoRef.current
     const rect = progressBarRef.current.getBoundingClientRect()
     const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
     setProgress(percent * 100)
-    video.currentTime = percent * video.duration
-  }
+    jumpVideo(percent * videoRef.current.duration)
+  }, [isDragging, jumpVideo])
 
   const handleMouseUp = () => {
     setIsDragging(false)
@@ -64,6 +112,7 @@ export default function VideoDemo({ url }) {
 
   useEffect(() => {
     if (isDragging) {
+      setShowControls(false)
       document.addEventListener("mousemove", handleMouseMove)
       document.addEventListener("mouseup", handleMouseUp)
       return () => {
@@ -71,7 +120,7 @@ export default function VideoDemo({ url }) {
         document.removeEventListener("mouseup", handleMouseUp)
       }
     }
-  }, [isDragging])
+  }, [isDragging, handleMouseMove])
 
   return (
     <>
@@ -96,6 +145,8 @@ export default function VideoDemo({ url }) {
                 <div className="rounded-full bg-black/60 backdrop-blur-md p-4">
                   {isPlaying ? (
                     <Pause className="w-8 h-8 text-white" />
+                  ) : videoRef.current.ended ? (
+                    <RotateCcw className="w-8 h-8 text-white" />
                   ) : (
                     <Play className="w-8 h-8 text-white" />
                   )}
@@ -106,7 +157,7 @@ export default function VideoDemo({ url }) {
             {/* Progress Bar */}
             <div
               ref={progressBarRef}
-              className="absolute bottom-0 left-0 right-0 h-2.5 bg-white/20 cursor-pointer"
+              className="absolute bottom-0 left-0 right-0 h-2.5 bg-white/20 cursor-pointer border-t border-white"
               onClick={(e) => {
                 e.stopPropagation()
                 handleSeek(e)
@@ -126,5 +177,5 @@ export default function VideoDemo({ url }) {
         </div>
       )}
     </>
-  );
+  )
 }
