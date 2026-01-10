@@ -24,14 +24,9 @@ class HandleCheckoutComplete(StripeEvents):
             current_period_end=self.current_period_end,
             status="active"
         )
-        print("Updated subscription info for user:", self.firebase_user_id)
         return self.firebase_user_id
         
     def endSubscription(self):
-        print("Cancelling subscription for user:", self.firebase_user_id)
-        print("Subscription ID:", self.subscription_id)
-        print("Current period end:", self.current_period_end)
-
         try:
             subscription = stripe.Subscription.cancel(self.subscription_id)
 

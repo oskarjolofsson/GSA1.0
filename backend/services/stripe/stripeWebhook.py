@@ -286,7 +286,6 @@ class StripeWebhookService(StripeService):
         except Exception as e:
             print(f"Error retrieving subscription info for token addition: {e}")
             return
-        print(price_id)
         # Add appropriate amount of tokens upon successful payment
         try:
             FireBaseTokens(self.firebase_user_id).add_tokens_based_on_priceid(price_id)

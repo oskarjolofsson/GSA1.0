@@ -67,7 +67,6 @@ def fake_swing_upload_result(request, flask_app):
         analysis_results = json_data.get("analysis_results", {})
 
         results_manager.store_analysis_results(model, analysis_results)
-        print_analysis_results(analysis_results, model)
 
         return {
             "response": response,
@@ -116,13 +115,6 @@ def test_fake_swing_response_structure(fake_swing_upload_result):
         raise
 
 # Helper
-
-def print_analysis_results(analysis_results, model):
-    """Helper method to print analysis results in a readable format."""
-    print(f"\nAnalysis Results for Model: {model}")
-    for section, content in analysis_results.items():
-        print(f"\n=== {section.upper()} ===")
-        pprint(content)
         
 
 # To run only this test file, use: pytest tests/AI_tests/fake_swing_test.py, 

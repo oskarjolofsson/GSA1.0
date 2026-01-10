@@ -36,7 +36,6 @@ class Video_file(File):
             List[str]: List of keyframe file paths
         """
         file_path = self.path()
-        print(f"Keyframes-method: filepath is {file_path}")
         try:
             cap = cv2.VideoCapture(file_path)
             if not cap.isOpened():
