@@ -9,7 +9,7 @@ class FirebaseDrillService(FireBaseService):
         self.drills_ref = self.db.collection('drills')
         
 
-    def add_drill(self, drill: str) -> str:
+    def add_drill(self, drill: str, analysis_id: str) -> str:
         """
         Adds a new drill document to the 'drills' collection.
 
@@ -23,6 +23,7 @@ class FirebaseDrillService(FireBaseService):
         
         document_data = {
             "user_id": self.user_id,
+            "analysis_id": analysis_id,
             "drill": drill,
             "drill_id": drill_id,
             "image_url": None,
@@ -46,7 +47,7 @@ class FirebaseDrillService(FireBaseService):
             "image_url": image_url
         })
         
-    def extract_drill_from_analysis(self, analysis: dict) -> dict:
+    def extract_drill_from_analysis(self, analysis: dict, analysis_id: str) -> dict:
         """
         Extracts a drill from analysis data, returns analysis added with drill ID.
 
@@ -62,7 +63,7 @@ class FirebaseDrillService(FireBaseService):
         for finding in key_findings:
             drill_text = finding.get("try_this", "")
             if drill_text:
-                drill_id = self.add_drill(drill_text)
+                drill_id = self.add_drill(drill=drill_text, analysis_id=analysis_id)
                 finding["drill_id"] = drill_id
                 
         return analysis
