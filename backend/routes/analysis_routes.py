@@ -6,7 +6,6 @@ import uuid
 from services.analy.analyser import analyser
 
 # Firebase
-from services.firebase.firebase_past_analysis import FireBasePastAnalysis
 from firebase_admin import auth as firebase_auth
 from services.firebase.firebase_auth import require_auth
 from services.firebase.firebase_analyses import firebase_analyses

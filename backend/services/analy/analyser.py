@@ -8,7 +8,6 @@ from services.firebase.firebase_tokens import FireBaseTokens
 # Import models and sports analyses
 from services.analy.Models.OpenAI.gpt5 import Gpt5AnalysisService
 from services.analy.Sports.golfInstructions import GolfAnalysis
-from services.firebase.firebase_past_analysis import FireBasePastAnalysis
 from services.analy.Models.Gemini.gemini25flash import Gemini_25_flash
 from services.analy.Models.Gemini.gemini25flashlite import Gemini_25_flash_lite
 from services.analy.Models.Gemini.gemini25pro import Gemini_25_pro
@@ -82,10 +81,7 @@ class Analysis():
                                                   misses=misses,
                                                   extra=extra
                                                     )
-        
-        # Log past analysis and get the document ID
-        analysis_id = FireBasePastAnalysis(user_id, sport_name).add_analysis(return_dict)
-        return_dict["_id"] = analysis_id
+
         
         return return_dict
     

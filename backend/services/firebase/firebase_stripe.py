@@ -12,8 +12,8 @@ class FirebaseStripeService(FireBaseService):
         super().__init__(user_id=firebase_user_id)
         self.stripe_api_key = os.getenv("STRIPE_SECRET_KEY")
         stripe.api_key = self.stripe_api_key
-        self.doc_ref = self.db.collection('users').document(self.user_id)
-        self.stripe_ref = self.doc_ref.collection('stripe').document('customer')
+        self.doc_ref = self.db.collection('stripe')
+        self.stripe_ref = self.doc_ref.document(self.user_id)
         self.email = email
 
     def get_or_create_customer(self) -> str:
@@ -43,6 +43,7 @@ class FirebaseStripeService(FireBaseService):
             
             
             user.update({
+                "user_id": self.user_id,  # Add this
                 "email": self.email,
                 "stripe_customer_id": customer_id,
                 "stripe_subscription_id": None,
@@ -105,20 +106,18 @@ class FirebaseStripeService(FireBaseService):
         self.db_save_user(user) 
     
     def get_user_id_by_customer_id(self, customer_id: str) -> str | None:
-        # Query across all 'stripe' subcollections under 'users'
-        query = self.db.collection_group('stripe') \
+        # Query the 'stripe' collection for the customer_id
+        query = self.db.collection('stripe') \
                .where(filter=FieldFilter('stripe_customer_id', '==', customer_id)) \
                .limit(1)
         results = query.stream()
 
         for doc in results:
-            # Extract user_id from the document path: users/{user_id}/stripe/{doc}
-            user_id = doc.reference.parent.parent.id
+            user_id = doc.get('user_id')
             self.user_id = user_id
             
-            # Update the doc_ref and stripe_ref to point to this user
-            self.doc_ref = self.db.collection('users').document(self.user_id)
-            self.stripe_ref = self.doc_ref.collection('stripe').document('customer')
+            # Update references to point to this user
+            self.stripe_ref = self.doc_ref.document(self.user_id)
  
             return user_id
 
