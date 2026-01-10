@@ -46,16 +46,21 @@ export default function DrillPopup({ drill, image, onClose }) {
     const popupWidth = popupHeight * aspectRatio;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none bg-black/50">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center pointer-events-auto transition-colors duration-300 ${
+            entered && !exiting ? 'bg-black/50' : 'bg-black/0'
+            }`}
+            onClick={handleClose}
+        >
             <div
                 className={`
-                    relative pointer-events-auto transform transition-all duration-300 ease-out
+                    relative pointer-events-auto transform transition-all duration-300 ease-out max-h-[90vh] max-w-[90vw]
                     ${entered && !exiting ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}
                 `}
                 style={{
                     width: `${popupWidth}px`,
                     height: `${popupHeight}px`,
                 }}
+                onClick={(e) => e.stopPropagation()}
             >
                 {/* Image Background */}
                 {image ? (
@@ -65,7 +70,14 @@ export default function DrillPopup({ drill, image, onClose }) {
                         className="absolute inset-0 w-full h-full object-cover rounded-2xl"
                     />
                 ) : (
-                    <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl" />
+                    <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl" >
+                        {/* Text to say that no image is available */}
+                        <div className="flex items-center justify-center h-full">
+                            <p className="text-white text-lg">No image available</p>
+                        </div>
+
+                    </div>
+                    
                 )}
 
                 {/* Dark Overlay at Bottom */}

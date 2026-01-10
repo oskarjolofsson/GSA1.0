@@ -6,12 +6,14 @@ export default function ResultHeroCard({
   diagnosis = "You keep your weight on your trail foot instead of shifting forward.",
   impactLine = "This typically reduces compression and consistency.",
   onClickDrill,
+  onNextDrill,
+  onPreviousDrill
 }) {
   return (
     <section className="w-full px-4 py-6 flex justify-center max-sm:px-0" aria-label="Top priority summary">
-      <div className="relative w-full overflow-hidden rounded-3xl">
+      <div className="relative w-full overflow-hidden rounded-3xl h-fit sm:h-auto">
         {/* Card */}
-        <div className="relative rounded-3xl bg-[#0e1428]/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] p-6 sm:p-8">
+        <div className="relative rounded-3xl bg-[#0e1428]/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] p-6 sm:p-8 min-h-[450px]  sm:min-h-[300px] flex flex-col">
           {/* Top row */}
           <div className="flex items-center justify-between gap-3 mb-4">
             {/* Kicker */}
@@ -49,14 +51,14 @@ export default function ResultHeroCard({
                 {diagnosis}
               </p>
             </div>
-            
+
             <div className="inline-flex items-center gap-2 text-sm text-slate-400">
               <TrendingDown size={20} />
               <p className="text-sm sm:text-base leading-relaxed text-slate-400 border-t border-white/5 pt-4">
                 {impactLine}
               </p>
             </div>
-            
+
           </div>
 
           {/* Actions */}
@@ -69,8 +71,31 @@ export default function ResultHeroCard({
               Start Fix #{prioNumber}
             </button>
 
-            <div className="text-xs text-slate-400 max-sm:text-left text-right">
-              Do this first — then unlock the next.
+            <div className="flex items-center justify-end gap-3 max-sm:justify-center">
+
+              {onPreviousDrill && (
+                <button
+                  type="button"
+                  className="text-xs font-medium text-slate-400 hover:text-slate-200 px-3 py-1 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-slate-500"
+                  onClick={onPreviousDrill}
+                >
+                  Previous
+                </button>
+              )}
+
+
+              {onNextDrill && (
+                <button
+                  type="button"
+                  className="text-xs font-medium text-slate-400 hover:text-slate-200 px-3 py-1 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-slate-500"
+                  onClick={onNextDrill}
+                >
+                  Next
+                </button>
+              )}
+
+
+
             </div>
           </div>
         </div>
