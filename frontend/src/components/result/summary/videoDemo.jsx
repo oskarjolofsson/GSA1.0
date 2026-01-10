@@ -106,8 +106,11 @@ export default function VideoDemo({ url }) {
             {/* Progress Bar */}
             <div
               ref={progressBarRef}
-              className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/20 cursor-pointer"
-              onClick={handleSeek}
+              className="absolute bottom-0 left-0 right-0 h-2.5 bg-white/20 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleSeek(e)
+              }}
               onMouseDown={handleMouseDown}
             >
               <div
