@@ -13,7 +13,8 @@ class FireBaseTokens(FireBaseService):
         load_dotenv()
         super().__init__(user_id)
         
-        self.tokens_ref = self.db.collection('users').document(user_id).collection('tokens').document('token_balance')
+        # self.tokens_ref = self.db.collection('users').document(user_id).collection('tokens').document('token_balance')
+        self.tokens_ref = self.db.collection('tokens').document(user_id)
         self.initialize_user_tokens()
         
     def get_user_tokens(self):
@@ -25,7 +26,8 @@ class FireBaseTokens(FireBaseService):
             self.tokens_ref.set({
                 'tokens': 3,
                 'createdAt': firestore.SERVER_TIMESTAMP,
-                'lastUpdated': firestore.SERVER_TIMESTAMP
+                'lastUpdated': firestore.SERVER_TIMESTAMP,
+                'user_id': self.user_id
             })
 
     def spend_tokens(self, amount=1):
