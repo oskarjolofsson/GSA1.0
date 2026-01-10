@@ -94,7 +94,7 @@ export default function InfoBox({ analysis, video_url }) {
             <ResultHeroCard
               prioNumber={activeProblem + 1}
               problemName={key_findings[activeProblem].title}
-              diagnosis={key_findings[activeProblem].diagnosis}
+              diagnosis={key_findings[activeProblem].what_you_did}
               impactLine={key_findings[activeProblem].why_it_matters}
               onClickDrill={() => handleDrillOpen(activeProblem)}
               onNextDrill={activeProblem < key_findings.length - 1 ? onNextDrill : null}
