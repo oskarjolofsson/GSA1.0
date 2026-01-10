@@ -93,7 +93,4 @@ class GeminiTemplate(Model, ABC):
             print(f"ERROR: Invalid JSON response: {raw_text[:200]}")
             raise
         
-        print("Raw Gemini Response:" + raw_text)
-        pprint(data)
-        
         return data

@@ -18,7 +18,6 @@ class HandleSubscriptionSwitch(StripeEvents):
         new_price_id = self.price_id
 
         if current_price_id == new_price_id:
-            print("No change: user already on this plan.")
             return
 
         current_price = stripe.Price.retrieve(current_price_id)
@@ -30,7 +29,6 @@ class HandleSubscriptionSwitch(StripeEvents):
         # Decide proration behavior (or use dashboard defaults)
         if current_amount < new_amount:
             # Upgrade → immediately
-            print("Upgrading subscription immediately.")
             updated = stripe.Subscription.modify(
                 self.subscription_id,
                 items=[{

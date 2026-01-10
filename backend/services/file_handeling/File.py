@@ -23,7 +23,6 @@ class File(ABC):
     def saveFile(self, file_blob: bytes) -> str:
         file_extension = self._detect_file_extension(file_blob) 
         filename = self._generate_unique_filename(f"video.{file_extension}")
-        print(f"filename is: {filename}")
         if not self.allowed_file(filename):
             raise ValueError(f"Invalid file type: .{file_extension} not allowed")
         

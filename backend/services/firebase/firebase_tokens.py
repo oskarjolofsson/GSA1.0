@@ -71,5 +71,4 @@ class FireBaseTokens(FireBaseService):
             # TODO send some warning to monitoring service?
             raise ValueError(f"Unknown price_id: {price_id}")
 
-        print(f"Adding {price_to_tokens.get(price_id, 0)} tokens for price_id {price_id}")
         self.add_tokens(price_to_tokens.get(price_id, 0))
