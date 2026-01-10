@@ -47,6 +47,7 @@ export default function InfoBox({ analysis, video_url }) {
   const [activeProblem, setActiveProblem] = useState(0);
   const [activeTab, setActiveTab] = useState("what");
   const [drillPopupOpen, setDrillPopupOpen] = useState(false);
+  const [direction, setDirection] = useState(0);
 
   useEffect(() => {
     // Reset to first problem when analysis changes
@@ -61,29 +62,57 @@ export default function InfoBox({ analysis, video_url }) {
     setDrillPopupOpen(false);
   }
 
+  const onNextDrill = () => {
+    if (activeProblem < key_findings.length - 1) {
+      setDirection(1);
+      setActiveProblem(activeProblem + 1);
+    }
+    else return null;
+  };
 
+  const onPreviousDrill = () => {
+    if (activeProblem > 0) {
+      setDirection(-1);
+      setActiveProblem(activeProblem - 1);
+    }
+    else return null;
+  };
 
   return (
     <>
       {/* Asymmetric grid: 2fr card, 1fr video. Stacks on mobile */}
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
-        <ResultHeroCard
-          prioNumber={activeProblem + 1}
-          problemName={key_findings[activeProblem].title}
-          diagnosis={key_findings[activeProblem].diagnosis}
-          impactLine={key_findings[activeProblem].why_it_matters}
-          onClickDrill={() => handleDrillOpen(activeProblem)}
-        />
+        <div className="w-full flex justify-center overflow-hidden">
+          <motion.div
+            key={activeProblem}
+            initial={{ opacity: 0, x: direction > 0 ? 100 : -100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction > 0 ? -100 : 100 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="w-full"
+          >
+            <ResultHeroCard
+              prioNumber={activeProblem + 1}
+              problemName={key_findings[activeProblem].title}
+              diagnosis={key_findings[activeProblem].diagnosis}
+              impactLine={key_findings[activeProblem].why_it_matters}
+              onClickDrill={() => handleDrillOpen(activeProblem)}
+              onNextDrill={activeProblem < key_findings.length - 1 ? onNextDrill : null}
+              onPreviousDrill={activeProblem > 0 ? onPreviousDrill : null}
+            />
+          </motion.div>
+        </div>
 
         {/* Video constrained to match card height */}
         <VideoDemo url={video_url} />
       </div>
       
-      {/* <DrillPopup
-        drill={key_findings[activeProblem]["try_this"] ? key_findings[activeProblem]["try_this"] : null}
+      
+      <DrillPopup
+        drill={drillPopupOpen ? key_findings[activeProblem]["try_this"] : null}
         image={file ? file.previewImage : null}
         onClose={handleDrillClose}
-      /> */}
+      />
 
     </>
   );
