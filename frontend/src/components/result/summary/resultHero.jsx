@@ -5,6 +5,7 @@ export default function ResultHeroCard({
   problemName = "Hanging Back",
   diagnosis = "You keep your weight on your trail foot instead of shifting forward.",
   impactLine = "This typically reduces compression and consistency.",
+  onClickDrill,
 }) {
   return (
     <section className="w-full px-4 py-6 flex justify-center max-sm:px-0" aria-label="Top priority summary">
@@ -63,6 +64,7 @@ export default function ResultHeroCard({
             <button
               type="button"
               className="whitespace-nowrap rounded-xl bg-emerald-500/90 hover:bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-300"
+              onClick={onClickDrill}
             >
               Start Fix #{prioNumber}
             </button>
