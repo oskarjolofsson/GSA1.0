@@ -56,7 +56,8 @@ class FirebaseDrillService(FireBaseService):
         Returns:
             dict: Analysis data with the drill ID included.
         """
-        key_findings = analysis.get("analysis_results", {}).get("key_findings", [])
+        print("Extracting drill from analysis...")
+        key_findings = analysis.get("key_findings", [])
         
         for finding in key_findings:
             drill_text = finding.get("try_this", "")
