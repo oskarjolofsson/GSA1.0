@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import ResultHeroCard from "./summary/resultHero";
 import VideoDemo from "./summary/videoDemo";
 import { fileTransferService } from "../../services/fileTransferService";
+import DrillPopup from "../popup/drillPopup";
 
 const SEVERITY_COLORS = {
   border: {
@@ -45,11 +46,20 @@ export default function InfoBox({ analysis, video_url }) {
 
   const [activeProblem, setActiveProblem] = useState(0);
   const [activeTab, setActiveTab] = useState("what");
+  const [drillPopupOpen, setDrillPopupOpen] = useState(false);
 
   useEffect(() => {
     // Reset to first problem when analysis changes
     setActiveTab("what");
   }, [activeProblem]);
+
+  const handleDrillOpen = (index) => {
+    setDrillPopupOpen(true);
+  }
+
+  const handleDrillClose = () => {
+    setDrillPopupOpen(false);
+  }
 
 
 
@@ -62,13 +72,18 @@ export default function InfoBox({ analysis, video_url }) {
           problemName={key_findings[activeProblem].title}
           diagnosis={key_findings[activeProblem].diagnosis}
           impactLine={key_findings[activeProblem].why_it_matters}
+          onClickDrill={() => handleDrillOpen(activeProblem)}
         />
 
         {/* Video constrained to match card height */}
         <VideoDemo url={video_url} />
-
       </div>
       
+      {/* <DrillPopup
+        drill={key_findings[activeProblem]["try_this"] ? key_findings[activeProblem]["try_this"] : null}
+        image={file ? file.previewImage : null}
+        onClose={handleDrillClose}
+      /> */}
 
     </>
   );
