@@ -7,7 +7,8 @@ class UserService {
         // Make sure consent is a boolean
         consent = Boolean(consent);
         
-        url = `${API}/api/v1/user/consent`;
+        const url = `${API}/api/v1/users/consent`;
+        console.log("Setting consent to:", consent, "at URL:", url);
         const options = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -17,7 +18,7 @@ class UserService {
     }
 
     async getConsent() {
-        const url = `${API}/api/v1/user/consent`;
+        const url = `${API}/api/v1/users/consent`;
         const options = {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }

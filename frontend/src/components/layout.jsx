@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Nav from './nav/Nav2.jsx';
 import Footer from './footer/footer.jsx';
+import { ConsentBanner } from './popup/consentBanner.jsx';
 
 function Background() {
   return (
@@ -29,7 +30,7 @@ export default function Layout() {
       <main className="flex-1">
         <Outlet />
       </main>
-
+      <ConsentBanner />
       <Footer />
     </div>
   );

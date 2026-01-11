@@ -1,6 +1,6 @@
-import { auth } from "../firebase";
+import { auth } from "../lib/firebase";
 
-async function useFetchAuthenticated(url, options) {
+export default async function useFetchAuthenticated(url, options) {
     const user = auth.currentUser;
     if (!user) throw new Error('Not signed in');
     const idToken = await user.getIdToken();
@@ -23,4 +23,3 @@ async function useFetchAuthenticated(url, options) {
     return response;
 }
 
-export { useFetchAuthenticated };
