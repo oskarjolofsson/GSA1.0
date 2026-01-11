@@ -10,11 +10,9 @@ async function getAnalyticsConsent() {
     const user = auth.currentUser;
     if (user) {
         try {
-            const consent = await userService.getConsent();
-            // Handle null/undefined responses
-            const boolConsent = consent === true || consent === "true";
-            localStorage.setItem("analytics_consent", boolConsent.toString());
-            return boolConsent;
+            const consent = await userService.getConsent();    
+            localStorage.setItem("analytics_consent", consent.toString());
+            return consent === "true";
         } catch (error) {
             console.error("Failed to fetch consent from server:", error);
             // Fallback: return false (deny tracking) on error as safe default
