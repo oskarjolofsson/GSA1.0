@@ -38,8 +38,7 @@ def create_app():
         methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
         supports_credentials=True,
         allow_headers=["Content-Type", "Authorization"],
-        expose_headers=["Content-Type"]
-        
+        expose_headers=["Content-Type"]  
     )
     
     print(f"Allowed CORS origins: {FRONTENDS}")
