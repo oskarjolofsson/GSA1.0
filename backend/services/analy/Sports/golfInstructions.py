@@ -13,7 +13,9 @@ class GolfAnalysis(SportAnalysis):
         Analyze the user’s golf swing video and return feedback formatted in a clean, modern, simple structure.
 
         Write using short sentences, calm tone, no jargon, no biomechanics terminology.
-        Every fix must be actionable, easy to execute, and beginner-friendly.
+        Every fix must be actionable, easy to execute, and beginner-friendly. 
+        Use everyday language. Assume the golfer has no coaching background.
+        If a term would not be understood by a 20-handicap golfer, replace it.
 
         Return the feedback in this exact JSON structure:
 
@@ -26,28 +28,17 @@ class GolfAnalysis(SportAnalysis):
             "key_findings": [
                 {
                 "title": "Short title (ex: Early Extension)",
-                "severity": "high | medium | low",
-                "icon": "Choose one of: setup, alignment, grip, takeaway, top, plane, over_the_top, shallow, impact, rotation, balance, tempo, contact, distance, slice, hook, drill, good",
-                "what_you_did": "1–2 sentence observation",
-                "why_it_matters": "1 sentence explaining impact on contact/consistency/power.",
-                "try_this": "One simple drill, feel, or instruction."
+                "what_you_did": "Clear observation of what happens in the swing, written as if speaking directly to the golfer. One short sentence",
+                "why_it_matters": "Plain-language explanation of how this affects ball flight or consistency. Avoid all technical or biomechanical terms.",
+                "try_this": "One very simple drill, feel, or cue the golfer can try immediately"
+                "improve": {
+                        "task": "One simple action to repeat for a short test (5 shots unless stated otherwise).",
+                        "success_signal": "One clear thing the golfer should see or feel when the task is done well.",
+                        "fault_indicator": "One clear, observable outcome that means the issue is still present."
+                    }
                 }
             ],
-
-            "video_breakdown": {
-                "address": "What you did well + what to adjust.",
-                "takeaway": "Simple explanation of the takeaway check.",
-                "top": "Top of the backswing checkpoint.",
-                "impact": "Impact position explanation.",
-                "finish": "Finish and balance."
-            },
-
-            "premium_suggestions": {
-                "progress_tracking": "1 sentence about what would be useful to track.",
-                "before_after": "If relevant, what improvement you’d expect visually.",
-                "personal_drill_pack": ["Drill 1", "Drill 2", "Drill 3"], (give all drills that were given in key_findings)
-                "biggest_leak": "The one issue that costs them the most strokes."
-            }
+            
             "success": if analysis was successful true, else if not or the video did not show a golf swing false
         }
 
@@ -58,9 +49,9 @@ class GolfAnalysis(SportAnalysis):
 
         Use positive reinforcement (“Here’s what’s working…”).
 
-        Never overwhelm the user—prioritize one main focus.
+        Never overwhelm the user—prioritize one main focus. Each key finding must describe one issue only. Do not combine multiple faults in one finding.
 
-        If the user has multiple swing issues, choose the most important 3-5.
+        Come up with 1-2 drills or cues per key finding that are easy to implement immediately and are the most important.
 
         If something is uncertain from the video, say so gently.
         
