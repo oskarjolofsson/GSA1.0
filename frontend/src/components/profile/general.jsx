@@ -32,6 +32,9 @@ export default function GeneralProfile() {
                     For any questions regarding your account, please contact support at <a href="mailto:trueswing25@gmail.com">trueswing25@gmail.com</a>.
                 </p>
 
+                {/* Line */}
+                <hr className="border-white/10 my-6" />
+
                 <AnalyticsConsentToggle />
 
 

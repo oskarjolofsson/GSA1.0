@@ -44,7 +44,7 @@ class FirebaseUsersService(FireBaseService):
             "user_id": self.user_id,
             "name": name,
             "email": email,
-            "consent": False,
+            "consent": None,
             "createdAt": firestore.SERVER_TIMESTAMP,
             "updatedAt": firestore.SERVER_TIMESTAMP,
         }
