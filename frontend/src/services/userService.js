@@ -8,7 +8,6 @@ class UserService {
         consent = Boolean(consent);
         
         const url = `${API}/api/v1/users/consent`;
-        console.log("Setting consent to:", consent, "at URL:", url);
         const options = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
