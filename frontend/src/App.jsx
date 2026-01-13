@@ -17,10 +17,13 @@ import TermsAndCond from './pages/TermsAndCond.jsx';
 import Privacy from './pages/Privacy.jsx';
 import Success from './pages/Success.jsx';
 import Cancel from './pages/Cancel.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 
 // Import components
-import Layout from './components/layout.jsx';
+import Layout from './components/PublicLayout.jsx';
 import RequireAuth from './auth/requireAuth.jsx';
+import DashboardLayout from './components/dashboard/DashboardLayout.jsx';
+import CenteredPanel from './components/dashboard/CenteredPanel.jsx';
 
 
 function App() {
@@ -57,9 +60,17 @@ function App() {
           
         </Route>
 
-        {/* 404 */}
-        <Route path="*" element={<NotFound />} />
+        
       </Route>
+      <Route element ={<RequireAuth/>}>
+        <Route path ="/dashboard" element={<DashboardLayout />}>
+          <Route index element = {<Dashboard/>}/>
+        </Route>
+      </Route>
+      
+
+      {/* 404 */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
