@@ -12,6 +12,7 @@ from services.analy.Models.Gemini.gemini25flash import Gemini_25_flash
 from services.analy.Models.Gemini.gemini25flashlite import Gemini_25_flash_lite
 from services.analy.Models.Gemini.gemini25pro import Gemini_25_pro
 from services.analy.Models.Gemini.gemini3propreview import Gemini_3_pro_preview
+from services.analy.Models.OpenAI.gpt52 import Gpt52AnalysisService
 
 # Factory
 models = {
@@ -21,6 +22,7 @@ models = {
     "gemini-2.5-flash-lite": Gemini_25_flash_lite,  # Broken model
     "gemini-2.5-pro": Gemini_25_pro,    # Broken model
     "gemini-3-pro-preview": Gemini_3_pro_preview,
+    "gpt-5.2": Gpt52AnalysisService,
 }
 
 sports = {
@@ -56,7 +58,8 @@ class Analysis():
         extra = data.get("prompts").get("extra", "")
         user_id = data.get("user_id")
         sport_name = data.get("sport", "golf")
-        model_name = data.get("video").get("model", "gemini-3-pro-preview")
+        #model_name = data.get("video").get("model", "gpt-5.2")
+        model_name = "gpt-5.2"
         
         # # Check current balance first
         # print(self.user_has_subscription(user_id))
