@@ -9,10 +9,13 @@ import cv2
 
 class Image_file(File):
     def __init__(self, f: FileStorage | np.ndarray, filename: str | None = ""):
-        super().__init__(f)
-
         if isinstance(f, np.ndarray):
             self._path = self._saveNpDarray(f, filename or "keyframe.jpg")
+        else:
+            # f is FileStorage, convert to bytes
+            f.stream.seek(0)
+            file_bytes = f.read()
+            super().__init__(file_bytes)
 
     @property
     def allowed_extensions(self) -> set:

@@ -8,6 +8,7 @@ class Gemini_3_pro_preview(GeminiTemplate):
         super().__init__(system_instructions=system_instructions)
 
     def ai_analysis(self, content: list[dict[str, str]]):
+        print("Gemini 3 Pro Preview Analysis Started")
         response = self.client.models.generate_content(
             model="gemini-3-pro-preview",
             config=types.GenerateContentConfig(
