@@ -18,6 +18,7 @@ import Privacy from './pages/Privacy.jsx';
 import Success from './pages/Success.jsx';
 import Cancel from './pages/Cancel.jsx';
 import Dashboard from './pages/DashboardUpload.jsx';
+import Drills from './pages/Drills.jsx';
 
 // Import components
 import Layout from './components/PublicLayout.jsx';
@@ -65,6 +66,7 @@ function App() {
           <Route path="/dashboard/billing/cancel" element={<Cancel />} />
           <Route path="/dashboard/analyse" element={<Analyser />} />
           <Route path="/dashboard/profile" element={<Profile />} />
+          <Route path="/dashboard/drills" element={<Drills />} />
         </Route>
       </Route>
       

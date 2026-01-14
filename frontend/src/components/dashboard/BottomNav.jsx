@@ -9,7 +9,7 @@ import {
 
 const items = [
   { to: "/dashboard", label: "Upload", icon: <ArrowUpNarrowWide size={18} /> },
-  { to: "/dashboard/analysis", label: "Drills", icon: <ChartLine size={18} /> },
+  { to: "/dashboard/drills", label: "Drills", icon: <ChartLine size={18} /> },
   { to: "/dashboard/feedback", label: "History", icon: <BookMarked size={18} /> },
   { to: "/dashboard/account", label: "Account", icon: <User size={18} /> },
   { to: "/dashboard/help", label: "Help", icon: <FileQuestionMark size={18} /> },
