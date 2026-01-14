@@ -67,4 +67,33 @@ class FirebaseDrillService(FireBaseService):
                 finding["drill_id"] = drill_id
                 
         return analysis
+    
+    def update_drill_image_url(self, drill_id: str, image_url: str) -> None:
+        """
+        Updates the image URL of a drill.
+
+        Args:
+            drill_id (str): The ID of the drill to update.
+            image_url (str): The new image URL to set.
+        """
+        drill_doc_ref = self.drills_ref.document(drill_id)
+        drill_doc_ref.update({
+            "image_url": image_url
+        })
+        
+    def get_drill_by_id(self, drill_id: str) -> dict:
+        """
+        Retrieves a drill document by its ID.
+
+        Args:
+            drill_id (str): The ID of the drill document to retrieve.
+
+        Returns:
+            dict: The drill document data if found, otherwise None.
+        """
+        drill_doc = self.drills_ref.document(drill_id).get()
+        if drill_doc.exists:
+            return drill_doc.to_dict()
+        else:
+            return None
                 

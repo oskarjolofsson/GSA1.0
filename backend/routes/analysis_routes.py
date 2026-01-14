@@ -10,6 +10,7 @@ from firebase_admin import auth as firebase_auth
 from services.firebase.firebase_auth import require_auth
 from services.firebase.firebase_analyses import firebase_analyses
 from services.firebase.firebase_drill import FirebaseDrillService
+from services.image_gen.drills.gemini.drill_image import GeminiDrillImage
 
 # Cloudflare R2
 from services.cloudflare.videoStorageService import video_storage_service
@@ -222,5 +223,60 @@ def get_analysis(analysis_id):
                 "error": "error retrieving analysis",
                 "details": str(e),
                 "analysis": {},
+            }
+        ), 500
+
+@analysis_bp.route("/image/<drill_id>", methods=["GET"])
+@require_auth
+def generate_image(drill_id):
+    """
+    Retrieve image_url for drill. If it exists, return it. If not, generate it.
+
+    Arguments:
+        drill_id (str): The ID of the drill
+
+    Returns:
+        JSON response with:
+        - success
+        - signed image URL
+    """
+    
+    # Get drill
+    user_id = request.user["uid"]
+    drill = FirebaseDrillService(user_id=user_id).get_drill_by_id(drill_id=drill_id)
+    if not drill:
+        return jsonify({"success": False, "error": "drill not found"}), 404
+    
+    # Check if image_url already exists
+    if "image_url" in drill and drill["image_url"]:
+        return jsonify(
+            {
+                "success": True,
+                "image_url": drill["image_url"],
+            }
+        ), 200
+    try:
+        # Generate image
+        image_url = GeminiDrillImage(drill=drill).execute(drill_id=drill_id)
+        
+        # Save image_url to drill
+        FirebaseDrillService(user_id=user_id).update_drill_image_url(
+            drill_id=drill_id,
+            image_url=image_url
+        )
+        
+        return jsonify(
+            {
+                "success": True,
+                "image_url": image_url,
+            }
+        ), 200
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify(
+            {
+                "success": False,
+                "error": "error generating image",
+                "details": str(e),
             }
         ), 500
