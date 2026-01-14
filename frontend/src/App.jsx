@@ -23,7 +23,6 @@ import Dashboard from './pages/Dashboard.jsx';
 import Layout from './components/PublicLayout.jsx';
 import RequireAuth from './auth/requireAuth.jsx';
 import DashboardLayout from './components/dashboard/DashboardLayout.jsx';
-import CenteredPanel from './components/dashboard/CenteredPanel.jsx';
 
 
 function App() {
@@ -53,10 +52,8 @@ function App() {
         {/* Protected */}
         <Route element={<RequireAuth />}>
           <Route path="/billing/success" element={<Success />} />
-          <Route path="/billing/cancel" element={<Cancel />} />
-          <Route path="/analyse" element={<Analyser />} />
-          <Route path="/profile" element={<Profile />} />
           <Route path="/past-drills" element={<PastDrills />} />
+          <Route path="/analyse" element={<Analyser />} />
           
         </Route>
 
@@ -65,6 +62,9 @@ function App() {
       <Route element ={<RequireAuth/>}>
         <Route path ="/dashboard" element={<DashboardLayout />}>
           <Route index element = {<Dashboard/>}/>
+          <Route path="/dashboard/billing/cancel" element={<Cancel />} />
+          <Route path="/dashboard/analyse" element={<Analyser />} />
+          <Route path="/dashboard/profile" element={<Profile />} />
         </Route>
       </Route>
       

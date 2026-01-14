@@ -1,33 +1,43 @@
 import { NavLink } from "react-router-dom";
+import {
+  ArrowUpNarrowWide,
+  ChartLine,
+  BookMarked,
+  User,
+  FileQuestionMark,
+} from "lucide-react";
 
 const items = [
-  { to: "/dashboard", label: "Upload", icon: "↑" },
-  { to: "/dashboard/analysis", label: "History", icon: "📊" },
-  { to: "/dashboard/feedback", label: "Drills", icon: "🎯" },
-  { to: "/dashboard/account", label: "Account", icon: "👤" },
-  { to: "/dashboard/help", label: "Help", icon: "❓" },
+  { to: "/dashboard", label: "Upload", icon: <ArrowUpNarrowWide size={18} /> },
+  { to: "/dashboard/analysis", label: "Drills", icon: <ChartLine size={18} /> },
+  { to: "/dashboard/feedback", label: "History", icon: <BookMarked size={18} /> },
+  { to: "/dashboard/account", label: "Account", icon: <User size={18} /> },
+  { to: "/dashboard/help", label: "Help", icon: <FileQuestionMark size={18} /> },
 ];
 
 export default function BottomNav() {
   return (
-    <nav className="relative z-10 pb-6 flex justify-center">
-      <div className="flex items-center gap-1 rounded-full bg-[#0e1428]/80 backdrop-blur-md border border-white/10 px-2 py-2 shadow-xl">
+    <nav className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none">
+      <div className="pointer-events-auto flex items-center gap-1 bg-[#0b1020]/90 text-white px-2 py-2 rounded-full shadow-xl backdrop-blur-md">
         {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               `
-              flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition
+              group relative flex items-center gap-2
+              px-4 py-2 rounded-full text-sm font-medium
+              transition-all duration-200 ease-out
+              will-change-transform
               ${
                 isActive
-                  ? "bg-emerald-500/15 text-emerald-400"
-                  : "text-white/60 hover:text-white"
+                  ? "bg-blue-500 text-white shadow-lg scale-105"
+                  : "text-white/70 hover:text-white hover:scale-105 hover:shadow-lg"
               }
             `
             }
           >
-            <span>{item.icon}</span>
+            <span className="flex items-center">{item.icon}</span>
             <span className="hidden sm:inline">{item.label}</span>
           </NavLink>
         ))}
