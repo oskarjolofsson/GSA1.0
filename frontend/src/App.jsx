@@ -17,7 +17,7 @@ import TermsAndCond from './pages/TermsAndCond.jsx';
 import Privacy from './pages/Privacy.jsx';
 import Success from './pages/Success.jsx';
 import Cancel from './pages/Cancel.jsx';
-import Dashboard from './pages/Dashboard.jsx';
+import Dashboard from './pages/DashboardUpload.jsx';
 
 // Import components
 import Layout from './components/PublicLayout.jsx';
@@ -61,7 +61,7 @@ function App() {
       </Route>
       <Route element ={<RequireAuth/>}>
         <Route path ="/dashboard" element={<DashboardLayout />}>
-          <Route index element = {<Dashboard/>}/>
+          <Route index element = {<DashboardUpload/>}/>
           <Route path="/dashboard/billing/cancel" element={<Cancel />} />
           <Route path="/dashboard/analyse" element={<Analyser />} />
           <Route path="/dashboard/profile" element={<Profile />} />
