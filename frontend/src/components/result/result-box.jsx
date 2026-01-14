@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import {Search, Lightbulb, Brain } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -7,6 +7,8 @@ import ResultHeroCard from "./summary/resultHero";
 import VideoDemo from "./summary/videoDemo";
 import { fileTransferService } from "../../services/fileTransferService";
 import DrillPopup from "../popup/drillPopup";
+import useDrillImageURLFetch from "../../hooks/useImageFetch";
+
 
 const SEVERITY_COLORS = {
   border: {
@@ -48,6 +50,7 @@ export default function InfoBox({ analysis, video_url }) {
   const [activeTab, setActiveTab] = useState("what");
   const [drillPopupOpen, setDrillPopupOpen] = useState(false);
   const [direction, setDirection] = useState(0);
+  const [drill_image_url, setDrillImageURL] = useState(null);
 
   useEffect(() => {
     // Reset to first problem when analysis changes
@@ -77,6 +80,10 @@ export default function InfoBox({ analysis, video_url }) {
     }
     else return null;
   };
+
+  useEffect(() => {
+    setDrillImageURL(useDrillImageURLFetch(key_findings[activeProblem].drill_id));
+  }, [activeProblem]);
 
   return (
     <>
@@ -110,7 +117,7 @@ export default function InfoBox({ analysis, video_url }) {
       
       <DrillPopup
         drill={drillPopupOpen ? key_findings[activeProblem]["try_this"] : null}
-        image={file ? file.previewImage : null}
+        image={drill_image_url}
         onClose={handleDrillClose}
       />
 
