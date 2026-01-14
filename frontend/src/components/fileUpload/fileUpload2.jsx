@@ -126,7 +126,7 @@ export default function UploadPage({ initialFile }) {
 
   return (
     <ValidationProvider validationState={validationState}>
-      <div className="text-slate-100 relative overflow-hidden py-12 min-h-screen">
+      <div className="h-auto text-slate-100 relative overflow-hidden py-12 min-h-screen">
         <section className="relative mx-auto max-w-6xl px-4 mt-16">
           {isLoading || isUploading ? (
             <Loading time={40} full={true} />

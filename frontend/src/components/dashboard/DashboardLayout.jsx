@@ -3,7 +3,7 @@ import BottomNav from "./BottomNav";
 
 export default function DashboardLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#0b1020] text-slate-100 relative overflow-hidden">
+    <div className="fixed inset-0 bg-[#0b1020] text-slate-100 overflow-hidden">
 
       {/* subtle background texture */}
       <div
