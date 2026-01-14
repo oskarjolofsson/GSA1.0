@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
+
 export default function DrillPopup({ drill, image, onClose }) {
     const [entered, setEntered] = useState(false);
     const [exiting, setExiting] = useState(false);
