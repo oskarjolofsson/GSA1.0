@@ -9,8 +9,6 @@ from services.file_handeling.Video_file import Video_file
 from services.keyframes.Keyframes import Keyframes
 from services.analy.Sports.sportInstructions import SportAnalysis
 
-from pprint import pprint
-
 from abc import ABC, abstractmethod
 
 class GeminiTemplate(Model, ABC):
@@ -26,25 +24,33 @@ class GeminiTemplate(Model, ABC):
         self.client = genai.Client(api_key=api_key)
         
     
-    def format_content(self, video, shape: str = "unsure", height: str = "unsure", misses: str = "unsure", extra: str = "") -> list[dict[str, str]]:
-        final_prompt = f"""Here are the user's personal notes about their swing. 
-        Use them as additional context only. 
-        Do NOT blindly assume they are correct. 
-        If their interpretation is wrong or incomplete, gently correct it in a supportive way.
+    def format_content(self, shape: str = None, height: str = None, misses: str = None, extra: str = None) -> str:
+        final_prompt = f"""
+        Here are the user’s personal notes about their swing.
 
-        User's notes:
-        wanted shape: {shape}
-        wanted height: {height}
-        Things that were bad with the result: {misses}
-        Extra notes about the swing: {extra}
+        Use these notes as context only.
+        Do NOT assume they are correct.
+        If they conflict with what you see, gently correct them in a supportive way.
+
+        User intent:
+        - Wanted ball shape: {shape if shape else "Not specified"}
+        - Wanted height: {height if height else "Not specified"}
+        - Actual result: {misses if misses else "Not specified"}
+
+        Extra notes:
+        {extra if extra else "None"}
+
+        Use this information only to:
+        - Cross-check ball flight
+        - Help rank swing issues by importance
+
+        Do not prioritize user assumptions over video evidence.
         """
+        return final_prompt
         
-        content = [
-            {"text": final_prompt},
-            {"fileData": {"fileUri": video.uri}}
-        ]
         
-        return content
+        
+        return final_prompt
 
     @abstractmethod
     def ai_analysis(self, content: list[dict[str, str]]):
@@ -54,6 +60,7 @@ class GeminiTemplate(Model, ABC):
         
         # Upload video to Gemini
         video = self.client.files.upload(file=video_file.path())
+        
         # Wait until ACTIVE
         while True:
             file_status = self.client.files.get(name=video.name)
@@ -62,15 +69,13 @@ class GeminiTemplate(Model, ABC):
             elif file_status.state == "FAILED":
                 raise Exception(f"File processing failed: {file_status.error_message}")
             time.sleep(0.5)
-        
-        
-        
-        user_prompt_content = self.format_content(video=video, shape=shape, height=height, misses=misses, extra=extra)
-        
+            
         # Delete image and video-files from memory
         video_file.remove()
         
-        analysis = self.ai_analysis(user_prompt_content)
+        user_prompt_content = self.format_content(shape=shape, height=height, misses=misses, extra=extra)
+       
+        analysis = self.ai_analysis(user_prompt_content, video)
         
         # Remove uploaded file from Gemini
         self.client.files.delete(name=video.name)
