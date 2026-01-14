@@ -79,13 +79,13 @@ def create_analysis():
         start_time = float(request.form.get("start_time")) if request.form.get("start_time") else None
         end_time = float(request.form.get("end_time")) if request.form.get("end_time") else None
         user_id = request.user["uid"]
-        model = request.form.get("model", "gpt-5.2")
+        model = request.form.get("model", "gemini-3-pro-preview")
         
         details = {
-            "shape": request.form.get("shape", "unsure"),
-            "height": request.form.get("height", "unsure"),
-            "misses": request.form.get("miss", "unsure"),
-            "extra": request.form.get("extra", ""),
+            "shape": request.form.get("shape", None),
+            "height": request.form.get("height", None),
+            "misses": request.form.get("misses", None),
+            "extra": request.form.get("extra", None),
         }
         
         if not user_id:

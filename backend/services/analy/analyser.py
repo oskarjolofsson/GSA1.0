@@ -52,14 +52,13 @@ class Analysis():
         
         start_time = data.get("video").get("start_time", None)
         end_time = data.get("video").get("end_time", None)
-        shape = data.get("prompts").get("shape", "unsure")
-        height = data.get("prompts").get("height", "unsure")
-        misses = data.get("prompts").get("misses", "unsure")
-        extra = data.get("prompts").get("extra", "")
+        shape = data.get("prompts").get("shape", None)
+        height = data.get("prompts").get("height", None)
+        misses = data.get("prompts").get("misses", None)
+        extra = data.get("prompts").get("extra", None)
         user_id = data.get("user_id")
         sport_name = data.get("sport", "golf")
-        #model_name = data.get("video").get("model", "gpt-5.2")
-        model_name = "gpt-5.2"
+        model_name = data.get("video").get("model")
         
         # # Check current balance first
         # print(self.user_has_subscription(user_id))
