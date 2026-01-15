@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Share2 } from "lucide-react";
+import { Share2, Trash2 } from "lucide-react";
 import ResultBox from "../components/result/result-box.jsx";
 import SharePopup from "../components/popup/SharePopup.jsx";
 import pastDrillService from "../services/pastDrillService.js";
@@ -122,6 +122,18 @@ export default function ResultsPage() {
               </button>
             </div>
             <ResultBox analysis={analysis} video_url={videoURL} drill_image_url={drillImageURL} drill_image_loading={drillImageLoading} drill_image_timeout={drillImageTimeout} activeProblem={activeProblem} setActiveProblem={setActiveProblem} />
+
+            <div className="flex justify-end mt-8">
+              {/* Delete button */}
+            <button
+              onClick={() => {
+                // Add delete functionality here
+              }}
+              className="flex items-center gap-2 bg-transparent hover:bg-red-50 text-red-700 px-2 py-2 rounded-lg transition-colors duration-200"
+            >
+              Delete Analysis <Trash2 size={20} />
+            </button>
+            </div>
           </>
         ) : null}
         {!analysis && error && (
