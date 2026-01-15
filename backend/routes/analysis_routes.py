@@ -257,7 +257,12 @@ def generate_image(drill_id):
         ), 200
     try:
         # Generate image
-        image_url = GeminiDrillImage(drill=drill).execute(drill_id=drill_id)
+        image_url = GeminiDrillImage(
+            fault_indicator=drill["fault_indicator"],
+            success_signal=drill["success_signal"],
+            task=drill["task"],
+            
+            ).execute(drill_id=drill_id)
         
         # Save image_url to drill
         FirebaseDrillService(user_id=user_id).update_drill_image_url(

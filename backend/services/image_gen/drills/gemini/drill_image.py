@@ -14,11 +14,7 @@ class GeminiDrillImage:
     def __init__(self, 
                  fault_indicator: str, 
                  success_signal: str, 
-                 task: str, 
-                 title: str, 
-                 try_this: str, 
-                 what_you_did: str, 
-                 why_it_matters: str,
+                 task: str
                  ):
         load_dotenv()
         api_key = os.getenv("GEMINI_API_KEY")
@@ -30,10 +26,6 @@ class GeminiDrillImage:
         self.fault_indicator = fault_indicator
         self.success_signal = success_signal
         self.task = task
-        self.title = title
-        self.try_this = try_this
-        self.what_you_did = what_you_did
-        self.why_it_matters = why_it_matters
         
     def director_system_instructions(self) -> str:
         instructions= """
@@ -112,14 +104,13 @@ class GeminiDrillImage:
         return instructions
     
     def director_user_instructions(self) -> str:
+        print("Generating drill image prompt...")
+        print(self.task, self.fault_indicator, self.success_signal)
+        
         user_prompt = f"""
         Create a minimal, text-free instructional image plan for the following golf drill.
 
         DRILL FIELDS:
-        - title: {self.title}
-        - what_you_did: {self.what_you_did}
-        - why_it_matters: {self.why_it_matters}
-        - try_this: {self.try_this}
         - task: {self.task}
         - success_signal: {self.success_signal}
         - fault_indicator: {self.fault_indicator}
@@ -161,7 +152,7 @@ class GeminiDrillImage:
         return response.candidates[0].content.parts[0].text
     
     def generate_image(self):
-        response = self.director_user_instructionsclient.models.generate_content(
+        response = self.client.models.generate_content(
             model="gemini-3-pro-image-preview",
             contents=[self.generate_drill_image_prompt()],
             config=types.GenerateContentConfig(
@@ -176,16 +167,18 @@ class GeminiDrillImage:
             ),
         )
         
-        # upload to cloudflare r2
-        
-
-        # Handle and save the generated image
+        # Extract and return image bytes
         for part in response.candidates[0].content.parts:
             if part.inline_data:
                 image_data = io.BytesIO(part.inline_data.data)
                 img = Image.open(image_data)
-                img.save("")    
-            
+                # Convert to bytes for upload
+                output = io.BytesIO()
+                img.save(output, format="PNG")
+                return output.getvalue()
+        
+        raise RuntimeError("No image found in response")
+    
     def extract_image_bytes(response):
         for candidate in response.candidates:
             for part in candidate.content.parts:
@@ -219,9 +212,7 @@ class GeminiDrillImage:
         return read_url
         
     def execute(self, drill_id: str) -> str:
-        response = self.generate_image()
-        image_bytes = self.extract_image_bytes(response)
+        image_bytes = self.generate_image()
         image_url = self.upload_image_to_storage(image_bytes, drill_id)
         return image_url
-        
-        
+
