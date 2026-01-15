@@ -17,7 +17,7 @@ import TermsAndCond from './pages/TermsAndCond.jsx';
 import Privacy from './pages/Privacy.jsx';
 import Success from './pages/Success.jsx';
 import Cancel from './pages/Cancel.jsx';
-import Dashboard from './pages/DashboardUpload.jsx';
+import DashboardUpload from './pages/DashboardUpload.jsx';
 import Drills from './pages/Drills.jsx';
 
 // Import components
