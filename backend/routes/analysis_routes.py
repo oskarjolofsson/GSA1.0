@@ -175,6 +175,33 @@ def confirm_upload(analysis_id):
                 "details": str(e),
             }
         ), 500
+    
+@analysis_bp.route("", methods=["GET"])
+@require_auth
+def list_analyses():
+    try:
+        user_id = request.user["uid"]
+        limit = int(request.args.get("limit", 10))
+        sport = request.args.get("sport", "golf")
+
+        analyses = firebase_analyses(
+            user_id=user_id,
+            sport=sport
+        ).list_analyses_for_user(limit=limit)
+
+        return jsonify({
+            "success": True,
+            "analyses": analyses
+        }), 200
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": "error retrieving analyses",
+            "details": str(e)
+        }), 500
+
 
 
 @analysis_bp.route("/<analysis_id>", methods=["GET"])

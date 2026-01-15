@@ -1,5 +1,6 @@
 from services.firebase.firebase import FireBaseService
 from google.cloud import firestore
+from google.cloud.firestore import Query
 
 class FireBaseAnalyses(FireBaseService):
     def __init__(self, user_id: str, sport = "golf"):
@@ -43,6 +44,27 @@ class FireBaseAnalyses(FireBaseService):
             return doc.to_dict()
         else:
             return None
+        
+    def list_analyses_for_user(self, limit: int = 10):
+        """
+        List analyses for the authenticated user, most recent first.
+        """
+        query = (
+            self.analyses_ref
+            .where("user_id", "==", self.user_id)
+            .order_by("createdAt", direction=Query.DESCENDING)
+            .limit(limit)
+        )
+
+        docs = query.stream()
+
+        analyses = []
+        for doc in docs:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            analyses.append(data)
+
+        return analyses
         
     def update_analysis(self, analysis_id: str, update_data: dict) -> None:
         """

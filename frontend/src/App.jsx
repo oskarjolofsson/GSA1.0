@@ -19,6 +19,7 @@ import Success from './pages/Success.jsx';
 import Cancel from './pages/Cancel.jsx';
 import DashboardUpload from './pages/DashboardUpload.jsx';
 import Drills from './pages/Drills.jsx';
+import Analysis from './pages/Analysis.jsx'
 
 // Import components
 import Layout from './components/PublicLayout.jsx';
@@ -64,7 +65,7 @@ function App() {
         <Route path ="/dashboard" element={<DashboardLayout />}>
           <Route index element = {<DashboardUpload/>}/>
           <Route path="/dashboard/billing/cancel" element={<Cancel />} />
-          <Route path="/dashboard/analyse" element={<Analyser />} />
+          <Route path="/dashboard/analyse" element={<Analysis />} />
           <Route path="/dashboard/profile" element={<Profile />} />
           <Route path="/dashboard/drills" element={<Drills />} />
         </Route>
