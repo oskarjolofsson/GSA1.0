@@ -101,7 +101,7 @@ export default function InfoBox({ analysis, video_url, drill_image_url, activePr
       
       
       <DrillPopup
-        drill={drillPopupOpen ? key_findings[activeProblem]["try_this"] : null}
+        drill={drillPopupOpen ? key_findings[activeProblem].what_you_did : null}
         image={drill_image_url}
         onClose={handleDrillClose}
         isLoading={drill_image_loading}
