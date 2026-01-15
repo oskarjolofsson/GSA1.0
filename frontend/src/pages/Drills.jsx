@@ -7,47 +7,59 @@ export default function Drills() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // useEffect(() => {
-  //   const fetchUserDrills = async () => {
-  //     try {
-  //       setLoading(true);
-  //       setError(null);
+  useEffect(() => { //Fetch the last 10 drills, not all, and also for analysis page, fetch 10 analysises
+    const fetchUserDrills = async () => {
+      try {
+        setLoading(true);
+        setError(null);
         
-  //       if (!user) {
-  //         setDrills([]);
-  //         setLoading(false);
-  //         return;
-  //       }
+        if (!user) {
+          setDrills([]);
+          setLoading(false);
+          return;
+        }
 
-  //       // Get ID token for authentication
-  //       const idToken = await user.getIdToken();
+        // Get ID token for authentication
+        const idToken = await user.getIdToken();
         
-  //       const response = await fetch(
-  //         `${import.meta.env.VITE_API_URL}/user/drills`,
-  //         {
-  //           headers: {
-  //             "Authorization": `Bearer ${idToken}`,
-  //             "Content-Type": "application/json",
-  //           },
-  //         }
-  //       );
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/v1/drills`,
+          {
+            headers: {
+              "Authorization": `Bearer ${idToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-  //       if (!response.ok) {
-  //         throw new Error(`Failed to fetch drills: ${response.statusText}`);
-  //       }
+        if (!response.ok) {
+          throw new Error(`Failed to fetch drills: ${response.statusText}`);
+        }
 
-  //       const data = await response.json();
-  //       setDrills(data.drills || []);
-  //     } catch (err) {
-  //       console.error("Error fetching drills:", err);
-  //       setError(err.message);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
+        const data = await response.json();
 
-  //   fetchUserDrills();
-  // }, [user]);
+        const normalizedDrills = (data.drills || []).map((d) => ({
+          id: d.id,
+          name: "Practice Drill",
+          date: null,
+          drill: d.drill,
+          analysisId: d.analysis_id,
+          thumbnailUrl: d.image_url,
+        }));
+
+
+        setDrills(normalizedDrills);
+
+      } catch (err) {
+        console.error("Error fetching drills:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserDrills();
+  }, [user]);
 
 
 
@@ -118,17 +130,15 @@ export default function Drills() {
                     {new Date(mostRecent.date).toLocaleDateString()}
                   </p>
                 )}
-                {mostRecent.analysis && (
+                {mostRecent.drill && (
                   <div className="bg-slate-900/50 rounded p-3 mb-4">
                     <p className="text-sm text-slate-300">
-                      {typeof mostRecent.analysis === 'string'
-                        ? mostRecent.analysis
-                        : mostRecent.analysis.summary || "Analysis available"}
+                      {mostRecent.drill}
                     </p>
                   </div>
                 )}
                 <a
-                  href={`/results/${mostRecent.id}`}
+                  href={`/drills/${mostRecent.id}`}
                   className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm"
                 >
                   View Analysis
@@ -160,7 +170,7 @@ export default function Drills() {
                   )}
                 </div>
                 <a
-                  href={`/results/${drill.id}`}
+                  href={`/drills/${drill.id}`}
                   className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm whitespace-nowrap"
                 >
                   View

@@ -27,11 +27,7 @@ def list_drills():
         limit = int(request.args.get("limit", 20))
         offset = int(request.args.get("offset", 0))
 
-        drills = FirebaseDrillService(user_id=user_id).list_drills(
-            sport=sport,
-            limit=limit,
-            offset=offset
-        )
+        drills = FirebaseDrillService(user_id=user_id).list_drills_for_user()
 
         return jsonify({
             "success": True,
