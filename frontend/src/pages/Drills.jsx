@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../auth/authContext";
-import { useFetch } from "../hooks/useFetch";
 
 export default function Drills() {
   const { user } = useAuth();
