@@ -17,45 +17,6 @@ from services.cloudflare.videoStorageService import video_storage_service
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint("analysis", __name__, url_prefix="/api/v1/analysis")
-
-# Commented out and not removed because replacement-fetch has not yet been deployed yet
-# @analysis_bp.route("/get_previous_analyses", methods=["GET", "POST"])
-# def get_past_analyses():
-#     try:
-#         # Get the token from Authorization header
-#         auth_header = request.headers.get("Authorization")
-#         if not auth_header or not auth_header.startswith("Bearer "):
-#             return jsonify({"error": "No authorization token provided"}), 401
-
-#         # Extract the token (remove 'Bearer ' prefix)
-#         id_token = auth_header.split("Bearer ")[1]
-
-#         # Verify the token with Firebase Admin SDK
-#         decoded_token = firebase_auth.verify_id_token(id_token)
-
-#         # Extract user_id from the decoded token
-#         user_id = decoded_token["uid"]
-#         sport = request.form.get("sport") or request.args.get("sport", "golf")
-#         offset = int(request.form.get("offset") or request.args.get("offset", 0))
-#         limit = int(request.form.get("limit") or request.args.get("limit", 10))
-        
-#         result = FireBasePastAnalysis(user_id, sport).get_analyses_by_tier(limit=limit, offset=offset)
-#         return jsonify(result), 200
-
-#     except Exception as e:
-#         traceback.print_exc()
-#         print(f"Error retrieving previous analyses: {str(e)}")
-
-#         return (
-#             jsonify(
-#                 {
-#                     "success": False,
-#                     "error": "error with retrieving previous analyses",
-#                     "details": str(e),
-#                 }
-#             ),
-#             500,
-#         )
         
 
 @analysis_bp.route("/create", methods=["POST"])
@@ -247,15 +208,18 @@ def generate_image(drill_id):
     if not drill:
         return jsonify({"success": False, "error": "drill not found"}), 404
     
-    # Check if image_url already exists
-    if "image_url" in drill and drill["image_url"]:
-        return jsonify(
-            {
-                "success": True,
-                "image_url": drill["image_url"],
-            }
-        ), 200
     try:
+        # If image already exists, return it
+        if "image_key" in drill and drill["image_key"]:
+            # Get the URL
+            image_url = video_storage_service.generate_read_url(drill["image_key"])
+            return jsonify(
+                {
+                    "success": True,
+                    "image_url": image_url,
+                }
+            ), 200
+        
         # Generate image
         image_url, image_key = GeminiDrillImage(
             fault_indicator=drill["fault_indicator"],
@@ -264,10 +228,9 @@ def generate_image(drill_id):
             
             ).execute(drill_id=drill_id)
         
-        # Save image_url to drill
-        FirebaseDrillService(user_id=user_id).update_drill_image_url(
+        # Save image_key to drill
+        FirebaseDrillService(user_id=user_id).update_drill_image(
             drill_id=drill_id,
-            image_url=image_url,
             image_key=image_key
         )
         
