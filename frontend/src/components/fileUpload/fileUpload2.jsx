@@ -37,7 +37,7 @@ export default function UploadPage({ initialFile }) {
 
   // File handling with error throwing
   const { file, previewUrl, isLoading, handleFileSelection, handleDrop, removeFile, setFile } =
-    useFileHandling({ allowedTypes: ['video/mp4', 'video/webm'] });
+    useFileHandling({ allowedTypes: ['video/mp4', 'video/webm', 'video/mov'] });
 
   // Video upload
   const { analysis, analysisId, uploading: isUploading, errorMessage, uploadVideo, setAnalysis, setErrorMessage } =
@@ -76,6 +76,7 @@ export default function UploadPage({ initialFile }) {
       handleFileSelection(files);
     } catch (err) {
       setErrorMessage(err.message);
+      removeFile(); // Clear any partial state
     }
   }
 
