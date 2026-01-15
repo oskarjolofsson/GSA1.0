@@ -5,8 +5,9 @@ const API = (import.meta.env.VITE_API_URL || '');
 class PastDrillService {
 
   // Helper method for authenticated fetch requests
-  async fetchWithAuth(url) {
+  async fetchWithAuth(url, method = 'GET') {
     await this.ensureUserReady(); // Wait for auth to be ready
+    console.log("Fetching URL with auth: " + url);
 
     const user = auth.currentUser;
     if (!user) throw new Error('Not signed in');
@@ -14,7 +15,7 @@ class PastDrillService {
     const idToken = await user.getIdToken();
     
     const response = await fetch(`${API}${url}`, {
-      method: 'GET',
+      method: method,
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${idToken}`
@@ -64,10 +65,9 @@ class PastDrillService {
   }
 
   async deleteAnalysis(analysisId) {
+    console.log("Deleting analysis with ID: " + analysisId);
     try {
-      await this.fetchWithAuth(`/api/v1/analysis/${analysisId}`, {
-        method: 'DELETE',
-      });
+      await this.fetchWithAuth(`/api/v1/analysis/${analysisId}`, 'DELETE');
     } catch (error) {
       console.error("Error in deleteAnalysis:", error);
       throw new Error("Could not delete analysis. Please try again later.");

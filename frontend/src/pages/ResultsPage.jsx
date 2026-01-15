@@ -11,9 +11,11 @@ import SignInPopup from "../components/signInPopup/signInPopup.jsx";
 import { useAuth } from "../auth/authContext.jsx";
 import FeedbackBubble from "../components/popup/FeedbackBubble.jsx";
 import FeedbackPopup from "../components/popup/FeedbackPopup.jsx";
+import { Navigate } from "react-router-dom";
 
 export default function ResultsPage() {
   const { analysisId } = useParams();
+  const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
   const [videoURL, setVideoURL] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -127,7 +129,8 @@ export default function ResultsPage() {
               {/* Delete button */}
             <button
               onClick={() => {
-                // Add delete functionality here
+                pastDrillService.deleteAnalysis(analysisId);
+                navigate("/dashboard");
               }}
               className="flex items-center gap-2 bg-transparent hover:bg-red-50 text-red-700 px-2 py-2 rounded-lg transition-colors duration-200"
             >
