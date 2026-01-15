@@ -1,32 +1,36 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../auth/authContext";
+import DrillDropdown from "../components/drillDropdown/drillDropdown";
 
 export default function Drills() {
   const { user } = useAuth();
+
   const [drills, setDrills] = useState([]);
+  const [activeDrill, setActiveDrill] = useState(null);
+  const [showList, setShowList] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  useEffect(() => { //Fetch the last 10 drills, not all, and also for analysis page, fetch 10 analysises
+
+  useEffect(() => {
     const fetchUserDrills = async () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         if (!user) {
           setDrills([]);
-          setLoading(false);
+          setActiveDrill(null);
           return;
         }
 
-        // Get ID token for authentication
         const idToken = await user.getIdToken();
-        
+
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/v1/drills`,
           {
             headers: {
-              "Authorization": `Bearer ${idToken}`,
+              Authorization: `Bearer ${idToken}`,
               "Content-Type": "application/json",
             },
           }
@@ -41,15 +45,13 @@ export default function Drills() {
         const normalizedDrills = (data.drills || []).map((d) => ({
           id: d.id,
           name: "Practice Drill",
-          date: null,
           drill: d.drill,
           analysisId: d.analysis_id,
           thumbnailUrl: d.image_url,
         }));
 
-
         setDrills(normalizedDrills);
-
+        setActiveDrill(normalizedDrills[0] || null); // default = most recent
       } catch (err) {
         console.error("Error fetching drills:", err);
         setError(err.message);
@@ -61,14 +63,14 @@ export default function Drills() {
     fetchUserDrills();
   }, [user]);
 
-
+  /* -------------------- Loading / Error States -------------------- */
 
   if (loading) {
     return (
       <div className="w-full max-w-4xl mx-auto px-4">
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-          <p className="mt-4 text-slate-300">Loading your drills...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+          <p className="mt-4 text-slate-300">Loading your drills…</p>
         </div>
       </div>
     );
@@ -84,12 +86,16 @@ export default function Drills() {
     );
   }
 
-  if (!drills || drills.length === 0) {
+  if (!activeDrill) {
     return (
       <div className="w-full max-w-4xl mx-auto px-4">
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
-          <h2 className="text-2xl font-semibold text-slate-100 mb-2">No Drills Yet</h2>
-          <p className="text-slate-400 mb-6">Start by uploading a swing to create your first drill</p>
+          <h2 className="text-2xl font-semibold text-slate-100 mb-2">
+            No Drills Yet
+          </h2>
+          <p className="text-slate-400 mb-6">
+            Upload a swing to generate your first drill
+          </p>
           <a
             href="/dashboard"
             className="inline-block px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
@@ -101,85 +107,91 @@ export default function Drills() {
     );
   }
 
-  // Get most recent drill
-  const mostRecent = drills[0];
+  /* -------------------- Main UI -------------------- */
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 py-6">
-      {/* Most Recent Drill */}
-      {mostRecent && (
-        <section className="mb-12">
-          <h2 className="text-2xl font-semibold text-slate-100 mb-4">Most Recent Drill</h2>
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-lg p-6 hover:border-slate-600 transition">
-            <div className="flex flex-col md:flex-row gap-6">
-              {mostRecent.thumbnailUrl && (
-                <div className="md:w-1/3">
-                  <img
-                    src={mostRecent.thumbnailUrl}
-                    alt={mostRecent.name || "Drill"}
-                    className="w-full h-40 object-cover rounded-lg"
-                  />
-                </div>
-              )}
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-slate-100 mb-2">
-                  {mostRecent.name || "Unnamed Drill"}
-                </h3>
-                {mostRecent.date && (
-                  <p className="text-sm text-slate-400 mb-3">
-                    {new Date(mostRecent.date).toLocaleDateString()}
-                  </p>
-                )}
-                {mostRecent.drill && (
-                  <div className="bg-slate-900/50 rounded p-3 mb-4">
-                    <p className="text-sm text-slate-300">
-                      {mostRecent.drill}
-                    </p>
-                  </div>
-                )}
-                <a
-                  href={`/drills/${mostRecent.id}`}
-                  className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm"
+      {/* Drill selector */}
+      <div
+        onClick={() => setShowList((prev) => !prev)}
+        className="w-full mb-4 cursor-pointer select-none"
+        role="button"
+        aria-expanded={showList}
+      >
+        <DrillDropdown
+          header="Current Drills"
+        />
+      </div>
+
+      {/* Drill list (dropdown mode) */}
+      {showList && (
+        <div className="mt-4">
+          {/* Outer container */}
+          <div
+            className="
+              rounded-2xl
+              border border-slate-700/60
+              bg-slate-900/70
+              backdrop-blur-sm
+              shadow-lg
+            "
+          >
+            {/* Scrollable inner area */}
+            <div
+              className="
+                max-h-[50vh]
+                overflow-y-auto
+                overscroll-contain
+                no-scrollbar
+                p-2
+                space-y-2
+              "
+            >
+              {drills.map((drill) => (
+                <button
+                  key={drill.id}
+                  onClick={() => {
+                    setActiveDrill(drill);
+                    setShowList(false);
+                  }}
+                  className={`w-full text-left p-4 rounded-xl border transition
+                    ${
+                      drill.id === activeDrill.id
+                        ? "bg-blue-600/20 border-blue-500"
+                        : "bg-slate-800 border-slate-700 hover:bg-slate-700"
+                    }
+                  `}
                 >
-                  View Analysis
-                </a>
-              </div>
+                  <div className="font-medium text-slate-100">
+                    {drill.name}
+                  </div>
+                  <div className="text-sm text-slate-400 truncate">
+                    {drill.drill}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
-        </section>
+        </div>
       )}
 
-      {/* All Drills */}
-      <section>
-        <h2 className="text-2xl font-semibold text-slate-100 mb-4">All Drills</h2>
-        <div className="grid gap-4">
-          {drills.map((drill) => (
-            <div
-              key={drill.id}
-              className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-medium text-slate-100 truncate">
-                    {drill.name || "Unnamed Drill"}
-                  </h3>
-                  {drill.date && (
-                    <p className="text-sm text-slate-400">
-                      {new Date(drill.date).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-                <a
-                  href={`/drills/${drill.id}`}
-                  className="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm whitespace-nowrap"
-                >
-                  View
-                </a>
-              </div>
-            </div>
-          ))}
+
+
+      {/* Active drill (full-page focus) */}
+      {!showList && activeDrill && (
+      <div className="mt-10">
+        <h1 className="text-3xl font-semibold text-slate-100 mb-6">
+          {activeDrill.name}
+        </h1>
+
+        <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
+          <p className="text-lg text-slate-200 leading-relaxed">
+            {activeDrill.drill}
+          </p>
         </div>
-      </section>
+      </div>
+      )}
     </div>
+      
   );
 }
