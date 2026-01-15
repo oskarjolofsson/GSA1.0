@@ -63,6 +63,17 @@ class PastDrillService {
     }
   }
 
+  async deleteAnalysis(analysisId) {
+    try {
+      await this.fetchWithAuth(`/api/v1/analysis/${analysisId}`, {
+        method: 'DELETE',
+      });
+    } catch (error) {
+      console.error("Error in deleteAnalysis:", error);
+      throw new Error("Could not delete analysis. Please try again later.");
+    }
+  }
+
   // Helper to wait for user to be ready
   async ensureUserReady() {
     return new Promise((resolve, reject) => {

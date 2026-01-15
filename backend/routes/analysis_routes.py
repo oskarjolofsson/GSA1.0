@@ -287,7 +287,7 @@ def generate_image(drill_id):
             }
         ), 500
         
-@analysis_bp.route("/delete", methods=["POST"])
+@analysis_bp.route("/<analysis_id>", methods=["DELETE"])
 @require_auth
 def delete_analysis(analysis_id):
     """
