@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
  * 
  * @param {Object} config - Validation configuration
  * @param {Function} config.validateFile - Custom validation function that throws on failure
- * @param {string[]} config.allowedTypes - Array of allowed MIME types (e.g., ['video/mp4', 'video/webm'])
+ * @param {string[]} config.allowedTypes - Array of allowed MIME types (e.g., ['video/mp4', 'video/webm', 'video/mov'])
  * @returns {Object} - {file, previewUrl, isLoading, handleFileSelection, handleDrop, removeFile}
  */
 export const useFileHandling = (config = {}) => {
@@ -17,43 +17,74 @@ export const useFileHandling = (config = {}) => {
   const defaultValidateFile = useCallback(async (f) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = () => {
         const arrayBuffer = reader.result;
-        
+
         // Check for valid MP4 signature (ftyp box starts with 0x66747970)
         const view = new Uint8Array(arrayBuffer);
-        const isMp4 = view.length > 8 && 
-                      view[4] === 0x66 && view[5] === 0x74 && 
-                      view[6] === 0x79 && view[7] === 0x70;
-        
-        // Check for WebM signature
-        const isWebM = view.length > 4 && 
-                       view[0] === 0x1A && view[1] === 0x45 && 
-                       view[2] === 0xDF && view[3] === 0xA3;
-        
-        if (!isMp4 && !isWebM) {
-          reject(new Error("Invalid video format. Please upload an MP4 or WebM file."));
+
+        // ISO BMFF (MP4 / MOV)
+        const isISOBMFF =
+          view.length > 12 &&
+          view[4] === 0x66 && // f
+          view[5] === 0x74 && // t
+          view[6] === 0x79 && // y
+          view[7] === 0x70;   // p
+
+        let isMp4 = false;
+        let isMov = false;
+
+        if (isISOBMFF) {
+          const brand = String.fromCharCode(
+            view[8],
+            view[9],
+            view[10],
+            view[11]
+          );
+
+          // MOV
+          if (brand === 'qt  ') {
+            isMov = true;
+          }
+
+          // MP4 (common brands)
+          const mp4Brands = ['isom', 'iso2', 'mp41', 'mp42', 'avc1'];
+          if (mp4Brands.includes(brand)) {
+            isMp4 = true;
+          }
+        }
+
+        // WebM
+        const isWebM =
+          view.length > 4 &&
+          view[0] === 0x1A &&
+          view[1] === 0x45 &&
+          view[2] === 0xDF &&
+          view[3] === 0xA3;
+
+        if (!isMp4 && !isWebM && !isMov) {
+          reject(new Error("Invalid video format. Please upload an MP4, MOV, or WebM file."));
           return;
         }
-        
+
         // Create a fresh blob to ensure integrity
         const blob = new Blob([arrayBuffer], { type: f.type });
-        const validatedFile = new File([blob], f.name, { 
+        const validatedFile = new File([blob], f.name, {
           type: f.type,
-          lastModified: f.lastModified 
+          lastModified: f.lastModified
         });
         resolve(validatedFile);
       };
-      
+
       reader.onerror = () => {
         reject(new Error("Failed to read file. Please try again."));
       };
-      
+
       reader.onabort = () => {
         reject(new Error("File reading was cancelled."));
       };
-      
+
       reader.readAsArrayBuffer(f);
     });
   }, []);
@@ -100,7 +131,7 @@ export const useFileHandling = (config = {}) => {
 
       // Validate and prepare file
       const validatedFile = await validateFile(f);
-      
+
       setFile(validatedFile);
 
       // Create preview URL from validated file
@@ -122,7 +153,7 @@ export const useFileHandling = (config = {}) => {
     event.stopPropagation();
 
     const files = event.dataTransfer?.files;
-    
+
     try {
       await handleFileSelection(files);
     } catch (err) {
