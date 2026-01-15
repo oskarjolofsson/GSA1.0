@@ -102,6 +102,13 @@ class FireBaseAnalyses(FireBaseService):
             if viewer_user_id not in viewers:
                 viewers.append(viewer_user_id)
                 doc_ref.update({"viewers": viewers})
+                
+    def delete_analysis(self, analysis_id: str) -> None:
+        """
+        Delete an analysis document by its ID.
+        """
+        doc_ref = self.analyses_ref.document(analysis_id)
+        doc_ref.delete()
                         
 
 def firebase_analyses(user_id: str, sport = "golf") -> FireBaseAnalyses:

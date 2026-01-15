@@ -29,6 +29,7 @@ class FirebaseDrillService(FireBaseService):
             "success_signal": success_signal,
             "drill_id": drill_id,
             "image_url": None,
+            "image_key": None,
             "createdAt": firestore.SERVER_TIMESTAMP,
         }
         
@@ -74,7 +75,7 @@ class FirebaseDrillService(FireBaseService):
                 
         return analysis
     
-    def update_drill_image_url(self, drill_id: str, image_url: str) -> None:
+    def update_drill_image_url(self, drill_id: str, image_url: str, image_key: str) -> None:
         """
         Updates the image URL of a drill.
 
@@ -84,7 +85,8 @@ class FirebaseDrillService(FireBaseService):
         """
         drill_doc_ref = self.drills_ref.document(drill_id)
         drill_doc_ref.update({
-            "image_url": image_url
+            "image_url": image_url,
+            "image_key": image_key
         })
         
     def get_drill_by_id(self, drill_id: str) -> dict:
@@ -103,3 +105,12 @@ class FirebaseDrillService(FireBaseService):
         else:
             return None
                 
+    def delete_drill(self, drill_id: str) -> None:
+        """
+        Deletes a drill document by its ID.
+
+        Args:
+            drill_id (str): The ID of the drill document to delete.
+        """
+        drill_doc_ref = self.drills_ref.document(drill_id)
+        drill_doc_ref.delete()

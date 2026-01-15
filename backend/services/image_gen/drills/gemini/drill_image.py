@@ -209,10 +209,10 @@ class GeminiDrillImage:
         put_response.raise_for_status()
         # Generate read URL
         read_url = video_storage_service.generate_read_url(unique_image_key)
-        return read_url
+        return read_url, unique_image_key
         
     def execute(self, drill_id: str) -> str:
         image_bytes = self.generate_image()
-        image_url = self.upload_image_to_storage(image_bytes, drill_id)
-        return image_url
+        image_url, image_key = self.upload_image_to_storage(image_bytes, drill_id)
+        return image_url, image_key
 
