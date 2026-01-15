@@ -5,9 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 // Import Components
 import ResultHeroCard from "./summary/resultHero";
 import VideoDemo from "./summary/videoDemo";
-import { fileTransferService } from "../../services/fileTransferService";
 import DrillPopup from "../popup/drillPopup";
-import useDrillImageURLFetch from "../../hooks/useImageFetch";
 
 
 const SEVERITY_COLORS = {
@@ -39,23 +37,14 @@ const TAB_CONFIGS = {
   try: { icon: Lightbulb, label: "Try this" }
 };
 
-export default function InfoBox({ analysis, video_url }) {
+export default function InfoBox({ analysis, video_url, drill_image_url, activeProblem, setActiveProblem, drill_image_loading, drill_image_timeout }) {
 
   if (!analysis) return null;
 
   const { quick_summary, key_findings } = analysis;
-  const file = fileTransferService.getFile();
 
-  const [activeProblem, setActiveProblem] = useState(0);
-  const [activeTab, setActiveTab] = useState("what");
   const [drillPopupOpen, setDrillPopupOpen] = useState(false);
   const [direction, setDirection] = useState(0);
-  const [drill_image_url, setDrillImageURL] = useState(null);
-
-  useEffect(() => {
-    // Reset to first problem when analysis changes
-    setActiveTab("what");
-  }, [activeProblem]);
 
   const handleDrillOpen = (index) => {
     setDrillPopupOpen(true);
@@ -80,10 +69,6 @@ export default function InfoBox({ analysis, video_url }) {
     }
     else return null;
   };
-
-  useEffect(() => {
-    setDrillImageURL(useDrillImageURLFetch(key_findings[activeProblem].drill_id));
-  }, [activeProblem]);
 
   return (
     <>
@@ -119,6 +104,8 @@ export default function InfoBox({ analysis, video_url }) {
         drill={drillPopupOpen ? key_findings[activeProblem]["try_this"] : null}
         image={drill_image_url}
         onClose={handleDrillClose}
+        isLoading={drill_image_loading}
+        isTimeout={drill_image_timeout}
       />
 
     </>
