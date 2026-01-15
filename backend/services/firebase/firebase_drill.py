@@ -19,17 +19,17 @@ class FirebaseDrillService(FireBaseService):
         Returns:
             str: The ID of the newly created drill document.
         """
-        drill_id = "drill_" + str(uuid4())
+        drill_id = f"drill_{uuid4()}"
         
-        document_data = {
+        
+        
+        self.drills_ref.document(drill_id).set({
             "user_id": self.user_id,
             "analysis_id": analysis_id,
             "drill": drill,
             "drill_id": drill_id,
             "image_url": None,
-        }
-        
-        self.drills_ref.document(drill_id).set(document_data)
+        })
         
         return drill_id
     
@@ -41,9 +41,7 @@ class FirebaseDrillService(FireBaseService):
             drill_id (str): The ID of the drill document to be updated.
             image_url (str): The new image URL to be set.
         """
-        drill_doc_ref = self.drills_ref.document(drill_id)
-        
-        drill_doc_ref.update({
+        self.drills_ref.document(drill_id).update({
             "image_url": image_url
         })
         
@@ -67,4 +65,33 @@ class FirebaseDrillService(FireBaseService):
                 finding["drill_id"] = drill_id
                 
         return analysis
-                
+    
+    def list_drills_for_user(self):
+        docs = (
+            self.drills_ref
+            .where("user_id", "==", self.user_id)
+            .stream()
+        )
+
+        return [
+
+            {**doc.to_dict(), "id": doc.id}
+            for doc in docs
+        ]
+    
+    def list_drills_for_analysis(self, analysis_id: str):
+        query = (
+            self.drills_ref
+            .where("user_id", "==", self.user_id)
+            .where("analysis_id", "==", analysis_id)
+        )
+
+        docs = query.stream()
+
+        drills = []
+        for doc in docs:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            drills.append(data)
+
+        return drills

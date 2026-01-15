@@ -6,48 +6,50 @@ export default function Drills() {
   const [drills, setDrills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchUserDrills = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  
+  // useEffect(() => {
+  //   const fetchUserDrills = async () => {
+  //     try {
+  //       setLoading(true);
+  //       setError(null);
         
-        if (!user) {
-          setDrills([]);
-          setLoading(false);
-          return;
-        }
+  //       if (!user) {
+  //         setDrills([]);
+  //         setLoading(false);
+  //         return;
+  //       }
 
-        // Get ID token for authentication
-        const idToken = await user.getIdToken();
+  //       // Get ID token for authentication
+  //       const idToken = await user.getIdToken();
         
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/user/drills`,
-          {
-            headers: {
-              "Authorization": `Bearer ${idToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+  //       const response = await fetch(
+  //         `${import.meta.env.VITE_API_URL}/user/drills`,
+  //         {
+  //           headers: {
+  //             "Authorization": `Bearer ${idToken}`,
+  //             "Content-Type": "application/json",
+  //           },
+  //         }
+  //       );
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch drills: ${response.statusText}`);
-        }
+  //       if (!response.ok) {
+  //         throw new Error(`Failed to fetch drills: ${response.statusText}`);
+  //       }
 
-        const data = await response.json();
-        setDrills(data.drills || []);
-      } catch (err) {
-        console.error("Error fetching drills:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       const data = await response.json();
+  //       setDrills(data.drills || []);
+  //     } catch (err) {
+  //       console.error("Error fetching drills:", err);
+  //       setError(err.message);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchUserDrills();
-  }, [user]);
+  //   fetchUserDrills();
+  // }, [user]);
+
+
 
   if (loading) {
     return (
