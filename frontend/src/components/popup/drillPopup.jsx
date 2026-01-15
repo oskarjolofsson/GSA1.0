@@ -11,8 +11,13 @@ function getPopupSize() {
   const vh = typeof window !== "undefined" ? window.innerHeight : 800;
   const minSide = Math.min(vw, vh);
 
+  // Total height (image + title) should be max 90% of screen height
+  const maxTotalHeight = vh * 0.9;
+  const titleHeight = 100; // approximate height for title section
+  const imageSize = maxTotalHeight - titleHeight;
+
   // Desired size is "absolute" (px) but responsive and never outside screen:
-  const desired = clamp(Math.round(minSide * 0.9), 280, 760);
+  const desired = clamp(Math.round(imageSize), 280, 760);
   const maxAllowed = Math.max(220, minSide - padding * 2); // guarantee fit
   return Math.min(desired, maxAllowed);
 }
@@ -102,15 +107,18 @@ export default function DrillPopup({
       aria-label="Drill popup"
     >
       <div
-        className={`relative transform transition-all duration-300 ease-out ${
+        className={`relative transform transition-all duration-300 ease-out flex flex-col items-center ${
           entered && !exiting
             ? "opacity-100 translate-y-0 scale-100"
             : "opacity-0 translate-y-3 scale-[0.98]"
         }`}
-        style={{ width: popupSize, height: popupSize }}
+        style={{ maxHeight: "90vh" }}
       >
-        {/* Card */}
-        <div className="relative h-full w-full overflow-hidden rounded-3xl shadow-2xl ring-1 ring-white/10 bg-slate-900">
+        {/* Image - Always square */}
+        <div
+          className="relative flex-shrink-0 overflow-hidden rounded-3xl shadow-2xl ring-1 ring-white/10 bg-slate-900"
+          style={{ width: `${popupSize}px`, height: `${popupSize}px` }}
+        >
           {/* Image / State layer */}
           {isLoading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
@@ -146,14 +154,14 @@ export default function DrillPopup({
           {/* Soft vignette + title overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-          {/* Title (glass) */}
+          {/* Title (glass)
           <div className="absolute bottom-4 left-4 right-4">
             <div className="backdrop-blur-md bg-black/35 border border-white/10 rounded-2xl px-4 py-3">
               <h2 className="text-white text-lg sm:text-xl font-semibold leading-tight">
                 {drill}
               </h2>
             </div>
-          </div>
+          </div> */}
 
           {/* Close button */}
           <button
@@ -165,7 +173,16 @@ export default function DrillPopup({
             X
           </button>
         </div>
+        {/* Title (glass) */}
+        <div className="w-full rounded-3xl shadow-2xl ring-1 ring-white/10 px-4 py-3 mt-1">
+          <div className="backdrop-blur-md bg-black/35 border border-white/10 rounded-2xl px-4 py-3">
+            <h2 className="text-white text-lg sm:text-xl font-semibold leading-tight">
+              {drill}
+            </h2>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
