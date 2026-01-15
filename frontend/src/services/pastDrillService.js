@@ -6,6 +6,8 @@ class PastDrillService {
 
   // Helper method for authenticated fetch requests
   async fetchWithAuth(url) {
+    await this.ensureUserReady(); // Wait for auth to be ready
+
     const user = auth.currentUser;
     if (!user) throw new Error('Not signed in');
     
@@ -42,12 +44,22 @@ class PastDrillService {
 
   async getAnalysisById(analysisId) {
     try {
-      await this.ensureUserReady(); // Wait for auth to be ready
       const data = await this.fetchWithAuth(`/api/v1/analysis/${analysisId}`);
       return data || null;
     } catch (error) {
       console.error("Error in getAnalysisById:", error);
       throw new Error("Could not fetch analysis. Please try again later.");
+    }
+  }
+
+  async getDrillImageURL(drill_id) {
+    try {
+      const data = await this.fetchWithAuth(`/api/v1/analysis/image/${drill_id}`);
+      console.log("Fetched drill image URL: " + data.image_url);
+      return data.image_url || null;
+    } catch (error) {
+      console.error("Error in getDrillImageURL:", error);
+      throw new Error("Could not fetch drill image. Please try again later.");
     }
   }
 

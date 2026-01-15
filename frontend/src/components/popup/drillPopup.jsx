@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Loader } from 'lucide-react';
 
 
-export default function DrillPopup({ drill, image, onClose }) {
+export default function DrillPopup({ drill, image, onClose, isLoading, isTimeout }) {
     const [entered, setEntered] = useState(false);
     const [exiting, setExiting] = useState(false);
 
@@ -64,7 +64,21 @@ export default function DrillPopup({ drill, image, onClose }) {
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Image Background */}
-                {image ? (
+                {isLoading ? (
+                    <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <Loader size={48} className="text-white animate-spin" />
+                            <p className="text-white text-lg">Loading drill image...</p>
+                        </div>
+                    </div>
+                ) : isTimeout ? (
+                    <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-700 to-slate-900 rounded-2xl flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-4">
+                            <p className="text-red-400 text-lg font-semibold">Failed to load image</p>
+                            <p className="text-slate-300 text-sm">The image took too long to load. Please try again.</p>
+                        </div>
+                    </div>
+                ) : image ? (
                     <img
                         src={image}
                         alt="Drill"

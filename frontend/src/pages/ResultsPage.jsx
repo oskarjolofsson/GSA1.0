@@ -26,6 +26,10 @@ export default function ResultsPage() {
   const [showSignInPopup, setShowSignInPopup] = useState(false);
   const { user, login } = useAuth();
   const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
+  const [drillImageURL, setDrillImageURL] = useState(null);
+  const [drillImageLoading, setDrillImageLoading] = useState(false);
+  const [drillImageTimeout, setDrillImageTimeout] = useState(false);
+  const [activeProblem, setActiveProblem] = useState(0);
 
   const share_button_url = window.location.origin + "/results/" + analysisId;
 
@@ -55,6 +59,47 @@ export default function ResultsPage() {
     }
   }, [analysisId, user]);
 
+  useEffect(() => {
+    const fetchDrillImage = async () => {
+      if (!analysis || !analysis.key_findings || analysis.key_findings.length === 0) {
+        setDrillImageURL(null);
+        setDrillImageLoading(false);
+        setDrillImageTimeout(false);
+        return;
+      }
+
+      const activeFinding = analysis.key_findings[activeProblem];
+      if (!activeFinding || !activeFinding.drill_id) {
+        setDrillImageURL(null);
+        setDrillImageLoading(false);
+        setDrillImageTimeout(false);
+        return;
+      }
+
+      try {
+        setDrillImageLoading(true);
+        setDrillImageTimeout(false);
+        
+        // Set timeout for 60 seconds
+        const timeoutId = setTimeout(() => {
+          setDrillImageTimeout(true);
+        }, 60000);
+        
+        const imageUrl = await pastDrillService.getDrillImageURL(activeFinding.drill_id);
+        clearTimeout(timeoutId);
+        setDrillImageURL(imageUrl);
+        setDrillImageTimeout(false);
+      } catch (err) {
+        console.error("Error fetching drill image:", err);
+        setDrillImageURL(null);
+      } finally {
+        setDrillImageLoading(false);
+      }
+    };
+
+    fetchDrillImage();
+  }, [analysis, activeProblem]);
+
   if (loading) {
     return <Loading1 />;
   }
@@ -76,7 +121,7 @@ export default function ResultsPage() {
                 Share
               </button>
             </div>
-            <ResultBox analysis={analysis} video_url={videoURL} />
+            <ResultBox analysis={analysis} video_url={videoURL} drill_image_url={drillImageURL} drill_image_loading={drillImageLoading} drill_image_timeout={drillImageTimeout} activeProblem={activeProblem} setActiveProblem={setActiveProblem} />
           </>
         ) : null}
         {!analysis && error && (
