@@ -9,7 +9,7 @@ class FirebaseDrillService(FireBaseService):
         self.drills_ref = self.db.collection('drills')
         
 
-    def add_drill(self, task: str, fault_indicator: str, success_signal: str, analysis_id: str) -> str:
+    def add_drill(self, task: str, fault_indicator: str, success_signal: str, analysis_id: str, title: str) -> str:
         """
         Adds a new drill document to the 'drills' collection.
 
@@ -30,6 +30,7 @@ class FirebaseDrillService(FireBaseService):
             "drill_id": drill_id,
             "image_key": None,
             "createdAt": firestore.SERVER_TIMESTAMP,
+            "title": title,
         }
         
         self.drills_ref.document(drill_id).set(document_data)
@@ -67,9 +68,10 @@ class FirebaseDrillService(FireBaseService):
             task = finding.get("improve", {}).get("task", "")
             fault_indicator = finding.get("improve", {}).get("fault_indicator", "")
             success_signal = finding.get("improve", {}).get("success_signal", "")
+            title = finding.get("title", "")
             
             if task and fault_indicator and success_signal:
-                drill_id = self.add_drill(task=task, fault_indicator=fault_indicator, success_signal=success_signal, analysis_id=analysis_id)
+                drill_id = self.add_drill(task=task, fault_indicator=fault_indicator, success_signal=success_signal, analysis_id=analysis_id, title=title)
                 finding["drill_id"] = drill_id
                 
         return analysis
