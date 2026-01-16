@@ -9,7 +9,7 @@ export default function LogOutButton() {
 
 
     return (
-        <div className="flex mt-4 select-none ml-4">
+        <div className="flex select-none">
             <a
                 onClick={logout}
                 className="flex items-center text-red-400 hover:text-red-500 cursor-pointer transition-colors duration-200"

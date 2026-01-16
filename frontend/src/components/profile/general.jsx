@@ -29,14 +29,14 @@ export default function GeneralProfile() {
 
                 {/* Helper text */}
                 <p className="text-sm text-gray-400 mb-4">
-                    For any questions regarding your account, please contact support at <a href="mailto:trueswing25@gmail.com">trueswing25@gmail.com</a>.
+                    For any questions regarding your account, please contact support at{' '}
+                    <a href="mailto:trueswing25@gmail.com">trueswing25@gmail.com</a>.
                 </p>
 
                 {/* Line */}
                 <hr className="border-white/10 my-6" />
 
                 <AnalyticsConsentToggle />
-
 
                 {/* <TokenBalance /> */}
             </div>
@@ -46,7 +46,9 @@ export default function GeneralProfile() {
 
 function InfoRow({ label, value, isLoading, className = '' }) {
     return (
-        <div className={`flex justify-between items-center bg-white/10 dark:bg-gray-800/30 backdrop-blur-md border border-white/20 dark:border-gray-700/40 rounded-xl px-4 py-3 shadow-sm mb-4 ${className}`}>
+        <div
+            className={`flex justify-between items-center bg-white/10 dark:bg-gray-800/30 backdrop-blur-md border border-white/20 dark:border-gray-700/40 rounded-xl px-4 py-3 shadow-sm mb-4 ${className}`}
+        >
             <div className="w-full">
                 <p className="text-sm text-white/80">{label}</p>
                 <p className="text-base font-medium text-white">
@@ -71,15 +73,31 @@ function AnalyticsConsentToggle() {
         }
 
         fetchConsent();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
-    const handleToggle = async () => {
-        const newConsent = !consent;
-        setPendingConsent(newConsent);
+    // What the toggle currently shows in the UI
+    const effectiveConsent = pendingConsent ?? consent;
+
+    // Only show Save/Cancel when the pending value differs from saved value
+    const hasChanges = pendingConsent !== null && pendingConsent !== consent;
+
+    const handleToggle = () => {
+        const next = !effectiveConsent;
+
+        // If user toggles back to the saved value, clear pending state (auto-collapses)
+        if (next === consent) {
+            setPendingConsent(null);
+        } else {
+            setPendingConsent(next);
+        }
     };
 
     const handleSave = async () => {
+        if (!hasChanges) return;
+
         setIsSaving(true);
         try {
             setConsent(pendingConsent);
@@ -94,16 +112,16 @@ function AnalyticsConsentToggle() {
         setPendingConsent(null);
     };
 
-    const hasChanges = pendingConsent !== null;
-
     return (
         <div className="">
             <div className="w-full">
                 <h3 className="text-base font-semibold text-white mb-2">Improve your experience</h3>
                 <p className="text-sm text-gray-400 mb-4">
-                    Enable anonymous analytics to help us improve performance, accuracy, and features.<br/>
+                    Enable anonymous analytics to help us improve performance, accuracy, and features.
+                    <br />
                     This is optional and can be disabled at any time.
                 </p>
+
                 {consent === null ? (
                     <Skeleton width="w-16" />
                 ) : (
@@ -112,14 +130,15 @@ function AnalyticsConsentToggle() {
                             <input
                                 type="checkbox"
                                 className="form-checkbox h-5 w-5 text-emerald-500"
-                                checked={pendingConsent !== null ? pendingConsent : consent}
+                                checked={!!effectiveConsent}
                                 onChange={handleToggle}
                                 disabled={isSaving}
                             />
                             <span className="ml-2 text-white">
-                                Enabled
+                                {effectiveConsent ? 'Enabled' : 'Disabled'}
                             </span>
                         </label>
+
                         {hasChanges && (
                             <div className="flex gap-2 mt-3">
                                 <button
@@ -173,7 +192,9 @@ function TokenBalance() {
         }
 
         fetchBalance();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [user]);
 
     const showSkeleton = loading || (user && balance === null && !error);
@@ -194,7 +215,10 @@ function TokenBalance() {
                                 alt=""
                                 aria-hidden="true"
                                 className="inline-block h-4 w-4 mr-2 align-middle text-emerald-400"
-                                style={{ filter: 'invert(43%) sepia(93%) saturate(513%) hue-rotate(100deg) brightness(93%) contrast(92%)' }}
+                                style={{
+                                    filter:
+                                        'invert(43%) sepia(93%) saturate(513%) hue-rotate(100deg) brightness(93%) contrast(92%)',
+                                }}
                             />
                             {balance}
                         </>

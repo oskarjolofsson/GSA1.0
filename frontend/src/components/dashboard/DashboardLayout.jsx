@@ -16,7 +16,7 @@ export default function DashboardLayout() {
       />
 
       {/* Main content */}
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-10">
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4">
         <Outlet />
       </main>
 
