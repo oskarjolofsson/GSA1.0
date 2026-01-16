@@ -76,7 +76,7 @@ export default function ResultsPage() {
                 Share
               </button>
             </div>
-            <ResultBox analysis={analysis} video_url={videoURL} />
+            <ResultBox analysis={analysis.analysis} video_url={videoURL} />
           </>
         ) : null}
         {!analysis && error && (

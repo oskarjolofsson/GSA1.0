@@ -12,7 +12,6 @@ const items = [
   { to: "/dashboard/drills", label: "Drills", icon: <ChartLine size={18} /> },
   { to: "/dashboard/analyse", label: "Analysis", icon: <BookMarked size={18} /> },
   { to: "/dashboard/profile", label: "Profile", icon: <User size={18} /> },
-  { to: "/dashboard/help", label: "Help", icon: <FileQuestionMark size={18} /> },
 ];
 
 export default function BottomNav() {
