@@ -4,6 +4,7 @@ import AnalysisCard from "../components/analysis/AnalysisCard";
 import pastDrillService from "../services/pastDrillService";
 import SharePopup from "../components/popup/SharePopup";
 import ResultBox from "../components/result/result-box.jsx";
+import Sidebar from "../components/dashboard/sidebar.jsx";
 
 import { Share2 } from "lucide-react";
 
@@ -152,16 +153,16 @@ export default function Analyses() {
   /* -------------------- Main UI -------------------- */
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-6">
+    <div className="w-full mx-auto px-4 py-6">
       {/* Analysis selector */}
-      <div
+      {/* <div
         onClick={() => setShowList((prev) => !prev)}
-        className="w-full mb-4 cursor-pointer"
+        className="w-full max-w-4xl mb-4 cursor-pointer"
         role="button"
         aria-expanded={showList}
       >
         <DrillDropdown header="Your Analyses" />
-      </div>
+      </div> */}
 
       {/* Analysis list (dropdown mode) */}
       {showList && (
@@ -192,6 +193,7 @@ export default function Analyses() {
 
       {activeAnalysis && !showList && (
         <>
+          <Sidebar list={["Item1", "Item2", "Item3"]} />
           {/* Show share button for viewing own analysis */}
           <div className="flex justify-end mb-6">
             <button
