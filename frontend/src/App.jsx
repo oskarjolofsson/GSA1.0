@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { onAuthStateChanged, signOut, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "./lib/firebase.js";
 import './App.css'
@@ -50,24 +50,21 @@ function App() {
         <Route path="/legal/terms-and-conditions" element={<TermsAndCond />} />
         <Route path="/legal/privacy-policy" element={<Privacy />} />
         <Route path="/results/:analysisId" element={<ResultsPage />} />
-
-        {/* Protected */}
-        <Route element={<RequireAuth />}>
-          <Route path="/billing/success" element={<Success />} />
-          <Route path="/past-drills" element={<PastDrills />} />
-          <Route path="/analyse" element={<Analyser />} />
-          
-        </Route>
-
-        
       </Route>
+
       <Route element ={<RequireAuth/>}>
         <Route path ="/dashboard" element={<DashboardLayout />}>
-          <Route index element = {<DashboardUpload/>}/>
-          <Route path="/dashboard/billing/cancel" element={<Cancel />} />
-          <Route path="/dashboard/analyse" element={<Analysis />} />
-          <Route path="/dashboard/profile" element={<Profile />} />
-          <Route path="/dashboard/drills" element={<Drills />} />
+          <Route index element = {<Navigate to="upload" replace/> }/>
+
+          <Route path="upload" element={<DashboardUpload/>}/>
+          <Route path="billing/cancel" element={<Cancel />} />
+          <Route path="analyse" element={<Analysis />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="drills" element={<Drills />} />
+
+          {/* <Route path="/billing/success" element={<Success />} />
+          <Route path="/past-drills" element={<PastDrills />} />
+          <Route path="/analyse" element={<Analyser />} /> */}
         </Route>
       </Route>
       
