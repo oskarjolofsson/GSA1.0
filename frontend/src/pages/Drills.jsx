@@ -47,7 +47,6 @@ export default function Drills() {
           id: d.id,
           name: "Practice Drill",
           drill: d.drill,
-          analysisId: d.analysis_id,
           thumbnailUrl: d.image_url,
         }));
 
