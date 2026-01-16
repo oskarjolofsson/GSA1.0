@@ -3,7 +3,7 @@ import BottomNav from "./BottomNav";
 
 export default function DashboardLayout() {
   return (
-    <div className="fixed inset-0 bg-[#0b1020] text-slate-100 overflow-hidden">
+    <div className="fixed inset-0 bg-[#0b1020] text-slate-100 overflow-hidden flex flex-col">
 
       {/* subtle background texture */}
       <div
@@ -16,7 +16,7 @@ export default function DashboardLayout() {
       />
 
       {/* Main content */}
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4">
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 overflow-y-auto">
         <Outlet />
       </main>
 

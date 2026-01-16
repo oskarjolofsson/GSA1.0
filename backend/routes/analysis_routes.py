@@ -251,3 +251,42 @@ def get_analysis(analysis_id):
                 "analysis": {},
             }
         ), 500
+
+
+@analysis_bp.route("/<analysis_id>/video-url", methods=["GET"])
+@require_auth
+def get_video_url(analysis_id):
+    try:
+        """
+        Get a signed video URL for an analysis without fetching the full analysis document.
+        
+        Arguments:
+            analysis_id (str): The ID of the analysis
+            video_key (str): Query parameter - the video key from the analysis
+        
+        Returns:
+            JSON response with:
+            - success
+            - video_url (signed S3 URL)
+        """
+        user_id = request.user["uid"]
+        video_key = request.args.get("video_key")
+        
+        if not video_key:
+            return jsonify({"success": False, "error": "missing video_key parameter"}), 400
+        
+        # Generate signed video URL
+        video_url = video_storage_service.generate_read_url(video_key)
+        
+        return jsonify({
+            "success": True,
+            "video_url": video_url
+        }), 200
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": "error retrieving video URL",
+            "details": str(e)
+        }), 500
