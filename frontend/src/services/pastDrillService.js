@@ -51,6 +51,28 @@ class PastDrillService {
     }
   }
 
+  async getAnalysesForUser() {
+    try {
+      await this.ensureUserReady(); // Wait for auth to be ready
+      const data = await this.fetchWithAuth('/api/v1/analysis');
+      return Array.isArray(data?.analyses) ? data.analyses : [];
+    } catch (error) {
+      console.error("Error in getAnalysesForUser:", error);
+      throw new Error("Could not fetch analyses. Please try again later.");
+    }
+  }
+
+  async getAnalysisVideoURL(analysisId, videoKey) {
+    try {
+      await this.ensureUserReady();
+      const data = await this.fetchWithAuth(`/api/v1/analysis/${analysisId}/video-url?video_key=${encodeURIComponent(videoKey)}`);
+      return data?.video_url || null;
+    } catch (error) {
+      console.error("Error in getAnalysisVideoURL:", error);
+      throw new Error("Could not fetch video URL. Please try again later.");
+    }
+  }
+
   // Helper to wait for user to be ready
   async ensureUserReady() {
     return new Promise((resolve, reject) => {
