@@ -100,7 +100,7 @@ export default function Sidebar({
                 role="navigation"
                 aria-label={title}
                 className={[
-                    "fixed top-0 left-0 bottom-0 z-[101] w-[22rem]",
+                    "fixed top-0 left-0 bottom-0 z-[101] w-full md:w-[22rem]",
                     // liquid glass panel surface
                     "bg-white/8 backdrop-blur-2xl",
                     "border-r border-white/12",
