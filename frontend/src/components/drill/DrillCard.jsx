@@ -66,19 +66,6 @@ export default function DrillCard({
               <p className="text-base text-slate-200 leading-relaxed whitespace-pre-wrap">
                 {drill?.drill || ""}
               </p>
-
-              {drill?.analysisId && (
-                <div className="mt-4">
-                  <a
-                    href={`/dashboard/analyse?analysisId=${encodeURIComponent(
-                      drill.analysisId
-                    )}`}
-                    className="inline-flex items-center px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-100 transition"
-                  >
-                    View analysis
-                  </a>
-                </div>
-              )}
             </div>
           )}
         </div>
