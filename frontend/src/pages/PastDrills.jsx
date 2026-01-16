@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import DrillDropdown from "../components/drillDropdown/drillDropdown";
+import DrillDropdown from "../components/drill/drillDropdown";
 import PastDrillService from "../services/pastDrillService";
 import SubscriptionService from "../services/activeSubscription";
 
