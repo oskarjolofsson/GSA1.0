@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../auth/authContext";
-import DrillDropdown from "../components/drillDropdown/drillDropdown";
+import DrillDropdown from "../components/drill/drillDropdown";
+import DrillCard from "../components/drill/drillCard";
 
 export default function Drills() {
   const { user } = useAuth();
@@ -118,80 +119,40 @@ export default function Drills() {
         role="button"
         aria-expanded={showList}
       >
-        <DrillDropdown
-          header="Current Drills"
-        />
+        <DrillDropdown header="Current Drills" />
       </div>
 
       {/* Drill list (dropdown mode) */}
       {showList && (
         <div className="mt-4">
-          {/* Outer container */}
-          <div
-            className="
-              rounded-2xl
-              border border-slate-700/60
-              bg-slate-900/70
-              backdrop-blur-sm
-              shadow-lg
-            "
-          >
-            {/* Scrollable inner area */}
-            <div
-              className="
-                max-h-[50vh]
-                overflow-y-auto
-                overscroll-contain
-                no-scrollbar
-                p-2
-                space-y-2
-              "
-            >
+          <div className="rounded-2xl border border-slate-700/60 bg-slate-900/70 backdrop-blur-sm shadow-lg">
+            <div className="max-h-[50vh] overflow-y-auto overscroll-contain no-scrollbar p-2 space-y-2">
               {drills.map((drill) => (
-                <button
+                <DrillCard
                   key={drill.id}
+                  drill={drill}
+                  isActive={drill.id === activeDrill.id}
                   onClick={() => {
                     setActiveDrill(drill);
                     setShowList(false);
                   }}
-                  className={`w-full text-left p-4 rounded-xl border transition
-                    ${
-                      drill.id === activeDrill.id
-                        ? "bg-blue-600/20 border-blue-500"
-                        : "bg-slate-800 border-slate-700 hover:bg-slate-700"
-                    }
-                  `}
-                >
-                  <div className="font-medium text-slate-100">
-                    {drill.name}
-                  </div>
-                  <div className="text-sm text-slate-400 truncate">
-                    {drill.drill}
-                  </div>
-                </button>
+                />
               ))}
             </div>
           </div>
         </div>
       )}
 
-
-
       {/* Active drill (full-page focus) */}
       {!showList && activeDrill && (
-      <div className="mt-10">
-        <h1 className="text-3xl font-semibold text-slate-100 mb-6">
-          {activeDrill.name}
-        </h1>
+        <div className="mt-10">
+          <h1 className="text-3xl font-semibold text-slate-100 mb-6">
+            {activeDrill.name}
+          </h1>
 
-        <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
-          <p className="text-lg text-slate-200 leading-relaxed">
-            {activeDrill.drill}
-          </p>
+          <DrillCard drill={activeDrill} showFull />
         </div>
-      </div>
       )}
     </div>
-      
   );
 }

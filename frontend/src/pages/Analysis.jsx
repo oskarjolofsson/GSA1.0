@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../auth/authContext";
-import DrillDropdown from "../components/drillDropdown/drillDropdown";
+import DrillDropdown from "../components/drill/drillDropdown";
+import AnalysisCard from "../components/analysis/AnalysisCard";
 
 export default function Analyses() {
   const { user } = useAuth();
@@ -42,16 +43,24 @@ export default function Analyses() {
 
         const data = await response.json();
 
-        const normalizedAnalyses = (data.analyses || []).map((a) => ({
-          id: a.id,
-          title: "Swing Analysis",
-          status: a.status,
-          createdAt: a.createdAt,
-          analysisResults: a.analysis_results,
-        }));
+        // Normalize + sort (newest first if createdAt exists)
+        const normalizedAnalyses = (data.analyses || [])
+          .map((a) => ({
+            id: a.id,
+            title: a.title || "Swing Analysis",
+            drillName: a.drill_name || a.drillName || "", // if present from backend
+            status: a.status,
+            createdAt: a.createdAt,
+            analysisResults: a.analysis_results,
+          }))
+          .sort((x, y) => {
+            const dx = new Date(x.createdAt || 0).getTime();
+            const dy = new Date(y.createdAt || 0).getTime();
+            return dy - dx;
+          });
 
         setAnalyses(normalizedAnalyses);
-        setActiveAnalysis(normalizedAnalyses[0] || null); // most recent
+        setActiveAnalysis(normalizedAnalyses[0] || null);
       } catch (err) {
         console.error("Error fetching analyses:", err);
         setError(err.message);
@@ -97,7 +106,7 @@ export default function Analyses() {
             Upload a swing to generate your first analysis
           </p>
           <a
-            href="/dashboard"
+            href="/dashboard/upload"
             className="inline-block px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
           >
             Upload Swing
@@ -124,47 +133,22 @@ export default function Analyses() {
       {/* Analysis list (dropdown mode) */}
       {showList && (
         <div className="mt-4">
-          <div
-            className="
-              rounded-2xl
-              border border-slate-700/60
-              bg-slate-900/70
-              backdrop-blur-sm
-              shadow-lg
-            "
-          >
-            <div
-              className="
-                max-h-[50vh]
-                overflow-y-auto
-                overscroll-contain
-                no-scrollbar
-                p-2
-                space-y-2
-              "
-            >
+          <div className="rounded-2xl border border-slate-700/60 bg-slate-900/70 backdrop-blur-sm shadow-lg">
+            <div className="max-h-[50vh] overflow-y-auto overscroll-contain no-scrollbar p-2 space-y-2">
               {analyses.map((analysis) => (
-                <button
+                <AnalysisCard
                   key={analysis.id}
+                  title={analysis.title}
+                  drillName={analysis.drillName}
+                  status={analysis.status}
+                  createdAt={analysis.createdAt}
+                  compact
+                  selected={analysis.id === activeAnalysis.id}
                   onClick={() => {
                     setActiveAnalysis(analysis);
                     setShowList(false);
                   }}
-                  className={`w-full text-left p-4 rounded-xl border transition
-                    ${
-                      analysis.id === activeAnalysis.id
-                        ? "bg-blue-600/20 border-blue-500"
-                        : "bg-slate-800 border-slate-700 hover:bg-slate-700"
-                    }
-                  `}
-                >
-                  <div className="font-medium text-slate-100">
-                    {analysis.title}
-                  </div>
-                  <div className="text-sm text-slate-400">
-                    Status: {analysis.status}
-                  </div>
-                </button>
+                />
               ))}
             </div>
           </div>
@@ -173,22 +157,34 @@ export default function Analyses() {
 
       {/* Active analysis (focus mode) */}
       {!showList && activeAnalysis && (
-        <div className="mt-10">
-          <h1 className="text-3xl font-semibold text-slate-100 mb-6">
+        <div className="mt-10 space-y-6">
+          <h1 className="text-3xl font-semibold text-slate-100">
             {activeAnalysis.title}
           </h1>
 
-          <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
-            <p className="text-slate-300 mb-4">
-              Status:{" "}
-              <span className="font-medium text-slate-100">
-                {activeAnalysis.status}
-              </span>
-            </p>
+          {/* Top “individual drill/analysis” card */}
+          <AnalysisCard
+            title={activeAnalysis.title}
+            drillName={activeAnalysis.drillName}
+            status={activeAnalysis.status}
+            createdAt={activeAnalysis.createdAt}
+            interactive={false}
+          />
 
-            <p className="text-slate-400 text-sm">
-              Full analysis details will be displayed here.
-            </p>
+          {/* Details */}
+          <div className="bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
+            {activeAnalysis.analysisResults ? (
+              <>
+                <p className="text-slate-300 mb-3 font-medium">Analysis Results</p>
+                <pre className="text-xs sm:text-sm text-slate-200/90 whitespace-pre-wrap break-words bg-black/20 rounded-xl p-4 border border-white/10">
+                  {JSON.stringify(activeAnalysis.analysisResults, null, 2)}
+                </pre>
+              </>
+            ) : (
+              <p className="text-slate-400 text-sm">
+                Full analysis details will be displayed here.
+              </p>
+            )}
           </div>
         </div>
       )}
