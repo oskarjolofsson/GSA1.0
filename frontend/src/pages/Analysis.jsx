@@ -112,7 +112,7 @@ export default function Analyses() {
     return (
       <div className="w-full max-w-4xl mx-auto px-4">
         <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-red" />
           <p className="mt-4 text-slate-300">Loading your analyses…</p>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function Analyses() {
           </p>
           <a
             href="/dashboard/upload"
-            className="inline-block px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+            className="inline-block px-6 py-2 bg-blue-600 hover:bg-blue-700 text-red rounded-lg transition"
           >
             Upload Swing
           </a>
@@ -193,12 +193,15 @@ export default function Analyses() {
 
       {activeAnalysis && !showList && (
         <>
+        <div className="bg-red">
           <Sidebar list={["Item1", "Item2", "Item3"]} />
+        </div>
+          
           {/* Show share button for viewing own analysis */}
           <div className="flex justify-end mb-6">
             <button
               onClick={() => setShowSharePopup(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-red px-4 py-2 rounded-lg transition-colors duration-200"
             >
               <Share2 size={20} />
               Share
