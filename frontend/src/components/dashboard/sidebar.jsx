@@ -54,12 +54,12 @@ export default function Sidebar({
                         "fixed top-4 left-4 z-[110]",
                         "h-11 px-3.5 rounded-2xl",
                         // liquid glass button surface
-                        "bg-white/10 backdrop-blur-xl",
+                        "bg-red/10 backdrop-blur-xl",
                         "border border-white/15",
                         "shadow-[0_10px_30px_rgba(0,0,0,0.35)]",
                         "flex items-center gap-2.5",
                         "transition-all duration-200",
-                        "hover:bg-white/14 hover:border-white/20",
+                        "hover:bg-red/14 hover:border-white/20",
                         "active:scale-[0.98]",
                         "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
                     ].join(" ")}
@@ -102,7 +102,7 @@ export default function Sidebar({
                 className={[
                     "fixed top-0 left-0 bottom-0 z-[101] w-full md:w-[22rem]",
                     // liquid glass panel surface
-                    "bg-white/8 backdrop-blur-2xl",
+                    "bg-red/8 backdrop-blur-2xl",
                     "border-r border-white/12",
                     "shadow-[20px_0_60px_rgba(0,0,0,0.55)]",
                     "flex flex-col",
@@ -121,7 +121,7 @@ export default function Sidebar({
                 />
                 <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl bg-white/10"
+                    className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl bg-red/10"
                 />
                 <div
                     aria-hidden="true"
@@ -145,12 +145,12 @@ export default function Sidebar({
                         aria-label="Close menu"
                         className={[
                             "relative w-9 h-9 rounded-2xl overflow-hidden",
-                            "bg-white/10 backdrop-blur-xl",
+                            "bg-red/10 backdrop-blur-xl",
                             "border border-white/12",
                             "text-white/80",
                             "flex items-center justify-center",
                             "transition-all duration-200",
-                            "hover:bg-white/14 hover:text-white hover:border-white/18",
+                            "hover:bg-red/14 hover:text-white hover:border-white/18",
                             "active:scale-[0.98]",
                             "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25",
                         ].join(" ")}
@@ -178,11 +178,11 @@ export default function Sidebar({
                             className={[
                                 "group w-full rounded-2xl p-3",
                                 // glassy card
-                                "bg-white/8 backdrop-blur-xl",
+                                "bg-red/8 backdrop-blur-xl",
                                 "border border-white/10",
                                 "shadow-[0_10px_24px_rgba(0,0,0,0.25)]",
                                 "transition-all duration-200",
-                                "hover:bg-white/12 hover:border-white/16",
+                                "hover:bg-red/12 hover:border-white/16",
                                 "active:scale-[0.995]",
                                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/25",
                                 "flex items-center gap-3",
@@ -192,7 +192,7 @@ export default function Sidebar({
                             <div
                                 className={[
                                     "relative h-12 w-12 shrink-0 rounded-xl overflow-hidden",
-                                    "bg-white/6",
+                                    "bg-red/6",
                                     "border border-white/12",
                                     "shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]",
                                 ].join(" ")}
