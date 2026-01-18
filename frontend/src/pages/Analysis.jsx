@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import DrillDropdown from "../components/drill/drillDropdown";
 import AnalysisCard from "../components/analysis/AnalysisCard";
 import pastDrillService from "../services/pastDrillService";
@@ -21,7 +21,24 @@ export default function Analyses() {
   const [videoURLCache, setVideoURLCache] = useState({}); // Cache: analysisId -> videoUrl
   const [showSharePopup, setShowSharePopup] = useState(false);
 
-  const share_button_url = window.location.origin + "/dashboard/analyse/" + (activeAnalysis ? activeAnalysis.analysis_id : "");
+  const share_button_url = window.location.origin + "/share_analysis/" + (activeAnalysis ? activeAnalysis.analysis_id : "");
+
+  // Build sidebar list from analyses
+  const sidebarList = useMemo(() => {
+    return analyses.map((analysis) => ({
+      id: analysis.analysis_id,
+      label: analysis.analysis_results?.key_findings?.[0]?.title || "Untitled Analysis",
+      image: null,
+    }));
+  }, [analyses]);
+
+  // Handle sidebar selection
+  const handleSidebarSelect = (item) => {
+    const selected = analyses.find((a) => a.analysis_id === item.id);
+    if (selected) {
+      setActiveAnalysis(selected);
+    }
+  };
 
   useEffect(() => {
     const fetchUserAnalyses = async () => {
@@ -151,7 +168,7 @@ export default function Analyses() {
       {activeAnalysis && !showList && (
         <>
         <div className="bg-red">
-          <Sidebar list={["Item1", "Item2", "Item3"]} />
+          <Sidebar list={sidebarList} onSelect={handleSidebarSelect} />
         </div>
           
           {/* Show share button for viewing own analysis */}
