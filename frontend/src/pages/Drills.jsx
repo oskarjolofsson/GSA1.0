@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../auth/authContext";
-import DrillDropdown from "../components/drill/drillDropdown";
+import Sidebar from "../components/dashboard/sidebar"; // Import Sidebar
 import DrillCard from "../components/drill/drillCard";
 
 export default function Drills() {
@@ -8,7 +8,6 @@ export default function Drills() {
 
   const [drills, setDrills] = useState([]);
   const [activeDrill, setActiveDrill] = useState(null);
-  const [showList, setShowList] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -108,50 +107,25 @@ export default function Drills() {
   }
 
   /* -------------------- Main UI -------------------- */
-
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-6">
-      {/* Drill selector */}
-      <div
-        onClick={() => setShowList((prev) => !prev)}
-        className="w-full mb-4 cursor-pointer select-none"
-        role="button"
-        aria-expanded={showList}
-      >
-        <DrillDropdown header="Current Drills" />
-      </div>
-
-      {/* Drill list (dropdown mode) */}
-      {showList && (
-        <div className="mt-4">
-          <div className="rounded-2xl border border-slate-700/60 bg-slate-900/70 backdrop-blur-sm shadow-lg">
-            <div className="max-h-[50vh] overflow-y-auto overscroll-contain no-scrollbar p-2 space-y-2">
-              {drills.map((drill) => (
-                <DrillCard
-                  key={drill.id}
-                  drill={drill}
-                  isActive={drill.id === activeDrill.id}
-                  onClick={() => {
-                    setActiveDrill(drill);
-                    setShowList(false);
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="w-full max-w-4xl mx-auto px-4 py-6 flex gap-8">
+      {/* Sidebar */}
+      <Sidebar
+        list={drills}
+        title="Drills"
+        onSelect={(item) => {
+          setActiveDrill(item);
+        }}
+      />
 
       {/* Active drill (full-page focus) */}
-      {!showList && activeDrill && (
-        <div className="mt-10">
-          <h1 className="text-3xl font-semibold text-slate-100 mb-6">
-            {activeDrill.name}
-          </h1>
+      <div className="flex-1">
+        <h1 className="text-3xl font-semibold text-slate-100 mb-6">
+          {activeDrill.name}
+        </h1>
 
-          <DrillCard drill={activeDrill} showFull />
-        </div>
-      )}
+        <DrillCard drill={activeDrill} showFull />
+      </div>
     </div>
   );
 }
