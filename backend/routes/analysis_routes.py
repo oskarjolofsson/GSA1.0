@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 import traceback
 import uuid
+import pprint
 
 # Analysis Service
 from services.analy.analyser import analyser
@@ -16,45 +17,6 @@ from services.cloudflare.videoStorageService import video_storage_service
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint("analysis", __name__, url_prefix="/api/v1/analysis")
-
-# Commented out and not removed because replacement-fetch has not yet been deployed yet
-# @analysis_bp.route("/get_previous_analyses", methods=["GET", "POST"])
-# def get_past_analyses():
-#     try:
-#         # Get the token from Authorization header
-#         auth_header = request.headers.get("Authorization")
-#         if not auth_header or not auth_header.startswith("Bearer "):
-#             return jsonify({"error": "No authorization token provided"}), 401
-
-#         # Extract the token (remove 'Bearer ' prefix)
-#         id_token = auth_header.split("Bearer ")[1]
-
-#         # Verify the token with Firebase Admin SDK
-#         decoded_token = firebase_auth.verify_id_token(id_token)
-
-#         # Extract user_id from the decoded token
-#         user_id = decoded_token["uid"]
-#         sport = request.form.get("sport") or request.args.get("sport", "golf")
-#         offset = int(request.form.get("offset") or request.args.get("offset", 0))
-#         limit = int(request.form.get("limit") or request.args.get("limit", 10))
-        
-#         result = FireBasePastAnalysis(user_id, sport).get_analyses_by_tier(limit=limit, offset=offset)
-#         return jsonify(result), 200
-
-#     except Exception as e:
-#         traceback.print_exc()
-#         print(f"Error retrieving previous analyses: {str(e)}")
-
-#         return (
-#             jsonify(
-#                 {
-#                     "success": False,
-#                     "error": "error with retrieving previous analyses",
-#                     "details": str(e),
-#                 }
-#             ),
-#             500,
-#         )
         
 
 @analysis_bp.route("/create", methods=["POST"])
@@ -188,6 +150,8 @@ def list_analyses():
             user_id=user_id,
             sport=sport
         ).list_analyses_for_user(limit=limit)
+        
+        print("Analyses fetched: " + pprint.pformat(analyses[0]))
 
         return jsonify({
             "success": True,
