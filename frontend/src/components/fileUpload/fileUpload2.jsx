@@ -37,7 +37,7 @@ export default function UploadPage({ initialFile }) {
 
   // File handling with error throwing
   const { file, previewUrl, isLoading, handleFileSelection, handleDrop, removeFile, setFile } =
-    useFileHandling({ allowedTypes: ['video/mp4', 'video/webm', 'video/mov'] });
+    useFileHandling({ allowedTypes: ['video/'] });
 
   // Video upload
   const { analysis, analysisId, uploading: isUploading, errorMessage, uploadVideo, setAnalysis, setErrorMessage } =
