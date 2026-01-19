@@ -1,17 +1,14 @@
 import { NavLink } from "react-router-dom";
 import {
-  ArrowUpNarrowWide,
+  Upload,
   ChartLine,
   BookMarked,
-  User,
-  FileQuestionMark,
 } from "lucide-react";
 
 const items = [
-  { to: "/dashboard/upload", label: "Upload", icon: <ArrowUpNarrowWide size={18} /> },
-  { to: "/dashboard/drills", label: "Drills", icon: <ChartLine size={18} /> },
+  { to: "/dashboard/upload", label: "Upload", icon: <Upload size={18} /> },
   { to: "/dashboard/analyse", label: "Analysis", icon: <BookMarked size={18} /> },
-  { to: "/dashboard/profile", label: "Profile", icon: <User size={18} /> },
+  { to: "/dashboard/drills", label: "Drills", icon: <ChartLine size={18} /> },
 ];
 
 export default function BottomNav() {
