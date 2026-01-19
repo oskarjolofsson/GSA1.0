@@ -95,3 +95,10 @@ class FirebaseDrillService(FireBaseService):
             drills.append(data)
 
         return drills
+    
+    def get_drill(self, drill_id: str):
+        doc = self.drills_ref.document(drill_id).get()
+        if doc.exists:
+            return doc.to_dict()
+        else:
+            raise ValueError("Drill not found")

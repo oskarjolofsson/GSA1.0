@@ -73,6 +73,17 @@ class PastDrillService {
     }
   }
 
+  async getDrill(drillId) {
+    try {
+      await this.ensureUserReady();
+      const data = await this.fetchWithAuth(`/api/v1/drill/${drillId}`);
+      return data.drill || null;
+    } catch (error) {
+      console.error("Error in getDrill:", error);
+      throw new Error("Could not fetch drill. Please try again later.");
+    }
+  }
+
   // Helper to wait for user to be ready
   async ensureUserReady() {
     return new Promise((resolve, reject) => {

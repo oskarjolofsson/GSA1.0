@@ -150,8 +150,6 @@ def list_analyses():
             user_id=user_id,
             sport=sport
         ).list_analyses_for_user(limit=limit)
-        
-        print("Analyses fetched: " + pprint.pformat(analyses[0]))
 
         return jsonify({
             "success": True,
