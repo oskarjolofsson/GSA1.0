@@ -17,6 +17,9 @@ export default function DashboardLayout() {
         </div>
         <div className="w-full flex flex-col overflow-hidden">
           <SessionHeader />
+          <main className="relative z-10 flex-1 overflow-y-auto border border-white/10 rounded-xl m-4 p-3">
+            <Outlet />
+          </main>
         </div>
       </div>
 
@@ -25,7 +28,3 @@ export default function DashboardLayout() {
     </div>
   );
 }
-
-{/* <main className="relative z-10 flex-1 overflow-y-auto">
-            <Outlet />
-          </main> */}
