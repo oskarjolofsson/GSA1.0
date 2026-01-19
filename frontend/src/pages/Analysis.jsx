@@ -1,6 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import DrillDropdown from "../components/drill/drillDropdown";
-import AnalysisCard from "../components/analysis/AnalysisCard";
 import pastDrillService from "../services/pastDrillService";
 import SharePopup from "../components/popup/SharePopup";
 import ResultBox from "../components/result/result-box.jsx";
@@ -167,9 +165,9 @@ export default function Analyses() {
 
       {activeAnalysis && !showList && (
         <>
-        <div className="bg-red">
+        {/* <div className="bg-red">
           <Sidebar list={sidebarList} onSelect={handleSidebarSelect} />
-        </div>
+        </div> */}
           
           {/* Show share button for viewing own analysis */}
           <div className="flex justify-end mb-6">
