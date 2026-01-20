@@ -22,9 +22,6 @@ export default function DashboardLayout() {
           </main>
         </div>
       </div>
-
-      {/* Bottom navigation */}
-      <BottomNav />
     </div>
   );
 }

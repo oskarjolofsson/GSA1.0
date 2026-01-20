@@ -4,6 +4,7 @@ import ThumbnailImage from "./thumbnailImage"
 import Graph from "./graph"
 import ProgressBar from "./progress"
 import ProfileBar from "./profileBar"
+import SidebarNav from "./sidebarNav"
 
 
 export default function DashboardSidebar() {
@@ -63,6 +64,11 @@ export default function DashboardSidebar() {
 
             {/* Spacer */}
             <div className="flex-1" />
+
+            {/* Sidebar Navigation - above profile bar */}
+            <div className="border-b border-white/10 p-2 w-full">
+                <SidebarNav isOpen={isOpen} />
+            </div>
 
             {/* Profile Bar - at bottom */}
             <div className="border-t border-white/10 p-2 w-full flex items-center justify-center">
