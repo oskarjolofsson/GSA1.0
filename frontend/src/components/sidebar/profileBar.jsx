@@ -2,7 +2,7 @@ import { User, Settings, Clock, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from '../../auth/authContext';
 
-export default function ProfileBar() {
+export default function ProfileBar({ showName = true, onOpenSidebar }) {
     const [open, setOpen] = useState(false);
     const btnRef = useRef(null);
     const menuRef = useRef(null);
@@ -39,7 +39,10 @@ export default function ProfileBar() {
                 aria-haspopup="menu"
                 aria-expanded={open}
                 aria-controls="profile-menu"
-                onClick={() => setOpen((v) => !v)}
+                onClick={() => {
+                    setOpen((v) => !v);
+                    onOpenSidebar?.();
+                }}
                 className="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-700 hover:bg-opacity-40 w-full"
             >
                 <div className="flex-shrink-0">
@@ -55,9 +58,11 @@ export default function ProfileBar() {
                         </div>
                     )}
                 </div>
-                <div className="flex flex-col items-start">
-                    <span className="text-sm font-semibold text-white">{user.displayName}</span>
-                </div>
+                {showName && (
+                    <div className="flex flex-col items-start">
+                        <span className="text-sm font-semibold text-white">{user.displayName}</span>
+                    </div>
+                )}
             </button>
 
             <div
