@@ -14,7 +14,6 @@ export default function sessionHeader() {
                     <span className="text-sm text-slate-300">Share</span>
                 </div>
                 
-                <DropDown />
             </div>
 
         </div>

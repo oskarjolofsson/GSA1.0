@@ -1,15 +1,17 @@
+import ThumbnailImage from "./thumbnailImage"
+import Graph from "./graph"
+import ProgressBar from "./progress"
+import ProfileBar from "./profileBar"
 
 
 export default function DashboardSidebar() {
 
     return (
-        <div className="flex flex-col w-80 border-r border-white/10 shadow-[2px_0_10px_-2px_rgba(0,0,0,0.6)] h-full items-center">
+        <div className="flex flex-col w-80 border-r border-white/10 shadow-[2px_0_10px_-2px_rgba(0,0,0,0.6)] h-full items-center rounded-r-xl m-t-4 bg-[#121827]">
             {/* Section 1 */}
             <div className="flex-1 border-b border-white/10 p-6 text-center">
             {/* Image of thumbnail */}
-                <div className="mb-4 w-full h-32 bg-white/10 rounded-lg flex items-center justify-center">
-                    <span className="text-white/50">Thumbnail Image</span>
-                </div>
+                <ThumbnailImage />
                 
                 <h2 className="text-xl font-bold text-white mb-3">Current Analysis</h2>
                 <p className="text-sm text-white/70">Date it was made</p>
@@ -19,10 +21,7 @@ export default function DashboardSidebar() {
             {/* Section 2 */}
             <div className="flex-1 border-b border-white/10 p-6 text-center">
 
-                <div className="mb-4 w-full h-32 bg-white/10 rounded-lg flex items-center justify-center">
-                    <span className="text-white/50 text-sm p-2 w-full">Graph of recent activity</span>
-                </div>
-
+                <Graph />
                 <h2 className="text-xl font-bold text-white">Recent Activity</h2>
             </div>
 
@@ -31,18 +30,14 @@ export default function DashboardSidebar() {
                 <h2 className="text-xl font-bold text-white mb-3">Goals</h2>
                 
                 {/* Progress-bar */}
-                <div className="w-full h-4 bg-white/10 rounded-full overflow-hidden mb-4">
-                    <div className="h-full bg-blue-500 w-3/4"></div>
-                </div>
+                <ProgressBar progress={75} />
 
                 <p className="text-sm text-white/70">75% of your weekly goal achieved</p>
             </div>
 
-            <div className="inset -x-0 bottom-0 p-6 w-full min-h-16 border-t border-white/10 flex items-center justify-center">
+            <div className="inset -x-0 bottom-0 p-1 w-full border-t border-white/10 flex items-center justify-center">
                 
-                {/* Profile Image */}
-
-                {/* Name/email */}
+                <ProfileBar />
 
             </div>
 
