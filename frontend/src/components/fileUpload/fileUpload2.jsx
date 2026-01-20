@@ -132,8 +132,10 @@ export default function UploadPage({ initialFile }) {
             <Loading time={40} full={true} />
           ) : !analysis ? (
             <>
-              <UploadHeader />
+              { !file && <UploadHeader /> }
+
               <div className="gap-12">
+                
                 {!file ? (
                   <DropZone
                     file={file}
