@@ -108,7 +108,7 @@ export default function Drills() {
 
   /* -------------------- Main UI -------------------- */
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-6 flex gap-8">
+    <div className="w-full mx-auto px-4 py-6 flex gap-8">
       {/* Sidebar */}
       <Sidebar
         list={drills}
