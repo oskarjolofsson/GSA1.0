@@ -1,8 +1,8 @@
 import { Outlet } from 'react-router-dom';
-import Nav from './nav/TopNav.jsx';
-import Footer from './footer/footer.jsx';
-import { ConsentBanner } from './popup/consentBanner.jsx';
-import TopographyBackground from './background/topography.jsx';
+import Nav from '../../components/nav/TopNav.jsx';
+import Footer from '../../components/footer/footer.jsx';
+import { ConsentBanner } from '../../components/popup/consentBanner.jsx';
+import TopographyBackground from '../../components/background/topography.jsx';
 
 export default function Layout() {
   return (

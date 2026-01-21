@@ -1,8 +1,8 @@
 import { Outlet } from "react-router-dom";
-import BottomNav from "../nav/BottomNav.jsx";
-import SessionHeader from "../nav/sessionHeader.jsx";
-import TopographyBackground from '../background/topography.jsx';
-import DashboardSidebar from "../sidebar/dashboardSidebar.jsx";
+import BottomNav from "../../components/nav/BottomNav.jsx";
+import SessionHeader from "../../components/nav/sessionHeader.jsx";
+import TopographyBackground from '../../components/background/topography.jsx';
+import DashboardSidebar from "../../components/sidebar/dashboardSidebar.jsx";
 
 export default function DashboardLayout() {
   return (
