@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion"
 // Import Components
 import ResultHeroCard from "./summary/resultHero";
 import VideoDemo from "./summary/videoDemo";
+import { fileTransferService } from "../../services/fileTransferService";
+import pastDrillService from "../../services/pastDrillService";
 import DrillPopup from "../popup/drillPopup";
 
 
@@ -45,6 +47,32 @@ export default function InfoBox({ analysis, video_url, drill_image_url, activePr
 
   const [drillPopupOpen, setDrillPopupOpen] = useState(false);
   const [direction, setDirection] = useState(0);
+  const [drillImage, setDrillImage] = useState(null);
+
+  useEffect(() => {
+    // Reset to first problem when analysis changes
+    setActiveTab("what");
+  }, [activeProblem]);
+
+  useEffect(() => {
+    // Fetch drill image when activeProblem changes
+    const fetchDrillImage = async () => {
+      try {
+        const currentKeyFinding = key_findings[activeProblem];
+        if (currentKeyFinding?.drill_id) {
+          const drill = await pastDrillService.getDrill(currentKeyFinding.drill_id);
+          setDrillImage(drill?.image_url || null);
+        } else {
+          setDrillImage(null);
+        }
+      } catch (error) {
+        console.error("Error fetching drill image:", error);
+        setDrillImage(null);
+      }
+    };
+
+    fetchDrillImage();
+  }, [activeProblem, key_findings]);
 
   const handleDrillOpen = (index) => {
     setDrillPopupOpen(true);
@@ -101,8 +129,8 @@ export default function InfoBox({ analysis, video_url, drill_image_url, activePr
       
       
       <DrillPopup
-        drill={drillPopupOpen ? key_findings[activeProblem].try_this : null}
-        image={drill_image_url}
+        drill={drillPopupOpen ? key_findings[activeProblem]["try_this"] : null}
+        image={drillImage || (file ? file.previewImage : null)}
         onClose={handleDrillClose}
         isLoading={drill_image_loading}
         isTimeout={drill_image_timeout}

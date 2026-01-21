@@ -63,6 +63,16 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Hide scrollbar but allow scrolling */
+.no-scrollbar {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE 10+ */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;                /* Safari and Chrome */
+}
+
 @media (prefers-color-scheme: dark) {
   body { background: #242424; color: rgba(255,255,255,0.87); }
 }

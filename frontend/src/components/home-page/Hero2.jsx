@@ -71,7 +71,7 @@ function TextBlock() {
             <button
                 type="button"
                 className="inline-flex items-center gap-2 rounded-xl px-6 sm:px-8 py-3 sm:py-4 bg-emerald-500/90 hover:bg-emerald-500 text-white font-semibold shadow-md shadow-emerald-900/30 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-colors text-base sm:text-lg mb-4"
-                onClick={() => window.location.href = '/analyse'}
+                onClick={() => window.location.href = '/dashboard/upload'}
             >
                 {cta}
             </button>
@@ -117,14 +117,14 @@ export default function Hero2() {
                 <EmblaCarousel images={IMAGES} options={OPTIONS} />
 
                 {/* Demo Preview */}
-
+{/* 
                 <div className="text-center max-w-2xl mx-auto px-4 mb-16">
-                    {/* Header */}
+                    
                     <h2 className="text-3xl sm:text-5xl font-bold leading-tight tracking-tight mb-4 text-slate-100">
                         See How It Works, upload a video today!
                     </h2>
                 </div>
-                {DemoPreview()}
+                {DemoPreview()} */}
             </main>
         </section>
     );

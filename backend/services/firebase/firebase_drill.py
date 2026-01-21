@@ -19,9 +19,11 @@ class FirebaseDrillService(FireBaseService):
         Returns:
             str: The ID of the newly created drill document.
         """
-        drill_id = "drill_" + str(uuid4())
+        drill_id = f"drill_{uuid4()}"
         
-        document_data = {
+        
+        
+        self.drills_ref.document(drill_id).set({
             "user_id": self.user_id,
             "analysis_id": analysis_id,
             "task": task,
@@ -75,6 +77,43 @@ class FirebaseDrillService(FireBaseService):
                 finding["drill_id"] = drill_id
                 
         return analysis
+    
+    def list_drills_for_user(self):
+        docs = (
+            self.drills_ref
+            .where("user_id", "==", self.user_id)
+            .stream()
+        )
+
+        return [
+
+            {**doc.to_dict(), "id": doc.id}
+            for doc in docs
+        ]
+    
+    def list_drills_for_analysis(self, analysis_id: str):
+        query = (
+            self.drills_ref
+            .where("user_id", "==", self.user_id)
+            .where("analysis_id", "==", analysis_id)
+        )
+
+        docs = query.stream()
+
+        drills = []
+        for doc in docs:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            drills.append(data)
+
+        return drills
+    
+    def get_drill(self, drill_id: str):
+        doc = self.drills_ref.document(drill_id).get()
+        if doc.exists:
+            return doc.to_dict()
+        else:
+            raise ValueError("Drill not found")
         
     def get_drill_by_id(self, drill_id: str) -> dict:
         """
