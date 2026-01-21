@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PanelLeftClose } from "lucide-react";
 import ThumbnailImage from "./thumbnailImage"
 import Graph from "./graph"
@@ -9,32 +10,42 @@ import SidebarNav from "./sidebarNav"
 
 export default function DashboardSidebar() {
     const [isOpen, setIsOpen] = useState(true);
+    const navigate = useNavigate();
 
     return (
-        <div className={`flex flex-col border-r border-white/10 shadow-[2px_0_10px_-2px_rgba(0,0,0,0.6)] h-full rounded-r-xl bg-[#121827] transition-all duration-300 ease-in-out ${
-            isOpen ? 'w-80' : 'w-24'
-        }`}>
+        <div className={`flex flex-col border-r border-white/10 shadow-[2px_0_10px_-2px_rgba(0,0,0,0.6)] h-full rounded-r-xl bg-[#121827] transition-all duration-300 ease-in-out ${isOpen ? 'w-80' : 'w-24'
+            }`}>
             {/* Top Section with Logo and Toggle */}
             <div className={`flex items-center justify-between p-4 ${!isOpen && 'flex-col gap-2'}`}>
                 {!isOpen ? (
                     <button
-                        onClick={() => setIsOpen(true)}
+                        onClick={() => {
+                            setIsOpen(true);
+                        }}
                         className="p-2 hover:bg-gray-700 hover:bg-opacity-40 rounded-lg transition-colors duration-200"
                         aria-label="Open sidebar"
                     >
-                        <img 
-                            src="/icons/true_swing_logo3.png" 
-                            alt="True Swing Logo" 
+                        <img
+                            src="/icons/true_swing_logo3.png"
+                            alt="True Swing Logo"
                             className="h-12 w-12 transition-all duration-300"
                         />
                     </button>
                 ) : (
                     <>
-                        <img 
-                            src="/icons/true_swing_logo3.png" 
-                            alt="True Swing Logo" 
-                            className="h-10 w-auto transition-all duration-300"
-                        />
+                        <button
+                            onClick={() => {
+                                navigate("/dashboard");
+                            }}
+                            className="p-2 hover:bg-gray-700 hover:bg-opacity-40 rounded-lg transition-colors duration-200"
+                            aria-label="Open sidebar"
+                        >
+                            <img
+                                src="/icons/true_swing_logo3.png"
+                                alt="True Swing Logo"
+                                className="h-12 w-12 transition-all duration-300"
+                            />
+                        </button>
                         <button
                             onClick={() => setIsOpen(false)}
                             className="p-2 hover:bg-gray-700 hover:bg-opacity-40 rounded-lg transition-colors duration-200"
@@ -49,12 +60,12 @@ export default function DashboardSidebar() {
             {/* Section 1 */}
             {isOpen && (
                 <div className="flex-1 border-b border-white/10 p-6 text-center w-full">
-                {/* Image of thumbnail */}
+                    {/* Image of thumbnail */}
                     <ThumbnailImage />
-                    
+
                     <h2 className="text-xl font-bold text-white mb-3">Current Analysis</h2>
                     <p className="text-sm text-white/70">Date it was made</p>
-                    
+
                 </div>
             )}
 
@@ -71,7 +82,7 @@ export default function DashboardSidebar() {
             {isOpen && (
                 <div className="flex-1 border-white/10 p-6 w-full">
                     <h2 className="text-xl font-bold text-white mb-3">Goals</h2>
-                    
+
                     {/* Progress-bar */}
                     <ProgressBar progress={75} />
 
