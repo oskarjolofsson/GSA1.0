@@ -1,4 +1,4 @@
-import TextBox from "../components/textBox/textBox";
+import TextBox from "../../components/textBox/textBox";
 
 export default function NotFound() {
   return (
