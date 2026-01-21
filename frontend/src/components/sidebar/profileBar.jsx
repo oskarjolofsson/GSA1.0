@@ -76,7 +76,7 @@ export default function ProfileBar({ showName = true, onOpenSidebar }) {
               p-2 shadow-lg transform transition duration-150 origin-bottom-left mb-2
               ${open ? 'scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}`}
             >
-                <MenuItem name="My Profile" href="/profile" icon={<User className="h-4 w-4" />} />
+                <MenuItem name="My Profile" href="/dashboard/profile" icon={<User className="h-4 w-4" />} />
                 {/* <MenuItem name="Settings" href="/settings" icon={<Settings className="h-4 w-4" />} /> */}
                 {/* <MenuItem name="Past Drills" href="/past-drills" icon={<Clock className="h-4 w-4" />} /> */}
                 <div className="my-1 h-px bg-gray-700" />
