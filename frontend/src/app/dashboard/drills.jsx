@@ -109,14 +109,6 @@ export default function Drills() {
   /* -------------------- Main UI -------------------- */
   return (
     <div className="w-full mx-auto px-4 py-6 flex gap-8">
-      {/* Sidebar */}
-      <Sidebar
-        list={drills}
-        title="Drills"
-        onSelect={(item) => {
-          setActiveDrill(item);
-        }}
-      />
 
       {/* Active drill (full-page focus) */}
       <div className="flex-1">

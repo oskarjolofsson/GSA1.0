@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { PanelLeftClose } from "lucide-react";
 import ThumbnailImage from "./thumbnailImage"
 import Graph from "./graph"
 import ProgressBar from "./progress"
@@ -14,19 +14,36 @@ export default function DashboardSidebar() {
         <div className={`flex flex-col border-r border-white/10 shadow-[2px_0_10px_-2px_rgba(0,0,0,0.6)] h-full rounded-r-xl bg-[#121827] transition-all duration-300 ease-in-out ${
             isOpen ? 'w-80' : 'w-24'
         }`}>
-            {/* Toggle Button */}
-            <div className="w-full flex justify-end p-2">
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="p-2 hover:bg-gray-700 hover:bg-opacity-40 rounded-lg transition-colors duration-200"
-                    aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
-                >
-                    {isOpen ? (
-                        <ChevronLeft className="w-5 h-5 text-white" />
-                    ) : (
-                        <ChevronRight className="w-5 h-5 text-white" />
-                    )}
-                </button>
+            {/* Top Section with Logo and Toggle */}
+            <div className={`flex items-center justify-between p-4 ${!isOpen && 'flex-col gap-2'}`}>
+                {!isOpen ? (
+                    <button
+                        onClick={() => setIsOpen(true)}
+                        className="p-2 hover:bg-gray-700 hover:bg-opacity-40 rounded-lg transition-colors duration-200"
+                        aria-label="Open sidebar"
+                    >
+                        <img 
+                            src="/icons/true_swing_logo3.png" 
+                            alt="True Swing Logo" 
+                            className="h-12 w-12 transition-all duration-300"
+                        />
+                    </button>
+                ) : (
+                    <>
+                        <img 
+                            src="/icons/true_swing_logo3.png" 
+                            alt="True Swing Logo" 
+                            className="h-10 w-auto transition-all duration-300"
+                        />
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="p-2 hover:bg-gray-700 hover:bg-opacity-40 rounded-lg transition-colors duration-200"
+                            aria-label="Close sidebar"
+                        >
+                            <PanelLeftClose className="w-5 h-5 text-white" />
+                        </button>
+                    </>
+                )}
             </div>
 
             {/* Section 1 */}
