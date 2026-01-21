@@ -90,7 +90,7 @@ export default function MarketingBox({
 
       {/* CTA (optional for later) */}
       <div className="mt-4">
-        <Link to="/analyse" className="inline-flex items-center gap-2 rounded-xl px-6 py-3 bg-emerald-500/90 hover:bg-emerald-500 text-white font-semibold shadow-md shadow-emerald-900/30 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-colors">
+        <Link to="/dashboard/upload" className="inline-flex items-center gap-2 rounded-xl px-6 py-3 bg-emerald-500/90 hover:bg-emerald-500 text-white font-semibold shadow-md shadow-emerald-900/30 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition-colors">
           Try it for free
         </Link>
       </div>
