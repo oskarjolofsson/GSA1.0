@@ -1,5 +1,5 @@
-import GeneralProfile from "../components/profile/general";
-import LogOutButton from "../components/profile/logOutButton";
+import GeneralProfile from "../../components/profile/general";
+import LogOutButton from "../../components/profile/logOutButton";
 
 export default function Profile() {
   return (

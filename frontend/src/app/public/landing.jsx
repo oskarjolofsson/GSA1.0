@@ -1,11 +1,11 @@
-import Faq from '../components/home-page/faq.jsx';
-import PricingTable from "../components/subscriptions/PricingTable.jsx";
+import Faq from '../../components/home-page/faq.jsx';
+import PricingTable from "../../components/subscriptions/PricingTable.jsx";
 
-import MarketingBox from "../components/home-page/Marketingbox.jsx";
+import MarketingBox from "../../components/home-page/Marketingbox.jsx";
 
-import Hero2 from '../components/home-page/Hero2.jsx';
+import Hero2 from '../../components/home-page/Hero2.jsx';
 
-import EmblaCarousel from '../components/carousel/EmblaCarousel.jsx';
+import EmblaCarousel from '../../components/carousel/EmblaCarousel.jsx';
 
 export default function Home() {   
 

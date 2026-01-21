@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Share2 } from "lucide-react";
-import ResultBox from "../components/result/result-box.jsx";
-import SharePopup from "../components/popup/SharePopup.jsx";
-import pastDrillService from "../services/pastDrillService.js";
-import Loading1 from "../components/loading/loading1.jsx";
-import TextBox from "../components/textBox/textBox.jsx";
-import tokenService from "../services/tokenService.js";
-import SignInPopup from "../components/signInPopup/signInPopup.jsx";
-import { useAuth } from "../auth/authContext.jsx";
-import FeedbackBubble from "../components/popup/FeedbackBubble.jsx";
-import FeedbackPopup from "../components/popup/FeedbackPopup.jsx";
+import ResultBox from "../../components/result/result-box.jsx";
+import SharePopup from "../../components/popup/SharePopup.jsx";
+import pastDrillService from "../../services/pastDrillService.js";
+import Loading1 from "../../components/loading/loading1.jsx";
+import TextBox from "../../components/textBox/textBox.jsx";
+import tokenService from "../../services/tokenService.js";
+import SignInPopup from "../../components/signInPopup/signInPopup.jsx";
+import { useAuth } from "../../auth/authContext.jsx";
+import FeedbackBubble from "../../components/popup/FeedbackBubble.jsx";
+import FeedbackPopup from "../../components/popup/FeedbackPopup.jsx";
 
 export default function ResultsPage() {
   const { analysisId } = useParams();

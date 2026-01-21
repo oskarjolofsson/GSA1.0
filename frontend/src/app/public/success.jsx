@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { useAuth } from '../auth/authContext';
+import { useAuth } from '../../auth/authContext';
 
 const URL = import.meta.env.VITE_API_URL;
 
