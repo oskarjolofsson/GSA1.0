@@ -44,5 +44,11 @@ class R2Client:
         )
         return response["Body"].read()
     
+    def delete_object(self, key: str) -> None:
+        self.s3.delete_object(
+            Bucket=os.getenv("CLOUDFLARE_R2_BUCKET"),
+            Key=key,
+        )
+    
 # Instantiate a single global R2 client
 r2_client = R2Client()

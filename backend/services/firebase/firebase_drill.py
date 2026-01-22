@@ -9,7 +9,7 @@ class FirebaseDrillService(FireBaseService):
         self.drills_ref = self.db.collection('drills')
         
 
-    def add_drill(self, drill: str, analysis_id: str) -> str:
+    def add_drill(self, task: str, fault_indicator: str, success_signal: str, analysis_id: str, title: str) -> str:
         """
         Adds a new drill document to the 'drills' collection.
 
@@ -26,23 +26,31 @@ class FirebaseDrillService(FireBaseService):
         self.drills_ref.document(drill_id).set({
             "user_id": self.user_id,
             "analysis_id": analysis_id,
-            "drill": drill,
+            "task": task,
+            "fault_indicator": fault_indicator,
+            "success_signal": success_signal,
             "drill_id": drill_id,
-            "image_url": None,
-        })
+            "image_key": None,
+            "createdAt": firestore.SERVER_TIMESTAMP,
+            "title": title,
+        }
+        
+        self.drills_ref.document(drill_id).set(document_data)
         
         return drill_id
     
-    def update_drill_image(self, drill_id: str, image_url: str) -> None:
+    def update_drill_image(self, drill_id: str, image_key: str) -> None:
         """
         Updates the image URL of an existing drill document.
 
         Args:
             drill_id (str): The ID of the drill document to be updated.
-            image_url (str): The new image URL to be set.
+            image_key (str): The new image key to be set.
         """
-        self.drills_ref.document(drill_id).update({
-            "image_url": image_url
+        drill_doc_ref = self.drills_ref.document(drill_id)
+        
+        drill_doc_ref.update({
+            "image_key": image_key
         })
         
     def extract_drill_from_analysis(self, analysis: dict, analysis_id: str) -> dict:
@@ -59,9 +67,13 @@ class FirebaseDrillService(FireBaseService):
         key_findings = analysis.get("key_findings", [])
         
         for finding in key_findings:
-            drill_text = finding.get("try_this", "")
-            if drill_text:
-                drill_id = self.add_drill(drill=drill_text, analysis_id=analysis_id)
+            task = finding.get("improve", {}).get("task", "")
+            fault_indicator = finding.get("improve", {}).get("fault_indicator", "")
+            success_signal = finding.get("improve", {}).get("success_signal", "")
+            title = finding.get("title", "")
+            
+            if task and fault_indicator and success_signal:
+                drill_id = self.add_drill(task=task, fault_indicator=fault_indicator, success_signal=success_signal, analysis_id=analysis_id, title=title)
                 finding["drill_id"] = drill_id
                 
         return analysis
@@ -95,3 +107,36 @@ class FirebaseDrillService(FireBaseService):
             drills.append(data)
 
         return drills
+    
+    def get_drill(self, drill_id: str):
+        doc = self.drills_ref.document(drill_id).get()
+        if doc.exists:
+            return doc.to_dict()
+        else:
+            raise ValueError("Drill not found")
+        
+    def get_drill_by_id(self, drill_id: str) -> dict:
+        """
+        Retrieves a drill document by its ID.
+
+        Args:
+            drill_id (str): The ID of the drill document to retrieve.
+
+        Returns:
+            dict: The drill document data if found, otherwise None.
+        """
+        drill_doc = self.drills_ref.document(drill_id).get()
+        if drill_doc.exists:
+            return drill_doc.to_dict()
+        else:
+            return None
+                
+    def delete_drill(self, drill_id: str) -> None:
+        """
+        Deletes a drill document by its ID.
+
+        Args:
+            drill_id (str): The ID of the drill document to delete.
+        """
+        drill_doc_ref = self.drills_ref.document(drill_id)
+        drill_doc_ref.delete()

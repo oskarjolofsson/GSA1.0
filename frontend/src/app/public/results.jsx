@@ -1,19 +1,21 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Share2 } from "lucide-react";
-import ResultBox from "../components/result/result-box.jsx";
-import SharePopup from "../components/popup/SharePopup.jsx";
-import pastDrillService from "../services/pastDrillService.js";
-import Loading1 from "../components/loading/loading1.jsx";
-import TextBox from "../components/textBox/textBox.jsx";
-import tokenService from "../services/tokenService.js";
-import SignInPopup from "../components/signInPopup/signInPopup.jsx";
-import { useAuth } from "../auth/authContext.jsx";
-import FeedbackBubble from "../components/popup/FeedbackBubble.jsx";
-import FeedbackPopup from "../components/popup/FeedbackPopup.jsx";
+import ResultBox from "../../components/result/result-box.jsx";
+import SharePopup from "../../components/popup/SharePopup.jsx";
+import pastDrillService from "../../services/pastDrillService.js";
+import Loading1 from "../../components/loading/loading1.jsx";
+import TextBox from "../../components/textBox/textBox.jsx";
+import tokenService from "../../services/tokenService.js";
+import SignInPopup from "../../components/signInPopup/signInPopup.jsx";
+import { useAuth } from "../../auth/authContext.jsx";
+import FeedbackBubble from "../../components/popup/FeedbackBubble.jsx";
+import FeedbackPopup from "../../components/popup/FeedbackPopup.jsx";
+import { Navigate } from "react-router-dom";
 
 export default function ResultsPage() {
   const { analysisId } = useParams();
+  const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
   const [videoURL, setVideoURL] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,10 @@ export default function ResultsPage() {
   const [showSignInPopup, setShowSignInPopup] = useState(false);
   const { user, login } = useAuth();
   const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
+  const [drillImageURL, setDrillImageURL] = useState(null);
+  const [drillImageLoading, setDrillImageLoading] = useState(false);
+  const [drillImageTimeout, setDrillImageTimeout] = useState(false);
+  const [activeProblem, setActiveProblem] = useState(0);
 
   const share_button_url = window.location.origin + "/results/" + analysisId;
 
@@ -55,6 +61,47 @@ export default function ResultsPage() {
     }
   }, [analysisId, user]);
 
+  useEffect(() => {
+    const fetchDrillImage = async () => {
+      if (!analysis || !analysis.key_findings || analysis.key_findings.length === 0) {
+        setDrillImageURL(null);
+        setDrillImageLoading(false);
+        setDrillImageTimeout(false);
+        return;
+      }
+
+      const activeFinding = analysis.key_findings[activeProblem];
+      if (!activeFinding || !activeFinding.drill_id) {
+        setDrillImageURL(null);
+        setDrillImageLoading(false);
+        setDrillImageTimeout(false);
+        return;
+      }
+
+      try {
+        setDrillImageLoading(true);
+        setDrillImageTimeout(false);
+        
+        // Set timeout for 60 seconds
+        const timeoutId = setTimeout(() => {
+          setDrillImageTimeout(true);
+        }, 60000);
+        
+        const imageUrl = await pastDrillService.getDrillImageURL(activeFinding.drill_id);
+        clearTimeout(timeoutId);
+        setDrillImageURL(imageUrl);
+        setDrillImageTimeout(false);
+      } catch (err) {
+        console.error("Error fetching drill image:", err);
+        setDrillImageURL(null);
+      } finally {
+        setDrillImageLoading(false);
+      }
+    };
+
+    fetchDrillImage();
+  }, [analysis, activeProblem]);
+
   if (loading) {
     return <Loading1 />;
   }
@@ -76,7 +123,20 @@ export default function ResultsPage() {
                 Share
               </button>
             </div>
-            <ResultBox analysis={analysis.analysis} video_url={videoURL} />
+            <ResultBox analysis={analysis} video_url={videoURL} drill_image_url={drillImageURL} drill_image_loading={drillImageLoading} drill_image_timeout={drillImageTimeout} activeProblem={activeProblem} setActiveProblem={setActiveProblem} />
+
+            <div className="flex justify-end mt-8">
+              {/* Delete button */}
+            <button
+              onClick={() => {
+                pastDrillService.deleteAnalysis(analysisId);
+                navigate("/dashboard");
+              }}
+              className="flex items-center gap-2 bg-transparent hover:bg-red-50 text-red-700 px-2 py-2 rounded-lg transition-colors duration-200"
+            >
+              Delete Analysis <Trash2 size={20} />
+            </button>
+            </div>
           </>
         ) : null}
         {!analysis && error && (

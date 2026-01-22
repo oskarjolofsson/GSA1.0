@@ -28,7 +28,7 @@ export default function DemoPreview() {
         
         // Pass file to analyse page via service
         fileTransferService.setFile(file);
-        navigate('/analyse');
+        navigate('/dashboard/upload');
     }
 
     function handleDrop(e) {

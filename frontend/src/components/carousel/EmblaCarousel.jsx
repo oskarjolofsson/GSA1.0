@@ -58,7 +58,7 @@ const EmblaCarousel = ({ images = [], options }) => {
                 </div>
 
                 {/* CTA Button */}
-                <Link to="/analyse">
+                <Link to="/dashboard/upload">
                 <button className="
                   absolute bottom-8 sm:bottom-10 left-6 sm:left-8 right-6 sm:right-8
                   bg-white/80 hover:bg-white text-gray-900

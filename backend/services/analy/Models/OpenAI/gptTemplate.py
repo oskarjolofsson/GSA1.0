@@ -10,6 +10,8 @@ from services.analy.Sports.sportInstructions import SportAnalysis
 
 from abc import ABC, abstractmethod
 
+import time
+
 class GptTemplate(Model, ABC):
     
     def __init__(self, system_instructions: SportAnalysis):
@@ -51,16 +53,25 @@ class GptTemplate(Model, ABC):
         ...
     
     def analyze(self, video_file: Video_file, shape: str = "unsure", height: str = "unsure", misses: str = "unsure", extra: str = "") -> dict:
+        t1 = time.time()
         # Format the prompt and get result
-        keyframes = video_file.keyframes(15)     # <-- Decide how many keyframes here
+        keyframes = video_file.keyframes(20)     # <-- Decide how many keyframes here
+        t2 = time.time()
+        print(f"Extracted {20} keyframes in {t2 - t1:.2f} seconds")
         image_ids = self.image_ids(keyframes=keyframes)
+        t3 = time.time()
+        print(f"Assigned OpenAI IDs to {len(image_ids)} images in {t3 - t2:.2f} seconds")
         content = self.format_content(image_ids, shape=shape, height=height, misses=misses, extra=extra)
+        t4 = time.time()
+        print(f"Formatted content in {t4 - t3:.2f} seconds")
         
         # Delete image and video-files from memory
         keyframes.removeAll()
         video_file.remove()
         
         analysis = self.ai_analysis(content)
+        t5 = time.time()
+        print(f"AI analysis completed in {t5 - t4:.2f} seconds")
 
         # format result
         raw_text = analysis.output_text
