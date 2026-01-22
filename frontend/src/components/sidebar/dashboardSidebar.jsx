@@ -57,38 +57,7 @@ export default function DashboardSidebar() {
                 )}
             </div>
 
-            {/* Section 1 */}
-            {isOpen && (
-                <div className="flex-1 border-b border-white/10 p-6 text-center w-full">
-                    {/* Image of thumbnail */}
-                    <ThumbnailImage />
-
-                    <h2 className="text-xl font-bold text-white mb-3">Current Analysis</h2>
-                    <p className="text-sm text-white/70">Date it was made</p>
-
-                </div>
-            )}
-
-            {/* Section 2 */}
-            {isOpen && (
-                <div className="flex-1 border-b border-white/10 p-6 text-center w-full">
-
-                    <Graph />
-                    <h2 className="text-xl font-bold text-white">Recent Activity</h2>
-                </div>
-            )}
-
-            {/* Section 3 */}
-            {isOpen && (
-                <div className="flex-1 border-white/10 p-6 w-full">
-                    <h2 className="text-xl font-bold text-white mb-3">Goals</h2>
-
-                    {/* Progress-bar */}
-                    <ProgressBar progress={75} />
-
-                    <p className="text-sm text-white/70">75% of your weekly goal achieved</p>
-                </div>
-            )}
+            
 
             {/* Spacer */}
             <div className="flex-1" />

@@ -113,7 +113,8 @@ export default function Drills() {
       {/* Active drill (full-page focus) */}
       <div className="flex-1">
         <h1 className="text-3xl font-semibold text-slate-100 mb-6">
-          {activeDrill.name}
+          {/* {activeDrill.name} */}
+          Your Drill
         </h1>
 
         <DrillCard drill={activeDrill} showFull />
