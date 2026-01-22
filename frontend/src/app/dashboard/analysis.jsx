@@ -165,9 +165,6 @@ export default function Analyses() {
 
       {activeAnalysis && !showList && (
         <>
-        {/* <div className="bg-red">
-          <Sidebar list={sidebarList} onSelect={handleSidebarSelect} />
-        </div> */}
           
           {/* Show share button for viewing own analysis */}
           <div className="flex justify-end mb-6">

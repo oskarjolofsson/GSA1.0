@@ -13,6 +13,7 @@ import Cancel from './public/cancel.jsx';
 import DashboardUpload from './dashboard/upload.jsx';
 import Drills from './dashboard/drills.jsx';
 import Analysis from './dashboard/analysis.jsx';
+import Issues from './dashboard/issue.jsx';
 
 // Import components
 import PublicLayout from './public/layout.jsx';
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
           { path: "analyse", element: <Analysis /> },
           { path: "profile", element: <Profile /> },
           { path: "drills", element: <Drills /> },
+          { path: "issues", element: <Issues /> },
         ],
       },
     ],
