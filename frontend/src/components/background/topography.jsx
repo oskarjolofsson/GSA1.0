@@ -1,9 +1,6 @@
-import { Outlet } from 'react-router-dom';
-import Nav from './nav/Nav2.jsx';
-import Footer from './footer/footer.jsx';
-import { ConsentBanner } from './popup/consentBanner.jsx';
 
-function Background() {
+
+export default function TopographyBackground() {
   return (
     <>
       <div
@@ -18,20 +15,5 @@ function Background() {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-white/10 via-black/20 to-transparent -z-10" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-t from-transparent to-black/40 -z-10" />
     </>
-  );
-}
-
-export default function Layout() {
-  return (
-    <div className="min-h-screen flex flex-col relative z-0 overflow-hidden bg-[#0b1020] text-slate-100">
-      <Background />
-      <Nav />
-
-      <main className="flex-1">
-        <Outlet />
-      </main>
-      <ConsentBanner />
-      <Footer />
-    </div>
   );
 }

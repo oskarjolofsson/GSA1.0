@@ -5,14 +5,17 @@ const API = (import.meta.env.VITE_API_URL || '');
 class PastDrillService {
 
   // Helper method for authenticated fetch requests
-  async fetchWithAuth(url) {
+  async fetchWithAuth(url, method = 'GET') {
+    await this.ensureUserReady(); // Wait for auth to be ready
+    console.log("Fetching URL with auth: " + url);
+
     const user = auth.currentUser;
     if (!user) throw new Error('Not signed in');
     
     const idToken = await user.getIdToken();
     
     const response = await fetch(`${API}${url}`, {
-      method: 'GET',
+      method: method,
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${idToken}`
@@ -42,7 +45,6 @@ class PastDrillService {
 
   async getAnalysisById(analysisId) {
     try {
-      await this.ensureUserReady(); // Wait for auth to be ready
       const data = await this.fetchWithAuth(`/api/v1/analysis/${analysisId}`);
       return data || null;
     } catch (error) {
@@ -51,6 +53,27 @@ class PastDrillService {
     }
   }
 
+  async getDrillImageURL(drill_id) {
+    try {
+      const data = await this.fetchWithAuth(`/api/v1/analysis/image/${drill_id}`);
+      console.log("Fetched drill image URL: " + data.image_url);
+      return data.image_url || null;
+    } catch (error) {
+      console.error("Error in getDrillImageURL:", error);
+      throw new Error("Could not fetch drill image. Please try again later.");
+    }
+  }
+
+  async deleteAnalysis(analysisId) {
+    console.log("Deleting analysis with ID: " + analysisId);
+    try {
+      await this.fetchWithAuth(`/api/v1/analysis/${analysisId}`, 'DELETE');
+    } catch (error) {
+      console.error("Error in deleteAnalysis:", error);
+      throw new Error("Could not delete analysis. Please try again later.");
+    }
+  }
+  
   async getAnalysesForUser() {
     try {
       await this.ensureUserReady(); // Wait for auth to be ready
@@ -70,6 +93,17 @@ class PastDrillService {
     } catch (error) {
       console.error("Error in getAnalysisVideoURL:", error);
       throw new Error("Could not fetch video URL. Please try again later.");
+    }
+  }
+
+  async getDrill(drillId) {
+    try {
+      await this.ensureUserReady();
+      const data = await this.fetchWithAuth(`/api/v1/drill/${drillId}`);
+      return data.drill || null;
+    } catch (error) {
+      console.error("Error in getDrill:", error);
+      throw new Error("Could not fetch drill. Please try again later.");
     }
   }
 

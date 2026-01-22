@@ -22,6 +22,8 @@ class VideoStorageService:
             method="get_object", key=video_key, expires_in=3600
         )
     
+    def delete(self, key: str) -> None:
+        self.r2_client.delete_object(key)
 
 # Instantiate a single global instance
 video_storage_service = VideoStorageService()
