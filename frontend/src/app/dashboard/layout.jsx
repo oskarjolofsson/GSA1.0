@@ -16,7 +16,7 @@ export default function DashboardLayout() {
           <DashboardSidebar />
         </div>
         <div className="w-full flex flex-col overflow-hidden">
-          <SessionHeader />
+          {/* <SessionHeader /> */}
           <main className="relative z-10 flex-1 overflow-y-auto">
             <Outlet />
           </main>

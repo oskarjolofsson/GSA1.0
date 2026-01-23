@@ -65,7 +65,7 @@ export default function Drills() {
 
   if (loading) {
     return (
-      <div className="w-full max-w-4xl mx-auto px-4">
+      <div className="w-full max-w-4xl mx-auto px-4 items-center justify-center py-20">
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
           <p className="mt-4 text-slate-300">Loading your drills…</p>
@@ -76,7 +76,7 @@ export default function Drills() {
 
   if (error) {
     return (
-      <div className="w-full max-w-4xl mx-auto px-4">
+      <div className="w-full max-w-4xl mx-auto px-4 items-center justify-center py-20">
         <div className="bg-red-900/20 border border-red-700 rounded-lg p-6 text-center">
           <p className="text-red-200">Error loading drills: {error}</p>
         </div>
@@ -86,7 +86,7 @@ export default function Drills() {
 
   if (!activeDrill) {
     return (
-      <div className="w-full max-w-4xl mx-auto px-4">
+      <div className="w-full max-w-4xl mx-auto px-4 items-center justify-center py-20">
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
           <h2 className="text-2xl font-semibold text-slate-100 mb-2">
             No Drills Yet
