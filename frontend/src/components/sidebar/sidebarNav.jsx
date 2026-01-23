@@ -1,21 +1,21 @@
 import { NavLink } from "react-router-dom";
 import {
   Upload,
-  ChartLine,
+  FolderOpen,
   Home
 } from "lucide-react";
 
 const items = [
-  { to: "/dashboard/app", label: "Home", icon: <Home size={18} /> },
-  { to: "/dashboard/upload", label: "Upload", icon: <Upload size={18} /> },
-  { to: "/dashboard/drills", label: "Drills", icon: <ChartLine size={18} /> },
+  { to: "/dashboard/app", label: "Home", icon: <Home size={24} /> },
+  { to: "/dashboard/drills", label: "Drills", icon: <FolderOpen size={24} /> },
 ];
 
-export default function SidebarNav({ isOpen }) {
+export default function SidebarNav({ isOpen, onClick }) {
   return (
     <div className={`w-full px-2 ${isOpen ? 'flex-row' : 'flex-col items-center'}`}>
       {items.map((item) => (
         <NavLink
+          onClick={onClick}
           key={item.to}
           to={item.to}
           className={({ isActive }) =>
