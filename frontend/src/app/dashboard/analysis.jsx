@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import pastDrillService from "../../services/pastDrillService.js";
 import SharePopup from "../../components/popup/SharePopup.jsx";
 import ResultBox from "../../components/result/result-box.jsx";
-import Sidebar from "../../components/dashboard/sidebar.jsx";
 
 import { Share2 } from "lucide-react";
 

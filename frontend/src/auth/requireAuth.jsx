@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./authContext";
-import SignInPopup from "../components/signInPopup/signInPopup";
+import SignInPopup from "../components/popup/signInPopup.jsx";
 import { login } from "./auth.js"
 
 export default function RequireAuth() {
