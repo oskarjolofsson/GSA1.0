@@ -82,29 +82,24 @@ export default function DashboardSidebar() {
                 )}
             </div>
 
-            {/* Pages Header */}
-            <div className={`px-4 py-2 ${!isOpen && 'hidden'} text-center mt-4 border border-white/10 rounded-lg mx-2 bg-white/5`}>
-                <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider">
-                    Pages
-                </h2>
-            </div>
-
             {/* Sidebar Navigation - at top */}
             <div className="border-white/10 p-2 w-full">
                 <SidebarNav isOpen={isOpen} onClick={() => setIsOpen(false)} />
             </div>
 
             {/* Active Issues Header */}
-            <div className={`px-4 py-2 ${!isOpen && 'hidden'} text-center mt-4 border border-white/10 rounded-lg mx-2 bg-white/5`}>
+            {/* <div className={`px-4 py-2 ${!isOpen && 'hidden'} text-center mt-4 border border-white/10 rounded-lg mx-2 bg-white/5`}>
                 <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider">
                     Active Golf Issues
                 </h2>
             </div>
 
-            {/* Active Issues Section */}
+            
             <div className="flex-1 overflow-auto overflow-auto">
                 {isOpen && <ActiveIssues />}
-            </div>
+            </div> */}
+
+            <div className="flex-1" />
 
             {/* Profile Bar - at bottom */}
             <div className="border-t border-white/10 p-2 w-full flex items-center justify-center">

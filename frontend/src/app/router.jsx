@@ -45,7 +45,7 @@ export const router = createBrowserRouter([
           { path : "app", element: <HomeDashboard /> },
           { path: "upload", element: <DashboardUpload /> },
           { path: "billing/cancel", element: <Cancel /> },
-          { path: "analyse", element: <Analysis /> },
+          { path: "analysis", element: <Analysis /> },
           { path: "profile", element: <Profile /> },
           { path: "drills", element: <Drills /> },
           { path: "issues", element: <Issues /> },

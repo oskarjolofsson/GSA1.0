@@ -1,13 +1,20 @@
 import { NavLink } from "react-router-dom";
 import {
-  Upload,
+  UploadCloud,
   FolderOpen,
-  Home
+  Home,
+  Target,
+  Timer,
+  Repeat,
+  Activity,
+LineChart
 } from "lucide-react";
 
 const items = [
   { to: "/dashboard/app", label: "Home", icon: <Home size={24} /> },
-  { to: "/dashboard/drills", label: "Drills", icon: <FolderOpen size={24} /> },
+  { to: "/dashboard/issues", label: "Issues", icon: <Target size={24} /> },
+  { to: "/dashboard/analysis", label: "Analysis", icon: <Activity size={24} /> },
+  { to: "/dashboard/upload", label: "Upload", icon: <UploadCloud size={24} /> },
 ];
 
 export default function SidebarNav({ isOpen, onClick }) {
