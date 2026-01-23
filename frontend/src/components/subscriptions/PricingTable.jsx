@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import PlanCard from "./PlanCard";
-import SignInPopup from "../signInPopup/signInPopup";
+import SignInPopup from "../popup/signInPopup";
 import { useAuth } from "../../auth/authContext";
 import MessagePopup from "../popup/MessagePopup";
 import SubscriptionService from "../../services/activeSubscription";

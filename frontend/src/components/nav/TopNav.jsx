@@ -32,7 +32,7 @@ function desktopNav(navItems) {
   );
 }
 
-import SignInPopup from '../signInPopup/signInPopup.jsx';
+import SignInPopup from '../popup/signInPopup.jsx';
 
 function SignIn({ mobile = false }) {
   const { login, loading, user } = useAuth();

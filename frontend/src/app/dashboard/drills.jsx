@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../auth/authContext";
-import Sidebar from "../../components/dashboard/sidebar"; // Import Sidebar
 import DrillCard from "../../components/drill/drillCard";
 
 export default function Drills() {

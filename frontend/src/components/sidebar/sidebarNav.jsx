@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 
 const items = [
-  { to: "/dashboard/home", label: "Home", icon: <Home size={18} /> },
+  { to: "/dashboard/app", label: "Home", icon: <Home size={18} /> },
   { to: "/dashboard/upload", label: "Upload", icon: <Upload size={18} /> },
   { to: "/dashboard/drills", label: "Drills", icon: <ChartLine size={18} /> },
 ];

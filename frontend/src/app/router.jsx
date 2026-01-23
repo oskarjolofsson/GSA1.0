@@ -1,7 +1,7 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 
 // Import pages
-import Home from "./public/landing.jsx";
+import Landing from "./public/landing.jsx";
 import NotFound from './public/notFound.jsx';
 import Products from './public/Products.jsx';
 import Profile from "./dashboard/profile.jsx";
@@ -14,6 +14,7 @@ import DashboardUpload from './dashboard/upload.jsx';
 import Drills from './dashboard/drills.jsx';
 import Analysis from './dashboard/analysis.jsx';
 import Issues from './dashboard/issue.jsx';
+import HomeDashboard from "./dashboard/home.jsx";
 
 // Import components
 import PublicLayout from './public/layout.jsx';
@@ -26,7 +27,7 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     errorElement: <NotFound />,
     children: [
-      { index: true, element: <Home /> },
+      { index: true, element: <Landing /> },
       { path: "pricing", element: <Products /> },
       { path: "legal/terms-and-conditions", element: <TermsAndCond /> },
       { path: "legal/privacy-policy", element: <Privacy /> },
@@ -40,7 +41,8 @@ export const router = createBrowserRouter([
       {
         element: <DashboardLayout />,
         children: [
-          { index: true, element: <DashboardUpload /> },
+          { index: true, element: <Navigate to="/dashboard/app" replace /> },
+          { path : "app", element: <HomeDashboard /> },
           { path: "upload", element: <DashboardUpload /> },
           { path: "billing/cancel", element: <Cancel /> },
           { path: "analyse", element: <Analysis /> },

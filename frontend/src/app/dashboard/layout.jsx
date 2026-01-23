@@ -6,7 +6,7 @@ import DashboardSidebar from "../../components/sidebar/dashboardSidebar.jsx";
 
 export default function DashboardLayout() {
   return (
-    <div className="fixed inset-0 bg-[#0b1020] text-slate-100 overflow-hidden flex flex-col min-h-screen">
+    <div className="fixed inset-0 bg-[#0b1020] text-slate-100 overflow-auto flex flex-col min-h-screen">
 
       <TopographyBackground />
 
