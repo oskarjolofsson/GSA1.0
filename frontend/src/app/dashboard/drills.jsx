@@ -149,7 +149,7 @@ function DrillPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-center flex-1 min-h-0">
           
           {/* Drill image / video */}
-          <div className="rounded-xl border border-neutral-700 bg-neutral-800 aspect-square flex items-center justify-center text-neutral-400 w-full max-w-[240px] md:max-w-none mx-auto h-full max-h-[240px] md:max-h-full animate-slide-up">
+          <div className="rounded-xl border border-neutral-700 bg-neutral-800 aspect-square flex items-center justify-center text-neutral-400 w-full max-w-[350px] md:max-w-none mx-auto h-full max-h-[350px] md:max-h-[350px] animate-slide-up">
             Drill image / video
           </div>
 
