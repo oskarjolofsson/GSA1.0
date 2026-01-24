@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../auth/authContext";
+import NumberFlow from '@number-flow/react'
 
 export default function Drills() {
   const { user } = useAuth();
@@ -113,15 +114,27 @@ export default function Drills() {
 
 function DrillPage() {
   const total = 15;
-  const succeeded = 7;
-  const failed = 3;
+  const [succeeded, setSucceeded] = useState(0);
+  const [failed, setFailed] = useState(0);
 
   const succeededPercent = (succeeded / total) * 100;
   const failedPercent = (failed / total) * 100;
 
+  const handleFailure = () => {
+    if (succeeded + failed < total) {
+      setFailed(failed + 1);
+    }
+  };
+
+  const handleSuccess = () => {
+    if (succeeded + failed < total) {
+      setSucceeded(succeeded + 1);
+    }
+  };
+
   return (
     <div className="h-screen text-slate-100 reminder flex flex-col overflow-hidden">
-      <div className="w-full max-w-4xl mx-auto px-4 py-4 md:py-6 flex flex-col gap-4 md:gap-6 h-full">
+      <div className="w-full max-w-4xl mx-auto px-4 py-4 md:py-6 flex flex-col gap-4 md:gap-6 h-full animate-fade-in">
         
         {/* Progress bar */}
         <div className="flex-shrink-0">
@@ -136,12 +149,12 @@ function DrillPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-center flex-1 min-h-0">
           
           {/* Drill image / video */}
-          <div className="rounded-xl border border-neutral-700 bg-neutral-800 aspect-square flex items-center justify-center text-neutral-400 w-full max-w-[240px] md:max-w-none mx-auto h-full max-h-[240px] md:max-h-full">
+          <div className="rounded-xl border border-neutral-700 bg-neutral-800 aspect-square flex items-center justify-center text-neutral-400 w-full max-w-[240px] md:max-w-none mx-auto h-full max-h-[240px] md:max-h-full animate-slide-up">
             Drill image / video
           </div>
 
           {/* Explanation */}
-          <div className="flex flex-col justify-center text-center md:text-left">
+          <div className="flex flex-col justify-center text-center md:text-left animate-slide-up-delayed">
             <h1 className="text-xl md:text-2xl font-semibold mb-2">
               Title
             </h1>
@@ -155,7 +168,10 @@ function DrillPage() {
         <div className="grid grid-cols-2 gap-3 md:gap-6 w-full flex-shrink-0">
           {/* Fault indicator */}
           <div className="flex flex-col items-center gap-2 w-full">
-            <button className="rounded-xl border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 p-3 md:p-4 flex items-center justify-center transition-colors cursor-pointer w-full">
+            <button 
+              className="rounded-xl border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 active:scale-95 p-3 md:p-4 flex items-center justify-center transition-all duration-200 cursor-pointer w-full hover:shadow-lg hover:shadow-red-500/20"
+              onClick={handleFailure}
+            >
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-red-600 flex items-center justify-center text-lg md:text-xl">
                 ✕
               </div>
@@ -172,7 +188,10 @@ function DrillPage() {
 
           {/* Success indicator */}
           <div className="flex flex-col items-center gap-2 w-full">
-            <button className="rounded-xl border border-green-500/40 bg-green-500/10 hover:bg-green-500/20 p-3 md:p-4 flex items-center justify-center transition-colors cursor-pointer w-full">
+            <button 
+              className="rounded-xl border border-green-500/40 bg-green-500/10 hover:bg-green-500/20 active:scale-95 p-3 md:p-4 flex items-center justify-center transition-all duration-200 cursor-pointer w-full hover:shadow-lg hover:shadow-green-500/20"
+              onClick={handleSuccess}
+            >
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-600 flex items-center justify-center text-lg md:text-xl">
                 ✓
               </div>
@@ -205,19 +224,19 @@ function SuccessFailureProgress({ succeeded, failed, total }) {
         <div className="flex items-center justify-between mb-4">
           {/* Success section */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-sm font-bold">
-              {succeeded}
+            <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-sm font-bold transition-all duration-500">
+              <NumberFlow value={succeeded} duration={500} />
             </div>
             <div>
               <div className="text-sm font-medium text-green-400">Success</div>
-              <div className="text-xs text-neutral-400">{succeededPercent}%</div>
+              <div className="text-xs text-neutral-400 transition-all duration-500"><NumberFlow value={succeededPercent} />%</div>
             </div>
           </div>
 
           {/* Total in center */}
           <div className="text-center">
-            <div className="text-2xl font-semibold text-slate-100">
-              {succeeded + failed} / {total}
+            <div className="text-2xl font-semibold text-slate-100 transition-all duration-500">
+              <NumberFlow value={succeeded + failed} duration={500} /> / <NumberFlow value={total} />
             </div>
             <div className="text-xs text-neutral-400">Completed</div>
           </div>
@@ -226,10 +245,10 @@ function SuccessFailureProgress({ succeeded, failed, total }) {
           <div className="flex items-center gap-3">
             <div className="text-right">
               <div className="text-sm font-medium text-red-400">Failed</div>
-              <div className="text-xs text-neutral-400">{failedPercent}%</div>
+              <div className="text-xs text-neutral-400 transition-all duration-500"><NumberFlow value={failedPercent} />%</div>
             </div>
-            <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-sm font-bold">
-              {failed}
+            <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-sm font-bold transition-all duration-500">
+              <NumberFlow value={failed} duration={500} />
             </div>
           </div>
         </div>
@@ -238,13 +257,13 @@ function SuccessFailureProgress({ succeeded, failed, total }) {
         <div className="relative w-full h-3 bg-neutral-700 rounded-full overflow-hidden">
           {/* Green from left */}
           <div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-600 to-green-500 transition-all duration-300"
+            className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-600 to-green-500 transition-all duration-700 ease-out"
             style={{ width: `${succeededPercent}%` }}
           />
 
           {/* Red from right */}
           <div
-            className="absolute top-0 right-0 h-full bg-gradient-to-l from-red-600 to-red-500 transition-all duration-300"
+            className="absolute top-0 right-0 h-full bg-gradient-to-l from-red-600 to-red-500 transition-all duration-700 ease-out"
             style={{ width: `${failedPercent}%` }}
           />
         </div>
