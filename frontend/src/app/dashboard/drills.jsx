@@ -120,71 +120,71 @@ function DrillPage() {
   const failedPercent = (failed / total) * 100;
 
   return (
-    <div className="min-h-screen text-slate-100 reminder p-6 flex flex-col">
-
-      {/* Top Progress bar */}
-      {/* <div className="relative w-full h-2 bg-neutral-700 rounded-full overflow-hidden mb-12">
-        <div
-          className="absolute top-0 left-0 h-full bg-green-600 rounded-full"
-          style={{ width: `${succeededPercent}%` }}
-        />
-        <div
-          className="absolute top-0 right-0 h-full bg-red-600 rounded-full"
-          style={{ width: `${failedPercent}%` }}
-        />
-      </div> */}
-
-      <SuccessFailureProgress
-        succeeded={succeeded}
-        failed={failed}
-        total={total}
-      />
-      
-      {/* Main content */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+    <div className="h-screen text-slate-100 reminder flex flex-col overflow-hidden">
+      <div className="w-full max-w-4xl mx-auto px-4 py-4 md:py-6 flex flex-col gap-4 md:gap-6 h-full">
         
-        {/* Drill image / video */}
-        <div className="rounded-xl border border-neutral-700 bg-neutral-800 aspect-video flex items-center justify-center text-neutral-400 max-h-[250px] mx-auto w-full md:mx-0">
-          Drill image / video
+        {/* Progress bar */}
+        <div className="flex-shrink-0">
+          <SuccessFailureProgress
+            succeeded={succeeded}
+            failed={failed}
+            total={total}
+          />
         </div>
-
-        {/* Explanation */}
-        <div className="flex flex-col justify-center text-center md:text-left">
-          <h1 className="text-2xl font-semibold mb-3">
-            Title
-          </h1>
-          <p className="text-neutral-300 leading-relaxed">
-            Description. Explain how to execute the drill
-          </p>
-        </div>
-      </div>
-
-      {/* Indicators */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         
-        {/* Fault indicator */}
-        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-6 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-xl">
-            ✕
+        {/* Main content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-center flex-1 min-h-0">
+          
+          {/* Drill image / video */}
+          <div className="rounded-xl border border-neutral-700 bg-neutral-800 aspect-square flex items-center justify-center text-neutral-400 w-full max-w-[240px] md:max-w-none mx-auto h-full max-h-[240px] md:max-h-full">
+            Drill image / video
           </div>
-          <div>
-            <p className="font-medium text-red-400">Fault indicator</p>
-            <p className="text-sm text-neutral-400">
-              What signals that the drill is being done incorrectly.
+
+          {/* Explanation */}
+          <div className="flex flex-col justify-center text-center md:text-left">
+            <h1 className="text-xl md:text-2xl font-semibold mb-2">
+              Title
+            </h1>
+            <p className="text-neutral-300 leading-relaxed text-sm md:text-base">
+              Description. Explain how to execute the drill
             </p>
           </div>
         </div>
 
-        {/* Success indicator */}
-        <div className="rounded-xl border border-green-500/40 bg-green-500/10 p-6 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-xl">
-            ✓
+        {/* Indicators */}
+        <div className="grid grid-cols-2 gap-3 md:gap-6 w-full flex-shrink-0">
+          {/* Fault indicator */}
+          <div className="flex flex-col items-center gap-2 w-full">
+            <button className="rounded-xl border border-red-500/40 bg-red-500/10 hover:bg-red-500/20 p-3 md:p-4 flex items-center justify-center transition-colors cursor-pointer w-full">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-red-600 flex items-center justify-center text-lg md:text-xl">
+                ✕
+              </div>
+            </button>
+            <div className="text-center w-full">
+              <h3 className="font-semibold text-red-400 mb-1 text-xs md:text-sm">
+                Fault indicator
+              </h3>
+              <p className="text-xs text-neutral-400 leading-tight">
+                What signals that the drill is being done incorrectly.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-green-400">Success indicator</p>
-            <p className="text-sm text-neutral-400">
-              What confirms the drill is executed correctly.
-            </p>
+
+          {/* Success indicator */}
+          <div className="flex flex-col items-center gap-2 w-full">
+            <button className="rounded-xl border border-green-500/40 bg-green-500/10 hover:bg-green-500/20 p-3 md:p-4 flex items-center justify-center transition-colors cursor-pointer w-full">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-600 flex items-center justify-center text-lg md:text-xl">
+                ✓
+              </div>
+            </button>
+            <div className="text-center w-full">
+              <h3 className="font-semibold text-green-400 mb-1 text-xs md:text-sm">
+                Success indicator
+              </h3>
+              <p className="text-xs text-neutral-400 leading-tight">
+                What confirms the drill is executed correctly.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -199,7 +199,7 @@ function SuccessFailureProgress({ succeeded, failed, total }) {
     total > 0 ? Math.round((failed / total) * 100) : 0;
 
   return (
-    <div className="w-full mb-6">
+    <div className="w-full mb-2">
       {/* Card container */}
       <div className="rounded-xl border border-neutral-700 bg-neutral-800/50 px-6 py-2">
         <div className="flex items-center justify-between mb-4">
