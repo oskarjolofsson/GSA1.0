@@ -1,24 +1,76 @@
-// import UploadFileScreen from "./screens/uploadFileScreen";
-// import TrimVideoScreen from "./screens/trimFileScreen";
+import { useState } from "react";
+import UploadFileScreen from "./screens/uploadFileScreen";
+import TrimVideoScreen from "./screens/trimVideoScreen";
 import { AnalyzingScreen } from "./screens/AnalysingScreen";
 import useUploadFlow from "../upload/hooks/useUploadFlow";
+import { useFileHandling } from "./hooks/useFileHandling";
+import { usePromptConfig } from "./hooks/usePromptConfig";
 
 export default function UploadFlow() {
-  const { step } = useUploadFlow();
+  const { step, goToUpload, goToTrim, goToAnalyzing } = useUploadFlow();
+  const fileHandling = useFileHandling({ allowedTypes: ['video/'] });
+  const promptConfig = usePromptConfig();
+  const [errorMessage, setErrorMessage] = useState("");
+  const [analysisId, setAnalysisId] = useState(null);
 
-  // switch (step) {
-  //   case "upload":
-  //     return <UploadFileScreen />;
+  // Additional state for trim times
+  const [startTime, setStartTime] = useState(0);
+  const [endTime, setEndTime] = useState(0);
 
-  //   case "trim":
-  //     return <TrimVideoScreen />;
+  const handleFileSelected = () => {
+    if (fileHandling.file) {
+      goToTrim();
+    }
+  };
 
-  //   case "analyzing":
-  //     return <AnalyzingScreen />;
+  const handleRemoveFile = () => {
+    fileHandling.removeFile();
+    promptConfig.resetConfig();
+    setStartTime(0);
+    setEndTime(0);
+    goToUpload();
+  };
 
-  //   default:
-  //     return null;
-  // }
+  const handleAnalyzing = (id) => {
+    setAnalysisId(id);
+    goToAnalyzing();
+  };
 
-  return <AnalyzingScreen />;
+  switch (step) {
+    case "upload":
+      return (
+        <UploadFileScreen
+          fileHandling={fileHandling}
+          errorMessage={errorMessage}
+          setErrorMessage={setErrorMessage}
+          onFileSelected={handleFileSelected}
+        />
+      );
+
+    case "trim":
+      return (
+        <TrimVideoScreen
+          fileHandling={fileHandling}
+          promptConfig={promptConfig}
+          startTime={startTime}
+          endTime={endTime}
+          setStartTime={setStartTime}
+          setEndTime={setEndTime}
+          onRemoveFile={handleRemoveFile}
+          onAnalyzing={handleAnalyzing}
+        />
+      );
+
+    case "analyzing":
+      return (
+        <AnalyzingScreen
+          file={fileHandling.file}
+          promptConfig={promptConfig}
+          analysisId={analysisId}
+        />
+      );
+
+    default:
+      return null;
+  }
 }

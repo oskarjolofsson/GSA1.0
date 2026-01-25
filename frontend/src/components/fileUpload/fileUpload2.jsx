@@ -110,20 +110,7 @@ export default function UploadPage({ initialFile }) {
 
     try {
       await uploadVideo(file, advancedInput, startTime, endTime, tokenCount, hasSubscription, AImodel);
-
-      // Update token count after successful upload
-      // try {
-      //   const updatedCount = await tokenService.getBalance();
-      //   setTokenCount(updatedCount);
-      // } catch (e) {
-      //   console.error('Error updating token balance:', e);
-      // }
     } catch (err) {
-      // if (err.message === 'OUT_OF_TOKENS') {
-      //   setShowOutOfTokensPopup(true);
-      // } else {
-      //   setErrorMessage(err.message || "Upload failed");
-      // }
       setErrorMessage(err.message || "Upload failed");
     }
   }
