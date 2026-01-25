@@ -4,6 +4,7 @@ import { useValidationState } from "../../hooks/useValidationState.js";
 import { useSubscriptionAndTokens } from "../../hooks/useSubscriptionAndTokens.js";
 import { useVideoUpload } from "../../hooks/useVideoUpload.js";
 import { useFileHandling } from "../../features/upload/hooks/useFileHandling.js";
+import { usePromptConfig } from "../../features/upload/hooks/usePromptConfig.js";
 import { ValidationProvider } from "../../context/ValidationContext.jsx";
 import tokenService from "../../services/tokenService.js";
 import Loading1 from "../loading/loading1.jsx";
@@ -26,11 +27,12 @@ export default function UploadPage({ initialFile }) {
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
   const [showOutOfTokensPopup, setShowOutOfTokensPopup] = useState(false);
-  const [advancedInput, setAdvancedInput] = useState({});
-  const [AImodel, setAImodel] = useState("gemini-3-pro-preview");
 
   // Validation state
   const validationState = useValidationState();
+
+  // Prompt configuration
+  const { advancedInput, setAdvancedInput, AImodel, setAImodel, resetConfig } = usePromptConfig();
 
   // Subscription and tokens
   const { tokenCount, hasSubscription, setTokenCount } = useSubscriptionAndTokens();
@@ -91,6 +93,7 @@ export default function UploadPage({ initialFile }) {
 
   function onRemove() {
     if (isUploading) return;
+    resetConfig();
     removeFile();
     if (inputRef.current) inputRef.current.value = "";
   }
@@ -148,7 +151,6 @@ export default function UploadPage({ initialFile }) {
                     onSelect={onSelect}
                     onUpload={onUpload}
                     uploading={isUploading}
-                    tokenCount={hasSubscription ? "∞" : tokenCount}
                   />
                 ) : (
                   <>
