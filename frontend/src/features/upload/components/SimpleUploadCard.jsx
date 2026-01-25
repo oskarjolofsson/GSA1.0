@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fileTransferService } from '../../services/fileTransferService';
+import { fileTransferService } from '../../../services/fileTransferService';
 
 export default function SimpleUploadCard() {
     const [isDragging, setIsDragging] = useState(false);
