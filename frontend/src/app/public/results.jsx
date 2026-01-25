@@ -5,7 +5,7 @@ import ResultBox from "../../components/result/result-box.jsx";
 import SharePopup from "../../components/popup/SharePopup.jsx";
 import pastDrillService from "../../services/pastDrillService.js";
 import Loading1 from "../../components/loading/loading1.jsx";
-import TextBox from "../../components/cards/textBox.jsx";
+import TextBox from "../../shared/components/textBox.jsx";
 import tokenService from "../../services/tokenService.js";
 import SignInPopup from "../../components/popup/signInPopup.jsx";
 import { useAuth } from "../../auth/authContext.jsx";
