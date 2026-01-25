@@ -7,9 +7,9 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../../auth/authContext';
-import DemoPreview from '../cards/UploadCard.jsx';
-import EmblaCarousel from '../carousel/EmblaCarousel.jsx';
+import { useAuth } from '../../../auth/authContext.jsx';
+// import DemoPreview from '../cards/UploadCard.jsx';
+import EmblaCarousel from './EmblaCarousel.jsx';
 
 function backgroundTexture() {
     return (
