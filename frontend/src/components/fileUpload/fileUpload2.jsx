@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useValidationState } from "../../hooks/useValidationState.js";
 import { useSubscriptionAndTokens } from "../../hooks/useSubscriptionAndTokens.js";
 import { useVideoUpload } from "../../hooks/useVideoUpload.js";
-import { useFileHandling } from "../../hooks/useFileHandling.js";
+import { useFileHandling } from "../../features/upload/hooks/useFileHandling.js";
 import { ValidationProvider } from "../../context/ValidationContext.jsx";
 import tokenService from "../../services/tokenService.js";
 import Loading1 from "../loading/loading1.jsx";
