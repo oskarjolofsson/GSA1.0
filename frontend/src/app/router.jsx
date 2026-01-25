@@ -32,11 +32,13 @@ export const router = createBrowserRouter([
       { path: "legal/terms-and-conditions", element: <TermsAndCond /> },
       { path: "legal/privacy-policy", element: <Privacy /> },
       { path: "results/:analysisId", element: <ResultsPage /> },
+      { path: "*", element: <NotFound /> },
     ],
   },
   {
     path: "/dashboard",
     element: <RequireAuth />,
+    errorElement: <NotFound />,
     children: [
       {
         element: <DashboardLayout />,
@@ -49,6 +51,7 @@ export const router = createBrowserRouter([
           { path: "profile", element: <Profile /> },
           { path: "drills", element: <Drills /> },
           { path: "issues", element: <Issues /> },
+          { path: "*", element: <NotFound /> },
         ],
       },
     ],
