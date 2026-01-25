@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function useUploadFlow() {
+export default function useUploadFlow() {
   const [step, setStep] = useState("upload");
 
   return {
