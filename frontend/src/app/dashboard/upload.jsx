@@ -4,6 +4,8 @@ import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import { fileTransferService } from "../../services/fileTransferService.js";
 
+import UploadFlow from "../../features/upload/uploadFlow.jsx";
+
 export default function DashboardUpload() {
   const location = useLocation();
   const [uploadedFile] = useState(() => {
@@ -11,11 +13,13 @@ export default function DashboardUpload() {
   });
 
   return (
-    <div className="w-full flex items-center justify-center">
-      <div className="w-full">
-        <FileUpload />
-      </div>
-    </div>
+    // <div className="w-full flex items-center justify-center">
+    //   <div className="w-full">
+    //     <FileUpload />
+    //   </div>
+    // </div>
+
+    <UploadFlow initialFile={uploadedFile} />
 
   );
 }

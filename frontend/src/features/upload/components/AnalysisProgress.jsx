@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
-import { CircularProgressLabel } from "./CircularProgressLabel";
+import CircularProgressWithLabel from "./CircularProgressWithLabel.jsx";
 
 export function AnalysisProgress({ durationSeconds, full = false }) {
   const [progress, setProgress] = useState(10);
@@ -32,7 +32,7 @@ export function AnalysisProgress({ durationSeconds, full = false }) {
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center" gap={3}>
-      <CircularProgressLabel value={progress} />
+      <CircularProgressWithLabel value={progress} />
       <Typography variant="h6" sx={{ color: "#fff" }}>
         Processing...
       </Typography>

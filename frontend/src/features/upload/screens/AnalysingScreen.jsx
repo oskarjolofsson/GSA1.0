@@ -1,8 +1,9 @@
 import { AnalysisProgress } from "../components/AnalysisProgress";
 
 export function AnalyzingScreen({ estimatedTimeSeconds = 30 }) {
+
   return (
-    <div className="flex justify-center mt-6 px-4">
+    <div className="flex justify-center mt-6 px-4 h-full items-center">
       <div className="w-full max-w-md bg-gray-900 p-4 rounded-xl shadow-lg border border-gray-700">
         {/* Header */}
         <div className="text-center mb-6">
