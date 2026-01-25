@@ -127,9 +127,9 @@ function TrimVideoScreenContent({
     }
 
     return (
-        <div className="h-auto text-slate-100 relative overflow-hidden min-h-screen">
+        <div className="h-auto text-slate-100 relative overflow-hidden min-h-screen flex items-center justify-center py-10">
             <section className="relative mx-auto max-w-6xl px-4 mt-5">
-                <div className="gap-12">
+                <div className="gap-12 mb-16">
                     <div
                         className={`rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 min-h-[280px] max-w-[700px] mx-auto flex items-center justify-center transition-all duration-700 ease-out will-change-transform transform md:rounded-3xl md:bg-[#0e1428]/80 md:backdrop-blur-md md:border md:border-white/10 md:p-6 rounded-none bg-transparent backdrop-blur-none border-none p-0 w-full ${
                             ready ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
