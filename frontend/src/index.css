@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import dropdown animations */
+@import './features/upload/styles/dropdown.css';
+
 @layer utilities {
   /* Fade in animation for page load */
   @keyframes fadeIn {

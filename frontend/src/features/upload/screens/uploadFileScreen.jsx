@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import DropZone from "../../../components/fileUpload/DropZone";
+import DropZone from "../components/DropZone.jsx";
 import ErrorPopup from "../../../components/popup/ErrorPopup";
 
 export default function UploadFileScreen({ 

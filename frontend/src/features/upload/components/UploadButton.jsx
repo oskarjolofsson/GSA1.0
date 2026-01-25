@@ -1,4 +1,4 @@
-import { useValidation } from "../../context/ValidationContext";
+import { useValidation } from "../../../context/ValidationContext";
 
 export default function UploadButtonZone({ onUpload, uploading }) {
     const validation = useValidation();
