@@ -1,90 +1,231 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useValidationState } from "../../../hooks/useValidationState.js";
 import { useVideoUpload } from "../../../hooks/useVideoUpload.js";
-import { ValidationProvider } from "../../../context/ValidationContext.jsx";
-import PreviewPane from "../../../components/fileUpload/preview/PreviewPane.jsx";
-import UploadButtonZone from "../../../components/fileUpload/UploadButtonZone.jsx";
+import { ValidationProvider, useValidation } from "../../../context/ValidationContext.jsx";
+import { Scissors, ArrowRight } from "lucide-react";
+
+// Custom hooks
+import { useVideoMetadata } from "../hooks/useVideoMetadata.js";
+import { useVideoSeek } from "../hooks/useVideoSeek.js";
+import { useVideoTrimming } from "../hooks/useVideoTrimming.js";
+
+// Components
+import UploadButtonZone from "../components/UploadButton.jsx";
+import VideoPlayer from "../components/VideoPlayer.jsx";
+import TrimSlider from "../components/TrimSlider.jsx";
+import TrimStats from "../components/TrimStats.jsx";
+import Dropdown from "../components/Dropdown.jsx";
+import AdvancedSettings from "../components/AdvancedSettings.jsx";
 import ErrorPopup from "../../../components/popup/ErrorPopup.jsx";
 
-export default function TrimVideoScreen({
-  fileHandling,
-  promptConfig,
-  startTime,
-  endTime,
-  setStartTime,
-  setEndTime,
-  onRemoveFile,
-  onAnalyzing,
+// Constants
+import { VIDEO_CONSTANTS } from "../constants/videoConstants.js";
+
+function TrimVideoScreenContent({
+    fileHandling,
+    promptConfig,
+    setStartTime,
+    setEndTime,
+    onRemoveFile,
+    onAnalyzing,
 }) {
-  const [ready, setReady] = useState(false);
+    const [ready, setReady] = useState(false);
+    const [shouldOpenAdvanced, setShouldOpenAdvanced] = useState(false);
+    const dropdownRef = useRef(null);
+    const validation = useValidation();
 
-  // Validation state
-  const validationState = useValidationState();
+    // Video metadata and state
+    const { videoRef, duration, isLoaded, error: videoError } = useVideoMetadata(fileHandling.previewUrl);
+    
+    // Trimming state
+    const trimState = useVideoTrimming(duration, (start, end) => {
+        setStartTime(start);
+        setEndTime(end);
+    });
 
-  // Video upload
-  const { analysis, analysisId, uploading: isUploading, errorMessage, uploadVideo, setErrorMessage } =
-    useVideoUpload();
+    // Video seeking
+    const seekTo = useVideoSeek(videoRef);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setReady(true), 30);
-    return () => clearTimeout(timer);
-  }, []);
+    // Video upload
+    const { analysis, analysisId, uploading: isUploading, errorMessage, uploadVideo, setErrorMessage } =
+        useVideoUpload();
 
-  // Navigate to analyzing screen when upload completes
-  useEffect(() => {
-    if (analysis && analysisId && !isUploading) {
-      onAnalyzing(analysisId);
+    useEffect(() => {
+        const timer = setTimeout(() => setReady(true), 30);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Sync validation errors from trim state
+    useEffect(() => {
+        if (trimState.validation.errors.trim) {
+            validation.setValidationError('trim', trimState.validation.errors.trim);
+        } else {
+            validation.clearValidationError('trim');
+        }
+
+        if (trimState.validation.errors.duration) {
+            validation.setValidationError('duration', trimState.validation.errors.duration);
+        } else {
+            validation.clearValidationError('duration');
+        }
+    }, [trimState.validation, validation]);
+
+    // Navigate to analyzing screen when upload completes
+    useEffect(() => {
+        if (analysis && analysisId && !isUploading) {
+            onAnalyzing(analysisId);
+        }
+    }, [analysis, analysisId, isUploading, onAnalyzing]);
+
+    // Reset advanced settings trigger after opening
+    useEffect(() => {
+        if (shouldOpenAdvanced) {
+            setShouldOpenAdvanced(false);
+        }
+    }, [shouldOpenAdvanced]);
+
+    const handleTrimClose = () => {
+        setShouldOpenAdvanced(true);
+    };
+
+    const handleRangeChange = useCallback((values) => {
+        const prevStart = trimState.start;
+        const prevEnd = trimState.end;
+
+        trimState.setRange(values);
+
+        // Jump to whichever handle moved
+        if (Math.abs(values[0] - prevStart) > Math.abs(values[1] - prevEnd)) {
+            seekTo(values[0]);
+        } else {
+            seekTo(values[1]);
+        }
+    }, [trimState, seekTo]);
+
+    const handleConfirmTrim = () => {
+        if (dropdownRef.current) {
+            dropdownRef.current.close();
+        }
+        handleTrimClose();
+    };
+
+    async function handleUpload() {
+        if (!fileHandling.file) return;
+        if (isUploading) return;
+
+        try {
+            await uploadVideo(
+                fileHandling.file,
+                promptConfig.advancedInput,
+                trimState.start,
+                trimState.end,
+                promptConfig.AImodel
+            );
+        } catch (err) {
+            setErrorMessage(err.message || "Upload failed");
+        }
     }
-  }, [analysis, analysisId, isUploading, onAnalyzing]);
 
-  function handleTime(start, end) {
-    setStartTime(start);
-    setEndTime(end);
-  }
+    return (
+        <div className="h-auto text-slate-100 relative overflow-hidden min-h-screen">
+            <section className="relative mx-auto max-w-6xl px-4 mt-5">
+                <div className="gap-12">
+                    <div
+                        className={`rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 min-h-[280px] max-w-[700px] mx-auto flex items-center justify-center transition-all duration-700 ease-out will-change-transform transform md:rounded-3xl md:bg-[#0e1428]/80 md:backdrop-blur-md md:border md:border-white/10 md:p-6 rounded-none bg-transparent backdrop-blur-none border-none p-0 w-full ${
+                            ready ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                        } delay-150`}
+                    >
+                        {!fileHandling.previewUrl ? (
+                            <div className="text-slate-400 text-sm">No video selected</div>
+                        ) : (
+                            <div className="w-full h-full flex flex-col">
+                                <VideoPlayer
+                                    videoRef={videoRef}
+                                    previewUrl={fileHandling.previewUrl}
+                                    onRemove={onRemoveFile}
+                                />
 
-  async function handleUpload() {
-    if (!fileHandling.file) return;
-    if (isUploading) return;
+                                {/* User tip */}
+                                <div className="mt-3 text-center">
+                                    <p className="text-xs text-white/60">
+                                        Tip: Trim the video so only the swing motion remains.
+                                    </p>
+                                </div>
 
-    try {
-      await uploadVideo(
-        fileHandling.file,
-        promptConfig.advancedInput,
-        startTime,
-        endTime,
-        promptConfig.AImodel
-      );
-    } catch (err) {
-      setErrorMessage(err.message || "Upload failed");
-    }
-  }
+                                {/* Trim controls dropdown */}
+                                <div className="mt-4">
+                                    <Dropdown
+                                        ref={dropdownRef}
+                                        icon={<Scissors className="w-4 h-4 text-white/70" />}
+                                        name="Step 1: Trim Your Swing"
+                                        isStep1={true}
+                                        isInitiallyOpen={true}
+                                        onClose={handleTrimClose}
+                                        done={duration > 0 && trimState.trimmedLength <= VIDEO_CONSTANTS.MAX_TRIMMED_LENGTH}
+                                        requirement={"Video too long, please trim"}
+                                    >
+                                        {/* Helper text */}
+                                        <div className="text-xs text-white/60 mb-3">
+                                            Select only the swing motion. This is required for accurate analysis.
+                                        </div>
 
-  return (
-    <ValidationProvider validationState={validationState}>
-      <div className="h-auto text-slate-100 relative overflow-hidden min-h-screen">
-        <section className="relative mx-auto max-w-6xl px-4 mt-5">
-          <div className="gap-12">
-            <PreviewPane
-              previewUrl={fileHandling.previewUrl}
-              ready={ready}
-              uploading={isUploading}
-              onRemove={onRemoveFile}
-              onTime={handleTime}
-              advancedInput={promptConfig.advancedInput}
-              setAdvancedInput={promptConfig.setAdvancedInput}
-              selectedAI={promptConfig.AImodel}
-              setAI={promptConfig.setAImodel}
-            />
-            <UploadButtonZone
-              onUpload={handleUpload}
-              uploading={isUploading}
-              file={fileHandling.file}
-            />
-          </div>
+                                        {/* Trim Slider */}
+                                        <TrimSlider
+                                            start={trimState.start}
+                                            end={trimState.end}
+                                            duration={duration}
+                                            onChange={handleRangeChange}
+                                            isInvalid={trimState.trimmedLength > VIDEO_CONSTANTS.MAX_TRIMMED_LENGTH}
+                                        />
 
-          <ErrorPopup message={errorMessage} onClose={() => setErrorMessage("")} />
-        </section>
-      </div>
-    </ValidationProvider>
-  );
+                                        {/* Trim Stats */}
+                                        <TrimStats
+                                            trimmedLength={trimState.trimmedLength}
+                                            isValid={trimState.trimmedLength <= VIDEO_CONSTANTS.MAX_TRIMMED_LENGTH}
+                                        />
+
+                                        {/* Confirm button */}
+                                        <div className="mt-4 flex justify-end">
+                                            <button
+                                                onClick={handleConfirmTrim}
+                                                disabled={trimState.trimmedLength > VIDEO_CONSTANTS.MAX_TRIMMED_LENGTH}
+                                                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/90 hover:bg-emerald-500 rounded-lg text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                Confirm Trim
+                                                <ArrowRight className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </Dropdown>
+                                </div>
+
+                                {/* Advanced Settings */}
+                                <AdvancedSettings
+                                    advancedInput={promptConfig.advancedInput}
+                                    setAdvancedInput={promptConfig.setAdvancedInput}
+                                    shouldOpen={shouldOpenAdvanced}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <UploadButtonZone
+                        onUpload={handleUpload}
+                        uploading={isUploading}
+                    />
+                </div>
+
+                <ErrorPopup message={errorMessage || videoError} onClose={() => setErrorMessage("")} />
+            </section>
+        </div>
+    );
+}
+
+export default function TrimVideoScreen(props) {
+    const validationState = useValidationState();
+
+    return (
+        <ValidationProvider validationState={validationState}>
+            <TrimVideoScreenContent {...props} />
+        </ValidationProvider>
+    );
 }

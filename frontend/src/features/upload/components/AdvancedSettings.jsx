@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Settings, ArrowRight, SkipForward, CheckCircle2 } from "lucide-react";
-import Dropdown from "../../Dropdown";
+import Dropdown from "./Dropdown";
 
 export default function AdvancedSettings({ setAdvancedInput, shouldOpen = false }) {
   const [isOpen, setIsOpen] = useState(false);  // Track if dropdown is open

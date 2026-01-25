@@ -1,5 +1,6 @@
 import { useState, useImperativeHandle, forwardRef, useEffect } from "react";
 import { Settings, CheckCircle2 } from "lucide-react";
+import "../styles/dropdown.css"; // Import dropdown animations
 
 const Dropdown = forwardRef(({
   children,

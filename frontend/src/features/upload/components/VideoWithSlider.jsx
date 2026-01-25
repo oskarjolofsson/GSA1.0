@@ -1,8 +1,20 @@
+// NOTE: This component is kept for reference only and should not be imported anywhere.
+// The functionality has been refactored into smaller, focused components:
+// - VideoPlayer.jsx - video display
+// - TrimSlider.jsx - range slider UI
+// - TrimStats.jsx - trimmed length display
+// And hooks:
+// - useVideoMetadata.js - video loading
+// - useVideoSeek.js - debounced seeking
+// - useVideoTrimming.js - trim state management
+// See trimVideoScreen.jsx for the new implementation.
+
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Scissors, Trash2, ArrowRight } from "lucide-react";
 import { Range } from "react-range";
-import Dropdown from "../../Dropdown";
-import { useValidation } from "../../../../context/ValidationContext";
+import Dropdown from "./Dropdown";
+
+import { useValidation } from "../../../context/ValidationContext";
 
 // Add keyframe animations for blinking and sliding
 const style = document.createElement('style');
