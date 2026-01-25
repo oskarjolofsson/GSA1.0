@@ -26,7 +26,7 @@ export const useVideoUpload = () => {
     };
   };
 
-  const uploadVideo = async (file, advancedInput, startTime, endTime, tokenCount, hasSubscription, AImodel) => {
+  const uploadVideo = async (file, advancedInput, startTime, endTime, AImodel) => {
     if (!file) return;
     if (uploading) return;
 
