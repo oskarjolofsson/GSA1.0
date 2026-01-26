@@ -3,14 +3,14 @@
 import os
 import tempfile
 
-from backend.cloudflare.config import (
+from .config import (
     R2_BUCKET,
     FFMPEG_DEFAULT_TIMESTAMP,
     THUMBNAIL_FILENAME,
 )
 
-from backend.cloudflare.r2_client import download_file, upload_file
-from backend.cloudflare.ffmpeg_utils import extract_thumbnail_webp
+from .r2Client import download_file, upload_file
+from .ffmpeg_utils import extract_thumbnail_webp
 
 
 def make_thumbnail_key(video_key: str) -> str:
