@@ -1,8 +1,8 @@
 import os
 
-R2_ENDPOINT = "https://<ACCOUNT_ID>.r2.cloudflarestorage.com"
-R2_ACCESS_KEY = os.environ["R2_ACCESS_KEY"]
-R2_SECRET_KEY = os.environ["R2_SECRET_KEY"]
+R2_ENDPOINT = os.environ["S3_API"]
+R2_ACCESS_KEY = os.environ["CLOUDFLARE_R2_ACCESS_KEY"]
+R2_SECRET_KEY = os.environ["CLOUDFLARE_R2_SECRET_ACCESS_KEY"]
 
 R2_BUCKET = "trueswing-videos"
 

@@ -1,15 +1,13 @@
-# backend/media/thumbnail_service.py
-
 import os
 import tempfile
 
 from .config import (
-    R2_BUCKET,
     FFMPEG_DEFAULT_TIMESTAMP,
     THUMBNAIL_FILENAME,
+    R2_BUCKET,
 )
 
-from .r2Client import download_file, upload_file
+from .r2Client import r2_client
 from .ffmpeg_utils import extract_thumbnail_webp
 
 
@@ -17,6 +15,7 @@ def make_thumbnail_key(video_key: str) -> str:
     if not video_key.lower().endswith((".mp4", ".mov")):
         raise ValueError(f"Unexpected video key format: {video_key}")
 
+    # Put thumbnail next to the video
     return video_key.rsplit("/", 1)[0] + f"/{THUMBNAIL_FILENAME}"
 
 
@@ -26,30 +25,34 @@ def generate_thumbnail_for_video(video_key: str) -> str:
     local_thumb = os.path.join(tmp_dir, THUMBNAIL_FILENAME)
 
     try:
-        # 1) Download video
-        download_file(R2_BUCKET, video_key, local_video)
+        # 1) Download video bytes from R2
+        video_bytes = r2_client.get_object(video_key)
 
-        # 2) Extract frame
+        with open(local_video, "wb") as f:
+            f.write(video_bytes)
+
+        # 2) Extract frame with FFmpeg
         extract_thumbnail_webp(
             local_video,
             local_thumb,
             timestamp=FFMPEG_DEFAULT_TIMESTAMP,
         )
 
-        # 3) Upload thumbnail
+        # 3) Upload thumbnail back to R2 using boto3 client directly
         thumb_key = make_thumbnail_key(video_key)
 
-        upload_file(
-            R2_BUCKET,
-            thumb_key,
-            local_thumb,
-            content_type="image/webp",
-        )
+        with open(local_thumb, "rb") as f:
+            r2_client.s3.put_object(
+                Bucket=R2_BUCKET,
+                Key=thumb_key,
+                Body=f,
+                ContentType="image/webp",
+            )
 
         return thumb_key
 
     finally:
-        # Cleanup
+        # Cleanup temp files
         for path in (local_video, local_thumb):
             if os.path.exists(path):
                 os.remove(path)
