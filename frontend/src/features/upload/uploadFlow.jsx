@@ -6,7 +6,6 @@ import { AnalyzingScreen } from "./screens/AnalysingScreen";
 import useUploadFlow from "../upload/hooks/useUploadFlow";
 import { useFileHandling } from "./hooks/useFileHandling";
 import { usePromptConfig } from "./hooks/usePromptConfig";
-import { fileTransferService } from "../../services/fileTransferService.js";
 
 export default function UploadFlow() {
   const location = useLocation();
@@ -19,16 +18,6 @@ export default function UploadFlow() {
   // Additional state for trim times
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
-
-  // Handle initial uploaded file from fileTransferService or location state
-  useEffect(() => {
-    const uploadedFile = fileTransferService.getFile() || location.state?.uploadedFile;
-    if (uploadedFile && !fileHandling.file) {
-      fileHandling.setFile(uploadedFile);
-      const url = URL.createObjectURL(uploadedFile);
-      goToTrim();
-    }
-  }, []);
 
   const handleFileSelected = () => {
     if (fileHandling.file) {

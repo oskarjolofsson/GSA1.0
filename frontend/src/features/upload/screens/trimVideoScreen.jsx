@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useValidationState } from "../../../hooks/useValidationState.js";
+import { useValidationState } from "../hooks/useValidationState.js";
 import { useUploadState } from "../hooks/useUploadState.js";
 import uploadService from "../services/uploadService.js";
 import { ValidationProvider, useValidation } from "../../../context/ValidationContext.jsx";
