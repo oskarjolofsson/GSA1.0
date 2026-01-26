@@ -65,7 +65,7 @@ export default function ProfileDropdown() {
                 </div>
                 <div className="my-1 h-px bg-gray-200" />
 
-                <MenuItem name="My Profile" href="/profile" icon={<User className="h-4 w-4" />} />
+                <MenuItem name="My Profile" href="/dashboard/profile" icon={<User className="h-4 w-4" />} />
                 {/* <MenuItem name="Past Drills" href="/past-drills" icon={<Clock className="h-4 w-4" />} /> */}
                 {/* <MenuItem name="Sign Out" onClick={logout} icon={<LogOut className="h-4 w-4" />} /> */}
             </div>

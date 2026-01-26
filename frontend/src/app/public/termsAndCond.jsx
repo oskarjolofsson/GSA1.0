@@ -1,4 +1,4 @@
-import LegalContentSection from "../components/textBox/legalSection.jsx";
+import LegalContentSection from "../../components/textBox/legalSection.jsx";
 
 export default function Terms() {
   return (
