@@ -5,6 +5,8 @@ from botocore.client import Config
 from botocore.exceptions import ClientError
 
 load_dotenv()
+print("R2 access key loaded:", bool(os.getenv("CLOUDFLARE_R2_ACCESS_KEY")))
+print("R2 secret loaded:", bool(os.getenv("CLOUDFLARE_R2_SECRET_ACCESS_KEY")))
 class R2Client:
     
     def __init__(self):
