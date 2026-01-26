@@ -38,3 +38,7 @@ This project is the result of that vision: bringing advanced AI technology to th
 | Deployment     | Render                                         |
 
 ---
+
+### Deploy
+Frontend: Push to production-branch
+Backend: follow instructions in docker-file

@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 import traceback
 import uuid
+import pprint
 
 # Analysis Service
 from services.analy.analyser import analyser
@@ -10,51 +11,13 @@ from firebase_admin import auth as firebase_auth
 from services.firebase.firebase_auth import require_auth
 from services.firebase.firebase_analyses import firebase_analyses
 from services.firebase.firebase_drill import FirebaseDrillService
+from services.image_gen.drills.gemini.drill_image import GeminiDrillImage
 
 # Cloudflare R2
 from services.cloudflare.videoStorageService import video_storage_service
 
 # Create a Blueprint for analysis routes
 analysis_bp = Blueprint("analysis", __name__, url_prefix="/api/v1/analysis")
-
-# Commented out and not removed because replacement-fetch has not yet been deployed yet
-# @analysis_bp.route("/get_previous_analyses", methods=["GET", "POST"])
-# def get_past_analyses():
-#     try:
-#         # Get the token from Authorization header
-#         auth_header = request.headers.get("Authorization")
-#         if not auth_header or not auth_header.startswith("Bearer "):
-#             return jsonify({"error": "No authorization token provided"}), 401
-
-#         # Extract the token (remove 'Bearer ' prefix)
-#         id_token = auth_header.split("Bearer ")[1]
-
-#         # Verify the token with Firebase Admin SDK
-#         decoded_token = firebase_auth.verify_id_token(id_token)
-
-#         # Extract user_id from the decoded token
-#         user_id = decoded_token["uid"]
-#         sport = request.form.get("sport") or request.args.get("sport", "golf")
-#         offset = int(request.form.get("offset") or request.args.get("offset", 0))
-#         limit = int(request.form.get("limit") or request.args.get("limit", 10))
-        
-#         result = FireBasePastAnalysis(user_id, sport).get_analyses_by_tier(limit=limit, offset=offset)
-#         return jsonify(result), 200
-
-#     except Exception as e:
-#         traceback.print_exc()
-#         print(f"Error retrieving previous analyses: {str(e)}")
-
-#         return (
-#             jsonify(
-#                 {
-#                     "success": False,
-#                     "error": "error with retrieving previous analyses",
-#                     "details": str(e),
-#                 }
-#             ),
-#             500,
-#         )
         
 
 @analysis_bp.route("/create", methods=["POST"])
@@ -82,10 +45,10 @@ def create_analysis():
         model = request.form.get("model", "gemini-3-pro-preview")
         
         details = {
-            "shape": request.form.get("shape", "unsure"),
-            "height": request.form.get("height", "unsure"),
-            "misses": request.form.get("miss", "unsure"),
-            "extra": request.form.get("extra", ""),
+            "shape": request.form.get("shape", None),
+            "height": request.form.get("height", None),
+            "misses": request.form.get("misses", None),
+            "extra": request.form.get("extra", None),
         }
         
         if not user_id:
@@ -290,3 +253,117 @@ def get_video_url(analysis_id):
             "error": "error retrieving video URL",
             "details": str(e)
         }), 500
+
+@analysis_bp.route("/image/<drill_id>", methods=["GET"])
+@require_auth
+def generate_image(drill_id):
+    """
+    Retrieve image_url for drill. If it exists, return it. If not, generate it.
+
+    Arguments:
+        drill_id (str): The ID of the drill
+
+    Returns:
+        JSON response with:
+        - success
+        - signed image URL
+    """
+    
+    # Get drill
+    user_id = request.user["uid"]
+    drill = FirebaseDrillService(user_id=user_id).get_drill_by_id(drill_id=drill_id)
+    if not drill:
+        return jsonify({"success": False, "error": "drill not found"}), 404
+    
+    try:
+        # If image already exists, return it
+        if "image_key" in drill and drill["image_key"]:
+            # Get the URL
+            image_url = video_storage_service.generate_read_url(drill["image_key"])
+            return jsonify(
+                {
+                    "success": True,
+                    "image_url": image_url,
+                }
+            ), 200
+        
+        # Generate image
+        image_url, image_key = GeminiDrillImage(
+            fault_indicator=drill["fault_indicator"],
+            success_signal=drill["success_signal"],
+            task=drill["task"],
+            
+            ).execute(drill_id=drill_id)
+        
+        # Save image_key to drill
+        FirebaseDrillService(user_id=user_id).update_drill_image(
+            drill_id=drill_id,
+            image_key=image_key
+        )
+        
+        return jsonify(
+            {
+                "success": True,
+                "image_url": image_url,
+            }
+        ), 200
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify(
+            {
+                "success": False,
+                "error": "error generating image",
+                "details": str(e),
+            }
+        ), 500
+        
+@analysis_bp.route("/<analysis_id>", methods=["DELETE"])
+@require_auth
+def delete_analysis(analysis_id):
+    """
+    Delete an analysis by its ID.
+    Arguments:
+        analysis_id (str): The ID of the analysis to delete
+    """
+    
+    # Get user ID from authenticated request
+    user_id = request.user["uid"]
+    try:
+        # Make sure analysis exists
+        analysis = firebase_analyses(user_id=user_id, sport="golf").get_analysis_by_id(analysis_id=analysis_id)
+        if not analysis:
+            return jsonify({"success": False, "error": "analysis not found"}), 404
+        
+        # Delete analysis record
+        firebase_analyses(user_id=user_id, sport="golf").delete_analysis(analysis_id=analysis_id)
+        
+        # delete video from storage
+        video_storage_service.delete(analysis["video_key"])
+        
+        # Delete associated drill if exists
+        if "drill_id" in analysis and analysis["drill_id"]:
+            # get drill details
+            drill = FirebaseDrillService(user_id=user_id).get_drill_by_id(drill_id=analysis["drill_id"])
+                
+            # Remove from drills collection
+            FirebaseDrillService(user_id=user_id).delete_drill(drill_id=analysis["drill_id"])
+            
+            # Remove associated image from storage if exists
+            if "image_key" in drill and drill["image_key"]:
+                video_storage_service.delete(drill["image_key"])
+            
+        
+        return jsonify(
+            {
+                "success": True,
+            }
+        ), 200
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify(
+            {
+                "success": False,
+                "error": "error deleting analysis",
+                "details": str(e),
+            }
+        ), 500

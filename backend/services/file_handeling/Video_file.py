@@ -11,6 +11,7 @@ from werkzeug.datastructures import Headers
 from io import BytesIO
 import subprocess
 import shutil
+import traceback
 
 class Video_file(File):
     def __init__(self, f: FileStorage):
@@ -33,13 +34,14 @@ class Video_file(File):
             num_keyframes: Number of keyframes to extract
             
         Returns:
-            List[str]: List of keyframe file paths
+            Keyframes: List of keyframe file paths
         """
         file_path = self.path()
+        print("Extracting keyframes from:", file_path)
         try:
             cap = cv2.VideoCapture(file_path)
             if not cap.isOpened():
-                return []
+                raise ValueError(f"Could not open video file: {file_path}")
             
             total_frames = self.metrics()["total_frames"]
             
@@ -51,7 +53,7 @@ class Video_file(File):
             
             if usable_frames <= 0:
                 cap.release()
-                return []
+                raise ValueError(f"Not enough usable frames in video file: {file_path}")
             
             # Extract keyframes at even intervals
             frame_interval = usable_frames // num_keyframes
@@ -75,8 +77,9 @@ class Video_file(File):
             return kf
             
         except Exception as e:
-            print(f"Error extracting keyframes from {file_path}: {str(e)}")
-            return []
+            self.remove()
+            traceback.print_exc()
+            raise RuntimeError(f"Error extracting keyframes: {str(e)}")
         
 
 

@@ -1,4 +1,4 @@
-import PriceTable from "../components/subscriptions/PricingTable";
+import PriceTable from "../../components/subscriptions/PricingTable";
 
 export default function Products() {
     return (

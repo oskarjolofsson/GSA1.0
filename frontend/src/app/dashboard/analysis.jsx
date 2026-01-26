@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
-import DrillDropdown from "../components/drill/drillDropdown";
-import AnalysisCard from "../components/analysis/AnalysisCard";
-import pastDrillService from "../services/pastDrillService";
-import SharePopup from "../components/popup/SharePopup";
-import ResultBox from "../components/result/result-box.jsx";
-import Sidebar from "../components/dashboard/sidebar.jsx";
+import { useState, useEffect, useMemo } from "react";
+import pastDrillService from "../../services/pastDrillService.js";
+import SharePopup from "../../components/popup/SharePopup.jsx";
+import ResultBox from "../../components/result/result-box.jsx";
+import Sidebar from "../../components/dashboard/sidebar.jsx";
 
 import { Share2 } from "lucide-react";
 
@@ -21,7 +19,24 @@ export default function Analyses() {
   const [videoURLCache, setVideoURLCache] = useState({}); // Cache: analysisId -> videoUrl
   const [showSharePopup, setShowSharePopup] = useState(false);
 
-  const share_button_url = window.location.origin + "/dashboard/analyse/" + (activeAnalysis ? activeAnalysis.analysis_id : "");
+  const share_button_url = window.location.origin + "/share_analysis/" + (activeAnalysis ? activeAnalysis.analysis_id : "");
+
+  // Build sidebar list from analyses
+  const sidebarList = useMemo(() => {
+    return analyses.map((analysis) => ({
+      id: analysis.analysis_id,
+      label: analysis.analysis_results?.key_findings?.[0]?.title || "Untitled Analysis",
+      image: null,
+    }));
+  }, [analyses]);
+
+  // Handle sidebar selection
+  const handleSidebarSelect = (item) => {
+    const selected = analyses.find((a) => a.analysis_id === item.id);
+    if (selected) {
+      setActiveAnalysis(selected);
+    }
+  };
 
   useEffect(() => {
     const fetchUserAnalyses = async () => {
@@ -32,24 +47,16 @@ export default function Analyses() {
         const analyses = await pastDrillService.getAnalysesForUser();
 
         // Normalize + sort (newest first if createdAt exists)
-        const normalizedAnalyses = analyses
-          .map((a) => ({
-            id: a.analysis_id,
-            title: a.title || "Swing Analysis",
-            drillName: a.drill_name || a.drillName || "", // if present from backend
-            status: a.status,
-            createdAt: a.createdAt,
-            analysisResults: a.analysis_results,
-            video_key: a.video_key, // Preserve video_key for URL fetching
-          }))
-          .sort((x, y) => {
-            const dx = new Date(x.createdAt || 0).getTime();
-            const dy = new Date(y.createdAt || 0).getTime();
-            return dy - dx;
-          });
+        const normalizedAnalyses = analyses.sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0).getTime();
+          const dateB = new Date(b.createdAt || 0).getTime();
+          return dateB - dateA;
+        });
 
         setAnalyses(normalizedAnalyses);
-        setActiveAnalysis(normalizedAnalyses[0] || null);
+        const firstAnalysis = normalizedAnalyses[0];
+        console.log("Setting active analysis to:", firstAnalysis);
+        setActiveAnalysis(firstAnalysis);
       } catch (err) {
         console.error("Error fetching analyses:", err);
         setError(err.message);
@@ -78,7 +85,7 @@ export default function Analyses() {
 
       // If no video_key, can't fetch URL
       if (!activeAnalysis.video_key) {
-        console.warn("No video_key available for analysis:", activeAnalysis.id);
+        console.warn("No video_key available for analysis:", activeAnalysis.analysis_id);
         setVideoURL(null);
         return;
       }
@@ -154,48 +161,13 @@ export default function Analyses() {
 
   return (
     <div className="w-full mx-auto px-4 py-6">
-      {/* Analysis selector */}
-      {/* <div
-        onClick={() => setShowList((prev) => !prev)}
-        className="w-full max-w-4xl mb-4 cursor-pointer"
-        role="button"
-        aria-expanded={showList}
-      >
-        <DrillDropdown header="Your Analyses" />
-      </div> */}
-
-      {/* Analysis list (dropdown mode) */}
-      {showList && (
-        <div className="mt-4">
-          <div className="rounded-2xl border border-slate-700/60 bg-slate-900/70 backdrop-blur-sm shadow-lg">
-            <div className="max-h-[50vh] overflow-y-auto overscroll-contain no-scrollbar p-2 space-y-2">
-              {analyses.map((analysis) => (
-                <AnalysisCard
-                  key={analysis.analysis_id}
-                  title={analysis.title}
-                  drillName={analysis.drillName}
-                  status={analysis.status}
-                  createdAt={analysis.createdAt}
-                  compact
-                  selected={analysis.analysis_id === activeAnalysis.analysis_id}
-                  onClick={() => {
-                    setActiveAnalysis(analysis);
-                    setShowList(false);
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Analysis results */}
 
       {activeAnalysis && !showList && (
         <>
-        <div className="bg-red">
-          <Sidebar list={["Item1", "Item2", "Item3"]} />
-        </div>
+        {/* <div className="bg-red">
+          <Sidebar list={sidebarList} onSelect={handleSidebarSelect} />
+        </div> */}
           
           {/* Show share button for viewing own analysis */}
           <div className="flex justify-end mb-6">
@@ -207,7 +179,7 @@ export default function Analyses() {
               Share
             </button>
           </div>
-          <ResultBox analysis={activeAnalysis.analysisResults} video_url={videoURL} />
+          <ResultBox analysis={activeAnalysis.analysis_results} video_url={videoURL} />
         </>
       )}
 
