@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../auth/authContext';
+import { useAuth } from '../../../auth/authContext';
 import { Check } from 'lucide-react';
-import SubscriptionService from '../../services/activeSubscription';
+import SubscriptionService from '../../../services/activeSubscription';
 
 const playerMonthlyPriceId = import.meta.env.VITE_PRICE_ID_PLAYER_MONTHLY;
   const playerYearlyPriceId = import.meta.env.VITE_PRICE_ID_PLAYER_YEARLY;

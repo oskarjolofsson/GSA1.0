@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAuth } from "../../auth/authContext.jsx"; // exposes { user, loading }
+import { useAuth } from "../../../auth/authContext.jsx"; // exposes { user, loading }
 import { useNavigate } from "react-router-dom";
 
 export default function SignInPopup({

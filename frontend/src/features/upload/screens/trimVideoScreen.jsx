@@ -16,7 +16,7 @@ import TrimSlider from "../components/TrimSlider.jsx";
 import TrimStats from "../components/TrimStats.jsx";
 import Dropdown from "../components/Dropdown.jsx";
 import AdvancedSettings from "../components/AdvancedSettings.jsx";
-import ErrorPopup from "../../../components/popup/ErrorPopup.jsx";
+import ErrorPopup from "../../../shared/components/popup/ErrorPopup.jsx";
 
 // Constants
 import { VIDEO_CONSTANTS } from "../constants/videoConstants.js";
