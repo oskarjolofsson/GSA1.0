@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion"
 // Import Components
 import ResultHeroCard from "./resultHero";
 import VideoDemo from "./videoDemo";
-import { fileTransferService } from "../../../services/fileTransferService";
 import pastDrillService from "../../../services/pastDrillService";
 import DrillPopup from "../../../shared/components/popup/drillPopup";
 

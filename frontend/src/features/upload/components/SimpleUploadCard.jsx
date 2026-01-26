@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fileTransferService } from '../../../services/fileTransferService';
 
 export default function SimpleUploadCard() {
     const [isDragging, setIsDragging] = useState(false);
@@ -24,7 +23,9 @@ export default function SimpleUploadCard() {
         }
 
         setError('');
-        fileTransferService.setFile(file);
+        // TODO implement file transfer
+
+
         navigate('/dashboard/upload');
     }
 
