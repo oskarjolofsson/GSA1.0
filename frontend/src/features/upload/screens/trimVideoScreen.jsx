@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useValidationState } from "../../../hooks/useValidationState.js";
-import { useVideoUpload } from "../../../hooks/useVideoUpload.js";
+import { useUploadState } from "../hooks/useUploadState.js";
+import uploadService from "../services/uploadService.js";
 import { ValidationProvider, useValidation } from "../../../context/ValidationContext.jsx";
 import { Scissors, ArrowRight } from "lucide-react";
 
@@ -46,9 +47,8 @@ function TrimVideoScreenContent({
     // Video seeking
     const seekTo = useVideoSeek(videoRef);
 
-    // Video upload
-    const { analysis, analysisId, uploading: isUploading, errorMessage, uploadVideo, setErrorMessage } =
-        useVideoUpload();
+    // Video upload state and service
+    const uploadState = useUploadState();
 
     useEffect(() => {
         const timer = setTimeout(() => setReady(true), 30);
@@ -72,10 +72,10 @@ function TrimVideoScreenContent({
 
     // Navigate to analyzing screen when upload completes
     useEffect(() => {
-        if (analysis && analysisId && !isUploading) {
-            onAnalyzing(analysisId);
+        if (uploadState.analysis && uploadState.analysisId && !uploadState.uploading) {
+            onAnalyzing(uploadState.analysisId);
         }
-    }, [analysis, analysisId, isUploading, onAnalyzing]);
+    }, [uploadState.analysis, uploadState.analysisId, uploadState.uploading, onAnalyzing]);
 
     // Reset advanced settings trigger after opening
     useEffect(() => {
@@ -111,18 +111,26 @@ function TrimVideoScreenContent({
 
     async function handleUpload() {
         if (!fileHandling.file) return;
-        if (isUploading) return;
+        if (uploadState.uploading) return;
+
+        uploadState.setUploading(true);
+        uploadState.setErrorMessage('');
 
         try {
-            await uploadVideo(
+            const result = await uploadService.uploadVideo(
                 fileHandling.file,
                 promptConfig.advancedInput,
                 trimState.start,
                 trimState.end,
                 promptConfig.AImodel
             );
+            uploadState.setAnalysis(result.analysis);
+            uploadState.setAnalysisId(result.analysisId);
         } catch (err) {
-            setErrorMessage(err.message || "Upload failed");
+            const errorMsg = err.message || 'Upload failed';
+            uploadState.setErrorMessage(errorMsg);
+        } finally {
+            uploadState.setUploading(false);
         }
     }
 
@@ -210,11 +218,11 @@ function TrimVideoScreenContent({
 
                     <UploadButtonZone
                         onUpload={handleUpload}
-                        uploading={isUploading}
+                        uploading={uploadState.uploading}
                     />
                 </div>
 
-                <ErrorPopup message={errorMessage || videoError} onClose={() => setErrorMessage("")} />
+                <ErrorPopup message={uploadState.errorMessage || videoError} onClose={() => uploadState.setErrorMessage("")} />
             </section>
         </div>
     );
