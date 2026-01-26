@@ -4,13 +4,9 @@ import { PanelLeftClose } from "lucide-react";
 import ProfileBar from "./profileBar"
 import SidebarNav from "./sidebarNav"
 
-
 export default function DashboardSidebar() {
     const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();
-
-    
-
     return (
         <>
             {/* Open button on mobile - shown when sidebar is closed */}
@@ -85,18 +81,6 @@ export default function DashboardSidebar() {
             <div className="border-white/10 p-2 w-full">
                 <SidebarNav isOpen={isOpen} onClick={() => setIsOpen(false)} />
             </div>
-
-            {/* Active Issues Header */}
-            {/* <div className={`px-4 py-2 ${!isOpen && 'hidden'} text-center mt-4 border border-white/10 rounded-lg mx-2 bg-white/5`}>
-                <h2 className="text-sm font-semibold text-white/70 uppercase tracking-wider">
-                    Active Golf Issues
-                </h2>
-            </div>
-
-            
-            <div className="flex-1 overflow-auto overflow-auto">
-                {isOpen && <ActiveIssues />}
-            </div> */}
 
             <div className="flex-1" />
 

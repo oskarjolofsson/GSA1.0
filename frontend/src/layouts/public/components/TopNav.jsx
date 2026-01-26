@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../../auth/authContext.jsx';
+import { useAuth } from '../../../auth/authContext.jsx';
 
 // Components and icons
 import ProfileDropdown from './DropDown.jsx';
@@ -32,7 +32,7 @@ function desktopNav(navItems) {
   );
 }
 
-import SignInPopup from '../../shared/components/popup/signInPopup.jsx';
+import SignInPopup from '../../../shared/components/popup/signInPopup.jsx';
 
 function SignIn({ mobile = false }) {
   const { login, loading, user } = useAuth();
