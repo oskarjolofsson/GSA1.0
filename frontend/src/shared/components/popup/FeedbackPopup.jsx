@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import FeedbackService from '../../services/feedbackService.js';
+import FeedbackService from '../../../services/feedbackService.js';
 
 export default function FeedbackPopup({ isOpen, onClose }) {
   const [entered, setEntered] = useState(false);

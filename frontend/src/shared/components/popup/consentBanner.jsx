@@ -1,4 +1,4 @@
-import { setAnalyticsConsent, hasUserGivenConsent } from "../../lib/consent";
+import { setAnalyticsConsent, hasUserGivenConsent } from "../../../lib/consent";
 import { useState } from "react";
 
 export function ConsentBanner() {

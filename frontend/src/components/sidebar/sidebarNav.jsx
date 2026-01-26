@@ -1,13 +1,9 @@
 import { NavLink } from "react-router-dom";
 import {
   UploadCloud,
-  FolderOpen,
   Home,
   Target,
-  Timer,
-  Repeat,
   Activity,
-LineChart
 } from "lucide-react";
 
 const items = [

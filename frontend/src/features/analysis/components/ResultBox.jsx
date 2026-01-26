@@ -3,11 +3,11 @@ import {Search, Lightbulb, Brain } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"
 
 // Import Components
-import ResultHeroCard from "../../../components/result/summary/resultHero";
-import VideoDemo from "../../../components/result/summary/videoDemo";
+import ResultHeroCard from "./resultHero";
+import VideoDemo from "./videoDemo";
 import { fileTransferService } from "../../../services/fileTransferService";
 import pastDrillService from "../../../services/pastDrillService";
-import DrillPopup from "../../../components/popup/drillPopup";
+import DrillPopup from "../../../shared/components/popup/drillPopup";
 
 
 const SEVERITY_COLORS = {

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { PanelLeftClose } from "lucide-react";
 import ProfileBar from "./profileBar"
 import SidebarNav from "./sidebarNav"
-import ActiveIssues from "./active_issues"
 
 
 export default function DashboardSidebar() {

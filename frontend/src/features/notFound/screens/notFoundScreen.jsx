@@ -1,4 +1,4 @@
-import TextBox from "../../../shared/components/textBox"
+import TextBox from "../../../shared/components/cards/textBox"
 
 export default function NotFoundScreen() {
   return (
