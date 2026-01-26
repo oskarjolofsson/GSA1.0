@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import FeedbackService from '../../../services/feedbackService.js';
+import { useFeedback } from '../hooks/useFeedback.js';
 
 export default function FeedbackPopup({ isOpen, onClose }) {
   const [entered, setEntered] = useState(false);
@@ -7,6 +7,7 @@ export default function FeedbackPopup({ isOpen, onClose }) {
   const [selectedRating, setSelectedRating] = useState(null);
   const [explanation, setExplanation] = useState('');
   const textareaRef = useRef(null);
+  const { submit } = useFeedback();
 
   // Trigger animation on open/close
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function FeedbackPopup({ isOpen, onClose }) {
   }
 
   function handleSubmit() {
-    FeedbackService.submitFeedback(selectedRating, explanation)
+    submit(selectedRating, explanation)
       .then((response) => {
         console.log('Feedback successfully sent:', response);
       })
