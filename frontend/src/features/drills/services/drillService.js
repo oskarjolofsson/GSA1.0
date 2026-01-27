@@ -1,5 +1,5 @@
 import { auth } from '../../../lib/firebase';
-import { ensureUserReady } from './authHelper';
+import { ensureUserReady } from '../../analysis/services/authHelper';
 
 const API = (import.meta.env.VITE_API_URL || '');
 

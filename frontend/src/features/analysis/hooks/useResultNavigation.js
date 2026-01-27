@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import drillService from '../services/drillService';
+import drillService from '../../drills/services/drillService';
 
 export function useResultNavigation(activeProblem, setActiveProblem, key_findings) {
   const [drillPopupOpen, setDrillPopupOpen] = useState(false);
