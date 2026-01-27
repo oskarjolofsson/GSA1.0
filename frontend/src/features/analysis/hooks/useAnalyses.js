@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import pastDrillService from '../../../services/pastDrillService.js';
+import analysisService from '../services/analysisService.js';
 
 export function useAnalyses() {
     const [analyses, setAnalyses] = useState([]);
@@ -12,7 +12,7 @@ export function useAnalyses() {
                 setLoading(true);
                 setError(null);
 
-                const analyses = await pastDrillService.getAnalysesForUser();
+                const analyses = await analysisService.getAnalysesForUser();
 
                 const normalizedAnalyses = analyses.sort((a, b) => {
                     const dateA = new Date(a.createdAt || 0).getTime();
