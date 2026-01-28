@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 function UpperBar() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 grid grid-cols-2 sm:grid-cols-4 gap-8">
+    <div className="mx-auto max-w-6xl px-4 py-12 grid grid-cols-2 sm:grid-cols-3 gap-8">
       {Brand()}
       {Columns()}
     </div>
@@ -27,15 +27,15 @@ function Brand() {
 function Columns() {
   return (
     <>
-      <div>
+      {/* <div>
         <h3 className="text-sm font-semibold text-white mb-3">PRODUCT</h3>
         <ul className="space-y-2 text-sm">
           <li><Link to="/#features" className="hover:text-white">Features</Link></li>
           <li><Link to="/#faq" className="hover:text-white">FAQ</Link></li>
-          {/* <li><Link to="/products" className="hover:text-white">Products</Link></li> */}
+          
 
         </ul>
-      </div>
+      </div> */}
 
       <div>
         <h3 className="text-sm font-semibold text-white mb-3">RESOURCES</h3>

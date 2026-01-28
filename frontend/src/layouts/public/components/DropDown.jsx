@@ -1,4 +1,4 @@
-import { User, Settings, Clock, LogOut } from "lucide-react";
+import { User, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from '../../../auth/authContext';
 
@@ -66,6 +66,7 @@ export default function ProfileDropdown() {
                 <div className="my-1 h-px bg-gray-200" />
 
                 <MenuItem name="My Profile" href="/dashboard/profile" icon={<User className="h-4 w-4" />} />
+                <MenuItem name="Go To App" href="/dashboard" icon={<ArrowRight className="h-4 w-4" />} />
                 {/* <MenuItem name="Past Drills" href="/past-drills" icon={<Clock className="h-4 w-4" />} /> */}
                 {/* <MenuItem name="Sign Out" onClick={logout} icon={<LogOut className="h-4 w-4" />} /> */}
             </div>
