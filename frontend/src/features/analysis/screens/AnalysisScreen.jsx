@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import ResultBox from "../components/ResultBox.jsx";
 import SharePopup from "../../../shared/components/popup/SharePopup.jsx";
 import ShareButton from "../components/ShareButton.jsx";
-import { useAnalyses } from "../hooks/useAnalyses.js";
-import { useVideoURL } from "../hooks/useVideoURL.js";
+import useAnalyses  from "../hooks/useAnalyses.js";
+import useVideoURL from "../hooks/useVideoURL.js";
 
 export default function AnalysisScreen() {
     const { analyses, loading, error } = useAnalyses();

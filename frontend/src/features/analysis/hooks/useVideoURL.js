@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import analysisService from '../services/analysisService.js';
 
-export function useVideoURL(activeAnalysis) {
+export default function useVideoURL(activeAnalysis) {
     const [videoURL, setVideoURL] = useState(null);
 
     useEffect(() => {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import analysisService from '../services/analysisService.js';
 
-export function useAnalyses() {
+export default function useAnalyses() {
     const [analyses, setAnalyses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
