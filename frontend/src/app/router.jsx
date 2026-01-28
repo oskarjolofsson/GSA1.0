@@ -3,13 +3,9 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 // Import pages
 import Landing from "./public/landing.jsx";
 import NotFound from './public/notFound.jsx';
-import Products from './public/Products.jsx';
 import Profile from "./dashboard/profile.jsx";
-import ResultsPage from "./public/results.jsx";
 import TermsAndCond from './public/termsAndCond.jsx';
 import Privacy from './public/privacy.jsx';
-import Success from './public/success.jsx';
-import Cancel from './public/cancel.jsx';
 import DashboardUpload from './dashboard/upload.jsx';
 import Drills from './dashboard/drills.jsx';
 import Analysis from './dashboard/analysis.jsx';
@@ -28,15 +24,15 @@ export const router = createBrowserRouter([
     errorElement: <NotFound />,
     children: [
       { index: true, element: <Landing /> },
-      { path: "pricing", element: <Products /> },
       { path: "legal/terms-and-conditions", element: <TermsAndCond /> },
       { path: "legal/privacy-policy", element: <Privacy /> },
-      { path: "results/:analysisId", element: <ResultsPage /> },
+      { path: "*", element: <NotFound /> },
     ],
   },
   {
     path: "/dashboard",
     element: <RequireAuth />,
+    errorElement: <NotFound />,
     children: [
       {
         element: <DashboardLayout />,
@@ -44,11 +40,11 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="/dashboard/app" replace /> },
           { path : "app", element: <HomeDashboard /> },
           { path: "upload", element: <DashboardUpload /> },
-          { path: "billing/cancel", element: <Cancel /> },
           { path: "analysis", element: <Analysis /> },
           { path: "profile", element: <Profile /> },
           { path: "drills", element: <Drills /> },
           { path: "issues", element: <Issues /> },
+          { path: "*", element: <NotFound /> },
         ],
       },
     ],
