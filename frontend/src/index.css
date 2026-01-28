@@ -1,3 +1,6 @@
+/* Import dropdown animations */
+@import './features/upload/styles/dropdown.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
