@@ -17,7 +17,7 @@ from routes.feedback_routes import feedback_bp
 from routes.drill_routes import drills_bp
 
 #thumbnail
-from services.cloudflare.thumbnail_service import generate_thumbnail_for_video
+from services.cloudflare.thumbnail_service import generate_thumbnail_for_video, make_thumbnail_key
 from services.cloudflare.videoStorageService import video_storage_service
 from services.cloudflare.config import R2_BUCKET
 
@@ -114,6 +114,17 @@ def generate_thumbnail():
     except Exception as e:
         app.logger.exception("Thumbnail generation failed")
         return jsonify({"error": str(e)}), 500
+    
+@app.get("/api/videos/thumbnail")
+def get_thumbnail():
+    video_key = request.args.get("video_key")
+    thumb_key = make_thumbnail_key(video_key)
+
+    return jsonify({
+        "thumbnail_key": thumb_key,
+        "thumbnail_url": video_storage_service.generate_read_url(thumb_key),
+    })
+
 
 
 if __name__ == '__main__':

@@ -7,4 +7,5 @@ R2_SECRET_KEY = os.environ["CLOUDFLARE_R2_SECRET_ACCESS_KEY"]
 R2_BUCKET = "trueswing-videos"
 
 FFMPEG_DEFAULT_TIMESTAMP = 1.5
+THUMBNAIL_BASE_PREFIX = "golf-thumbnails"
 THUMBNAIL_FILENAME = "thumbnail.webp"
