@@ -10,4 +10,8 @@ export default defineConfig({
   ssr: {
     noExternal: ['@ffmpeg/ffmpeg', '@ffmpeg/core'],
   },
+  test: {
+    environment: 'jsdom',
+    globals: true
+  },
 })
