@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import drillService from '../../drills/services/drillService';
 
-export function useResultNavigation(activeProblem, setActiveProblem, key_findings) {
+export default function useResultNavigation(activeProblem, setActiveProblem, key_findings) {
   const [drillPopupOpen, setDrillPopupOpen] = useState(false);
   const [direction, setDirection] = useState(0);
   const [drillImage, setDrillImage] = useState(null);
