@@ -1,6 +1,7 @@
-import { User, Settings, Clock, LogOut } from "lucide-react";
+import { User, Settings, ArrowLeft, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from '../../../auth/authContext';
+import { Link } from "react-router-dom";
 
 export default function ProfileBar({ showName = true, onOpenSidebar }) {
     const [open, setOpen] = useState(false);
@@ -76,9 +77,8 @@ export default function ProfileBar({ showName = true, onOpenSidebar }) {
               p-2 shadow-lg transform transition duration-150 origin-bottom-left mb-2
               ${open ? 'scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}`}
             >
+                <MenuItem name="Main Site" href="/?view=landing" icon={<ArrowLeft className="h-4 w-4" />} />
                 <MenuItem name="My Profile" href="/dashboard/profile" icon={<User className="h-4 w-4" />} />
-                {/* <MenuItem name="Settings" href="/settings" icon={<Settings className="h-4 w-4" />} /> */}
-                {/* <MenuItem name="Past Drills" href="/past-drills" icon={<Clock className="h-4 w-4" />} /> */}
                 <div className="my-1 h-px bg-gray-700" />
                 <MenuItem name="Sign Out" onClick={logout} icon={<LogOut className="h-4 w-4" />} />
             </div>
@@ -88,8 +88,8 @@ export default function ProfileBar({ showName = true, onOpenSidebar }) {
 
 function MenuItem({ name, href, icon, onClick }) {
     return (
-        <a
-            href={href}
+        <Link
+            to={href}
             role="menuitem"
             tabIndex={0}
             className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-700 hover:bg-opacity-40 transition-colors duration-200 text-sm font-medium text-white"
@@ -97,6 +97,6 @@ function MenuItem({ name, href, icon, onClick }) {
         >
             {icon}
             {name}
-        </a>
+        </Link>
     );
 }
