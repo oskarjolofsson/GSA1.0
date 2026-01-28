@@ -9,21 +9,18 @@ class FirebaseDrillService(FireBaseService):
         self.drills_ref = self.db.collection('drills')
         
 
-    def add_drill(self, task: str, fault_indicator: str, success_signal: str, analysis_id: str, title: str) -> str:
-        """
-        Adds a new drill document to the 'drills' collection.
-
-        Args:
-            drill (str): The drill content to be stored.
-
-        Returns:
-            str: The ID of the newly created drill document.
-        """
+    def add_drill(
+        self,
+        task: str,
+        fault_indicator: str,
+        success_signal: str,
+        analysis_id: str,
+        title: str
+    ) -> str:
+    
         drill_id = f"drill_{uuid4()}"
-        
-        
-        
-        self.drills_ref.document(drill_id).set({
+
+        document_data = {
             "user_id": self.user_id,
             "analysis_id": analysis_id,
             "task": task,
@@ -34,10 +31,12 @@ class FirebaseDrillService(FireBaseService):
             "createdAt": firestore.SERVER_TIMESTAMP,
             "title": title,
         }
-        
+
+        # Correct single set() call
         self.drills_ref.document(drill_id).set(document_data)
-        
+
         return drill_id
+
     
     def update_drill_image(self, drill_id: str, image_key: str) -> None:
         """
