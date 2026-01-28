@@ -31,14 +31,25 @@ class DrillService {
   }
 
   // Fetch drill by ID
-  async getDrill(drillId) {
+  async getDrillByID(drillId) {
     try {
       await ensureUserReady();
-      const data = await this.fetchWithAuth(`/api/v1/drill/${drillId}`);
+      const data = await this.fetchWithAuth(`/api/v1/drills/${drillId}`);
       return data.drill || null;
     } catch (error) {
-      console.error("Error in getDrill:", error);
+      console.error("Error in getDrillByID:", error);
       throw new Error("Could not fetch drill. Please try again later.");
+    }
+  }
+
+  async listDrills() {
+    try {
+      await ensureUserReady();
+      const data = await this.fetchWithAuth('/api/v1/drills');
+      return data.drills || [];
+    } catch (error) {
+      console.error("Error in listDrills:", error);
+      throw new Error("Could not fetch drills. Please try again later.");
     }
   }
 }
