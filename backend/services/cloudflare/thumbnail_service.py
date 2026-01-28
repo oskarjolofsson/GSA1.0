@@ -3,6 +3,7 @@ import tempfile
 
 from .config import (
     FFMPEG_DEFAULT_TIMESTAMP,
+    THUMBNAIL_BASE_PREFIX,
     THUMBNAIL_FILENAME,
     R2_BUCKET,
 )
@@ -12,11 +13,11 @@ from .ffmpeg_utils import extract_thumbnail_webp
 
 
 def make_thumbnail_key(video_key: str) -> str:
-    if not video_key.lower().endswith((".mp4", ".mov")):
-        raise ValueError(f"Unexpected video key format: {video_key}")
+    
+    video_name = os.path.basename(video_key)
+    base, _ = os.path.splitext(video_name)
 
-    # Put thumbnail next to the video
-    return video_key.rsplit("/", 1)[0] + f"/{THUMBNAIL_FILENAME}"
+    return f"{THUMBNAIL_BASE_PREFIX}/{base}.webp"
 
 
 def generate_thumbnail_for_video(video_key: str) -> str:
