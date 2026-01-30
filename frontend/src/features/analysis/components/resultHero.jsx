@@ -1,13 +1,14 @@
-import { Eye, TrendingDown } from "lucide-react";
+import { Eye, Star } from "lucide-react";
 
 export default function ResultHeroCard({
   prioNumber = 1,
+  totalIssues = 1,
   problemName = "Hanging Back",
   diagnosis = "You keep your weight on your trail foot instead of shifting forward.",
   impactLine = "This typically reduces compression and consistency.",
   onClickDrill,
-  onNextDrill,
-  onPreviousDrill
+  onNextIssue,
+  onPreviousIssue
 }) {
   return (
     <section className="w-full px-4 py-6 flex justify-center max-sm:px-0" aria-label="Top priority summary">
@@ -53,7 +54,7 @@ export default function ResultHeroCard({
             </div>
 
             <div className="inline-flex items-center gap-2 text-sm text-slate-400">
-              <TrendingDown size={20} />
+              <Star size={20} />
               <p className="text-sm sm:text-base leading-relaxed text-slate-400 border-t border-white/5 pt-4">
                 {impactLine}
               </p>
@@ -73,28 +74,23 @@ export default function ResultHeroCard({
 
             <div className="flex items-center justify-end gap-3 max-sm:justify-center">
 
-              {onPreviousDrill && (
-                <button
-                  type="button"
-                  className="text-xs font-medium text-slate-400 hover:text-slate-200 px-3 py-1 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-slate-500"
-                  onClick={onPreviousDrill}
-                >
-                  Previous
-                </button>
-              )}
+              <button
+                type="button"
+                className="text-xs font-medium text-slate-400 hover:text-slate-200 px-3 py-1 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-slate-500"
+                onClick={onPreviousIssue}
+                disabled={prioNumber <= 1}
+              >
+                Previous
+              </button>
 
-
-              {onNextDrill && (
-                <button
-                  type="button"
-                  className="text-xs font-medium text-slate-400 hover:text-slate-200 px-3 py-1 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-slate-500"
-                  onClick={onNextDrill}
-                >
-                  Next
-                </button>
-              )}
-
-
+              <button
+                type="button"
+                className="text-xs font-medium text-slate-400 hover:text-slate-200 px-3 py-1 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-slate-500"
+                onClick={onNextIssue}
+                disabled={prioNumber >= totalIssues}
+              >
+                Next
+              </button>
 
             </div>
           </div>

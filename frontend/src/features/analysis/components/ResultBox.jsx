@@ -1,6 +1,8 @@
-import { use, useEffect, useState } from "react";
-import {Search, Lightbulb, Brain } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Lightbulb, Brain } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+// Custom hooks
 import useResultNavigation from '../hooks/useResultNavigation';
 
 // Import Components
@@ -38,22 +40,15 @@ const TAB_CONFIGS = {
   try: { icon: Lightbulb, label: "Try this" }
 };
 
-export default function ResultBox({ analysis, video_url, drill_image_url, activeProblem, setActiveProblem, drill_image_loading, drill_image_timeout }) {
+export default function ResultBox({ analysis, issue, totalIssues, video_url, activeProblem, setActiveProblem }) {
 
-  if (!analysis) return null;
-
-  const { quick_summary, key_findings } = analysis;
+  if (!analysis || !issue) return null;
 
   const {
-    drillPopupOpen,
-    setDrillPopupOpen,
     direction,
-    drillImage,
-    handleDrillOpen,
-    handleDrillClose,
-    onNextDrill,
-    onPreviousDrill,
-  } = useResultNavigation(activeProblem, setActiveProblem, key_findings);
+    onNextIssue,
+    onPreviousIssue,
+  } = useResultNavigation(activeProblem, setActiveProblem, totalIssues);
 
   return (
     <>
@@ -70,12 +65,15 @@ export default function ResultBox({ analysis, video_url, drill_image_url, active
           >
             <ResultHeroCard
               prioNumber={activeProblem + 1}
-              problemName={key_findings[activeProblem].title}
-              diagnosis={key_findings[activeProblem].what_you_did}
-              impactLine={key_findings[activeProblem].why_it_matters}
-              onClickDrill={() => handleDrillOpen(activeProblem)}
-              onNextDrill={activeProblem < key_findings.length - 1 ? onNextDrill : null}
-              onPreviousDrill={activeProblem > 0 ? onPreviousDrill : null}
+              totalIssues={totalIssues}
+              problemName={issue.title}
+              diagnosis={issue.what_is_happening}
+              impactLine={issue.what_should_happen}
+              onClickDrill={() => {
+                // Do nothing
+              }}
+              onNextIssue={onNextIssue}
+              onPreviousIssue={onPreviousIssue}
             />
           </motion.div>
         </div>
@@ -83,16 +81,6 @@ export default function ResultBox({ analysis, video_url, drill_image_url, active
         {/* Video constrained to match card height */}
         <VideoDemo url={video_url} />
       </div>
-      
-      
-      <DrillPopup
-        drill={drillPopupOpen ? key_findings[activeProblem]["try_this"] : null}
-        image={drillImage || (file ? file.previewImage : null)}
-        onClose={handleDrillClose}
-        isLoading={drill_image_loading}
-        isTimeout={drill_image_timeout}
-      />
-
     </>
   );
 }

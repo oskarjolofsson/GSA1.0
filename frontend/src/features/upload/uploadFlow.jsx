@@ -24,7 +24,7 @@ export default function UploadFlow() {
   const uploadFlow = useUploadAndAnalyze(
     // onComplete - redirect to analysis page
     (analysisId) => {
-      navigate(`/dashboard/analyse?analysisId=${analysisId}`);
+      navigate(`/dashboard/analysis?analysisId=${analysisId}`);
     },
     // onError - handled via uploadFlow.error state, no callback needed
     null

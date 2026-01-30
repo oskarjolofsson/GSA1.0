@@ -1,61 +1,25 @@
-import { useState, useEffect } from 'react';
-import drillService from '../../drills/services/drillService';
+import { useState } from 'react';
 
-export default function useResultNavigation(activeProblem, setActiveProblem, key_findings) {
-  const [drillPopupOpen, setDrillPopupOpen] = useState(false);
+export default function useResultNavigation(activeIssue, setActiveIssue, totalIssues) {
   const [direction, setDirection] = useState(0);
-  const [drillImage, setDrillImage] = useState(null);
 
-  // Fetch drill image when activeProblem changes
-  useEffect(() => {
-    const fetchDrillImage = async () => {
-      try {
-        const currentKeyFinding = key_findings[activeProblem];
-        if (currentKeyFinding?.drill_id) {
-          const drill = await drillService.getDrill(currentKeyFinding.drill_id);
-          setDrillImage(drill?.image_url || null);
-        } else {
-          setDrillImage(null);
-        }
-      } catch (error) {
-        console.error("Error fetching drill image:", error);
-        setDrillImage(null);
-      }
-    };
-
-    fetchDrillImage();
-  }, [activeProblem, key_findings]);
-
-  const handleDrillOpen = () => {
-    setDrillPopupOpen(true);
-  };
-
-  const handleDrillClose = () => {
-    setDrillPopupOpen(false);
-  };
-
-  const onNextDrill = () => {
-    if (activeProblem < key_findings.length - 1) {
+  const onNextIssue = () => {
+    if (activeIssue < totalIssues - 1) {
       setDirection(1);
-      setActiveProblem(activeProblem + 1);
+      setActiveIssue(activeIssue + 1);
     }
   };
 
-  const onPreviousDrill = () => {
-    if (activeProblem > 0) {
+  const onPreviousIssue = () => {
+    if (activeIssue > 0) {
       setDirection(-1);
-      setActiveProblem(activeProblem - 1);
+      setActiveIssue(activeIssue - 1);
     }
   };
 
   return {
-    drillPopupOpen,
-    setDrillPopupOpen,
     direction,
-    drillImage,
-    handleDrillOpen,
-    handleDrillClose,
-    onNextDrill: activeProblem < key_findings.length - 1 ? onNextDrill : null,
-    onPreviousDrill: activeProblem > 0 ? onPreviousDrill : null,
+    onNextIssue,
+    onPreviousIssue,
   };
 }
