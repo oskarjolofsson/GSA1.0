@@ -91,13 +91,14 @@ export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectA
                       <div className="flex items-center gap-2 mb-2">
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
                         <span className="text-xs text-slate-400 font-medium">
-                          {formatDate(analysis.createdAt)}
+                          
+                          {formatTime(analysis.createdAt)}
                         </span>
                       </div>
 
                       {/* Time */}
                       <div className="text-sm text-slate-300 font-semibold mb-1">
-                        {formatTime(analysis.createdAt)}
+                        {formatDate(analysis.createdAt)}
                       </div>
 
                       {/* Analysis ID (truncated) */}
