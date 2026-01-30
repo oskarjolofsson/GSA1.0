@@ -150,11 +150,16 @@ def list_analyses():
         analyses = firebase_analyses(
             user_id=user_id,
             sport=sport
-        ).list_analyses_for_user(limit=limit)
+        ).list_analysis_ids_for_user(limit=limit)
+        
+        # Generate signed video URLs
+        for analysis in analyses:
+            analysis["video_url"] = video_storage_service.generate_read_url(analysis["video_key"])
+            del analysis["video_key"]  # Remove video_key from response
 
         return jsonify({
             "success": True,
-            "analyses": analyses
+            "analyses": analyses    # Format: List of {analysis_id, createdAt, video_url, title}
         }), 200
 
     except Exception as e:
