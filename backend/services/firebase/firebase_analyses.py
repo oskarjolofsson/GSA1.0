@@ -50,9 +50,11 @@ class FireBaseAnalyses(FireBaseService):
     def list_analyses_for_user(self, limit: int = 10):
         """
         List analyses for the authenticated user, most recent first.
+        Filters to only include analyses where success is True.
         """
         query = (
             self.analyses_ref.where("user_id", "==", self.user_id)
+            .where("analysis_results.success", "==", True)
             .order_by("createdAt", direction=Query.DESCENDING)
             .limit(limit)
         )
