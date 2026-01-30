@@ -6,6 +6,7 @@ export default function useAnalysisData() {
 
     const [analysis, setAnalysis] = useState(null);
     const [activeIssue, setActiveIssue] = useState(0);
+    const [analysisError, setAnalysisError] = useState(null);
 
     // Call hook at top level, not inside useEffect
     const videoURL = useVideoURL(analysis);
@@ -25,6 +26,15 @@ export default function useAnalysisData() {
 
 
     useEffect(() => {
+        // Check if analysis failed
+        if (analysis?.analysis_results?.success === false) {
+            setAnalysisError("Video not eligible for golf swing analysis");
+            return;
+        }
+        
+        // Clear error if analysis is successful
+        setAnalysisError(null);
+        
         const issues = analysis?.analysis_results?.issues;
         
         if (issues && issues.length > 0) {
@@ -49,7 +59,8 @@ export default function useAnalysisData() {
         activeIssue,
         setActiveIssue,
         totalIssues: analysis?.analysis_results?.issues?.length || 0,
-        videoURL  
+        videoURL,
+        analysisError
     }
 
 }
