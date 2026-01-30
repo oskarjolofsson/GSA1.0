@@ -1,61 +1,66 @@
 import { useState, useEffect } from 'react';
 import analysisService from '../services/analysisService.js';
 
+// Custom hook to fetch and manage analyses for the user
 export default function useAnalyses() {
-    //const [analyses, setAnalyses] = useState([]);
-    const [analysis_ids, setAnalysisIds] = useState([]);    // fetched_analysis_ids is an array of { analysis_id, createdAt, video_url }
+    const [allAnalyses, setAllAnalyses] = useState([]); // [{ analysis_id, createdAt, video_url, title }]
     const [activeAnalysis, setActiveAnalysis] = useState(null);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchUserAnalyses = async () => {
+        const fetchData = async () => {
             try {
-                const fetched_analysis_ids = await analysisService.getAnalysesForUser();    // Fetch list of analysis_objects, containing ID, createdAt and imageURL of thumbnail
-                // fetched_analysis_ids is an array of { analysis_id, createdAt, video_url, title }
+                setLoading(true);
+                setError(null);
 
-                // sort based on createdAt with newest first
-                fetched_analysis_ids.sort((a, b) => {
+                // 1. Fetch list
+                const fetched = await analysisService.getAnalysesForUser();
+
+                // 2. Sort newest first
+                fetched.sort((a, b) => {
                     const dateA = new Date(a.createdAt || 0).getTime();
                     const dateB = new Date(b.createdAt || 0).getTime();
                     return dateB - dateA;
                 });
-                console.log("Fetched analyses:", fetched_analysis_ids);
 
-                setAnalysisIds(fetched_analysis_ids);
+                setAllAnalyses(fetched);
+
+                // 3. Resolve active analysis ID
+                const urlParams = new URLSearchParams(window.location.search);
+                const analysisIdFromUrl = urlParams.get('analysisId');
+
+                const resolvedAnalysisId =
+                    analysisIdFromUrl ??
+                    fetched[0]?.analysis_id ??
+                    null;
+
+                // 4. Fetch active analysis
+                if (resolvedAnalysisId) {
+                    const analysisData =
+                        await analysisService.getAnalysisById(resolvedAnalysisId);
+
+                    setActiveAnalysis(analysisData);
+                } else {
+                    setActiveAnalysis(null);
+                }
             } catch (err) {
-                console.error("Error fetching analyses:", err);
-                setError(err.message);
+                console.error('Error fetching analyses:', err);
+                setError(err.message ?? 'Failed to fetch analyses');
+                setActiveAnalysis(null);
+            } finally {
+                setLoading(false);
             }
         };
 
-        const fetchActiveanalysis = async (analysis_id) => {
-            try {
-                const analysisData = await analysisService.getAnalysisById(analysis_id);
-                setActiveAnalysis(analysisData);    
-            } catch (err) {
-                console.error("Error fetching active analysis:", err);
-                setError(err.message);
-            }
-        }
-
-        setError(null);
-        setLoading(true);
-
-        fetchUserAnalyses();
-        console.log("Fetched analysis IDs:", analysis_ids);
-
-        // Check if there is an analysisId in the URL to set as activeAnalysis
-        // const urlParams = new URLSearchParams(window.location.search);
-        // const analysisId = urlParams.get('analysisId') ? urlParams.get('analysisId') : analysis_ids.length > 0 ? analysis_ids[0].analysis_id : null;
-        
-        // if (analysisId) {
-        //     fetchActiveanalysis(analysisId);
-        // }
-
-        setLoading(false);
+        fetchData();
     }, []);
 
-    return { activeAnalysis, loading, error };
+    return {
+        allAnalyses,
+        activeAnalysis,
+        loading,
+        error
+    };
 }

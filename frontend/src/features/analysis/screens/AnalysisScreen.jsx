@@ -6,44 +6,41 @@ import { useNavigate } from "react-router-dom";
 import ResultBox from "../components/ResultBox.jsx";
 import SharePopup from "../../../shared/components/popup/SharePopup.jsx";
 import ShareButton from "../components/ShareButton.jsx";
-import useAnalyses  from "../hooks/useAnalyses.js";
-import useVideoURL from "../hooks/useVideoURL.js";
 import TextBox from "../../../shared/components/cards/textBox.jsx";
+
+// Custom hooks
+import useAnalyses  from "../hooks/useAnalyses.js";         
+import useAnalysisData from "../hooks/useAnalysisData.js";
 
 export default function AnalysisScreen() {
     const navigate = useNavigate();
-    const { activeAnalysis, loading, error } = useAnalyses();
-    const [activeAnalysisState, setActiveAnalysisState] = useState(null);
+    const { setAnalysis, issue, activeIssue, setActiveIssue, totalIssues, videoURL } = useAnalysisData();
+
+    const { activeAnalysis, allAnalyses, loading, error } = useAnalyses();
+
     // const [showSharePopup, setShowSharePopup] = useState(false);
-    const [activeProblem, setActiveProblem] = useState(0);
-
-    const videoURL = useVideoURL(activeAnalysisState) ? activeAnalysisState : null;
-
     // const share_button_url = window.location.origin + "/share_analysis/" + (activeAnalysis ? activeAnalysis.analysis_id : "");
 
     useEffect(() => {
-        if (activeAnalysis) {
-            if (activeAnalysis.length > 0 && !activeAnalysisState) {
-                const firstAnalysis = activeAnalysis[0];
-                setActiveAnalysisState(firstAnalysis);
-            }
-        }
+        setAnalysis(activeAnalysis);
     }, [activeAnalysis]);
 
     return (
-        <div className="w-full mx-auto px-4 py-6">
+        <div className="w-full mx-auto px-4 py-6 h-full items-center justify-center">
             {loading ? (
                 <p className="text-center text-gray-500">Loading analyses...</p>
             ) : error ? (
                 <p className="text-center text-red-500">Error: {error}</p>
-            ) : activeAnalysisState ? (
+            ) : activeAnalysis ? (
                 <>
-                    <ShareButton onClick={() => setShowSharePopup(true)} />
+                    {/* <ShareButton onClick={() => setShowSharePopup(true)} /> */}
                     <ResultBox 
-                        analysis={activeAnalysisState.analysis_results} 
+                        analysis={activeAnalysis.analysis_results} 
+                        issue={issue}
+                        totalIssues={totalIssues}
                         video_url={videoURL}
-                        activeProblem={activeProblem}
-                        setActiveProblem={setActiveProblem}
+                        activeProblem={activeIssue}
+                        setActiveProblem={setActiveIssue}
                     />
                 </>
             ) : (

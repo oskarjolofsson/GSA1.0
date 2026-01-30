@@ -50,7 +50,7 @@ class AnalysisService {
   async getAnalysisById(analysisId) {
     try {
       const data = await this.fetchWithAuth(`/api/v1/analysis/${analysisId}`);
-      return data || null;
+      return data.analysis || null;
     } catch (error) {
       console.error("Error in getAnalysisById:", error);
       throw new Error("Could not fetch analysis. Please try again later.");
