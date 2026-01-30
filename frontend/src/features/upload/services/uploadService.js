@@ -33,10 +33,11 @@ class UploadService {
    * @param {number} startTime - Trim start time in seconds
    * @param {number} endTime - Trim end time in seconds
    * @param {string} AImodel - Selected AI model name
+   * @param {Function} onAnalysisCreated - Optional callback after step 1 with analysisId
    * @returns {Promise<Object>} Analysis response data and ID
    * @throws {Error} If any step of the upload fails
    */
-  async uploadVideo(file, advancedInput, startTime, endTime, AImodel) {
+  async uploadVideo(file, advancedInput, startTime, endTime, AImodel, onAnalysisCreated = null) {
     if (!file) throw new Error('No file provided');
 
     try {
@@ -68,6 +69,11 @@ class UploadService {
       const newAnalysisId = createData.analysis_id;
       const uploadUrl = createData.upload_url;
 
+      // Notify caller that analysis was created (for early UI transition)
+      if (onAnalysisCreated) {
+        onAnalysisCreated(newAnalysisId);
+      }
+
       // Step 2: Upload video to signed R2 URL
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
@@ -94,6 +100,43 @@ class UploadService {
 
       const confirmData = await confirmRes.json();
       return { analysis: confirmData, analysisId: newAnalysisId };
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  /**
+   * Check the status of an ongoing analysis
+   * @param {string} analysisId - The ID of the analysis to check
+   * @returns {Promise<Object>} Status object with status field
+   * @throws {Error} If request fails
+   */
+  async getAnalysisStatus(analysisId) {
+    if (!analysisId) throw new Error('No analysis ID provided');
+
+    try {
+      const authHeader = await this.getAuthHeader();
+
+      const response = await fetch(API + `/api/v1/analysis/${analysisId}`, {
+        method: 'GET',
+        headers: authHeader,
+      });
+
+      if (!response.ok) {
+        const backendMessage = await this.parseErrorResponse(response);
+        throw new Error(backendMessage);
+      }
+
+      const data = await response.json();
+      
+      // Extract status from analysis object
+      // The backend returns { success: true, analysis: {...}, video_url: "..." }
+      const analysis = data.analysis || {};
+      return {
+        status: analysis.status || 'processing',
+        error_message: analysis.error_message || null,
+        analysis: analysis,
+      };
     } catch (err) {
       throw err;
     }

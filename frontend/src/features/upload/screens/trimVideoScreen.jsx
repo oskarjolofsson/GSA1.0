@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useValidationState } from "../hooks/useValidationState.js";
-import { useUploadState } from "../hooks/useUploadState.js";
-import uploadService from "../services/uploadService.js";
 import { ValidationProvider, useValidation } from "../../../context/ValidationContext.jsx";
 import { Scissors, ArrowRight } from "lucide-react";
 
@@ -28,7 +26,10 @@ function TrimVideoScreenContent({
     setStartTime,
     setEndTime,
     onRemoveFile,
-    onAnalyzing,
+    onUpload,
+    isUploading,
+    errorMessage,
+    onErrorDismiss,
 }) {
     const [ready, setReady] = useState(false);
     const [shouldOpenAdvanced, setShouldOpenAdvanced] = useState(false);
@@ -46,9 +47,6 @@ function TrimVideoScreenContent({
 
     // Video seeking
     const seekTo = useVideoSeek(videoRef);
-
-    // Video upload state and service
-    const uploadState = useUploadState();
 
     useEffect(() => {
         const timer = setTimeout(() => setReady(true), 30);
@@ -69,13 +67,6 @@ function TrimVideoScreenContent({
             validation.clearValidationError('duration');
         }
     }, [trimState.validation, validation]);
-
-    // Navigate to analyzing screen when upload completes
-    useEffect(() => {
-        if (uploadState.analysis && uploadState.analysisId && !uploadState.uploading) {
-            onAnalyzing(uploadState.analysisId);
-        }
-    }, [uploadState.analysis, uploadState.analysisId, uploadState.uploading, onAnalyzing]);
 
     // Reset advanced settings trigger after opening
     useEffect(() => {
@@ -109,30 +100,13 @@ function TrimVideoScreenContent({
         handleTrimClose();
     };
 
-    async function handleUpload() {
-        if (!fileHandling.file) return;
-        if (uploadState.uploading) return;
-
-        uploadState.setUploading(true);
-        uploadState.setErrorMessage('');
-
-        try {
-            const result = await uploadService.uploadVideo(
-                fileHandling.file,
-                promptConfig.advancedInput,
-                trimState.start,
-                trimState.end,
-                promptConfig.AImodel
-            );
-            uploadState.setAnalysis(result.analysis);
-            uploadState.setAnalysisId(result.analysisId);
-        } catch (err) {
-            const errorMsg = err.message || 'Upload failed';
-            uploadState.setErrorMessage(errorMsg);
-        } finally {
-            uploadState.setUploading(false);
+    // Handle upload - delegate to parent
+    const handleUpload = () => {
+        if (onUpload) {
+            onUpload();
         }
-    }
+    };
+    
 
     return (
         <div className="h-auto text-slate-100 relative overflow-hidden min-h-screen flex items-center justify-center py-10">
@@ -218,11 +192,14 @@ function TrimVideoScreenContent({
 
                     <UploadButtonZone
                         onUpload={handleUpload}
-                        uploading={uploadState.uploading}
+                        isLoading={isUploading}
                     />
                 </div>
 
-                <ErrorPopup message={uploadState.errorMessage || videoError} onClose={() => uploadState.setErrorMessage("")} />
+                <ErrorPopup 
+                    message={errorMessage || videoError} 
+                    onClose={onErrorDismiss} 
+                />
             </section>
         </div>
     );
