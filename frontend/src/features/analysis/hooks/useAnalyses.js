@@ -57,9 +57,26 @@ export default function useAnalyses() {
         fetchData();
     }, []);
 
+    // Method to switch active analysis by ID
+    const setActiveAnalysisById = async (analysisId) => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const analysisData = await analysisService.getAnalysisById(analysisId);
+            setActiveAnalysis(analysisData);
+        } catch (err) {
+            console.error('Error setting active analysis:', err);
+            setError(err.message ?? 'Failed to load analysis');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         allAnalyses,
         activeAnalysis,
+        setActiveAnalysisById,
         loading,
         error
     };

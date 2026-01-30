@@ -7,6 +7,7 @@ import ResultBox from "../components/ResultBox.jsx";
 import SharePopup from "../../../shared/components/popup/SharePopup.jsx";
 import ShareButton from "../components/ShareButton.jsx";
 import TextBox from "../../../shared/components/cards/textBox.jsx";
+import AnalysisSidebar from "../components/AnalysisSidebar.jsx";
 
 // Custom hooks
 import useAnalyses  from "../hooks/useAnalyses.js";         
@@ -16,14 +17,20 @@ export default function AnalysisScreen() {
     const navigate = useNavigate();
     const { setAnalysis, issue, activeIssue, setActiveIssue, totalIssues, videoURL } = useAnalysisData();
 
-    const { activeAnalysis, allAnalyses, loading, error } = useAnalyses();
+    const { activeAnalysis, allAnalyses, setActiveAnalysisById, loading, error } = useAnalyses();
 
     // const [showSharePopup, setShowSharePopup] = useState(false);
     // const share_button_url = window.location.origin + "/share_analysis/" + (activeAnalysis ? activeAnalysis.analysis_id : "");
 
     useEffect(() => {
         setAnalysis(activeAnalysis);
-    }, [activeAnalysis]);
+    }, [activeAnalysis, setAnalysis]);
+
+    // Handle switching analyses from sidebar
+    const handleSelectAnalysis = async (analysisId) => {
+        await setActiveAnalysisById(analysisId);
+        setActiveIssue(0); // Reset to first issue
+    };
 
     return (
         <div className="w-full mx-auto px-4 py-6 h-full items-center justify-center">
@@ -41,6 +48,13 @@ export default function AnalysisScreen() {
                         video_url={videoURL}
                         activeProblem={activeIssue}
                         setActiveProblem={setActiveIssue}
+                    />
+                    
+                    {/* Sidebar for switching analyses */}
+                    <AnalysisSidebar
+                        allAnalyses={allAnalyses}
+                        activeAnalysis={activeAnalysis}
+                        onSelectAnalysis={handleSelectAnalysis}
                     />
                 </>
             ) : (
