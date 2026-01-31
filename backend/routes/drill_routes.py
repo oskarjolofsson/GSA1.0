@@ -21,6 +21,9 @@ drills_bp = Blueprint(
 @drills_bp.route("", methods=["GET"])
 @require_auth
 def list_drills():
+    """
+    Lists drills for the authenticated user.
+    """
     try:
         user_id = request.user["uid"]
 
