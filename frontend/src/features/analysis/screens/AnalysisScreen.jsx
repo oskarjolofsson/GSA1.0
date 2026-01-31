@@ -38,7 +38,7 @@ export default function AnalysisScreen() {
 
     return (
         <>
-            <SessionHeader onShareClick={() => setShowSharePopup(true)} />
+            <SessionHeader onShareClick={() => setShowSharePopup(true)} showShare={true ? activeAnalysis : false} />
             <div className="w-full mx-auto px-4 py-6 h-full items-center justify-center">
                 {loading ? (
                     <p className="text-center text-gray-500">Loading analyses...</p>
