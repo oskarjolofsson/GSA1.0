@@ -1,6 +1,6 @@
 import { Share2 } from "lucide-react";
 
-export default function SessionHeader({ onShareClick }) {
+export default function SessionHeader({ onShareClick, showShare }) {
 
     // Session-header placed on top of the screen
     // Share-button on the right side
@@ -9,13 +9,15 @@ export default function SessionHeader({ onShareClick }) {
             
             {/* Share button */}
             <div className="flex items-center gap-4 mr-16">
-                <button 
-                    onClick={onShareClick}
-                    className="flex items-center gap-2 border-blue-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
-                >
-                    <Share2 size={20} />
-                    <span className="text-sm">Share</span>
-                </button>
+                {showShare && (
+                    <button 
+                        onClick={onShareClick}
+                        className="flex items-center gap-2 border-blue-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+                    >
+                        <Share2 size={20} />
+                        <span className="text-sm">Share</span>
+                    </button>
+                )}
             </div>
 
         </div>
