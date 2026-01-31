@@ -76,16 +76,11 @@ class FireBaseAnalyses(FireBaseService):
         """
         analyses = self.list_analyses_for_user(limit=limit)
 
-        key_findings = analyses[0].get("analysis_results", {}).get("key_findings", [])
-        titles = [finding.get("title") for finding in key_findings]
-        print("Analyses-titles:", titles)
-
         return_list = [
             {
                 "analysis_id": analysis["analysis_id"],
                 "createdAt": analysis.get("createdAt"),
                 "video_key": analysis.get("video_key", ""),
-                "title": titles[0] if 0 < len(titles) else "Untitled Analysis",
             }
             for analysis in analyses
         ]
