@@ -159,7 +159,7 @@ def list_analyses():
 
         return jsonify({
             "success": True,
-            "analyses": analyses    # Format: List of {analysis_id, createdAt, video_url, title}
+            "analyses": analyses    # Format: List of {analysis_id, createdAt, video_url}
         }), 200
 
     except Exception as e:
