@@ -8,6 +8,8 @@ import SharePopup from "../../../shared/components/popup/SharePopup.jsx";
 import ShareButton from "../components/ShareButton.jsx";
 import TextBox from "../../../shared/components/cards/textBox.jsx";
 import AnalysisSidebar from "../components/AnalysisSidebar.jsx";
+import FeedbackBubble from "../../feedback/components/FeedbackBubble.jsx";
+import FeedbackPopup from "../../feedback/components/FeedbackPopup.jsx";
 
 // Custom hooks
 import useAnalyses  from "../hooks/useAnalyses.js";         
@@ -18,6 +20,8 @@ export default function AnalysisScreen() {
     const { setAnalysis, issue, activeIssue, setActiveIssue, totalIssues, videoURL, analysisError } = useAnalysisData();
 
     const { activeAnalysis, allAnalyses, setActiveAnalysisById, loading, error } = useAnalyses();
+
+    const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
 
     // const [showSharePopup, setShowSharePopup] = useState(false);
     // const share_button_url = window.location.origin + "/share_analysis/" + (activeAnalysis ? activeAnalysis.analysis_id : "");
@@ -81,6 +85,13 @@ export default function AnalysisScreen() {
                     onClose={() => setShowSharePopup(false)}
                 />
             )} */}
+
+            {/* Feedback Feature */}
+            <FeedbackBubble onOpenFeedback={() => setShowFeedbackPopup(true)} />
+            <FeedbackPopup 
+                isOpen={showFeedbackPopup} 
+                onClose={() => setShowFeedbackPopup(false)} 
+            />
         </div>
     );
 }
