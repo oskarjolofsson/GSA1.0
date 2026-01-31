@@ -54,7 +54,8 @@ class FireBaseAnalyses(FireBaseService):
         """
         query = (
             self.analyses_ref.where("user_id", "==", self.user_id)
-            .where("analysis_results.success", "==", True)
+            .where("analysis_results.success", "==", True )     # Only include successful analyses and completed analyses
+            .where("status", "==", "completed")                  # Only include completed analyses
             .order_by("createdAt", direction=Query.DESCENDING)
             .limit(limit)
         )
