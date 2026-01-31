@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import SessionHeader from "./components/sessionHeader.jsx";
+import SessionHeader from "../../shared/components/sessionHeader.jsx";
 import TopographyBackground from '../../shared/layout/topography.jsx';
 import DashboardSidebar from "./components/dashboardSidebar.jsx";
 

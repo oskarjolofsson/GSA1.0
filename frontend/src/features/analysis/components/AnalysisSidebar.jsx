@@ -32,7 +32,7 @@ export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectA
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => setIsOpen(true)}
-          className="fixed right-4 top-4 z-40 rounded-xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-3 text-slate-400 hover:text-slate-200 hover:bg-[#0e1428]/90 transition-all shadow-lg"
+          className="fixed right-4 top-2 z-40 rounded-xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-3 text-slate-400 hover:text-slate-200 hover:bg-[#0e1428]/90 transition-all shadow-lg"
           aria-label="Open analyses sidebar"
         >
           <ChevronLeft className="w-5 h-5" />
