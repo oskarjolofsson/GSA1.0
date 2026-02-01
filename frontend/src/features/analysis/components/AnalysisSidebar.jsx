@@ -32,6 +32,8 @@ export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectA
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => setIsOpen(true)}
+          key={"closeSidebar"}
+          data-testid="open-sidebar-button"
           className="fixed right-4 top-2 z-40 rounded-xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-3 text-slate-400 hover:text-slate-200 hover:bg-[#0e1428]/90 transition-all shadow-lg"
           aria-label="Open analyses sidebar"
         >
@@ -59,6 +61,7 @@ export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectA
               </div>
               <button
                 onClick={() => setIsOpen(false)}
+                data-testid="close-sidebar-button"
                 className="rounded-lg p-2 text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
                 aria-label="Close sidebar"
               >
@@ -80,6 +83,7 @@ export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectA
                   return (
                     <button
                       key={analysis.analysis_id}
+                      data-testid={`analysis-button-${analysis.analysis_id}`}
                       onClick={() => onSelectAnalysis(analysis.analysis_id)}
                       className={`w-full text-left rounded-xl p-4 transition-all ${
                         isActive
