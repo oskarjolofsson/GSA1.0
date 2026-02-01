@@ -1,4 +1,4 @@
-from ..db.base import Base
+from ..base import Base
 import uuid
 from sqlalchemy import (
     Text,
