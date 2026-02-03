@@ -13,6 +13,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
+# Related models
+from .Video import Video
+from .AnalysisIssue import AnalysisIssue
+
 
 class Analysis(Base):
     __tablename__ = "analysis"
