@@ -10,6 +10,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Mapped, mapped_column
+from datetime import timedelta
 
 
 class Video(Base):
@@ -28,8 +29,8 @@ class Video(Base):
 
     video_key: Mapped[str] = mapped_column(Text, nullable=False)
 
-    start_time: Mapped = mapped_column(Interval)
-    end_time: Mapped = mapped_column(Interval)
+    start_time: Mapped[timedelta | None] = mapped_column(Interval)
+    end_time: Mapped[timedelta | None] = mapped_column(Interval)
 
     camera_view: Mapped[str] = mapped_column(
         Text,

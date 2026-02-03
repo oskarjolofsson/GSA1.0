@@ -13,6 +13,9 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
+# Related models
+from .AnalysisDrill import AnalysisDrill
+
 
 class AnalysisIssue(Base):
     __tablename__ = "analysis_issues"
