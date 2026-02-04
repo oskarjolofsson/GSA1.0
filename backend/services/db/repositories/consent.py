@@ -2,8 +2,8 @@ from ..models.UserConsent import UserConsent
 from sqlalchemy.orm import Session
 
 
-def get_consent_by_id(consent_id, session: Session) -> UserConsent:
-    return session.get(UserConsent, consent_id)
+def get_consent_by_id(user_id, mandatory_consent_id, session: Session) -> UserConsent:
+    return session.get(UserConsent, (user_id, mandatory_consent_id))
     
     
 def create_consent(consent: UserConsent, session: Session) -> UserConsent:
