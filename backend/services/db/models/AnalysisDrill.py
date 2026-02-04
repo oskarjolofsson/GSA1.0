@@ -1,7 +1,6 @@
 from ..base import Base
 import uuid
 from sqlalchemy import (
-    Text,
     DateTime,
     ForeignKey,
 )
@@ -25,10 +24,11 @@ class AnalysisDrill(Base):
         nullable=False,
     )
 
-    title: Mapped[str] = mapped_column(Text, nullable=False)
-    task: Mapped[str] = mapped_column(Text, nullable=False)
-    success_signal: Mapped[str] = mapped_column(Text, nullable=False)
-    fault_indicator: Mapped[str] = mapped_column(Text, nullable=False)
+    drill_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("drills.id", ondelete="CASCADE"),
+        nullable=False,
+    )
 
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
@@ -37,3 +37,4 @@ class AnalysisDrill(Base):
     )
 
     issue = relationship("AnalysisIssue", back_populates="drills")
+    drill = relationship("Drill", back_populates="analysis_drills")

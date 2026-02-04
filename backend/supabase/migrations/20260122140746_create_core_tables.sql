@@ -58,11 +58,22 @@ CREATE TABLE analysis (
     completed_at TIMESTAMPTZ
 );
 
-CREATE TABLE analysis_issues (
+CREATE TABLE drills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    analysis_id UUID NOT NULL REFERENCES analysis(id) ON DELETE CASCADE,
+    
+    title TEXT NOT NULL,
+    task TEXT NOT NULL,
+    success_signal TEXT NOT NULL,
+    fault_indicator TEXT NOT NULL,
+    
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
-    issue_code TEXT NOT NULL,
+CREATE TABLE issues (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    
+    title TEXT NOT NULL,
+    
     phase TEXT CHECK (
         phase IN (
             'SETUP',
@@ -73,15 +84,24 @@ CREATE TABLE analysis_issues (
             'FOLLOW_THROUGH'
         )
     ),
-
-    impact_rank INTEGER NOT NULL CHECK (impact_rank >= 1),
+    
     severity TEXT CHECK (severity IN ('MINOR', 'MODERATE', 'MAJOR')),
-    confidence REAL CHECK (confidence >= 0.0 AND confidence <= 1.0),
-
+    
     current_motion TEXT,
     expected_motion TEXT,
     swing_effect TEXT,
     shot_outcome TEXT,
+    
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE analysis_issues (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    analysis_id UUID NOT NULL REFERENCES analysis(id) ON DELETE CASCADE,
+    issue_id UUID NOT NULL REFERENCES issues(id) ON DELETE CASCADE,
+
+    impact_rank INTEGER NOT NULL CHECK (impact_rank >= 1),
+    confidence REAL CHECK (confidence >= 0.0 AND confidence <= 1.0),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -91,11 +111,7 @@ CREATE TABLE analysis_issues (
 CREATE TABLE analysis_drills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     analysis_issue_id UUID NOT NULL REFERENCES analysis_issues(id) ON DELETE CASCADE,
-
-    title TEXT NOT NULL,
-    task TEXT NOT NULL,
-    success_signal TEXT NOT NULL,
-    fault_indicator TEXT NOT NULL,
+    drill_id UUID NOT NULL REFERENCES drills(id) ON DELETE CASCADE,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -115,6 +131,10 @@ CREATE TABLE user_consent (
 
 CREATE INDEX idx_videos_user_id ON videos(user_id);
 CREATE INDEX idx_analysis_video_id ON analysis(video_id);
-CREATE INDEX idx_analysis_issues_issue_code ON analysis_issues(issue_code);
+CREATE INDEX idx_drills_title ON drills(title);
+CREATE INDEX idx_issues_title ON issues(title);
+CREATE INDEX idx_issues_phase ON issues(phase);
+CREATE INDEX idx_analysis_issues_issue_id ON analysis_issues(issue_id);
 CREATE INDEX idx_analysis_issues_confidence ON analysis_issues(confidence);
 CREATE INDEX idx_analysis_issues_created_at ON analysis_issues(created_at);
+CREATE INDEX idx_analysis_drills_drill_id ON analysis_drills(drill_id);

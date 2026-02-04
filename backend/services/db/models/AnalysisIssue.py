@@ -1,7 +1,6 @@
 from ..base import Base
 import uuid
 from sqlalchemy import (
-    Text,
     DateTime,
     CheckConstraint,
     Index,
@@ -32,13 +31,10 @@ class AnalysisIssue(Base):
         nullable=False,
     )
 
-    issue_code: Mapped[str] = mapped_column(Text, nullable=False)
-
-    phase: Mapped[str | None] = mapped_column(
-        Text,
-        CheckConstraint(
-            "phase IN ('SETUP','BACKSWING','TRANSITION','DOWNSWING','IMPACT','FOLLOW_THROUGH')"
-        ),
+    issue_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("issues.id", ondelete="CASCADE"),
+        nullable=False,
     )
 
     impact_rank: Mapped[int] = mapped_column(
@@ -47,19 +43,9 @@ class AnalysisIssue(Base):
         nullable=False,
     )
 
-    severity: Mapped[str | None] = mapped_column(
-        Text,
-        CheckConstraint("severity IN ('MINOR','MODERATE','MAJOR')"),
-    )
-
     confidence: Mapped[float | None] = mapped_column(
         CheckConstraint("confidence >= 0.0 AND confidence <= 1.0")
     )
-
-    current_motion: Mapped[str | None] = mapped_column(Text)
-    expected_motion: Mapped[str | None] = mapped_column(Text)
-    swing_effect: Mapped[str | None] = mapped_column(Text)
-    shot_outcome: Mapped[str | None] = mapped_column(Text)
 
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
@@ -68,6 +54,7 @@ class AnalysisIssue(Base):
     )
 
     analysis = relationship("Analysis", back_populates="issues")
+    issue = relationship("Issue", back_populates="analysis_issues")
     drills = relationship(
         "AnalysisDrill",
         back_populates="issue",
@@ -76,7 +63,7 @@ class AnalysisIssue(Base):
 
     __table_args__ = (
         UniqueConstraint("analysis_id", "impact_rank"),
-        Index("idx_analysis_issues_issue_code", "issue_code"),
+        Index("idx_analysis_issues_issue_id", "issue_id"),
         Index("idx_analysis_issues_confidence", "confidence"),
         Index("idx_analysis_issues_created_at", "created_at"),
     )
