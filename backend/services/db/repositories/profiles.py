@@ -1,20 +1,12 @@
 from ..models.Profile import Profile
-from ..session import SessionLocal
-from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 
-def get_profile_by_id(profile_id) -> Profile:
-    with SessionLocal() as session:
-        return session.get(Profile, profile_id)
+def get_profile_by_id(profile_id, session: Session) -> Profile:
+    return session.get(Profile, profile_id)
     
     
-def create_profile(profile: Profile) -> Profile:
-    with SessionLocal() as session:
-        try:
-            session.add(profile)
-            session.commit()
-            session.refresh(profile)
-            return profile
-        except Exception:
-            session.rollback()
-            raise
+def create_profile(profile: Profile, session: Session) -> Profile:
+    session.add(profile)
+    session.flush()
+    return profile

@@ -55,3 +55,6 @@ class Video(Base):
     )
 
     __table_args__ = (Index("idx_videos_user_id", "user_id"),)
+    
+    
+# Mandatory when creating new Video instances: user_id, video_key
