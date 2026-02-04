@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 import os
 import dotenv
-from ....services.db.session import SessionLocal
+from ....core.infrastructure.db.session import SessionLocal
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")

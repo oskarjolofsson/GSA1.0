@@ -1,6 +1,6 @@
-from services.db.models.MandatoryConsent import MandatoryConsent
+from ....core.infrastructure.db.models.MandatoryConsent import MandatoryConsent
 import uuid
-from services.db.repositories.mandatory_consent import (
+from ....core.infrastructure.db.repositories.mandatory_consent import (
     create_mandatory_consent,
     get_mandatory_consent_by_id,
 )

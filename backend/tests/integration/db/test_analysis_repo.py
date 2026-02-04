@@ -1,13 +1,13 @@
-from services.db.models.Analysis import Analysis
-from services.db.models.Video import Video
+from ....core.infrastructure.db.models.Analysis import Analysis
+from ....core.infrastructure.db.models.Video import Video
 import uuid
-from services.db.repositories.analysis import (
+from ....core.infrastructure.db.repositories.analysis import (
     create_analysis,
     get_analysis_by_id,
     get_analyses_by_user_id,
     update_analysis,
 )
-from services.db.repositories.videos import create_video
+from ....core.infrastructure.db.repositories.videos import create_video
 import pytest
 import time
 from datetime import datetime, timedelta, timezone
@@ -231,6 +231,8 @@ class TestAnalysisUpdate:
         video = Video(
             user_id=test_user,
             video_key="test_video.mp4",
+            camera_view="face_on",
+            club_type="driver",
         )
 
         video_id = create_video(video=video, session=db_session).id

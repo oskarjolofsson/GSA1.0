@@ -1,6 +1,6 @@
-from services.db.models.Video import Video
+from ....core.infrastructure.db.models.Video import Video
 import uuid
-from services.db.repositories.videos import (
+from ....core.infrastructure.db.repositories.videos import (
     create_video,
     get_video_by_id,
     get_video_by_user_id,

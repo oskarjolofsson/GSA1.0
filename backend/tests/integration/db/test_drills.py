@@ -1,6 +1,6 @@
-from services.db.models.Drill import Drill
+from ....core.infrastructure.db.models.Drill import Drill
 import uuid
-from services.db.repositories.drills import (
+from ....core.infrastructure.db.repositories.drills import (
     create_drill,
     get_drill_by_id,
 )

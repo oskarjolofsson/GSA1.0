@@ -1,6 +1,6 @@
-from services.db.models.Profile import Profile
+from ....core.infrastructure.db.models.Profile import Profile
 import uuid
-from services.db.repositories.profiles import (
+from ....core.infrastructure.db.repositories.profiles import (
     create_profile,
     get_profile_by_id,
 )
