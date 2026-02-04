@@ -109,7 +109,35 @@ FOR DELETE
 USING (user_id = auth.uid());
 
 -- -----------------------------------------------------------------------------
--- 6) analysis_issues (indirect ownership via analysis; backend-only writes)
+-- 6) drills (reference table, readable by all authenticated users)
+-- -----------------------------------------------------------------------------
+
+ALTER TABLE public.drills ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY drills_authenticated_select
+ON public.drills
+FOR SELECT
+USING (auth.role() = 'authenticated');
+
+-- NOTE:
+-- Only the service role should be able to INSERT / UPDATE / DELETE drills.
+
+-- -----------------------------------------------------------------------------
+-- 7) issues (reference table, readable by all authenticated users)
+-- -----------------------------------------------------------------------------
+
+ALTER TABLE public.issues ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY issues_authenticated_select
+ON public.issues
+FOR SELECT
+USING (auth.role() = 'authenticated');
+
+-- NOTE:
+-- Only the service role should be able to INSERT / UPDATE / DELETE issues.
+
+-- -----------------------------------------------------------------------------
+-- 8) analysis_issues (indirect ownership via analysis; backend-only writes)
 -- -----------------------------------------------------------------------------
 
 CREATE POLICY analysis_issues_owner_select
@@ -129,7 +157,7 @@ USING (
 -- Only the service role should be able to write this table.
 
 -- -----------------------------------------------------------------------------
--- 7) analysis_drills (indirect ownership via analysis_issues -> analysis)
+-- 9) analysis_drills (indirect ownership via analysis_issues -> analysis)
 -- -----------------------------------------------------------------------------
 
 CREATE POLICY analysis_drills_owner_select
@@ -149,7 +177,7 @@ USING (
 -- No INSERT / UPDATE / DELETE policies for authenticated users on analysis_drills.
 
 -- -----------------------------------------------------------------------------
--- 8) user_consent (append-only from user perspective)
+-- 10) user_consent (append-only from user perspective)
 -- -----------------------------------------------------------------------------
 
 CREATE POLICY user_consent_owner_select
@@ -165,7 +193,7 @@ WITH CHECK (user_id = auth.uid());
 -- No UPDATE or DELETE policies: consent is append-only.
 
 -- -----------------------------------------------------------------------------
--- 9) Privilege hardening (defense-in-depth via REVOKE)
+-- 11) Privilege hardening (defense-in-depth via REVOKE)
 -- -----------------------------------------------------------------------------
 
 -- Prevent reassignment of ownership
