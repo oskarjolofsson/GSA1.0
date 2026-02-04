@@ -1,11 +1,11 @@
-from services.db.models.UserConsent import UserConsent
-from services.db.models.MandatoryConsent import MandatoryConsent
+from ....core.infrastructure.db.models.UserConsent import UserConsent
+from ....core.infrastructure.db.models.MandatoryConsent import MandatoryConsent
 import uuid
-from services.db.repositories.consent import (
+from ....core.infrastructure.db.repositories.consent import (
     create_consent,
     get_consent_by_id,
 )
-from services.db.repositories.mandatory_consent import create_mandatory_consent
+from ....core.infrastructure.db.repositories.mandatory_consent import create_mandatory_consent
 import pytest
 
 

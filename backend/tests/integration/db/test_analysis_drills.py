@@ -1,17 +1,17 @@
-from services.db.models.AnalysisDrill import AnalysisDrill
-from services.db.models.Analysis import Analysis
-from services.db.models.AnalysisIssue import AnalysisIssue
-from services.db.models.Drill import Drill
-from services.db.models.Issue import Issue
+from ....core.infrastructure.db.models.AnalysisDrill import AnalysisDrill
+from ....core.infrastructure.db.models.Analysis import Analysis
+from ....core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
+from ....core.infrastructure.db.models.Drill import Drill
+from ....core.infrastructure.db.models.Issue import Issue
 import uuid
-from services.db.repositories.analysis_drills import (
+from ....core.infrastructure.db.repositories.analysis_drills import (
     create_analysis_drill,
     get_analysis_drill_by_id,
 )
-from services.db.repositories.analysis import create_analysis
-from services.db.repositories.analysis_issues import create_analysis_issue
-from services.db.repositories.drills import create_drill
-from services.db.repositories.issues import create_issue
+from ....core.infrastructure.db.repositories.analysis import create_analysis
+from ....core.infrastructure.db.repositories.analysis_issues import create_analysis_issue
+from ....core.infrastructure.db.repositories.drills import create_drill
+from ....core.infrastructure.db.repositories.issues import create_issue
 import pytest
 
 

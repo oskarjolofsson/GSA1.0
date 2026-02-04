@@ -1,13 +1,13 @@
-from services.db.models.AnalysisIssue import AnalysisIssue
-from services.db.models.Analysis import Analysis
-from services.db.models.Issue import Issue
+from ....core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
+from ....core.infrastructure.db.models.Analysis import Analysis
+from ....core.infrastructure.db.models.Issue import Issue
 import uuid
-from services.db.repositories.analysis_issues import (
+from ....core.infrastructure.db.repositories.analysis_issues import (
     create_analysis_issue,
     get_analysis_issue_by_id,
 )
-from services.db.repositories.analysis import create_analysis
-from services.db.repositories.issues import create_issue
+from ....core.infrastructure.db.repositories.analysis import create_analysis
+from ....core.infrastructure.db.repositories.issues import create_issue
 import pytest
 
 

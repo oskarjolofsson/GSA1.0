@@ -1,6 +1,6 @@
-from services.db.models.Issue import Issue
+from ....core.infrastructure.db.models.Issue import Issue
 import uuid
-from services.db.repositories.issues import (
+from ....core.infrastructure.db.repositories.issues import (
     create_issue,
     get_issue_by_id,
 )
