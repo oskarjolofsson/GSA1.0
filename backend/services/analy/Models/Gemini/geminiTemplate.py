@@ -48,9 +48,6 @@ class GeminiTemplate(Model, ABC):
         """
         return final_prompt
         
-        
-        
-        return final_prompt
 
     @abstractmethod
     def ai_analysis(self, content: list[dict[str, str]]):
