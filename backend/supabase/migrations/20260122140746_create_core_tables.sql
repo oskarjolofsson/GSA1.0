@@ -12,14 +12,19 @@ CREATE TABLE profiles (
 
 CREATE TABLE videos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
 
+    user_id UUID NOT NULL,
+    
     video_key TEXT NOT NULL,
+
     start_time INTERVAL,
     end_time INTERVAL,
 
-    camera_view TEXT CHECK (camera_view IN ('unknown', 'face_on', 'down_the_line')),
-    club_type TEXT CHECK (club_type IN ('unknown', 'iron', 'driver')),
+    camera_view TEXT NOT NULL
+        CHECK (camera_view IN ('unknown', 'face_on', 'down_the_line')),
+
+    club_type TEXT NOT NULL
+        CHECK (club_type IN ('unknown', 'wedge', 'iron', 'wood', 'driver')),
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

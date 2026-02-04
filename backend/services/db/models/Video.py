@@ -29,17 +29,19 @@ class Video(Base):
 
     video_key: Mapped[str] = mapped_column(Text, nullable=False)
 
-    start_time: Mapped[timedelta | None] = mapped_column(Interval)
-    end_time: Mapped[timedelta | None] = mapped_column(Interval)
+    start_time: Mapped[timedelta | None] = mapped_column(Interval, nullable=True)
+    end_time: Mapped[timedelta | None] = mapped_column(Interval, nullable=True)
 
     camera_view: Mapped[str] = mapped_column(
         Text,
         CheckConstraint("camera_view IN ('unknown', 'face_on', 'down_the_line')"),
+        nullable=False,
     )
 
     club_type: Mapped[str] = mapped_column(
         Text,
-        CheckConstraint("club_type IN ('unknown', 'iron', 'driver')"),
+        CheckConstraint("club_type IN ('unknown', 'wedge', 'iron', 'wood', 'driver')"),
+        nullable=False,
     )
 
     created_at: Mapped[DateTime] = mapped_column(

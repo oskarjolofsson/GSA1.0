@@ -199,6 +199,7 @@ class TestVideoConstraints:
 
         with pytest.raises(Exception):
             create_video(video=video, session=db_session)
+            db_session.flush()
 
     def test_video_requires_club_type(self, db_session, test_user):
         """Test that club_type is required"""
@@ -210,6 +211,7 @@ class TestVideoConstraints:
 
         with pytest.raises(Exception):
             create_video(video=video, session=db_session)
+            db_session.flush()
 
     def test_video_invalid_camera_view(self, db_session, test_user):
         """Test that invalid camera_view is rejected"""
