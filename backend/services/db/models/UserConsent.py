@@ -16,7 +16,6 @@ class UserConsent(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("auth.users.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
