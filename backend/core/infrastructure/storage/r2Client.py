@@ -1,21 +1,17 @@
-import os
-from dotenv import load_dotenv
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
+from ...config import R2_BUCKET, R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY
 
-load_dotenv()
-print("R2 access key loaded:", bool(os.getenv("CLOUDFLARE_R2_ACCESS_KEY")))
-print("R2 secret loaded:", bool(os.getenv("CLOUDFLARE_R2_SECRET_ACCESS_KEY")))
 class R2Client:
     
     def __init__(self):
-        self.bucket = os.getenv("CLOUDFLARE_R2_BUCKET")
+        self.bucket = R2_BUCKET
         self.s3 = boto3.client(
             "s3",
-            endpoint_url=os.getenv("S3_API"),
-            aws_access_key_id=os.getenv("CLOUDFLARE_R2_ACCESS_KEY"),
-            aws_secret_access_key=os.getenv("CLOUDFLARE_R2_SECRET_ACCESS_KEY"),
+            endpoint_url=R2_ENDPOINT,
+            aws_access_key_id=R2_ACCESS_KEY,
+            aws_secret_access_key=R2_SECRET_KEY,
             region_name="auto",
             config=Config(signature_version="s3v4"),
         )
@@ -30,7 +26,7 @@ class R2Client:
     def head_object(self, key: str) -> bool:
         try:
             self.s3.head_object(
-                Bucket=os.getenv("CLOUDFLARE_R2_BUCKET"),
+                Bucket=self.bucket,
                 Key=key,
             )
             return True
@@ -41,14 +37,14 @@ class R2Client:
 
     def get_object(self, key: str) -> bytes:
         response = self.s3.get_object(
-            Bucket=os.getenv("CLOUDFLARE_R2_BUCKET"),
+            Bucket=self.bucket,
             Key=key,
         )
         return response["Body"].read()
     
     def delete_object(self, key: str) -> None:
         self.s3.delete_object(
-            Bucket=os.getenv("CLOUDFLARE_R2_BUCKET"),
+            Bucket=self.bucket,
             Key=key,
         )
     

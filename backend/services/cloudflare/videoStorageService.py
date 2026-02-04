@@ -1,4 +1,4 @@
-from services.cloudflare.r2Client import r2_client
+from backend.core.infrastructure.storage.r2Client import r2_client
 
 class VideoStorageService:
     
