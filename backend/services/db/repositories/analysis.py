@@ -11,9 +11,9 @@ def get_analyses_by_user_id(user_id: str, session: Session) -> list[Analysis]:
     stmt = (
         select(Analysis)
         .where(Analysis.user_id == user_id)
-        .where(Analysis.status == text("'completed'"))
-            .where(Analysis.success == True)
-            .order_by(Analysis.created_at.desc())
+        .where(Analysis.status == "completed")
+        .where(Analysis.success == True)
+        .order_by(Analysis.created_at.desc(), Analysis.id.desc())
     )
         
     return session.scalars(stmt).all()
