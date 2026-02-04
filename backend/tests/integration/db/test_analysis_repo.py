@@ -1,4 +1,5 @@
 from services.db.models.Analysis import Analysis
+from services.db.models.Video import Video
 import uuid
 from services.db.repositories.analysis import (
     create_analysis,
@@ -6,6 +7,7 @@ from services.db.repositories.analysis import (
     get_analyses_by_user_id,
     update_analysis,
 )
+from services.db.repositories.videos import create_video
 import pytest
 import time
 from datetime import datetime, timedelta, timezone
@@ -94,7 +96,9 @@ class TestAnalysisRead:
 
         assert result is None
 
-    def test_get_analyses_by_user_id_completed_and_successful(self, db_session, test_user):
+    def test_get_analyses_by_user_id_completed_and_successful(
+        self, db_session, test_user
+    ):
         """Test retrieving only completed and successful analyses for a user"""
         # Create completed and successful analysis
         completed_analysis = Analysis(
@@ -224,7 +228,13 @@ class TestAnalysisUpdate:
 
     def test_update_analysis_with_video_id(self, db_session, test_user):
         """Test updating analysis with a video ID"""
-        video_id = uuid.uuid4()
+        video = Video(
+            user_id=test_user,
+            video_key="test_video.mp4",
+        )
+
+        video_id = create_video(video=video, session=db_session).id
+
         analysis = Analysis(
             user_id=test_user,
             model_version="v1.0",
@@ -299,5 +309,3 @@ class TestAnalysisConstraints:
         )
         with pytest.raises(Exception):
             create_analysis(analysis=analysis, session=db_session)
-
-

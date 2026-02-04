@@ -1,20 +1,12 @@
 from ..models.UserConsent import UserConsent
-from ..session import SessionLocal
-from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 
-def get_consent_by_id(consent_id) -> UserConsent:
-    with SessionLocal() as session:
-        return session.get(UserConsent, consent_id)
+def get_consent_by_id(consent_id, session: Session) -> UserConsent:
+    return session.get(UserConsent, consent_id)
     
     
-def create_consent(consent: UserConsent) -> UserConsent:
-    with SessionLocal() as session:
-        try:
-            session.add(consent)
-            session.commit()
-            session.refresh(consent)
-            return consent
-        except Exception:
-            session.rollback()
-            raise
+def create_consent(consent: UserConsent, session: Session) -> UserConsent:
+    session.add(consent)
+    session.flush()
+    return consent

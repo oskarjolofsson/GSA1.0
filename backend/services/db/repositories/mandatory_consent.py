@@ -1,20 +1,12 @@
 from ..models.MandatoryConsent import MandatoryConsent
-from ..session import SessionLocal
-from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 
-def get_mandatory_consent_by_id(mandatory_consent_id) -> MandatoryConsent:
-    with SessionLocal() as session:
-        return session.get(MandatoryConsent, mandatory_consent_id)
+def get_mandatory_consent_by_id(mandatory_consent_id, session: Session) -> MandatoryConsent:
+    return session.get(MandatoryConsent, mandatory_consent_id)
     
     
-def create_mandatory_consent(mandatory_consent: MandatoryConsent) -> MandatoryConsent:
-    with SessionLocal() as session:
-        try:
-            session.add(mandatory_consent)
-            session.commit()
-            session.refresh(mandatory_consent)
-            return mandatory_consent
-        except Exception:
-            session.rollback()
-            raise
+def create_mandatory_consent(mandatory_consent: MandatoryConsent, session: Session) -> MandatoryConsent:
+    session.add(mandatory_consent)
+    session.flush()
+    return mandatory_consent
