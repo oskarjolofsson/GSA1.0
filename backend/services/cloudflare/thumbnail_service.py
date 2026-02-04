@@ -8,7 +8,7 @@ from .config import (
     R2_BUCKET,
 )
 
-from .r2Client import r2_client
+from ...core.infrastructure.storage.r2Client import r2_client
 from .ffmpeg_utils import extract_thumbnail_webp
 
 
