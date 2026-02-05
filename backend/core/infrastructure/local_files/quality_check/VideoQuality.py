@@ -1,5 +1,5 @@
-from services.qualityCheck.Quality import Quality
-from services.file_handeling.Video_file import Video_file
+from ..quality_check.Quality import Quality
+from ..file_types.Video_file import Video_file
 
 class VideoQuality(Quality):
     def __init__(self, file: Video_file):

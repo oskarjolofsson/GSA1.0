@@ -1,4 +1,4 @@
-from services.file_handeling.File import File
+from .File import File
 from openai import OpenAI
 from werkzeug.datastructures import FileStorage
 from PIL import Image

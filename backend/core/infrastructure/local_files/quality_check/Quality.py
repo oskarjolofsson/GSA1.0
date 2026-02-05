@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from services.file_handeling.File import File
+from ..file_types.File import File
 
 class Quality(ABC):
     def __init__(self, file: File):
