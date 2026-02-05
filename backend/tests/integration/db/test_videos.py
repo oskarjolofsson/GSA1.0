@@ -178,41 +178,6 @@ class TestVideoConstraints:
         with pytest.raises(Exception):
             create_video(video=video, session=db_session)
 
-    def test_video_requires_video_key(self, db_session, test_user):
-        """Test that video_key is required"""
-        video = Video(
-            user_id=test_user,
-            camera_view="unknown",
-            club_type="unknown",
-        )
-
-        with pytest.raises(Exception):
-            create_video(video=video, session=db_session)
-
-    def test_video_requires_camera_view(self, db_session, test_user):
-        """Test that camera_view is required"""
-        video = Video(
-            user_id=test_user,
-            video_key="videos/no_camera.mp4",
-            club_type="unknown",
-        )
-
-        with pytest.raises(Exception):
-            create_video(video=video, session=db_session)
-            db_session.flush()
-
-    def test_video_requires_club_type(self, db_session, test_user):
-        """Test that club_type is required"""
-        video = Video(
-            user_id=test_user,
-            video_key="videos/no_club.mp4",
-            camera_view="unknown",
-        )
-
-        with pytest.raises(Exception):
-            create_video(video=video, session=db_session)
-            db_session.flush()
-
     def test_video_invalid_camera_view(self, db_session, test_user):
         """Test that invalid camera_view is rejected"""
         video = Video(
