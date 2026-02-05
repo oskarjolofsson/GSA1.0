@@ -1,7 +1,7 @@
 from typing import List
 from openai import OpenAI
 
-from services.file_handeling.Image_file import Image_file
+from ..file_types.Image_file import Image_file
 
 class Keyframes:
     def __init__(self):

@@ -1,6 +1,6 @@
 from Quality import Quality
 import cv2
-from services.file_handeling.Image_file import Image_file
+from ..file_types.Image_file import Image_file
 
 class ImageQuality(Quality):
     def __init__(self, file: Image_file):

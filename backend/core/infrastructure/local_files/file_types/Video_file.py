@@ -1,6 +1,6 @@
-from services.file_handeling.File import File
-from services.keyframes.Keyframes import Keyframes
-from services.file_handeling.Image_file import Image_file
+from .File import File
+from ..keyframes.Keyframes import Keyframes
+from .Image_file import Image_file
 from typing import List, Dict, Any 
 from openai import OpenAI
 import cv2
