@@ -19,3 +19,9 @@ def create_video(video: Video, session: Session) -> Video:
     session.add(video)
     session.flush()
     return video
+
+
+def update_video(video: Video, session: Session) -> Video:
+    session.add(video)
+    session.flush()
+    return video

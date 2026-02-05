@@ -12,6 +12,8 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
+from .Issue import Issue
+
 # Related models
 from .AnalysisDrill import AnalysisDrill
 

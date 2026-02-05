@@ -27,21 +27,21 @@ class Video(Base):
         nullable=False,
     )
 
-    video_key: Mapped[str] = mapped_column(Text, nullable=False)
+    video_key: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     start_time: Mapped[timedelta | None] = mapped_column(Interval, nullable=True)
     end_time: Mapped[timedelta | None] = mapped_column(Interval, nullable=True)
 
-    camera_view: Mapped[str] = mapped_column(
+    camera_view: Mapped[str | None] = mapped_column(
         Text,
         CheckConstraint("camera_view IN ('unknown', 'face_on', 'down_the_line')"),
-        nullable=False,
+        nullable=True,
     )
 
-    club_type: Mapped[str] = mapped_column(
+    club_type: Mapped[str | None] = mapped_column(
         Text,
         CheckConstraint("club_type IN ('unknown', 'wedge', 'iron', 'wood', 'driver')"),
-        nullable=False,
+        nullable=True,
     )
 
     created_at: Mapped[DateTime] = mapped_column(
