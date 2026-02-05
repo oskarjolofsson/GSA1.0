@@ -37,7 +37,7 @@ Do not prioritize user assumptions over video evidence.
 """
 
 
-def _upload_and_wait(client: genai.Client, video_path: str) -> genai.File:
+def _upload_and_wait(client: genai.Client, video_path: str) -> types.File:
     """Upload video to Gemini and wait for processing to complete."""
     print(f"Uploading video: {video_path}")
     video_file = client.files.upload(file=video_path)
@@ -55,7 +55,7 @@ def _upload_and_wait(client: genai.Client, video_path: str) -> genai.File:
     return video_file
 
 
-def _build_content_payload(video_file: genai.File, user_prompt: str) -> list:
+def _build_content_payload(video_file: types.File, user_prompt: str) -> list:
     """Build the content payload for the API request."""
     return [{
         "role": "user",
@@ -70,7 +70,7 @@ def _call_gemini_api(
     client: genai.Client,
     contents: list,
     model: str = "gemini-3-pro-preview"
-) -> genai.GenerateContentResponse:
+) -> types.GenerateContentResponse:
     """Call Gemini API with the prepared content."""
     print(f"Calling Gemini API with model: {model}")
     
@@ -88,7 +88,7 @@ def _call_gemini_api(
     return response
 
 
-def _parse_response(response: genai.GenerateContentResponse) -> dict:
+def _parse_response(response: types.GenerateContentResponse) -> dict:
     """Parse and validate the API response."""
     if not response or not response.text:
         raise ValueError("No response returned from Gemini API")
