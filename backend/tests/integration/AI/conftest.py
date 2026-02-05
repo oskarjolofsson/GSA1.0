@@ -2,6 +2,10 @@ import pytest
 import os
 from pathlib import Path
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Add backend to path
 backend_dir = Path(__file__).parent.parent.parent.parent
@@ -13,9 +17,11 @@ from core.infrastructure.AI.google.client import GoogleAnalysisClient
 @pytest.fixture(scope="module")
 def test_video_path():
     """Path to the test video file."""
-    video_path = Path(__file__).parent.parent.parent / "AI_tests" / "test_video.mp4"
+    video_path = backend_dir / "uploads" / "video" / "golf.mp4"
+    print(f"\nChecking for test video at: {video_path}")
     
     if not video_path.exists():
+        print(f"\nTest video not found at {video_path}. Skipping tests that require video analysis.")
         pytest.skip(f"Test video not found at {video_path}")
     
     return str(video_path)
@@ -27,8 +33,8 @@ def gemini_api_key():
     api_key = os.getenv("GEMINI_API_KEY")
     
     if not api_key:
+        print("\nGEMINI_API_KEY environment variable not set. Skipping tests that require Gemini API access.")
         pytest.skip("GEMINI_API_KEY environment variable not set")
-    
     return api_key
 
 
@@ -41,16 +47,13 @@ def google_client(gemini_api_key):
 @pytest.fixture(scope="module")
 def analysis_result(google_client, test_video_path):
     """Run analysis once and share result across all tests."""
-    print("\n🔄 Running video analysis (once for all tests)...")
     result = google_client.analyze_video(video_path=test_video_path)
-    print(f"✓ Analysis complete: {len(result.get('issues', []))} issues found")
     return result
 
 
 @pytest.fixture(scope="module")
 def analysis_result_with_context(google_client, test_video_path):
     """Run analysis with user context once."""
-    print("\n🔄 Running video analysis with user context...")
     result = google_client.analyze_video(
         video_path=test_video_path,
         shape="draw",
@@ -58,5 +61,4 @@ def analysis_result_with_context(google_client, test_video_path):
         misses="right",
         extra=None
     )
-    print(f"✓ Analysis with context complete")
     return result

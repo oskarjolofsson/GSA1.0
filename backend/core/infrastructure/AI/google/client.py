@@ -27,7 +27,7 @@ class GoogleAnalysisClient(AnalysisAI):
         height: Optional[str] = None,
         misses: Optional[str] = None,
         extra: Optional[str] = None,
-        model: str = "gemini-3-pro-preview"
+        model: str = "gemini-3-flash-preview"
     ) -> dict:
         """
         Analyze a golf swing video.
@@ -38,7 +38,7 @@ class GoogleAnalysisClient(AnalysisAI):
             height: Wanted ball height (optional)
             misses: Actual result/miss pattern (optional)
             extra: Additional user notes (optional)
-            model: Gemini model to use (default: gemini-3-pro-preview)
+            model: Gemini model to use (default: gemini-3-flash-preview)
         
         Returns:
             dict: Analysis results
