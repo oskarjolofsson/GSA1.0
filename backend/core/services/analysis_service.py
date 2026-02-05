@@ -11,36 +11,28 @@ from ..infrastructure.db.session import SessionLocal
 
 db_session = SessionLocal()
 
-def create_analysis(dto: CreateAnalysisDTO, session=None): 
-    if session is None:
-        session = SessionLocal()
-        should_commit = True
-    else:
-        should_commit = False
-    
+def create_analysis(dto: CreateAnalysisDTO): 
     video = Video(
         user_id=dto.user_id,
         start_time=dto.start_time,
         end_time=dto.end_time
     )
-    video = create_video(video, session)
+    video = create_video(video=video, session=db_session)
     
-    # Create analysis record in the database
     analysis = Analysis(
         user_id=dto.user_id,
-        model_version=dto.model,  # Fixed: was model_verison
+        model_version=dto.model, 
         video_id=video.id
     )
-    analysis = create_analysis_in_db(analysis, session)
+    analysis = create_analysis_in_db(analysis=analysis, session=db_session)
     
     video_key = f"videos/{video.id}"
     video.video_key = video_key
-    update_video(video, session)
+    update_video(video=video, session=db_session)
     
     upload_url = generate_upload_url(key=video_key)
     
-    if should_commit:
-        session.commit()
+    db_session.commit()
     
     return {
         "analysis_id": analysis.id,

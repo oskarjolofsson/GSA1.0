@@ -9,7 +9,7 @@ from ...core.infrastructure.db.repositories.videos import get_video_by_id
 class TestCreateAnalysis:
     """Tests for create_analysis function"""
 
-    def test_create_analysis_creates_video_record(self, db_session, test_user):
+    def test_create_analysis_creates_video_record(self, mock_service_session, test_user):
         """Test that create_analysis creates a video record with correct fields"""
         # Arrange
         dto = CreateAnalysisDTO(
@@ -20,21 +20,21 @@ class TestCreateAnalysis:
         )
 
         # Act
-        result = create_analysis(dto, session=db_session)
+        result = create_analysis(dto)
 
         # Assert - Verify analysis was created
-        analysis = get_analysis_by_id(result["analysis_id"], session=db_session)
+        analysis = get_analysis_by_id(result["analysis_id"], session=mock_service_session)
         assert analysis is not None
 
         # Verify video was created with correct fields
-        video = get_video_by_id(analysis.video_id, session=db_session)
+        video = get_video_by_id(analysis.video_id, session=mock_service_session)
         assert video is not None
         assert video.user_id == test_user
         assert video.start_time == timedelta(seconds=5)
         assert video.end_time == timedelta(seconds=15)
         assert video.video_key == f"videos/{video.id}"
 
-    def test_create_analysis_creates_analysis_record(self, db_session, test_user):
+    def test_create_analysis_creates_analysis_record(self, mock_service_session, test_user):
         """Test that create_analysis creates an analysis record with correct fields"""
         # Arrange
         dto = CreateAnalysisDTO(
@@ -45,16 +45,16 @@ class TestCreateAnalysis:
         )
 
         # Act
-        result = create_analysis(dto, session=db_session)
+        result = create_analysis(dto)
 
         # Assert
-        analysis = get_analysis_by_id(result["analysis_id"], session=db_session)
+        analysis = get_analysis_by_id(result["analysis_id"], session=mock_service_session)
         assert analysis is not None
         assert analysis.user_id == test_user
         assert analysis.model_version == "v2.0"
         assert analysis.video_id is not None
 
-    def test_create_analysis_returns_correct_values(self, db_session, test_user):
+    def test_create_analysis_returns_correct_values(self, mock_service_session, test_user):
         """Test that create_analysis returns analysis_id and upload_url"""
         # Arrange
         dto = CreateAnalysisDTO(
@@ -65,7 +65,7 @@ class TestCreateAnalysis:
         )
 
         # Act
-        result = create_analysis(dto, session=db_session)
+        result = create_analysis(dto)
 
         # Assert
         assert "analysis_id" in result
@@ -75,7 +75,7 @@ class TestCreateAnalysis:
         assert isinstance(result["upload_url"], str)
         assert len(result["upload_url"]) > 0
 
-    def test_create_analysis_video_key_matches_video_id(self, db_session, test_user):
+    def test_create_analysis_video_key_matches_video_id(self, mock_service_session, test_user):
         """Test that video_key is set to videos/{video.id}"""
         # Arrange
         dto = CreateAnalysisDTO(
@@ -86,15 +86,15 @@ class TestCreateAnalysis:
         )
 
         # Act
-        result = create_analysis(dto, session=db_session)
+        result = create_analysis(dto)
 
         # Assert
-        analysis = get_analysis_by_id(result["analysis_id"], session=db_session)
-        video = get_video_by_id(analysis.video_id, session=db_session)
+        analysis = get_analysis_by_id(result["analysis_id"], session=mock_service_session)
+        video = get_video_by_id(analysis.video_id, session=mock_service_session)
         
         assert video.video_key == f"videos/{video.id}"
 
-    def test_create_analysis_links_video_to_analysis(self, db_session, test_user):
+    def test_create_analysis_links_video_to_analysis(self, mock_service_session, test_user):
         """Test that the created video is properly linked to the analysis"""
         # Arrange
         dto = CreateAnalysisDTO(
@@ -105,10 +105,10 @@ class TestCreateAnalysis:
         )
 
         # Act
-        result = create_analysis(dto, session=db_session)
+        result = create_analysis(dto)
 
         # Assert
-        analysis = get_analysis_by_id(result["analysis_id"], session=db_session)
-        video = get_video_by_id(analysis.video_id, session=db_session)
+        analysis = get_analysis_by_id(result["analysis_id"], session=mock_service_session)
+        video = get_video_by_id(analysis.video_id, session=mock_service_session)
         
         assert analysis.video_id == video.id
