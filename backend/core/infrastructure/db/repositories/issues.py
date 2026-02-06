@@ -8,6 +8,10 @@ def get_issue_by_id(issue_id, session: Session) -> Issue:
     return session.get(Issue, issue_id)
 
 
+def get_all_issues(session: Session) -> list[Issue]:
+    return session.query(Issue).all()
+
+
 # ------------ CREATE ------------
 
 
