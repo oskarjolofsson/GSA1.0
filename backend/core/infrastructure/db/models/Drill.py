@@ -7,6 +7,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, Mapped, mapped_column
+from .IssueDrill import IssueDrill
 
 
 class Drill(Base):
