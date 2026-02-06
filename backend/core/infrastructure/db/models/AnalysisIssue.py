@@ -14,9 +14,6 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from .Issue import Issue
 
-# Related models
-from .AnalysisDrill import AnalysisDrill
-
 
 class AnalysisIssue(Base):
     __tablename__ = "analysis_issues"
@@ -39,12 +36,6 @@ class AnalysisIssue(Base):
         nullable=False,
     )
 
-    impact_rank: Mapped[int] = mapped_column(
-        Integer,
-        CheckConstraint("impact_rank >= 1"),
-        nullable=False,
-    )
-
     confidence: Mapped[float | None] = mapped_column(
         CheckConstraint("confidence >= 0.0 AND confidence <= 1.0")
     )
@@ -57,14 +48,8 @@ class AnalysisIssue(Base):
 
     analysis = relationship("Analysis", back_populates="issues")
     issue = relationship("Issue", back_populates="analysis_issues")
-    drills = relationship(
-        "AnalysisDrill",
-        back_populates="issue",
-        cascade="all, delete-orphan",
-    )
 
     __table_args__ = (
-        UniqueConstraint("analysis_id", "impact_rank"),
         Index("idx_analysis_issues_issue_id", "issue_id"),
         Index("idx_analysis_issues_confidence", "confidence"),
         Index("idx_analysis_issues_created_at", "created_at"),

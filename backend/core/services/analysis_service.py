@@ -7,9 +7,7 @@ from ..infrastructure.db.repositories.videos import create_video, update_video, 
 from ..infrastructure.db.models.Analysis import Analysis
 from ..infrastructure.db.models.Video import Video
 from ..infrastructure.db.repositories.analysis_issues import create_analysis_issue
-from ..infrastructure.db.repositories.analysis_drills import create_analysis_drill
 from ..infrastructure.db.models.AnalysisIssue import AnalysisIssue
-from ..infrastructure.db.models.AnalysisDrill import AnalysisDrill
 
 from ..infrastructure.storage.r2Adaptor import get_object
 from ..infrastructure.local_files.file_types.Video_file import Video_file
@@ -96,7 +94,7 @@ def run_analysis(dto: RunAnalysisDTO):
             camera_view=analysis_results.get("camera_view")
         )
         
-        # Insert analysis_issues and analysis_drills that are found in the analysis_results_object
+        # Insert analysis_issues that are found in the analysis_results_object
         for issue in analysis_results_object.issues:
             analysis_issue_object = AnalysisIssue(
                 analysis_id=analysis_object.id,
@@ -104,9 +102,6 @@ def run_analysis(dto: RunAnalysisDTO):
                 confidence=issue["confidence"]
             )
             create_analysis_issue(analysis_issue=analysis_issue_object, session=db_session)
-            
-        # TODO : insert analysis_drills based on the analysis_issues found
-            
         
         # Set completed state on analysis object
         analysis_object.status = 'completed'
@@ -141,10 +136,3 @@ def get_analysis_issues(analysis_id: int): ...
 def delete_analysis_issue(analysis_issue_id: int): ...
     # Prompt the database to delete the analysis issue with the given id
 
-
-def get_analysis_drills(analysis_id: int): ...
-    # Prompt the database for all analysis drills that belong to the analysis with the given analysis_id, and return a list of those analysis drill objects
-    
-    
-def delete_analysis_drill(analysis_drill_id: int): ...
-    # Prompt the database to delete the analysis drill with the given id

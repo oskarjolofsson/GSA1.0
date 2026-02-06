@@ -4,7 +4,7 @@ from typing import Optional
 from google import genai
 from google.genai import types
 
-from .prompts import VIDEO_SYSTEM_INSTRUCTIONS, format_content
+from .prompts import VIDEO_SYSTEM_INSTRUCTIONS2, format_content
 
 from ...db.repositories.issues import get_all_issues
 
@@ -49,7 +49,7 @@ def _call_gemini_api(
     response = client.models.generate_content(
         model=model,
         config=types.GenerateContentConfig(
-            system_instruction=[{"text": VIDEO_SYSTEM_INSTRUCTIONS}],
+            system_instruction=[{"text": VIDEO_SYSTEM_INSTRUCTIONS2}],
             temperature=0.0,
             top_p=0.1,
             top_k=1

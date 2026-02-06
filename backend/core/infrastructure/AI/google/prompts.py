@@ -83,12 +83,6 @@ VIDEO_SYSTEM_INSTRUCTIONS = """
         - IMPACT
         - FOLLOW_THROUGH
 
-        SEVERITY:
-
-        - MINOR
-        - MODERATE
-        - MAJOR
-
         CAMERA_VIEW:
 
         - unknown
@@ -119,8 +113,6 @@ VIDEO_SYSTEM_INSTRUCTIONS = """
                     "issue_code": "string_snake_case_identifier",
                     "title": "Short human-readable name",
                     "phase": "SETUP | BACKSWING | TRANSITION | DOWNSWING | IMPACT | FOLLOW_THROUGH",
-                    "impact_rank": 1,
-                    "severity": "MINOR | MODERATE | MAJOR",
                     "confidence": 0.0,
                     "explanation": {
                     "current_motion": "",
@@ -141,7 +133,7 @@ VIDEO_SYSTEM_INSTRUCTIONS = """
             "key_findings": 
             [
                 {
-                    "issue_code": "must_match_impact_rank_1_issue",
+                    "issue_code": "reference_to_issue_from_issues_array",
                     "title": "",
                     "summary": "",
                     "importance": "",
@@ -161,9 +153,7 @@ VIDEO_SYSTEM_INSTRUCTIONS = """
 
         - Include at most 6 issues total.
         - Include ALL identified issues in issues.
-        - Sort issues by impact_rank (1 first).
-        - Never include more than one issue with impact_rank = 1.
-        - key_findings MUST reference the impact_rank = 1 issue via issue_code.
+        - key_findings MUST reference issues from the issues array via issue_code.
         - Do NOT invent new issue codes or drill codes.
         - Lower confidence instead of guessing.
 

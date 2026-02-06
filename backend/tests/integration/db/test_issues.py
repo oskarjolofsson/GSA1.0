@@ -21,7 +21,6 @@ class TestIssueCreate:
         assert created.id is not None
         assert created.title == "Hanging Back"
         assert created.phase is None
-        assert created.severity is None
         assert created.created_at is not None
 
     def test_create_issue_with_all_fields(self, db_session):
@@ -29,7 +28,6 @@ class TestIssueCreate:
         issue = Issue(
             title="Early Extension",
             phase="DOWNSWING",
-            severity="MAJOR",
             current_motion="Hips move toward ball during downswing",
             expected_motion="Hips should rotate without moving forward",
             swing_effect="Loss of posture and power",
@@ -41,7 +39,6 @@ class TestIssueCreate:
         assert created.id is not None
         assert created.title == "Early Extension"
         assert created.phase == "DOWNSWING"
-        assert created.severity == "MAJOR"
         assert created.current_motion == "Hips move toward ball during downswing"
         assert created.expected_motion == "Hips should rotate without moving forward"
         assert created.swing_effect == "Loss of posture and power"
@@ -52,7 +49,6 @@ class TestIssueCreate:
         issue = Issue(
             title="Over the Top",
             phase="TRANSITION",
-            severity="MAJOR",
         )
 
         create_issue(issue=issue, session=db_session)
@@ -122,18 +118,6 @@ class TestIssueConstraints:
             )
             created = create_issue(issue=issue, session=db_session)
             assert created.phase == phase
-
-    def test_valid_severity_values(self, db_session):
-        """Test all valid severity values"""
-        valid_severities = ["MINOR", "MODERATE", "MAJOR"]
-
-        for severity in valid_severities:
-            issue = Issue(
-                title=f"Test Issue {severity}",
-                severity=severity,
-            )
-            created = create_issue(issue=issue, session=db_session)
-            assert created.severity == severity
 
     def test_issue_requires_title(self, db_session):
         """Test that title is required"""

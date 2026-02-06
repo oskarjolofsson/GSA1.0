@@ -29,9 +29,9 @@ class Drill(Base):
         server_default=func.now(),
     )
 
-    # Relationship to analysis_drills
-    analysis_drills = relationship(
-        "AnalysisDrill",
+    # Relationship to issue_drill
+    issue_drills = relationship(
+        "IssueDrill",
         back_populates="drill",
         cascade="all, delete-orphan",
     )

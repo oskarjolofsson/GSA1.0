@@ -28,11 +28,6 @@ class Issue(Base):
         ),
     )
 
-    severity: Mapped[str | None] = mapped_column(
-        Text,
-        CheckConstraint("severity IN ('MINOR','MODERATE','MAJOR')"),
-    )
-
     current_motion: Mapped[str | None] = mapped_column(Text)
     expected_motion: Mapped[str | None] = mapped_column(Text)
     swing_effect: Mapped[str | None] = mapped_column(Text)
@@ -47,6 +42,13 @@ class Issue(Base):
     # Relationship to analysis_issues
     analysis_issues = relationship(
         "AnalysisIssue",
+        back_populates="issue",
+        cascade="all, delete-orphan",
+    )
+
+    # Relationship to issue_drill
+    issue_drills = relationship(
+        "IssueDrill",
         back_populates="issue",
         cascade="all, delete-orphan",
     )
