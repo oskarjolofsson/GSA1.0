@@ -27,7 +27,6 @@ def test_issue(db_session):
     issue = Issue(
         title="Hanging Back",
         phase="IMPACT",
-        severity="MAJOR",
         current_motion="Weight stays on trail foot through impact",
         expected_motion="Weight should shift to lead foot by impact",
         swing_effect="Reduces power and consistency",
@@ -45,7 +44,6 @@ class TestAnalysisIssueCreate:
         analysis_issue = AnalysisIssue(
             analysis_id=test_analysis.id,
             issue_id=test_issue.id,
-            impact_rank=1,
         )
 
         created = create_analysis_issue(analysis_issue=analysis_issue, session=db_session)
@@ -53,7 +51,6 @@ class TestAnalysisIssueCreate:
         assert created.id is not None
         assert created.analysis_id == test_analysis.id
         assert created.issue_id == test_issue.id
-        assert created.impact_rank == 1
         assert created.confidence is None
 
     def test_create_analysis_issue_with_all_fields(self, db_session, test_analysis, test_issue):
@@ -62,7 +59,6 @@ class TestAnalysisIssueCreate:
         analysis_issue = AnalysisIssue(
             analysis_id=test_analysis.id,
             issue_id=test_issue.id,
-            impact_rank=3,
             confidence=0.85,
         )
 
@@ -71,7 +67,6 @@ class TestAnalysisIssueCreate:
         assert created.id is not None
         assert created.analysis_id == test_analysis.id
         assert created.issue_id == test_issue.id
-        assert created.impact_rank == 3
         assert created.confidence == 0.85
 
     def test_create_analysis_issue_persists_to_database(self, db_session, test_analysis, test_issue):
@@ -80,7 +75,6 @@ class TestAnalysisIssueCreate:
         analysis_issue = AnalysisIssue(
             analysis_id=test_analysis.id,
             issue_id=test_issue.id,
-            impact_rank=1,
         )
 
         create_analysis_issue(analysis_issue=analysis_issue, session=db_session)
@@ -102,7 +96,6 @@ class TestAnalysisIssueRead:
         analysis_issue = AnalysisIssue(
             analysis_id=test_analysis.id,
             issue_id=test_issue.id,
-            impact_rank=1,
         )
         created = create_analysis_issue(analysis_issue=analysis_issue, session=db_session)
 
@@ -130,7 +123,6 @@ class TestAnalysisIssueConstraints:
         analysis_issue = AnalysisIssue(
             analysis_id=test_analysis.id,
             issue_id=test_issue.id,
-            impact_rank=1,
         )
         created = create_analysis_issue(analysis_issue=analysis_issue, session=db_session)
 
@@ -140,7 +132,6 @@ class TestAnalysisIssueConstraints:
         """Test that analysis_id is required"""
         analysis_issue = AnalysisIssue(
             issue_id=test_issue.id,
-            impact_rank=1,
         )
 
         with pytest.raises(Exception):
@@ -150,28 +141,6 @@ class TestAnalysisIssueConstraints:
         """Test that issue_id is required"""
         analysis_issue = AnalysisIssue(
             analysis_id=test_analysis.id,
-            impact_rank=1,
-        )
-
-        with pytest.raises(Exception):
-            create_analysis_issue(analysis_issue=analysis_issue, session=db_session)
-
-    def test_analysis_issue_requires_impact_rank(self, db_session, test_analysis, test_issue):
-        """Test that impact_rank is required"""
-        analysis_issue = AnalysisIssue(
-            analysis_id=test_analysis.id,
-            issue_id=test_issue.id,
-        )
-
-        with pytest.raises(Exception):
-            create_analysis_issue(analysis_issue=analysis_issue, session=db_session)
-
-    def test_analysis_issue_impact_rank_must_be_positive(self, db_session, test_analysis, test_issue):
-        """Test that impact_rank must be >= 1"""
-        analysis_issue = AnalysisIssue(
-            analysis_id=test_analysis.id,
-            issue_id=test_issue.id,
-            impact_rank=0,  # Invalid - must be >= 1
         )
 
         with pytest.raises(Exception):

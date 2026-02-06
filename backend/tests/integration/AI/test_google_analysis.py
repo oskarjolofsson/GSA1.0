@@ -59,8 +59,6 @@ class TestGoogleAnalysisIntegration:
             assert "issue_code" in issue, f"Issue {i} missing issue_code"
             assert "title" in issue, f"Issue {i} missing title"
             assert "phase" in issue, f"Issue {i} missing phase"
-            assert "impact_rank" in issue, f"Issue {i} missing impact_rank"
-            assert "severity" in issue, f"Issue {i} missing severity"
             assert "confidence" in issue, f"Issue {i} missing confidence"
             assert "explanation" in issue, f"Issue {i} missing explanation"
             assert "drill" in issue, f"Issue {i} missing drill"
@@ -68,8 +66,6 @@ class TestGoogleAnalysisIntegration:
             # Verify enum values
             assert issue["phase"] in ["SETUP", "BACKSWING", "TRANSITION", "DOWNSWING", "IMPACT", "FOLLOW_THROUGH"], \
                 f"Invalid phase: {issue['phase']}"
-            assert issue["severity"] in ["MINOR", "MODERATE", "MAJOR"], \
-                f"Invalid severity: {issue['severity']}"
             
             # Verify confidence range
             assert 0.0 <= issue["confidence"] <= 1.0, \
@@ -153,42 +149,27 @@ class TestGoogleAnalysisIntegration:
         # Verify constraint: at most 6 issues
         assert len(issues) <= 6, f"Too many issues: {len(issues)} (max 6)"
         
-        # Verify constraint: only one issue with impact_rank = 1
-        rank_1_issues = [issue for issue in issues if issue["impact_rank"] == 1]
-        assert len(rank_1_issues) <= 1, f"Too many rank 1 issues: {len(rank_1_issues)} (max 1)"
-        
-        # Verify constraint: issues sorted by impact_rank
-        impact_ranks = [issue["impact_rank"] for issue in issues]
-        assert impact_ranks == sorted(impact_ranks), "Issues not sorted by impact_rank"
-        
         print(f"\n✓ Constraints validated")
         print(f"  Total issues: {len(issues)} (max 6)")
-        print(f"  Rank 1 issues: {len(rank_1_issues)} (max 1)")
-        print(f"  Impact ranks: {impact_ranks}")
     
-    def test_analyze_video_key_findings_reference_top_issue(self, analysis_result):
-        """Test that key_findings reference the top-ranked issue."""
+    def test_analyze_video_key_findings_reference_issues(self, analysis_result):
+        """Test that key_findings reference issues."""
         result = analysis_result
         
         issues = result["issues"]
         key_findings = result["key_findings"]
         
-        # If there are issues and key findings, verify they match
+        # If there are issues and key findings, verify they reference valid issues
         if issues and key_findings:
-            # Find the rank 1 issue
-            rank_1_issues = [issue for issue in issues if issue["impact_rank"] == 1]
+            issue_codes = [issue["issue_code"] for issue in issues]
             
-            if rank_1_issues:
-                rank_1_issue_code = rank_1_issues[0]["issue_code"]
-                
-                # Verify at least one key finding references it
-                referenced_codes = [finding["issue_code"] for finding in key_findings]
-                assert rank_1_issue_code in referenced_codes, \
-                    f"Key findings do not reference top issue: {rank_1_issue_code}"
-                
-                print(f"\n✓ Key findings reference top issue")
-                print(f"  Top issue: {rank_1_issue_code}")
-                print(f"  Referenced in key findings: {referenced_codes}")
+            for finding in key_findings:
+                assert finding["issue_code"] in issue_codes, \
+                    f"Key finding references unknown issue: {finding['issue_code']}"
+            
+            print(f"\n✓ Key findings reference valid issues")
+            print(f"  Total issues: {len(issue_codes)}")
+            print(f"  Key findings: {len(key_findings)}")
         else:
             print(f"\n✓ No issues or key findings to validate")
 
