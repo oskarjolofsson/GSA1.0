@@ -24,7 +24,18 @@ class CreateAnalysisDTO:
     
 @dataclass(frozen=True)
 class AnalysisResponseDTO:
-    ...
+    issues: list[dict]
+    club_type: str
+    camera_view: str
+    
+    
+class AnalysisResultsDTO:
+    user_id: UUID
+    analysis_id : int
+    
+    success: bool
+    
+    
     
 
     
