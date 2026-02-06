@@ -14,7 +14,7 @@ import shutil
 import traceback
 
 class Video_file(File):
-    def __init__(self, f: FileStorage):
+    def __init__(self, f: bytes):
         super().__init__(f)
 
     @property
@@ -207,33 +207,3 @@ class Video_file(File):
         self.remove()
         self._path = out_path
         return self
-
-    def to_filestorage(self) -> FileStorage:
-        """
-        Convert the saved video file back into a Werkzeug FileStorage-like object
-        by reading bytes into an in-memory file. 
-
-        Returns:
-            FileStorage: in-memory FileStorage with filename and stream
-        """
-        file_path = self.path()
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(file_path)
-
-        with open(file_path, 'rb') as f:
-            data = f.read()
-
-        stream = BytesIO(data)
-        # create a minimal headers object to pass content-type if needed
-        headers = Headers()
-        # try to guess content type from extension
-        ext = os.path.splitext(file_path)[1].lower()
-        if ext == '.mp4':
-            headers.add('Content-Type', 'video/mp4')
-        elif ext == '.mov':
-            headers.add('Content-Type', 'video/quicktime')
-
-        fs = FileStorage(stream=stream, filename=os.path.basename(file_path), headers=headers)
-        # Reset stream position for consumers
-        fs.stream.seek(0)
-        return fs

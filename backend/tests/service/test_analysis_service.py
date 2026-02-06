@@ -1,7 +1,7 @@
 import pytest
 from datetime import timedelta
 from ...core.services.analysis_service import create_analysis
-from ...core.services.dtos.create_analysis_dto import CreateAnalysisDTO
+from ...core.services.dtos.analysis_service_dto import CreateAnalysisDTO
 from ...core.infrastructure.db.repositories.analysis import get_analysis_by_id
 from ...core.infrastructure.db.repositories.videos import get_video_by_id
 
