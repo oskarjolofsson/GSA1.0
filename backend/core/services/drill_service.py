@@ -12,7 +12,7 @@ from ...core.infrastructure.db.repositories.drills import (
     get_drills_by_user_id as repo_get_drills_by_user_id,
 )
 from ...core.infrastructure.db.models.Drill import Drill
-from .dtos.drill_service_dto import CreateDrillDTO, DrillResponseDTO
+from .dtos.drill_service_dto import CreateDrillDTO, UpdateDrillDTO, DrillResponseDTO
 from ..infrastructure.db.session import SessionLocal
 
 db_session = SessionLocal()
@@ -58,24 +58,34 @@ def get_drills_by_issue_id(issue_id: UUID) -> list[DrillResponseDTO]:
     return [from_drill_to_response_dto(drill) for drill in drills]
 
 
-def get_drills_by_issue_id(issue_id: UUID) -> list[DrillResponseDTO]:
-    drills = repo_get_drills_by_issue_id(issue_id, db_session)
 
-    return [from_drill_to_response_dto(drill) for drill in drills]
+def update_drill(drill_id: UUID, dto: UpdateDrillDTO) -> DrillResponseDTO | None:
+    """Update an existing drill.
 
+    Args:
+        drill_id (UUID): The ID of the drill to update.
+        dto (UpdateDrillDTO): The data to update the drill with.
 
-def update_drill(drill_id: UUID, dto: CreateDrillDTO) -> DrillResponseDTO | None:
+    Returns:
+        DrillResponseDTO: The updated drill data.
+    """
     drill = repo_get_drill_by_id(drill_id, db_session)
 
     if not drill:
         return None
 
-    drill.title = dto.title
-    drill.task = dto.task
-    drill.success_signal = dto.success_signal
-    drill.fault_indicator = dto.fault_indicator
+    # Only update fields that are provided
+    if dto.title is not None:
+        drill.title = dto.title
+    if dto.task is not None:
+        drill.task = dto.task
+    if dto.success_signal is not None:
+        drill.success_signal = dto.success_signal
+    if dto.fault_indicator is not None:
+        drill.fault_indicator = dto.fault_indicator
 
     updated_drill = repo_update_drill(drill, db_session)
+    db_session.commit()
 
     return from_drill_to_response_dto(updated_drill)
 

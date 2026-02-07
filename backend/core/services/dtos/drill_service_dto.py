@@ -12,6 +12,14 @@ class CreateDrillDTO:
 
 
 @dataclass(frozen=True)
+class UpdateDrillDTO:
+    title: str | None = None
+    task: str | None = None
+    success_signal: str | None = None
+    fault_indicator: str | None = None
+
+
+@dataclass(frozen=True)
 class DrillResponseDTO:
     id: UUID
     title: str
