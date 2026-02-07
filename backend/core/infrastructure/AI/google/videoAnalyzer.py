@@ -119,7 +119,7 @@ def analyze_video(
             raise ValueError("Database session is required to retrieve issues")
         issues = get_all_issues(db_session) 
         issues = [ {
-            "issue_id": issue.id, 
+            "issue_id": str(issue.id), 
             "name": issue.title, 
             "current motion": issue.current_motion, 
             "expected motion": issue.expected_motion

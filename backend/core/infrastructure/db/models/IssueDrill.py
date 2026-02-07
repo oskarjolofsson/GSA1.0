@@ -39,9 +39,9 @@ class IssueDrill(Base):
         server_default=func.now(),
     )
 
-    # Relationships
-    issue = relationship("Issue", back_populates="issue_drills")
-    drill = relationship("Drill", back_populates="issue_drills")
+    # Relationships - using string references to avoid import issues
+    issue = relationship("Issue", back_populates="issue_drills", lazy="select")
+    drill = relationship("Drill", back_populates="issue_drills", lazy="select")
 
     __table_args__ = (
         UniqueConstraint("issue_id", "drill_id", name="uq_issue_drill"),

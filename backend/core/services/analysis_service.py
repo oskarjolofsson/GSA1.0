@@ -2,7 +2,7 @@ from .dtos.analysis_service_dto import CreateAnalysisDTO, RunAnalysisDTO, Analys
 
 # Infrastructure imports 
 from ..infrastructure.storage.r2Adaptor import generate_upload_url
-from ..infrastructure.db.repositories.analysis import create_analysis as create_analysis_in_db, get_analysis_by_id, update_analysis
+from ..infrastructure.db.repositories.analysis import create_analysis as create_analysis_in_db, get_analysis_by_id as get_analysis_by_id_in_db, update_analysis
 from ..infrastructure.db.repositories.videos import create_video, update_video, get_video_by_id
 from ..infrastructure.db.models.Analysis import Analysis
 from ..infrastructure.db.models.Video import Video
@@ -31,7 +31,8 @@ def create_analysis(dto: CreateAnalysisDTO):
         analysis = Analysis(
             user_id=dto.user_id,
             model_version=dto.model, 
-            video_id=video.id
+            video_id=video.id,
+            status='awaiting_upload'
         )
         analysis: Analysis = create_analysis_in_db(analysis=analysis, session=db_session)
         
@@ -58,7 +59,7 @@ def create_analysis(dto: CreateAnalysisDTO):
 
 def run_analysis(dto: RunAnalysisDTO): 
     # Check that analysis exists and is in correct state by getting that analysis object from the database with the analysis_id
-    analysis_object: Analysis = get_analysis_by_id(dto.analysis_id)
+    analysis_object: Analysis = get_analysis_by_id_in_db(analysis_id=dto.analysis_id, session=db_session)
     if analysis_object is None or analysis_object.status != 'awaiting_upload':
         raise ValueError("Analysis not found or not in correct state to run.")
     
@@ -69,13 +70,14 @@ def run_analysis(dto: RunAnalysisDTO):
         
         # Download the video from R2 using the video_key in analysis, and save it to a temporary location
         video_object: Video = get_video_by_id(analysis_object.video_id, session=db_session)
+        print(f"Video key: {video_object.video_key}")
         video_data: bytes = get_object(video_object.video_key)
         video_file = Video_file(f=video_data)
         
         # Start analysis process
         
         analysis_results: dict = analyze_video(  # TODO : handle client and prompts properly
-            client=GoogleAnalysisClient(),
+            client=GoogleAnalysisClient().client,
             video_path=video_file.path(),           
             shape=None,
             height=None,
@@ -91,7 +93,7 @@ def run_analysis(dto: RunAnalysisDTO):
         analysis_results_object = AnalysisResponseDTO(
             issues=analysis_results.get("issues", []),
             club_type=analysis_results.get("club_type"),
-            camera_view=analysis_results.get("camera_view")
+            camera_view=analysis_results.get("camera_view"),
         )
         
         # Insert analysis_issues that are found in the analysis_results_object
@@ -105,6 +107,7 @@ def run_analysis(dto: RunAnalysisDTO):
         
         # Set completed state on analysis object
         analysis_object.status = 'completed'
+        analysis_object.success = True
         update_analysis(analysis=analysis_object, session=db_session)
         
         # Commit to db
