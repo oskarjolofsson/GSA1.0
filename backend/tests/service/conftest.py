@@ -1,50 +1,137 @@
+# tests/conftest.py
 import uuid
 import pytest
-from sqlalchemy import text, event
-from ...core.infrastructure.db.session import SessionLocal
+from sqlalchemy import text
 from ...core.infrastructure.db.engine import engine
+from ...core.infrastructure.db.session import SessionLocal
+from ...core.infrastructure.storage.r2Adaptor import delete
+from ...core.infrastructure.db.repositories.analysis import get_analysis_by_id as get_analysis_by_id_in_db
 
 
-@pytest.fixture
+# ---------- Fast/isolated fixtures ----------
+
+@pytest.fixture(scope="function")
 def db_session():
+    """Function-scoped session for fast, isolated tests."""
     connection = engine.connect()
-    transaction = connection.begin()        # OUTER transaction
-
+    transaction = connection.begin()
     session = SessionLocal(bind=connection)
-    session.begin_nested()                  # SAVEPOINT
-
-    # Restart SAVEPOINT after each commit
-    @event.listens_for(session, "after_transaction_end")
-    def restart_savepoint(sess, trans):
-        if trans.nested and not trans._parent.nested:
-            sess.begin_nested()
-
+    
     try:
         yield session
     finally:
         session.close()
-        transaction.rollback()              # UNDO EVERYTHING
+        transaction.rollback()
         connection.close()
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def test_user(db_session):
+    """Function-scoped test user for fast tests."""
     user_id = uuid.uuid4()
-
     db_session.execute(
         text("INSERT INTO auth.users (id) VALUES (:id)"),
         {"id": user_id},
     )
     db_session.flush()
-
     return user_id
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def mock_service_session(db_session, monkeypatch):
-    """Replace the module-level db_session in analysis_service with the test session"""
+    """
+    Function-scoped fixture to patch analysis_service.db_session.
+    Use this for fast, isolated tests.
+    """
     from ...core.services import analysis_service
-    
     monkeypatch.setattr(analysis_service, "db_session", db_session)
+    yield db_session
+
+
+# ---------- Slow/shared fixtures (for run-analysis class only) ----------
+
+@pytest.fixture(scope="session")
+def shared_connection():
+    conn = engine.connect()
+    tx = conn.begin()  # one outer tx for whole session
+    try:
+        yield conn
+    finally:
+        tx.rollback()   # clean all shared writes at end of test session
+        conn.close()
+
+
+@pytest.fixture(scope="session")
+def shared_session(shared_connection):
+    session = SessionLocal(bind=shared_connection)
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+@pytest.fixture(scope="session")
+def shared_test_user(shared_session):
+    user_id = uuid.uuid4()
+    shared_session.execute(
+        text("INSERT INTO auth.users (id) VALUES (:id)"),
+        {"id": user_id},
+    )
+    shared_session.flush()
+    return user_id
+
+
+@pytest.fixture(scope="session")
+def shared_mock_service_session(shared_session):
+    """
+    Patch analysis_service.db_session once for slow tests.
+    Avoid monkeypatch fixture (function-scoped).
+    """
+    from ...core.services import analysis_service
+    original = analysis_service.db_session
+    analysis_service.db_session = shared_session
+    try:
+        yield shared_session
+    finally:
+        analysis_service.db_session = original
+
+
+@pytest.fixture(scope="class")
+def completed_analysis_shared(shared_test_user, shared_mock_service_session):
+    """
+    Run expensive analysis exactly once per TestRunAnalysis class.
+    """
+    from datetime import timedelta
+    from ...core.services.analysis_service import create_analysis, run_analysis
+    from ...core.services.dtos.analysis_service_dto import CreateAnalysisDTO, RunAnalysisDTO
+
+    create_result = create_analysis(
+        CreateAnalysisDTO(
+            user_id=shared_test_user,
+            model="gemini-3-pro-preview",
+            start_time=timedelta(seconds=0),
+            end_time=timedelta(seconds=10),
+        )
+    )
+    analysis_id = create_result["analysis_id"]
+    url = create_result["upload_url"]
     
-    return db_session
+    # Upload dummy video data to the pre-signed URL (simulate client upload)
+    import requests
+    with open("uploads/video/golf.mp4", "rb") as f:
+        video_data = f.read()
+    requests.put(url, data=video_data)
+
+    run_analysis(
+        RunAnalysisDTO(
+            analysis_id=analysis_id,
+            user_id=shared_test_user,
+        )
+    )
+    
+    # Get video key from db and delete the uploaded video from R2 to clean up after test
+    analysis = get_analysis_by_id_in_db(analysis_id=analysis_id, session=shared_mock_service_session)
+    video_key = analysis.video.video_key
+    delete(video_key)
+    
+    return analysis_id

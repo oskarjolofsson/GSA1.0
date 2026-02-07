@@ -1,9 +1,11 @@
 import pytest
 from datetime import timedelta
-from ...core.services.analysis_service import create_analysis
-from ...core.services.dtos.analysis_service_dto import CreateAnalysisDTO
+from ...core.services.analysis_service import create_analysis, run_analysis
+from ...core.services.dtos.analysis_service_dto import CreateAnalysisDTO, RunAnalysisDTO
 from ...core.infrastructure.db.repositories.analysis import get_analysis_by_id
 from ...core.infrastructure.db.repositories.videos import get_video_by_id
+
+from ...core.infrastructure.db.repositories.analysis_issues import get_analysis_issues_by_analysis_id
 
 
 class TestCreateAnalysis:
@@ -112,3 +114,33 @@ class TestCreateAnalysis:
         video = get_video_by_id(analysis.video_id, session=mock_service_session)
         
         assert analysis.video_id == video.id
+
+
+class TestRunAnalysis:
+    def test_run_analysis_updates_analysis_status(
+        self,
+        shared_mock_service_session,
+        completed_analysis_shared,
+    ):
+        analysis = get_analysis_by_id(
+            completed_analysis_shared,
+            session=shared_mock_service_session,
+        )
+        assert analysis.status == "completed", f"Expected analysis status to be 'completed', got '{analysis.status}'"
+        assert analysis.success is True, "Analysis did not complete successfully."
+        assert analysis.error_message is None, f"Unexpected error message: {analysis.error_message}"
+
+    def test_run_analysis_creates_analysis_issues(
+        self,
+        shared_mock_service_session,
+        completed_analysis_shared,
+    ):
+        analysis_issues = get_analysis_issues_by_analysis_id(
+            completed_analysis_shared,
+            session=shared_mock_service_session,
+        )
+
+        assert len(analysis_issues) > 0
+        for ai in analysis_issues:
+            assert ai.analysis_id == completed_analysis_shared
+            assert ai.issue_id is not None
