@@ -40,7 +40,6 @@ class TestAnalysisCreate:
             model_version="v1.0",
             status="completed",
             success=True,
-            raw_output_json={"key": "value"},
             error_message=None,
         )
 
@@ -51,7 +50,6 @@ class TestAnalysisCreate:
         assert created.model_version == "v1.0"
         assert created.status == "completed"
         assert created.success is True
-        assert created.raw_output_json == {"key": "value"}
 
     def test_create_analysis_persists_to_database(self, db_session, test_user):
         """Test that created analysis is persisted to database"""
@@ -193,7 +191,7 @@ class TestAnalysisUpdate:
         assert fetched.status == "processing"
 
     def test_update_analysis_success_and_output(self, db_session, test_user):
-        """Test updating analysis with success flag and output"""
+        """Test updating analysis with success flag"""
         analysis = Analysis(
             user_id=test_user,
             model_version="v1.0",
@@ -202,12 +200,10 @@ class TestAnalysisUpdate:
         created = create_analysis(analysis=analysis, session=db_session)
 
         created.success = True
-        created.raw_output_json = {"results": "test data"}
         updated = update_analysis(created, session=db_session)
 
         fetched = get_analysis_by_id(updated.id, session=db_session)
         assert fetched.success is True
-        assert fetched.raw_output_json == {"results": "test data"}
 
     def test_update_analysis_error_message(self, db_session, test_user):
         """Test updating analysis with error message"""

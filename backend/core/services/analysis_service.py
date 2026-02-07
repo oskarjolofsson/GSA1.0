@@ -1,12 +1,32 @@
-from .dtos.analysis_service_dto import CreateAnalysisDTO, RunAnalysisDTO, AnalysisResponseDTO, AnalysisResultsDTO
+from .dtos.analysis_service_dto import (
+    CreateAnalysisDTO,
+    GetAnalaysisIssueDTO,
+    RunAnalysisDTO,
+    AnalysisResponseDTO,
+    GetAnalaysisDTO,
+)
 
-# Infrastructure imports 
+# Infrastructure imports
 from ..infrastructure.storage.r2Adaptor import generate_upload_url
-from ..infrastructure.db.repositories.analysis import create_analysis as create_analysis_in_db, get_analysis_by_id as get_analysis_by_id_in_db, update_analysis
-from ..infrastructure.db.repositories.videos import create_video, update_video, get_video_by_id
+from ..infrastructure.db.repositories.analysis import (
+    create_analysis as create_analysis_in_db,
+    get_analysis_by_id as get_analysis_by_id_in_db,
+    update_analysis,
+    get_analyses_by_user_id as get_analyses_by_user_id_in_db,
+    delete_analysis as delete_analysis_in_db,
+)
+from ..infrastructure.db.repositories.videos import (
+    create_video,
+    update_video,
+    get_video_by_id,
+)
 from ..infrastructure.db.models.Analysis import Analysis
 from ..infrastructure.db.models.Video import Video
-from ..infrastructure.db.repositories.analysis_issues import create_analysis_issue
+from ..infrastructure.db.repositories.analysis_issues import (
+    create_analysis_issue,
+    get_analysis_issues_by_analysis_id,
+    delete_analysis_issue as delete_analysis_issue_in_db,
+)
 from ..infrastructure.db.models.AnalysisIssue import AnalysisIssue
 
 from ..infrastructure.storage.r2Adaptor import get_object
@@ -16,38 +36,38 @@ from ..infrastructure.db.session import SessionLocal
 from ..infrastructure.AI.google.client import GoogleAnalysisClient
 from ..infrastructure.AI.google.videoAnalyzer import analyze_video
 
+from uuid import UUID
+
 db_session = SessionLocal()
 
-def create_analysis(dto: CreateAnalysisDTO): 
+
+def create_analysis(dto: CreateAnalysisDTO) -> dict:
     analysis = None
     try:
         video: Video = Video(
-            user_id=dto.user_id,
-            start_time=dto.start_time,
-            end_time=dto.end_time
+            user_id=dto.user_id, start_time=dto.start_time, end_time=dto.end_time
         )
         video = create_video(video=video, session=db_session)
-        
+
         analysis = Analysis(
             user_id=dto.user_id,
-            model_version=dto.model, 
+            model_version=dto.model,
             video_id=video.id,
-            status='awaiting_upload'
+            status="awaiting_upload",
         )
-        analysis: Analysis = create_analysis_in_db(analysis=analysis, session=db_session)
-        
+        analysis: Analysis = create_analysis_in_db(
+            analysis=analysis, session=db_session
+        )
+
         video_key = f"videos/{video.id}"
         video.video_key = video_key
         update_video(video=video, session=db_session)
-        
+
         upload_url = generate_upload_url(key=video_key)
-        
+
         db_session.commit()
-        
-        return {
-            "analysis_id": analysis.id,
-            "upload_url": upload_url
-        }
+
+        return {"analysis_id": analysis.id, "upload_url": upload_url}
     except Exception as e:
         if analysis:
             analysis.error_message = str(e)
@@ -57,59 +77,67 @@ def create_analysis(dto: CreateAnalysisDTO):
         raise
 
 
-def run_analysis(dto: RunAnalysisDTO): 
+def run_analysis(dto: RunAnalysisDTO) -> None:
     # Check that analysis exists and is in correct state by getting that analysis object from the database with the analysis_id
-    analysis_object: Analysis = get_analysis_by_id_in_db(analysis_id=dto.analysis_id, session=db_session)
-    if analysis_object is None or analysis_object.status != 'awaiting_upload':
+    analysis_object: Analysis = get_analysis_by_id_in_db(
+        analysis_id=dto.analysis_id, session=db_session
+    )
+    if analysis_object is None or analysis_object.status != "awaiting_upload":
         raise ValueError("Analysis not found or not in correct state to run.")
-    
+
     try:
         # Set processing state on analysis object
-        analysis_object.status = 'processing'
+        analysis_object.status = "processing"
         analysis_object = update_analysis(analysis=analysis_object, session=db_session)
-        
+
         # Download the video from R2 using the video_key in analysis, and save it to a temporary location
-        video_object: Video = get_video_by_id(analysis_object.video_id, session=db_session)
+        video_object: Video = get_video_by_id(
+            analysis_object.video_id, session=db_session
+        )
         print(f"Video key: {video_object.video_key}")
         video_data: bytes = get_object(video_object.video_key)
         video_file = Video_file(f=video_data)
-        
+
         # Start analysis process
-        
-        analysis_results: dict = analyze_video(  # TODO : handle client and prompts properly
-            client=GoogleAnalysisClient().client,
-            video_path=video_file.path(),           
-            shape=None,
-            height=None,
-            misses=None,
-            extra=None,
-            model=analysis_object.model_version,
-            db_session=db_session
+
+        analysis_results: dict = (
+            analyze_video(  # TODO : handle client and prompts properly
+                client=GoogleAnalysisClient().client,
+                video_path=video_file.path(),
+                shape=None,
+                height=None,
+                misses=None,
+                extra=None,
+                model=analysis_object.model_version,
+                db_session=db_session,
+            )
         )
-        
+
         print("Analysis results:", analysis_results)
-        
+
         # Remake into analysis results object, that contains the analysis issues and drills, and the ids of those issues and drills once they are inserted into the database
         analysis_results_object = AnalysisResponseDTO(
             issues=analysis_results.get("issues", []),
             club_type=analysis_results.get("club_type"),
             camera_view=analysis_results.get("camera_view"),
         )
-        
+
         # Insert analysis_issues that are found in the analysis_results_object
         for issue in analysis_results_object.issues:
             analysis_issue_object = AnalysisIssue(
                 analysis_id=analysis_object.id,
                 issue_id=issue["issue_id"],
-                confidence=issue["confidence"]
+                confidence=issue["confidence"],
             )
-            create_analysis_issue(analysis_issue=analysis_issue_object, session=db_session)
-        
+            create_analysis_issue(
+                analysis_issue=analysis_issue_object, session=db_session
+            )
+
         # Set completed state on analysis object
-        analysis_object.status = 'completed'
+        analysis_object.status = "completed"
         analysis_object.success = True
         update_analysis(analysis=analysis_object, session=db_session)
-        
+
         # Commit to db
         db_session.commit()
     except Exception as e:
@@ -118,24 +146,91 @@ def run_analysis(dto: RunAnalysisDTO):
         update_analysis(analysis=analysis_object, session=db_session)
         db_session.commit()
         raise
-    
-    
-def get_analysis_by_id(analysis_id: int): ...
-    # Prompt the database for the analysis with the given id, and return that analysis object
 
 
-def get_analyses_by_user_id(user_id: str): ...
-    # Prompt the database for all analyses that belong to the user with the given user_id, and return a list of those analysis objects
+def get_analysis_by_id(analysis_id: UUID) -> GetAnalaysisDTO:
+    analysis_object: Analysis = get_analysis_by_id_in_db(
+        analysis_id=analysis_id, session=db_session
+    )
+    if analysis_object is None:
+        raise ValueError("Analysis not found.")
+
+    return_analysis_object = from_analysis_object_to_dto(analysis_object)
+    return return_analysis_object
 
 
-def delete_analysis(analysis_id: int): ...
-    # Prompt the database to delete the analysis with the given id
-    
+def get_analyses_by_user_id(user_id: UUID) -> list[GetAnalaysisDTO]:
+    analysis_objects: list[Analysis] = get_analyses_by_user_id_in_db(
+        user_id=user_id, session=db_session
+    )
 
-def get_analysis_issues(analysis_id: int): ...
-    # Prompt the database for all analysis issues that belong to the analysis with the given analysis_id, and return a list of those analysis issue objects
+    return_analysis_objects = []
+    for analysis_object in analysis_objects:
+        return_analysis_objects.append(from_analysis_object_to_dto(analysis_object))
+
+    return return_analysis_objects
 
 
-def delete_analysis_issue(analysis_issue_id: int): ...
-    # Prompt the database to delete the analysis issue with the given id
+def delete_analysis(analysis_id: UUID) -> None:
+    analysis_object: Analysis = get_analysis_by_id_in_db(
+        analysis_id=analysis_id, session=db_session
+    )
+    if analysis_object is None:
+        raise ValueError("Analysis not found.")
 
+    # Deleting the analysis will also delete the analysis issues that belong to that analysis, because of the cascade delete relationship defined in the Analysis model
+    delete_analysis_in_db(analysis=analysis_object, session=db_session)
+    db_session.commit()
+
+
+def get_analysis_issues(analysis_id: UUID) -> list[GetAnalaysisIssueDTO]:
+    analysis_issues: list[AnalysisIssue] = get_analysis_issues_by_analysis_id(
+        analysis_id=analysis_id, session=db_session
+    )
+    analysis_issue_dtos = [
+        from_analysis_issue_object_to_dto(issue) for issue in analysis_issues
+    ]
+    return analysis_issue_dtos
+
+
+def delete_analysis_issue(analysis_issue_id: UUID) -> None:
+    analysis_issue_object: AnalysisIssue = db_session.get(
+        AnalysisIssue, analysis_issue_id
+    )
+    if analysis_issue_object is None:
+        raise ValueError("Analysis issue not found.")
+
+    delete_analysis_issue_in_db(
+        analysis_issue=analysis_issue_object, session=db_session
+    )
+    db_session.commit()
+
+
+# ------------------------------ Helper functions ------------------------------
+
+
+def from_analysis_object_to_dto(analysis_object: Analysis) -> GetAnalaysisDTO:
+    return GetAnalaysisDTO(
+        analysis_id=analysis_object.id,
+        user_id=analysis_object.user_id,
+        video_id=analysis_object.video_id,
+        model_version=analysis_object.model_version,
+        status=analysis_object.status,
+        success=analysis_object.success,
+        error_message=analysis_object.error_message,
+        created_at=analysis_object.created_at,
+        started_at=analysis_object.started_at,
+        completed_at=analysis_object.completed_at,
+    )
+
+
+def from_analysis_issue_object_to_dto(
+    analysis_issue_object: AnalysisIssue,
+) -> GetAnalaysisIssueDTO:
+    return GetAnalaysisIssueDTO(
+        analysis_issue_id=analysis_issue_object.id,
+        analysis_id=analysis_issue_object.analysis_id,
+        issue_id=analysis_issue_object.issue_id,
+        confidence=analysis_issue_object.confidence,
+        created_at=analysis_issue_object.created_at,
+    )

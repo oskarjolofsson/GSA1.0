@@ -1,6 +1,14 @@
 import pytest
 from datetime import timedelta
-from ...core.services.analysis_service import create_analysis, run_analysis
+from ...core.services.analysis_service import (
+    create_analysis, 
+    run_analysis,
+    get_analysis_by_id as get_analysis_by_id_service,
+    get_analyses_by_user_id,
+    get_analysis_issues,
+    delete_analysis_issue,
+    delete_analysis,
+)
 from ...core.services.dtos.analysis_service_dto import CreateAnalysisDTO, RunAnalysisDTO
 from ...core.infrastructure.db.repositories.analysis import get_analysis_by_id
 from ...core.infrastructure.db.repositories.videos import get_video_by_id
@@ -144,3 +152,40 @@ class TestRunAnalysis:
         for ai in analysis_issues:
             assert ai.analysis_id == completed_analysis_shared
             assert ai.issue_id is not None
+
+    def test_analysis_crud_operations(
+        self,
+        shared_mock_service_session,
+        completed_analysis_shared,
+        shared_test_user,
+    ):
+        """Test get, list, and delete operations on analyses and analysis issues"""
+        # Test get_analysis_by_id
+        analysis_dto = get_analysis_by_id_service(completed_analysis_shared)
+        assert analysis_dto is not None
+        assert analysis_dto.analysis_id == completed_analysis_shared
+        assert analysis_dto.user_id == shared_test_user
+        assert analysis_dto.status == "completed"
+        
+        # Test get_analyses_by_user_id
+        user_analyses = get_analyses_by_user_id(shared_test_user)
+        assert len(user_analyses) > 0
+        analysis_ids = [a.analysis_id for a in user_analyses]
+        assert completed_analysis_shared in analysis_ids
+        
+        # Test get_analysis_issues
+        issues = get_analysis_issues(completed_analysis_shared)
+        assert len(issues) > 0
+        first_issue_id = issues[0].analysis_issue_id
+        
+        # Test delete_analysis_issue
+        delete_analysis_issue(first_issue_id)
+        remaining_issues = get_analysis_issues(completed_analysis_shared)
+        assert len(remaining_issues) == len(issues) - 1
+        remaining_issue_ids = [i.analysis_issue_id for i in remaining_issues]
+        assert first_issue_id not in remaining_issue_ids
+        
+        # Test delete_analysis
+        delete_analysis(completed_analysis_shared)
+        analysis_in_db = get_analysis_by_id(completed_analysis_shared, session=shared_mock_service_session)
+        assert analysis_in_db is None
