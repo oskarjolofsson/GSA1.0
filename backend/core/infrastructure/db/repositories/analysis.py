@@ -29,3 +29,8 @@ def update_analysis(analysis: Analysis, session: Session) -> Analysis:
     merged = session.merge(analysis)
     session.flush()
     return merged
+
+
+def delete_analysis(analysis: Analysis, session: Session) -> None:
+    session.delete(analysis)
+    session.flush()

@@ -14,3 +14,8 @@ def create_analysis_issue(analysis_issue: AnalysisIssue, session: Session) -> An
 
 def get_analysis_issues_by_analysis_id(analysis_id, session: Session):
     return session.query(AnalysisIssue).filter(AnalysisIssue.analysis_id == analysis_id).all()
+
+
+def delete_analysis_issue(analysis_issue: AnalysisIssue, session: Session) -> None:
+    session.delete(analysis_issue)
+    session.flush()

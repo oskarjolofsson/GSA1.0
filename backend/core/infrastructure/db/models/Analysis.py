@@ -50,8 +50,6 @@ class Analysis(Base):
 
     success: Mapped[bool | None] = mapped_column(Boolean)
 
-    raw_output_json: Mapped[dict | None] = mapped_column(JSON)
-
     error_message: Mapped[str | None] = mapped_column(Text)
 
     created_at: Mapped[DateTime] = mapped_column(
