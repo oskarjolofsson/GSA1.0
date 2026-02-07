@@ -35,7 +35,6 @@ from ..infrastructure.db.session import SessionLocal
 
 from ..infrastructure.AI.google.client import GoogleAnalysisClient
 from ..infrastructure.AI.google.videoAnalyzer import analyze_video
-
 from uuid import UUID
 
 db_session = SessionLocal()
@@ -77,13 +76,16 @@ def create_analysis(dto: CreateAnalysisDTO) -> dict:
         raise
 
 
-def run_analysis(dto: RunAnalysisDTO) -> None:
+def run_analysis(dto: RunAnalysisDTO) -> GetAnalaysisDTO | None:
     # Check that analysis exists and is in correct state by getting that analysis object from the database with the analysis_id
     analysis_object: Analysis = get_analysis_by_id_in_db(
         analysis_id=dto.analysis_id, session=db_session
     )
-    if analysis_object is None or analysis_object.status != "awaiting_upload":
-        raise ValueError("Analysis not found or not in correct state to run.")
+    if analysis_object is None:
+        return None
+    
+    if analysis_object.status != "awaiting_upload":
+        raise ValueError("Analysis not in correct state to run.")
 
     try:
         # Set processing state on analysis object
@@ -136,10 +138,12 @@ def run_analysis(dto: RunAnalysisDTO) -> None:
         # Set completed state on analysis object
         analysis_object.status = "completed"
         analysis_object.success = True
-        update_analysis(analysis=analysis_object, session=db_session)
+        analysis_object = update_analysis(analysis=analysis_object, session=db_session)
 
         # Commit to db
         db_session.commit()
+        
+        return from_analysis_object_to_dto(analysis_object)
     except Exception as e:
         analysis_object.error_message = str(e)
         analysis_object.success = False
@@ -153,7 +157,7 @@ def get_analysis_by_id(analysis_id: UUID) -> GetAnalaysisDTO:
         analysis_id=analysis_id, session=db_session
     )
     if analysis_object is None:
-        raise ValueError("Analysis not found.")
+        return None
 
     return_analysis_object = from_analysis_object_to_dto(analysis_object)
     return return_analysis_object
@@ -171,16 +175,17 @@ def get_analyses_by_user_id(user_id: UUID) -> list[GetAnalaysisDTO]:
     return return_analysis_objects
 
 
-def delete_analysis(analysis_id: UUID) -> None:
+def delete_analysis(analysis_id: UUID) -> bool:
     analysis_object: Analysis = get_analysis_by_id_in_db(
         analysis_id=analysis_id, session=db_session
     )
     if analysis_object is None:
-        raise ValueError("Analysis not found.")
+        return False
 
     # Deleting the analysis will also delete the analysis issues that belong to that analysis, because of the cascade delete relationship defined in the Analysis model
     delete_analysis_in_db(analysis=analysis_object, session=db_session)
     db_session.commit()
+    return True
 
 
 def get_analysis_issues(analysis_id: UUID) -> list[GetAnalaysisIssueDTO]:
@@ -193,17 +198,18 @@ def get_analysis_issues(analysis_id: UUID) -> list[GetAnalaysisIssueDTO]:
     return analysis_issue_dtos
 
 
-def delete_analysis_issue(analysis_issue_id: UUID) -> None:
+def delete_analysis_issue(analysis_issue_id: UUID) -> bool:
     analysis_issue_object: AnalysisIssue = db_session.get(
         AnalysisIssue, analysis_issue_id
     )
     if analysis_issue_object is None:
-        raise ValueError("Analysis issue not found.")
+        return False
 
     delete_analysis_issue_in_db(
         analysis_issue=analysis_issue_object, session=db_session
     )
     db_session.commit()
+    return True
 
 
 # ------------------------------ Helper functions ------------------------------
