@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import sys
 from dotenv import load_dotenv
+from sqlalchemy import create_engine
 
 # Load environment variables
 load_dotenv()
@@ -12,6 +13,23 @@ backend_dir = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(backend_dir))
 
 from core.infrastructure.AI.google.client import GoogleAnalysisClient
+
+from ....core.infrastructure.db.session import SessionLocal
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
+engine = create_engine(DATABASE_URL)
+
+
+@pytest.fixture(scope="module")
+def db_session():
+    session = SessionLocal()
+    print("Databse URL:", DATABASE_URL)
+    print("Database Password:", DATABASE_PASSWORD)
+    try:
+        yield session
+    finally:
+        session.close()
 
 
 @pytest.fixture(scope="module")
@@ -45,9 +63,9 @@ def google_client(gemini_api_key):
 
 
 @pytest.fixture(scope="module")
-def analysis_result(google_client, test_video_path):
+def analysis_result(google_client, test_video_path, db_session):
     """Run analysis once and share result across all tests."""
-    result = google_client.analyze_video(video_path=test_video_path)
+    result = google_client.analyze_video(video_path=test_video_path, db_session=db_session)
     return result
 
 
