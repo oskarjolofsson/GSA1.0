@@ -5,6 +5,7 @@ from .dtos.analysis_service_dto import (
     AnalysisResponseDTO,
     GetAnalaysisDTO,
 )
+from .exceptions import NotFoundException, InvalidStateException
 
 # Infrastructure imports
 from ..infrastructure.storage.r2Adaptor import generate_upload_url
@@ -76,16 +77,16 @@ def create_analysis(dto: CreateAnalysisDTO) -> dict:
         raise
 
 
-def run_analysis(dto: RunAnalysisDTO) -> GetAnalaysisDTO | None:
+def run_analysis(dto: RunAnalysisDTO) -> GetAnalaysisDTO:
     # Check that analysis exists and is in correct state by getting that analysis object from the database with the analysis_id
     analysis_object: Analysis = get_analysis_by_id_in_db(
         analysis_id=dto.analysis_id, session=db_session
     )
     if analysis_object is None:
-        return None
+        raise NotFoundException("Analysis", str(dto.analysis_id))
     
     if analysis_object.status != "awaiting_upload":
-        raise ValueError("Analysis not in correct state to run.")
+        raise InvalidStateException(f"Analysis is in '{analysis_object.status}' state, expected 'awaiting_upload'")
 
     try:
         # Set processing state on analysis object
@@ -157,7 +158,7 @@ def get_analysis_by_id(analysis_id: UUID) -> GetAnalaysisDTO:
         analysis_id=analysis_id, session=db_session
     )
     if analysis_object is None:
-        return None
+        raise NotFoundException("Analysis", str(analysis_id))
 
     return_analysis_object = from_analysis_object_to_dto(analysis_object)
     return return_analysis_object
@@ -175,17 +176,16 @@ def get_analyses_by_user_id(user_id: UUID) -> list[GetAnalaysisDTO]:
     return return_analysis_objects
 
 
-def delete_analysis(analysis_id: UUID) -> bool:
+def delete_analysis(analysis_id: UUID) -> None:
     analysis_object: Analysis = get_analysis_by_id_in_db(
         analysis_id=analysis_id, session=db_session
     )
     if analysis_object is None:
-        return False
+        raise NotFoundException("Analysis", str(analysis_id))
 
     # Deleting the analysis will also delete the analysis issues that belong to that analysis, because of the cascade delete relationship defined in the Analysis model
     delete_analysis_in_db(analysis=analysis_object, session=db_session)
     db_session.commit()
-    return True
 
 
 def get_analysis_issues(analysis_id: UUID) -> list[GetAnalaysisIssueDTO]:
@@ -198,18 +198,17 @@ def get_analysis_issues(analysis_id: UUID) -> list[GetAnalaysisIssueDTO]:
     return analysis_issue_dtos
 
 
-def delete_analysis_issue(analysis_issue_id: UUID) -> bool:
+def delete_analysis_issue(analysis_issue_id: UUID) -> None:
     analysis_issue_object: AnalysisIssue = db_session.get(
         AnalysisIssue, analysis_issue_id
     )
     if analysis_issue_object is None:
-        return False
+        raise NotFoundException("AnalysisIssue", str(analysis_issue_id))
 
     delete_analysis_issue_in_db(
         analysis_issue=analysis_issue_object, session=db_session
     )
     db_session.commit()
-    return True
 
 
 # ------------------------------ Helper functions ------------------------------

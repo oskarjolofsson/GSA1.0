@@ -1,27 +1,60 @@
 from ..models.Video import Video
+from ..models.Analysis import Analysis
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from uuid import UUID
 
-def get_video_by_id(video_id, session: Session) -> Video:
+
+# ------------ GET ------------
+
+
+def get_video_by_id(video_id: UUID, session: Session) -> Video:
+    """Get a video by its ID."""
     return session.get(Video, video_id)
-    
 
-def get_video_by_user_id(user_id, session: Session) -> Video:
+
+def get_video_by_analysis_id(analysis_id: UUID, session: Session) -> Video:
+    """Get a video by its associated analysis ID."""
     stmt = (
         select(Video)
-        .where(Video.user_id == user_id)
+        .join(Analysis, Video.id == Analysis.video_id)
+        .where(Analysis.id == analysis_id)
     )
-    
     return session.scalars(stmt).first()
-    
-    
+
+
+def get_video_by_user_id(user_id: UUID, session: Session) -> Video:
+    """Get the first video for a user."""
+    stmt = select(Video).where(Video.user_id == user_id)
+    return session.scalars(stmt).first()
+
+
+# ------------ CREATE ------------
+
+
 def create_video(video: Video, session: Session) -> Video:
+    """Create a new video."""
     session.add(video)
     session.flush()
     return video
+
+
+# ------------ UPDATE ------------
 
 
 def update_video(video: Video, session: Session) -> Video:
+    """Update an existing video."""
     session.add(video)
     session.flush()
     return video
+
+
+# ------------ DELETE ------------
+
+
+def delete_video(video_id: UUID, session: Session) -> None:
+    """Delete a video by its ID."""
+    video = session.get(Video, video_id)
+    if video:
+        session.delete(video)
+        session.flush()
