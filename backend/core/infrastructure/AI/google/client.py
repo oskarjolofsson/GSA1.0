@@ -7,6 +7,8 @@ from ..ports import AnalysisAI
 from . import videoAnalyzer
 
 
+
+
 class GoogleAnalysisClient(AnalysisAI):
     """Google Gemini-based video analysis client."""
     
@@ -27,7 +29,8 @@ class GoogleAnalysisClient(AnalysisAI):
         height: Optional[str] = None,
         misses: Optional[str] = None,
         extra: Optional[str] = None,
-        model: str = "gemini-3-flash-preview"
+        model: str = "gemini-3-flash-preview",
+        db_session: Optional[object] = None
     ) -> dict:
         """
         Analyze a golf swing video.
@@ -50,5 +53,6 @@ class GoogleAnalysisClient(AnalysisAI):
             height=height,
             misses=misses,
             extra=extra,
-            model=model
+            model=model,
+            db_session=db_session
         )

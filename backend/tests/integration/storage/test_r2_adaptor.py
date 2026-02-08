@@ -24,7 +24,7 @@ class TestGenerateUploadUrl:
         mock_r2_client.generate_signed_url.return_value = expected_url
 
         # Act
-        result = generate_upload_url(None, test_key)
+        result = generate_upload_url(test_key)
 
         # Assert
         assert result == expected_url
@@ -39,7 +39,7 @@ class TestGenerateUploadUrl:
         mock_r2_client.generate_signed_url.return_value = expected_url
 
         # Act
-        result = generate_upload_url(None, test_key)
+        result = generate_upload_url(test_key)
 
         # Assert
         assert result == expected_url
@@ -56,7 +56,7 @@ class TestGenerateReadUrl:
         mock_r2_client.generate_signed_url.return_value = expected_url
 
         # Act
-        result = generate_read_url(None, test_key)
+        result = generate_read_url(test_key)
 
         # Assert
         assert result == expected_url
@@ -71,7 +71,7 @@ class TestGenerateReadUrl:
         mock_r2_client.generate_signed_url.return_value = expected_url
 
         # Act
-        result = generate_read_url(None, test_key)
+        result = generate_read_url(test_key)
 
         # Assert
         assert result == expected_url
@@ -89,7 +89,7 @@ class TestGetObject:
         mock_r2_client.get_object.return_value = expected_data
 
         # Act
-        result = get_object(None, test_key)
+        result = get_object(test_key)
 
         # Assert
         assert result == expected_data
@@ -103,7 +103,7 @@ class TestGetObject:
         mock_r2_client.get_object.return_value = expected_data
 
         # Act
-        result = get_object(None, test_key)
+        result = get_object(test_key)
 
         # Assert
         assert result == expected_data
@@ -116,7 +116,7 @@ class TestGetObject:
         mock_r2_client.get_object.return_value = expected_data
 
         # Act
-        result = get_object(None, test_key)
+        result = get_object(test_key)
 
         # Assert
         assert result == expected_data
@@ -130,7 +130,7 @@ class TestObjectExists:
         mock_r2_client.head_object.return_value = True
 
         # Act
-        result = object_exists(None, test_key)
+        result = object_exists(test_key)
 
         # Assert
         assert result is True
@@ -142,7 +142,7 @@ class TestObjectExists:
         mock_r2_client.head_object.return_value = False
 
         # Act
-        result = object_exists(None, test_key)
+        result = object_exists(test_key)
 
         # Assert
         assert result is False
@@ -154,7 +154,7 @@ class TestObjectExists:
         mock_r2_client.head_object.return_value = True
 
         # Act
-        result = object_exists(None, test_key)
+        result = object_exists(test_key)
 
         # Assert
         assert result is True
@@ -168,7 +168,7 @@ class TestDelete:
         mock_r2_client.delete_object.return_value = None
 
         # Act
-        result = delete(None, test_key)
+        result = delete(test_key)
 
         # Assert
         assert result is None
@@ -181,7 +181,7 @@ class TestDelete:
 
         # Act
         for key in keys:
-            delete(None, key)
+            delete(key)
 
         # Assert
         assert mock_r2_client.delete_object.call_count == 3
@@ -194,7 +194,7 @@ class TestDelete:
         mock_r2_client.delete_object.return_value = None
 
         # Act
-        delete(None, test_key)
+        delete(test_key)
 
         # Assert
         mock_r2_client.delete_object.assert_called_once_with(test_key)
@@ -207,7 +207,7 @@ class TestEdgeCases:
         mock_r2_client.generate_signed_url.return_value = "url"
 
         # Act
-        result = generate_upload_url(None, test_key)
+        result = generate_upload_url(test_key)
 
         # Assert - should still call with test/ prefix
         mock_r2_client.generate_signed_url.assert_called_once_with(
@@ -220,7 +220,7 @@ class TestEdgeCases:
         mock_r2_client.get_object.return_value = b"data"
 
         # Act
-        result = get_object(None, test_key)
+        result = get_object(test_key)
 
         # Assert
         mock_r2_client.get_object.assert_called_once_with(test_key)
@@ -231,7 +231,7 @@ class TestEdgeCases:
         mock_r2_client.head_object.return_value = True
 
         # Act
-        result = object_exists(None, test_key)
+        result = object_exists(test_key)
 
         # Assert
         assert result is True
