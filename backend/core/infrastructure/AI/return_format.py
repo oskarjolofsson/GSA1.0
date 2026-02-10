@@ -9,5 +9,6 @@ RETURN_FORMAT = {
             "issue_id": "string",
             "confidence": 0.0
         }
-    ]
+    ],
+    "success": True
 }
