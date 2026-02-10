@@ -24,3 +24,9 @@ class ValidationException(ServiceException):
     """Raised when validation fails."""
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class InvalidVideoException(ServiceException):
+    """Raised when video analysis fails (e.g., non-golf video, corrupted file)."""
+    def __init__(self, message: str):
+        super().__init__(message)
