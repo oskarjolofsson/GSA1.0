@@ -5,6 +5,7 @@ from core.services.exceptions import (
     InvalidStateException,
     ValidationException,
     ServiceException,
+    InvalidVideoException,
 )
 
 
@@ -40,4 +41,10 @@ async def general_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "An unexpected error occurred"},
+    )
+
+async def invalid_video_exception_handler(request: Request, exc: InvalidVideoException):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        content={"detail": str(exc)},
     )

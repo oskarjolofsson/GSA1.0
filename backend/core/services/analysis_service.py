@@ -5,7 +5,7 @@ from .dtos.analysis_service_dto import (
     AnalysisResponseDTO,
     GetAnalaysisDTO,
 )
-from .exceptions import NotFoundException, InvalidStateException
+from .exceptions import NotFoundException, InvalidStateException, ValidationException, InvalidVideoException
 
 # Infrastructure imports
 from ..infrastructure.storage.r2Adaptor import generate_upload_url
@@ -97,7 +97,6 @@ def run_analysis(dto: RunAnalysisDTO) -> GetAnalaysisDTO:
         video_object: Video = get_video_by_id(
             analysis_object.video_id, session=db_session
         )
-        print(f"Video key: {video_object.video_key}")
         video_data: bytes = get_object(video_object.video_key)
         video_file = Video_file(f=video_data)
 
@@ -117,6 +116,9 @@ def run_analysis(dto: RunAnalysisDTO) -> GetAnalaysisDTO:
         )
 
         print("Analysis results:", analysis_results)
+        
+        if not analysis_results.get("success", False):
+            raise InvalidVideoException(analysis_results.get("error_message", "Video analysis failed"))
 
         # Remake into analysis results object, that contains the analysis issues and drills, and the ids of those issues and drills once they are inserted into the database
         analysis_results_object = AnalysisResponseDTO(
