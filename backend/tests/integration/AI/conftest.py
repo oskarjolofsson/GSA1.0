@@ -35,14 +35,17 @@ def db_session():
 @pytest.fixture(scope="module")
 def test_video_path():
     """Path to the test video file."""
-    video_path = backend_dir / "uploads" / "video" / "golf.mp4"
-    print(f"\nChecking for test video at: {video_path}")
+    video_paths = [
+        backend_dir / "uploads" / "video" / "golf.mp4",
+        backend_dir / "uploads" / "video" / "non_golf.mp4"
+        ]
     
-    if not video_path.exists():
-        print(f"\nTest video not found at {video_path}. Skipping tests that require video analysis.")
-        pytest.skip(f"Test video not found at {video_path}")
+    for video_path in video_paths:
+        if not video_path.exists():
+            print(f"\nTest video not found at {video_path}. Skipping tests that require video analysis.")
+            pytest.skip(f"Test video not found at {video_path}")
     
-    return str(video_path)
+    return [str(path) for path in video_paths]
 
 
 @pytest.fixture(scope="module")
@@ -65,18 +68,26 @@ def google_client(gemini_api_key):
 @pytest.fixture(scope="module")
 def analysis_result(google_client, test_video_path, db_session):
     """Run analysis once and share result across all tests."""
-    result = google_client.analyze_video(video_path=test_video_path, db_session=db_session)
+    result = google_client.analyze_video(video_path=test_video_path[0], db_session=db_session)
     return result
 
 
 @pytest.fixture(scope="module")
-def analysis_result_with_context(google_client, test_video_path):
+def analysis_result_with_context(google_client, test_video_path, db_session):
     """Run analysis with user context once."""
     result = google_client.analyze_video(
-        video_path=test_video_path,
+        video_path=test_video_path[0],  # Use the first video for this test
         shape="draw",
         height="mid",
         misses="right",
-        extra=None
+        extra=None,
+        db_session=db_session
     )
+    return result
+
+
+@pytest.fixture(scope="module")
+def analysis_result_non_golf(google_client, test_video_path, db_session):
+    """Run analysis once and share result across all tests."""
+    result = google_client.analyze_video(video_path=test_video_path[1], db_session=db_session)
     return result
