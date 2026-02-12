@@ -6,6 +6,10 @@ from ...core.infrastructure.db.engine import engine
 from ...core.infrastructure.db.session import SessionLocal
 from ...core.infrastructure.storage.r2Adaptor import delete
 from ...core.infrastructure.db.repositories.analysis import get_analysis_by_id as get_analysis_by_id_in_db
+from datetime import timedelta
+from ...core.services.analysis_service import create_analysis, run_analysis
+from ...core.services.dtos.analysis_service_dto import CreateAnalysisDTO, RunAnalysisDTO
+import requests
 
 
 # ---------- Fast/isolated fixtures ----------
@@ -37,17 +41,6 @@ def test_user(db_session):
     return user_id
 
 
-@pytest.fixture(scope="function")
-def mock_service_session(db_session, monkeypatch):
-    """
-    Function-scoped fixture to patch analysis_service.db_session.
-    Use this for fast, isolated tests.
-    """
-    from ...core.services import analysis_service
-    monkeypatch.setattr(analysis_service, "db_session", db_session)
-    yield db_session
-
-
 # ---------- Slow/shared fixtures (for run-analysis class only) ----------
 
 @pytest.fixture(scope="session")
@@ -62,7 +55,7 @@ def shared_connection():
 
 
 @pytest.fixture(scope="session")
-def shared_session(shared_connection):
+def shared_db_session(shared_connection):
     session = SessionLocal(bind=shared_connection)
     try:
         yield session
@@ -71,39 +64,21 @@ def shared_session(shared_connection):
 
 
 @pytest.fixture(scope="session")
-def shared_test_user(shared_session):
+def shared_test_user(shared_db_session):
     user_id = uuid.uuid4()
-    shared_session.execute(
+    shared_db_session.execute(
         text("INSERT INTO auth.users (id) VALUES (:id)"),
         {"id": user_id},
     )
-    shared_session.flush()
+    shared_db_session.flush()
     return user_id
 
 
-@pytest.fixture(scope="session")
-def shared_mock_service_session(shared_session):
-    """
-    Patch analysis_service.db_session once for slow tests.
-    Avoid monkeypatch fixture (function-scoped).
-    """
-    from ...core.services import analysis_service
-    original = analysis_service.db_session
-    analysis_service.db_session = shared_session
-    try:
-        yield shared_session
-    finally:
-        analysis_service.db_session = original
-
-
 @pytest.fixture(scope="class")
-def completed_analysis_shared(shared_test_user, shared_mock_service_session):
+def completed_analysis_shared(shared_test_user, shared_db_session):
     """
     Run expensive analysis exactly once per TestRunAnalysis class.
     """
-    from datetime import timedelta
-    from ...core.services.analysis_service import create_analysis, run_analysis
-    from ...core.services.dtos.analysis_service_dto import CreateAnalysisDTO, RunAnalysisDTO
 
     create_result = create_analysis(
         CreateAnalysisDTO(
@@ -111,13 +86,13 @@ def completed_analysis_shared(shared_test_user, shared_mock_service_session):
             model="gemini-3-pro-preview",
             start_time=timedelta(seconds=0),
             end_time=timedelta(seconds=10),
-        )
+        ),
+        db_session=shared_db_session
     )
     analysis_id = create_result["analysis_id"]
     url = create_result["upload_url"]
     
     # Upload dummy video data to the pre-signed URL (simulate client upload)
-    import requests
     with open("uploads/video/golf.mp4", "rb") as f:
         video_data = f.read()
     requests.put(url, data=video_data)
@@ -126,11 +101,12 @@ def completed_analysis_shared(shared_test_user, shared_mock_service_session):
         RunAnalysisDTO(
             analysis_id=analysis_id,
             user_id=shared_test_user,
-        )
+        ),
+        db_session=shared_db_session
     )
     
     # Get video key from db and delete the uploaded video from R2 to clean up after test
-    analysis = get_analysis_by_id_in_db(analysis_id=analysis_id, session=shared_mock_service_session)
+    analysis = get_analysis_by_id_in_db(analysis_id=analysis_id, session=shared_db_session)
     video_key = analysis.video.video_key
     delete(video_key)
     

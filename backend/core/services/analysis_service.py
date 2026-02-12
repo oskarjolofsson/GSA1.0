@@ -32,16 +32,13 @@ from ..infrastructure.db.models.AnalysisIssue import AnalysisIssue
 
 from ..infrastructure.storage.r2Adaptor import get_object
 from ..infrastructure.local_files.file_types.Video_file import Video_file
-from ..infrastructure.db.session import SessionLocal
 
 from ..infrastructure.AI.google.client import GoogleAnalysisClient
 from ..infrastructure.AI.google.videoAnalyzer import analyze_video
 from uuid import UUID
 
-db_session = SessionLocal()
 
-
-def create_analysis(dto: CreateAnalysisDTO) -> dict:
+def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
     analysis = None
     try:
         video: Video = Video(
@@ -65,19 +62,16 @@ def create_analysis(dto: CreateAnalysisDTO) -> dict:
 
         upload_url = generate_upload_url(key=video_key)
 
-        db_session.commit()
-
         return {"analysis_id": analysis.id, "upload_url": upload_url}
     except Exception as e:
         if analysis:
             analysis.error_message = str(e)
             analysis.success = False
             update_analysis(analysis=analysis, session=db_session)
-            db_session.commit()
         raise
 
 
-def run_analysis(dto: RunAnalysisDTO) -> GetAnalaysisDTO:
+def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
     # Check that analysis exists and is in correct state by getting that analysis object from the database with the analysis_id
     analysis_object: Analysis = get_analysis_by_id_in_db(
         analysis_id=dto.analysis_id, session=db_session
@@ -142,20 +136,16 @@ def run_analysis(dto: RunAnalysisDTO) -> GetAnalaysisDTO:
         analysis_object.status = "completed"
         analysis_object.success = True
         analysis_object = update_analysis(analysis=analysis_object, session=db_session)
-
-        # Commit to db
-        db_session.commit()
         
         return from_analysis_object_to_dto(analysis_object)
     except Exception as e:
         analysis_object.error_message = str(e)
         analysis_object.success = False
         update_analysis(analysis=analysis_object, session=db_session)
-        db_session.commit()
         raise
 
 
-def get_analysis_by_id(analysis_id: UUID) -> GetAnalaysisDTO:
+def get_analysis_by_id(analysis_id: UUID, db_session) -> GetAnalaysisDTO:
     analysis_object: Analysis = get_analysis_by_id_in_db(
         analysis_id=analysis_id, session=db_session
     )
@@ -166,7 +156,7 @@ def get_analysis_by_id(analysis_id: UUID) -> GetAnalaysisDTO:
     return return_analysis_object
 
 
-def get_analyses_by_user_id(user_id: UUID) -> list[GetAnalaysisDTO]:
+def get_analyses_by_user_id(user_id: UUID, db_session) -> list[GetAnalaysisDTO]:
     analysis_objects: list[Analysis] = get_analyses_by_user_id_in_db(
         user_id=user_id, session=db_session
     )
@@ -178,7 +168,7 @@ def get_analyses_by_user_id(user_id: UUID) -> list[GetAnalaysisDTO]:
     return return_analysis_objects
 
 
-def delete_analysis(analysis_id: UUID) -> None:
+def delete_analysis(analysis_id: UUID, db_session) -> None:
     analysis_object: Analysis = get_analysis_by_id_in_db(
         analysis_id=analysis_id, session=db_session
     )
@@ -187,10 +177,9 @@ def delete_analysis(analysis_id: UUID) -> None:
 
     # Deleting the analysis will also delete the analysis issues that belong to that analysis, because of the cascade delete relationship defined in the Analysis model
     delete_analysis_in_db(analysis=analysis_object, session=db_session)
-    db_session.commit()
 
 
-def get_analysis_issues(analysis_id: UUID) -> list[GetAnalaysisIssueDTO]:
+def get_analysis_issues(analysis_id: UUID, db_session) -> list[GetAnalaysisIssueDTO]:
     analysis_issues: list[AnalysisIssue] = get_analysis_issues_by_analysis_id(
         analysis_id=analysis_id, session=db_session
     )
@@ -200,7 +189,7 @@ def get_analysis_issues(analysis_id: UUID) -> list[GetAnalaysisIssueDTO]:
     return analysis_issue_dtos
 
 
-def delete_analysis_issue(analysis_issue_id: UUID) -> None:
+def delete_analysis_issue(analysis_issue_id: UUID, db_session) -> None:
     analysis_issue_object: AnalysisIssue = db_session.get(
         AnalysisIssue, analysis_issue_id
     )
@@ -210,7 +199,6 @@ def delete_analysis_issue(analysis_issue_id: UUID) -> None:
     delete_analysis_issue_in_db(
         analysis_issue=analysis_issue_object, session=db_session
     )
-    db_session.commit()
 
 
 # ------------------------------ Helper functions ------------------------------
