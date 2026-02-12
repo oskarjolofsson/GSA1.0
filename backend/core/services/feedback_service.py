@@ -12,10 +12,8 @@ from ...core.infrastructure.db.models.Feedback import UserFeedback
 from .dtos.feedback_service_dto import CreateFeedbackDTO, FeedbackResponseDTO
 from ..infrastructure.db.session import SessionLocal
 
-db_session = SessionLocal()
 
-
-def create_feedback(dto: CreateFeedbackDTO) -> FeedbackResponseDTO:
+def create_feedback(dto: CreateFeedbackDTO, db_session) -> FeedbackResponseDTO:
     """Create a new feedback entry."""
     new_feedback = UserFeedback(
         user_id=dto.user_id,
@@ -24,12 +22,11 @@ def create_feedback(dto: CreateFeedbackDTO) -> FeedbackResponseDTO:
     )
 
     created_feedback = repo_create_feedback(new_feedback, db_session)
-    db_session.commit()
 
     return from_feedback_to_response_dto(created_feedback)
 
 
-def get_feedback_by_id(feedback_id: UUID) -> FeedbackResponseDTO | None:
+def get_feedback_by_id(feedback_id: UUID, db_session) -> FeedbackResponseDTO | None:
     """Get a feedback entry by its ID."""
     feedback = repo_get_feedback_by_id(str(feedback_id), db_session)
 
@@ -39,21 +36,21 @@ def get_feedback_by_id(feedback_id: UUID) -> FeedbackResponseDTO | None:
     return from_feedback_to_response_dto(feedback)
 
 
-def get_feedback_by_user_id(user_id: UUID) -> list[FeedbackResponseDTO]:
+def get_feedback_by_user_id(user_id: UUID, db_session) -> list[FeedbackResponseDTO]:
     """Get all feedback entries for a specific user."""
     feedbacks = repo_get_feedback_by_user_id(str(user_id), db_session)
 
     return [from_feedback_to_response_dto(feedback) for feedback in feedbacks]
 
 
-def get_all_feedback(limit: int = 100) -> list[FeedbackResponseDTO]:
+def get_all_feedback(db_session, limit: int = 100) -> list[FeedbackResponseDTO]:
     """Get all feedback entries."""
     feedbacks = repo_get_all_feedback(db_session, limit)
 
     return [from_feedback_to_response_dto(feedback) for feedback in feedbacks]
 
 
-def get_feedback_by_rating(rating: int) -> list[FeedbackResponseDTO]:
+def get_feedback_by_rating(rating: int, db_session) -> list[FeedbackResponseDTO]:
     """Get all feedback entries with a specific rating."""
     feedbacks = repo_get_feedback_by_rating(rating, db_session)
 

@@ -14,12 +14,9 @@ from ...core.infrastructure.db.repositories.issues import (
 )
 from ...core.infrastructure.db.models.Issue import Issue
 from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueResponseDTO
-from ..infrastructure.db.session import SessionLocal
-
-db_session = SessionLocal()
 
 
-def create_issue(dto: CreateIssueDTO) -> IssueResponseDTO:
+def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
     """Create a new issue."""
     new_issue = Issue(
         title=dto.title,
@@ -31,12 +28,11 @@ def create_issue(dto: CreateIssueDTO) -> IssueResponseDTO:
     )
 
     created_issue = repo_create_issue(new_issue, db_session)
-    db_session.commit()
 
     return from_issue_to_response_dto(created_issue)
 
 
-def get_issue_by_id(issue_id: UUID) -> IssueResponseDTO | None:
+def get_issue_by_id(issue_id: UUID, db_session: Session) -> IssueResponseDTO | None:
     """Get an issue by its ID."""
     issue = repo_get_issue_by_id(issue_id, db_session)
 
@@ -46,28 +42,28 @@ def get_issue_by_id(issue_id: UUID) -> IssueResponseDTO | None:
     return from_issue_to_response_dto(issue)
 
 
-def get_all_issues() -> list[IssueResponseDTO]:
+def get_all_issues(db_session: Session) -> list[IssueResponseDTO]:
     """Get all issues."""
     issues = repo_get_all_issues(db_session)
 
     return [from_issue_to_response_dto(issue) for issue in issues]
 
 
-def get_issues_by_analysis_id(analysis_id: UUID) -> list[IssueResponseDTO]:
+def get_issues_by_analysis_id(analysis_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
     """Get all issues associated with a specific analysis."""
     issues = repo_get_issues_by_analysis_id(analysis_id, db_session)
 
     return [from_issue_to_response_dto(issue) for issue in issues]
 
 
-def get_issues_by_drill_id(drill_id: UUID) -> list[IssueResponseDTO]:
+def get_issues_by_drill_id(drill_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
     """Get all issues associated with a specific drill."""
     issues = repo_get_issues_by_drill_id(drill_id, db_session)
 
     return [from_issue_to_response_dto(issue) for issue in issues]
 
 
-def update_issue(issue_id: UUID, dto: UpdateIssueDTO) -> IssueResponseDTO | None:
+def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> IssueResponseDTO | None:
     """Update an existing issue.
 
     Args:
@@ -97,12 +93,11 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO) -> IssueResponseDTO | None
         issue.shot_outcome = dto.shot_outcome
 
     updated_issue = repo_update_issue(issue, db_session)
-    db_session.commit()
 
     return from_issue_to_response_dto(updated_issue)
 
 
-def delete_issue(issue_id: UUID) -> bool:
+def delete_issue(issue_id: UUID, db_session: Session) -> bool:
     """Delete an issue by its ID."""
     issue = repo_get_issue_by_id(issue_id, db_session)
 
@@ -110,7 +105,6 @@ def delete_issue(issue_id: UUID) -> bool:
         return False
 
     repo_delete_issue(issue, db_session)
-    db_session.commit()
 
     return True
 
