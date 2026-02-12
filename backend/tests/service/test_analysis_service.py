@@ -29,17 +29,14 @@ class TestCreateAnalysis:
         )
 
         # Act
-        result = create_analysis(dto, db_session
-)
+        result = create_analysis(dto, db_session)
 
         # Assert - Verify analysis was created
-        analysis = get_analysis_by_id(result["analysis_id"], session=db_session
-)
+        analysis = get_analysis_by_id(result["analysis_id"], session=db_session)
         assert analysis is not None
 
         # Verify video was created with correct fields
-        video = get_video_by_id(analysis.video_id, session=db_session
-)
+        video = get_video_by_id(analysis.video_id, session=db_session)
         assert video is not None
         assert video.user_id == test_user
         assert video.start_time == timedelta(seconds=5)
@@ -57,12 +54,11 @@ class TestCreateAnalysis:
         )
 
         # Act
-        result = create_analysis(dto, db_session
-)
+        result = create_analysis(dto, db_session)
+
 
         # Assert
-        analysis = get_analysis_by_id(result["analysis_id"], session=db_session
-)
+        analysis = get_analysis_by_id(result["analysis_id"], session=db_session)
         assert analysis is not None
         assert analysis.user_id == test_user
         assert analysis.model_version == "v2.0"

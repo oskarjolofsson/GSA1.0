@@ -1,5 +1,4 @@
 from requests import session
-from sqlalchemy.orm import Session
 from uuid import UUID
 
 from ...core.infrastructure.db.repositories.drills import (
@@ -15,10 +14,7 @@ from ...core.infrastructure.db.models.Drill import Drill
 from .dtos.drill_service_dto import CreateDrillDTO, UpdateDrillDTO, DrillResponseDTO
 from ..infrastructure.db.session import SessionLocal
 
-db_session = SessionLocal()
-
-
-def create_drill(dto: CreateDrillDTO) -> DrillResponseDTO:
+def create_drill(dto: CreateDrillDTO, db_session) -> DrillResponseDTO:
     new_drill = Drill(
         title=dto.title,
         task=dto.task,
@@ -31,7 +27,7 @@ def create_drill(dto: CreateDrillDTO) -> DrillResponseDTO:
     return from_drill_to_response_dto(created_drill)
 
 
-def get_drill_by_id(drill_id: UUID) -> DrillResponseDTO | None:
+def get_drill_by_id(drill_id: UUID, db_session) -> DrillResponseDTO | None:
     drill = repo_get_drill_by_id(drill_id, db_session)
 
     if not drill:
@@ -40,26 +36,26 @@ def get_drill_by_id(drill_id: UUID) -> DrillResponseDTO | None:
     return from_drill_to_response_dto(drill)
 
 
-def get_drills_by_user_id(user_id: UUID) -> list[DrillResponseDTO]:
+def get_drills_by_user_id(user_id: UUID, db_session) -> list[DrillResponseDTO]:
     drills = repo_get_drills_by_user_id(user_id, db_session)
 
     return [from_drill_to_response_dto(drill) for drill in drills]
 
 
-def get_drills_by_analysis_id(analysis_id: UUID) -> list[DrillResponseDTO]:
+def get_drills_by_analysis_id(analysis_id: UUID, db_session) -> list[DrillResponseDTO]:
     drills = repo_get_drills_by_analysis_id(analysis_id, db_session)
 
     return [from_drill_to_response_dto(drill) for drill in drills]
 
 
-def get_drills_by_issue_id(issue_id: UUID) -> list[DrillResponseDTO]:
+def get_drills_by_issue_id(issue_id: UUID, db_session) -> list[DrillResponseDTO]:
     drills = repo_get_drills_by_issue_id(issue_id, db_session)
 
     return [from_drill_to_response_dto(drill) for drill in drills]
 
 
 
-def update_drill(drill_id: UUID, dto: UpdateDrillDTO) -> DrillResponseDTO | None:
+def update_drill(drill_id: UUID, dto: UpdateDrillDTO, db_session) -> DrillResponseDTO | None:
     """Update an existing drill.
 
     Args:
@@ -85,19 +81,17 @@ def update_drill(drill_id: UUID, dto: UpdateDrillDTO) -> DrillResponseDTO | None
         drill.fault_indicator = dto.fault_indicator
 
     updated_drill = repo_update_drill(drill, db_session)
-    db_session.commit()
 
     return from_drill_to_response_dto(updated_drill)
 
 
-def delete_drill(drill_id: UUID) -> bool:
+def delete_drill(drill_id: UUID, db_session) -> bool:
     drill = repo_get_drill_by_id(drill_id, db_session)
 
     if not drill:
         return False
 
     repo_delete_drill(drill, db_session)
-    db_session.commit()
 
     return True
 

@@ -12,10 +12,8 @@ from ..infrastructure.storage.r2Adaptor import generate_read_url
 from .exceptions import NotFoundException
 from .dtos.video_service_dto import VideoResponseDTO, VideoUrlResponseDTO
 
-db_session = SessionLocal()
 
-
-def get_video_by_id(video_id: UUID) -> VideoResponseDTO:
+def get_video_by_id(video_id: UUID, db_session: Session) -> VideoResponseDTO:
     """Get a video by its ID."""
     video = repo_get_video_by_id(video_id, db_session)
     
@@ -25,7 +23,7 @@ def get_video_by_id(video_id: UUID) -> VideoResponseDTO:
     return from_video_to_response_dto(video)
 
 
-def get_video_read_url(video_id: UUID) -> VideoUrlResponseDTO:
+def get_video_read_url(video_id: UUID, db_session: Session) -> VideoUrlResponseDTO:
     """Get a signed read URL for a video."""
     video = repo_get_video_by_id(video_id, db_session)
     
@@ -39,7 +37,7 @@ def get_video_read_url(video_id: UUID) -> VideoUrlResponseDTO:
     return VideoUrlResponseDTO(video_url=video_url)
 
 
-def get_video_read_url_by_analysis(analysis_id: UUID) -> VideoUrlResponseDTO:
+def get_video_read_url_by_analysis(analysis_id: UUID, db_session: Session) -> VideoUrlResponseDTO:
     """Get a signed read URL for a video by analysis ID."""
     video = repo_get_video_by_analysis_id(analysis_id, db_session)
     if not video:
@@ -52,7 +50,7 @@ def get_video_read_url_by_analysis(analysis_id: UUID) -> VideoUrlResponseDTO:
     return VideoUrlResponseDTO(video_url=video_url)
 
 
-def delete_video(video_id: UUID) -> None:
+def delete_video(video_id: UUID, db_session: Session) -> None:
     """Delete a video by its ID."""
     video = repo_get_video_by_id(video_id, db_session)
     
@@ -60,7 +58,6 @@ def delete_video(video_id: UUID) -> None:
         raise NotFoundException("Video", str(video_id))
     
     repo_delete_video(video_id, db_session)
-    db_session.commit()
 
 
 def from_video_to_response_dto(video: Video) -> VideoResponseDTO:
