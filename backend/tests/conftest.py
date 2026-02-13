@@ -1,8 +1,8 @@
 import uuid
 import pytest
 from sqlalchemy import text
-from ..core.infrastructure.db.engine import engine
-from ..core.infrastructure.db.session import SessionLocal
+from core.infrastructure.db.engine import engine
+from core.infrastructure.db.session import SessionLocal
 
 
 @pytest.fixture(scope="function")
