@@ -193,6 +193,7 @@ def delete_analysis_issue(analysis_issue_id: UUID, db_session) -> None:
     analysis_issue_object: AnalysisIssue = db_session.get(
         AnalysisIssue, analysis_issue_id
     )
+    
     if analysis_issue_object is None:
         raise NotFoundException("AnalysisIssue", str(analysis_issue_id))
 

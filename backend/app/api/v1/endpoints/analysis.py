@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 from uuid import UUID
 from datetime import timedelta
-from ....dependencies.db import get_db
+from app.dependencies.db import get_db
 from sqlalchemy.orm import Session
 
 
-from ..schemas.analysis import (
+from app.api.v1.schemas.analysis import (
     CreateAnalysisRequest,
     CreateAnalysisResponse,
     GetAnalysis,
@@ -29,7 +29,7 @@ from core.services.video import get_video_read_url_by_analysis
 router = APIRouter()
 
 
-@router.post("/", response_model=CreateAnalysisResponse)
+@router.post("/", response_model=CreateAnalysisResponse, status_code=201)
 def create_analysis(
     request: CreateAnalysisRequest,
     db: Session = Depends(get_db)
