@@ -1,9 +1,33 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from uuid import UUID
+from app.dependencies.db import get_db
+from sqlalchemy.orm import Session
+
+from app.api.v1.schemas.issue import (
+    CreateIssueRequest,
+    CreateIssueResponse,
+    GetIssue,
+    UpdateIssueRequest,
+)
+from core.services.issues_service import (
+    create_issue as service_create_issue,
+    get_issue_by_id as service_get_issue_by_id,
+    get_all_issues as service_get_all_issues,
+    get_issues_by_analysis_id as service_get_issues_by_analysis_id,
+    get_issues_by_drill_id as service_get_issues_by_drill_id,
+    update_issue as service_update_issue,
+    delete_issue as service_delete_issue,
+)
+from core.services.dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO
+
 router = APIRouter()
 
 
-@router.post("/create")
-def create_issue():
+@router.post("/", response_model=CreateIssueResponse, status_code=201)
+def create_issue(
+    request: CreateIssueRequest,
+    db: Session = Depends(get_db)
+):
     """
     Create a new issue.
 
@@ -15,69 +39,98 @@ def create_issue():
         swing_effect (str, optional): Effect on swing
         shot_outcome (str, optional): Expected shot outcome
     """
-    pass
+    dto = CreateIssueDTO(
+        title=request.title,
+        phase=request.phase,
+        current_motion=request.current_motion,
+        expected_motion=request.expected_motion,
+        swing_effect=request.swing_effect,
+        shot_outcome=request.shot_outcome,
+    )
+
+    result = service_create_issue(dto=dto, db_session=db)
+
+    return CreateIssueResponse(
+        success=True,
+        issue_id=result.id,
+    )
 
 
-@router.get("/<issue_id>")
-def get_issue(issue_id: str):
+@router.get("/{issue_id}", response_model=GetIssue)
+def get_issue(issue_id: UUID, db: Session = Depends(get_db)):
     """
     Get details of a specific issue.
 
     Arguments:
-        issue_id (str): Issue identifier
+        issue_id (UUID): Issue identifier
 
     Returns:
         JSON response with issue details
     """
-    pass
+    issue = service_get_issue_by_id(issue_id, db_session=db)
+    
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue not found")
+
+    return GetIssue.from_domain(issue)
 
 
-@router.get("/by-analysis/<analysis_id>")
-def get_issues_by_analysis(analysis_id: str):
+@router.get("/by-analysis/{analysis_id}", response_model=list[GetIssue])
+def get_issues_by_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
     """
     Get all issues associated with a specific analysis.
 
     Arguments:
-        analysis_id (str): Analysis identifier
+        analysis_id (UUID): Analysis identifier
         
     Returns:
         JSON response with a list of issues
     """
-    pass
+    issues = service_get_issues_by_analysis_id(analysis_id, db_session=db)
+
+    return [GetIssue.from_domain(issue) for issue in issues]
 
 
-@router.get("/by-drill/<drill_id>")
-def get_issues_by_drill(drill_id: str):
+@router.get("/by-drill/{drill_id}", response_model=list[GetIssue])
+def get_issues_by_drill(drill_id: UUID, db: Session = Depends(get_db)):
     """
     Get all issues associated with a specific drill.
 
     Arguments:
-        drill_id (str): Drill identifier
+        drill_id (UUID): Drill identifier
 
     Returns:
         JSON response with a list of issues
     """
-    pass
+    issues = service_get_issues_by_drill_id(drill_id, db_session=db)
+
+    return [GetIssue.from_domain(issue) for issue in issues]
 
 
-@router.get("/")
-def get_all_issues():
+@router.get("/", response_model=list[GetIssue])
+def get_all_issues(db: Session = Depends(get_db)):
     """
     Get all issues.
 
     Returns:
         JSON response with a list of all issues
     """
-    pass
+    issues = service_get_all_issues(db_session=db)
+
+    return [GetIssue.from_domain(issue) for issue in issues]
 
 
-@router.put("/<issue_id>")
-def update_issue(issue_id: str):
+@router.put("/{issue_id}", response_model=GetIssue)
+def update_issue(
+    issue_id: UUID,
+    request: UpdateIssueRequest,
+    db: Session = Depends(get_db)
+):
     """
     Update an existing issue.
 
     Arguments:
-        issue_id (str): Issue identifier
+        issue_id (UUID): Issue identifier
     
     Arguments (JSON body):
         title (str, optional): Issue title
@@ -90,20 +143,37 @@ def update_issue(issue_id: str):
     Returns:
         JSON response with updated issue details
     """
-    pass
+    dto = UpdateIssueDTO(
+        title=request.title,
+        phase=request.phase,
+        current_motion=request.current_motion,
+        expected_motion=request.expected_motion,
+        swing_effect=request.swing_effect,
+        shot_outcome=request.shot_outcome,
+    )
+
+    result = service_update_issue(issue_id, dto=dto, db_session=db)
+    
+    if not result:
+        raise HTTPException(status_code=404, detail="Issue not found")
+
+    return GetIssue.from_domain(result)
 
 
-@router.delete("/<issue_id>")
-def delete_issue(issue_id: str):
+@router.delete("/{issue_id}", status_code=204)
+def delete_issue(issue_id: UUID, db: Session = Depends(get_db)):
     """
     Delete a specific issue.
 
     Arguments:
-        issue_id (str): Issue identifier
+        issue_id (UUID): Issue identifier
 
     Returns:
         JSON response with success status
     """
-    pass
+    success = service_delete_issue(issue_id, db_session=db)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Issue not found")
 
 

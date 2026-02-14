@@ -1,14 +1,14 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 
-from ..infrastructure.db.repositories.videos import (
+from core.infrastructure.db.repositories.videos import (
     get_video_by_id as repo_get_video_by_id,
     get_video_by_analysis_id as repo_get_video_by_analysis_id,
     delete_video as repo_delete_video,
 )
-from ..infrastructure.db.models.Video import Video
-from ..infrastructure.db.session import SessionLocal
-from ..infrastructure.storage.r2Adaptor import generate_read_url
+from core.infrastructure.db.models.Video import Video
+from core.infrastructure.db.session import SessionLocal
+from core.infrastructure.storage.r2Adaptor import generate_read_url
 from .exceptions import NotFoundException
 from .dtos.video_service_dto import VideoResponseDTO, VideoUrlResponseDTO
 

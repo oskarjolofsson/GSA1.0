@@ -98,7 +98,6 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         video_file = Video_file(f=video_data)
 
         # Start analysis process
-
         analysis_results: dict = (
             analyze_video(  # TODO : handle client and prompts properly
                 client=GoogleAnalysisClient().client,
@@ -111,8 +110,9 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
                 db_session=db_session,
             )
         )
-
-        print("Analysis results:", analysis_results)
+        
+        # Delete the video file from the temporary location
+        video_file.remove()
         
         if not analysis_results.get("success", False):
             raise InvalidVideoException(analysis_results.get("error_message", "Video analysis failed"))
