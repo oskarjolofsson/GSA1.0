@@ -57,7 +57,7 @@ def create_analysis(
     )
 
 
-@router.patch("/{analysis_id}/", response_model=GetAnalysis)
+@router.patch("/{analysis_id}/", response_model=GetAnalysis, status_code=200)
 def run_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
     """
     Confirm that the video upload has completed.
@@ -118,7 +118,7 @@ def get_analysis_video_url(analysis_id: UUID, db: Session = Depends(get_db)):
     }
 
 
-@router.delete("/{analysis_id}")
+@router.delete("/{analysis_id}", status_code=204)
 def delete_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
     """
     Delete a specific analysis and all associated data.
@@ -136,7 +136,7 @@ def get_analysis_issues(analysis_id: UUID, db: Session = Depends(get_db)):
     return [GetAnalysisIssue.from_domain(issue) for issue in issues]
 
 
-@router.delete("/{analysis_id}/issues/{analysis_issue_id}")
+@router.delete("/{analysis_id}/issues/{analysis_issue_id}", status_code=204)
 def delete_analysis_issue(analysis_id: UUID, analysis_issue_id: UUID, db: Session = Depends(get_db)):
     """
     Delete a specific analysis issue.

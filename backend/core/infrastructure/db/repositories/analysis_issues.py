@@ -12,7 +12,7 @@ def create_analysis_issue(analysis_issue: AnalysisIssue, session: Session) -> An
     return analysis_issue
 
 
-def get_analysis_issues_by_analysis_id(analysis_id, session: Session):
+def get_analysis_issues_by_analysis_id(analysis_id, session: Session) -> list[AnalysisIssue]:
     return session.query(AnalysisIssue).filter(AnalysisIssue.analysis_id == analysis_id).all()
 
 
