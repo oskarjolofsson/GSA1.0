@@ -8,7 +8,7 @@ from .dtos.analysis_service_dto import (
 from .exceptions import NotFoundException, InvalidStateException, ValidationException, InvalidVideoException
 
 # Infrastructure imports
-from ..infrastructure.storage.r2Adaptor import generate_upload_url
+from ..infrastructure.storage.r2Adaptor import generate_upload_url, put_object
 from ..infrastructure.db.repositories.analysis import (
     create_analysis as create_analysis_in_db,
     get_analysis_by_id as get_analysis_by_id_in_db,
@@ -31,11 +31,14 @@ from ..infrastructure.db.repositories.analysis_issues import (
 )
 from ..infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from ..infrastructure.storage.r2Adaptor import get_object
+from ..infrastructure.storage.r2Client import r2_client
 from ..infrastructure.local_files.file_types.Video_file import Video_file
 
 from ..infrastructure.AI.google.client import GoogleAnalysisClient
 from ..infrastructure.AI.google.videoAnalyzer import analyze_video
 from uuid import UUID
+import os
+import tempfile
 from ..infrastructure.db.repositories.prompts import (
     create_prompt,
     get_prompt_by_analysis_id,
@@ -72,7 +75,9 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
         create_prompt(prompt=prompt, session=db_session)
 
         video_key = f"videos/{video.id}"
+        thumbnail_key = f"thumbnails/{video.id}.webp"
         video.video_key = video_key
+        video.thumbnail_key = thumbnail_key
         update_video(video=video, session=db_session)
 
         upload_url = generate_upload_url(key=video_key)
@@ -128,6 +133,38 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
                 db_session=db_session,
             )
         )
+        
+        # Extract thumbnail from video and upload to R2
+        try:
+            # Create temporary file for thumbnail
+            tmp_dir = tempfile.mkdtemp()
+            local_thumb = os.path.join(tmp_dir, "thumbnail.webp")
+            
+            try:
+                # Extract thumbnail from video file
+                _extract_thumbnail_webp(
+                    video_file.path(),
+                    local_thumb,
+                    timestamp=1.5,
+                )
+                
+                # Upload thumbnail to R2
+                with open(local_thumb, "rb") as f:
+                    put_object(
+                        key=video_object.thumbnail_key,
+                        data=f.read(),
+                        content_type="image/webp"
+                    )  
+            finally:
+                # Cleanup thumbnail temp files
+                if os.path.exists(local_thumb):
+                    os.remove(local_thumb)
+                if os.path.exists(tmp_dir):
+                    os.rmdir(tmp_dir)
+        except Exception as e:
+            # Log thumbnail generation failure but don't fail the analysis
+            print(f"Warning: Failed to generate thumbnail: {str(e)}")
+            raise InvalidVideoException(f"Failed to generate thumbnail: {str(e)}")
         
         # Delete the video file from the temporary location
         video_file.remove()
@@ -250,3 +287,25 @@ def from_analysis_issue_object_to_dto(
         confidence=analysis_issue_object.confidence,
         created_at=analysis_issue_object.created_at,
     )
+    
+    
+import subprocess
+
+
+def _extract_thumbnail_webp(
+    input_path: str,
+    output_path: str,
+    timestamp: float,
+) -> None:
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-ss", str(timestamp),
+        "-i", input_path,
+        "-frames:v", "1",
+        "-c:v", "libwebp",
+        "-quality", "85",
+        output_path,
+    ]
+
+    subprocess.run(cmd, check=True)
