@@ -2,6 +2,20 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
+@router.post("/profile")
+def register_or_update_profile():
+    """
+    Register or update user profile information.
+
+    Arguments (JSON body):
+        name (str): User's name
+        email (str): User's email address
+    Returns:
+        JSON response with success status
+    """
+    pass
+
+
 @router.post("/consent")
 def set_user_consent():
     """
