@@ -5,9 +5,14 @@ import uuid
 from sqlalchemy import text
 
 from core.infrastructure.db.repositories.analysis import get_analysis_by_id, get_analyses_by_user_id
-from core.infrastructure.db.repositories.videos import get_video_by_id
+from core.infrastructure.db.repositories.videos import get_video_by_analysis_id, get_video_by_id
+from core.infrastructure.db.repositories.analysis_issues import get_analysis_issues_by_analysis_id as get_analysis_issues_by_analysis_id, get_analysis_issue_by_id
+from core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from core.infrastructure.db.models.Video import Video
 from core.infrastructure.db.models.Analysis import Analysis
+from pathlib import Path
+from core.infrastructure.storage.r2Adaptor import generate_upload_url
+import requests
 
 
 @pytest.fixture()
@@ -22,9 +27,33 @@ def analysis_with_id(client, test_user, db_session):
             "end_time": 10,
         },
     )
+    
+    assert response.status_code == 201
     data = response.json()
     return uuid.UUID(data["analysis_id"]), test_user
 
+@pytest.fixture()
+def run_analysis_and_set_completed(client, db_session, analysis_with_id):
+    """Helper function to set an analysis as completed for testing."""
+    analysis_id, user_id = analysis_with_id
+    video_object: Video = get_video_by_analysis_id(analysis_id=analysis_id, session=db_session)
+    video_key = video_object.video_key
+    
+    video_path = Path("uploads/video/golf.mp4")
+    video_blob = video_path.read_bytes()
+    upload_url = generate_upload_url(key=video_key)
+    
+    # Simulate uploading the video to the storage using the generated upload URL
+    upload_response = requests.put(upload_url, data=video_blob)
+    assert upload_response.status_code in [200, 201], f"Failed to upload video, status code: {upload_response.status_code}, response: {upload_response.text}"
+
+    response = client.patch(
+        f"/api/v1/analyses/{analysis_id}/"
+    )
+    
+    data = response.json()
+    return data, analysis_id, user_id
+    
 
 def test_create_analysis(client, test_user, db_session):
     response = client.post(
@@ -65,7 +94,7 @@ def test_create_analysis(client, test_user, db_session):
     assert video_result.video_key is not None
 
 
-def test_list_analyses(client, test_user, analysis_with_id):
+def test_list_analyses(client, analysis_with_id):
     """Test listing all analyses for a user, when no analysis have been completed."""
     analysis_id, user_id = analysis_with_id
     
@@ -78,10 +107,6 @@ def test_list_analyses(client, test_user, analysis_with_id):
     assert isinstance(data, list)
     assert len(data) == 0
     
-    # Check that our created analysis is in the list
-    analysis_ids = [uuid.UUID(a["analysis_id"]) for a in data]
-    assert analysis_id in analysis_ids
-
 
 def test_get_analysis(client, test_user, analysis_with_id):
     """Test getting a specific analysis by ID."""
@@ -156,26 +181,48 @@ def test_delete_analysis(client, test_user, db_session):
         f"/api/v1/analyses/{analysis_id}"
     )
     
-    assert response.status_code == 200
+    assert response.status_code == 204
     
     # Verify it's deleted
     assert get_analysis_by_id(analysis_id=analysis_id, session=db_session) is None
 
 
-def test_delete_analysis_issue(client, analysis_with_id):
-    """Test deleting a specific analysis issue."""
-    analysis_id, _ = analysis_with_id
+def test_run_analysis(client, run_analysis_and_set_completed, db_session):
+    """Test running an analysis, when the video upload has completed."""
+    analysis_data, analysis_id, user_id = run_analysis_and_set_completed
     
-    # Since we don't have issues in the test, we just test the endpoint structure
-    # This test will verify that the endpoint is reachable and properly handles
-    # the deletion of a non-existent issue (which should not error out)
-    test_issue_id = uuid.uuid4()
+    print("Analysis data after running analysis:", analysis_data)
+    assert analysis_data["status"] == "completed", f"Expected status to be 'completed' but got {analysis_data['status']} from {analysis_data}"
+    assert analysis_data["success"] is True
+    assert analysis_data["error_message"] is None  
     
-    response = client.delete(
-        f"/api/v1/analyses/{analysis_id}/issues/{test_issue_id}"
-    )
     
-    # The endpoint should return 200
-    assert response.status_code == 200
-
-
+    assert analysis_data["analysis_id"] == str(analysis_id)
+    assert analysis_data["user_id"] == str(user_id)
+    
+    # Check that all info is in the db
+    db_analysis = get_analysis_by_id(analysis_id=analysis_id, session=db_session)
+    assert db_analysis is not None
+    assert db_analysis.id == analysis_id
+    assert db_analysis.user_id == user_id
+    assert db_analysis.status == "completed"
+    assert db_analysis.success is True
+    assert db_analysis.error_message is None
+    
+    # Check that analysis_issues are created and in the database
+    analysis_issues: list[AnalysisIssue] = get_analysis_issues_by_analysis_id(analysis_id=analysis_id, session=db_session)
+    assert len(analysis_issues) > 0
+    for issue in analysis_issues:
+        assert issue.analysis_id == analysis_id
+        
+    # Cleanup - delete the created analysis issues
+    for issue in analysis_issues:
+        response = client.delete(
+            f"/api/v1/analyses/{analysis_id}/issues/{issue.id}"
+        )
+    
+        # Assert that the issue was deleted successfully with no return content
+        assert response.status_code == 204
+        
+        # Verify its deleted from the database
+        assert get_analysis_issue_by_id(analysis_issue_id=issue.id, session=db_session) is None

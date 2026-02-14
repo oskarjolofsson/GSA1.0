@@ -25,11 +25,11 @@ from ..infrastructure.db.models.Analysis import Analysis
 from ..infrastructure.db.models.Video import Video
 from ..infrastructure.db.repositories.analysis_issues import (
     create_analysis_issue,
+    get_analysis_issue_by_id,
     get_analysis_issues_by_analysis_id,
     delete_analysis_issue as delete_analysis_issue_in_db,
 )
 from ..infrastructure.db.models.AnalysisIssue import AnalysisIssue
-
 from ..infrastructure.storage.r2Adaptor import get_object
 from ..infrastructure.local_files.file_types.Video_file import Video_file
 
@@ -91,7 +91,10 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         video_object: Video = get_video_by_id(
             analysis_object.video_id, session=db_session
         )
-        video_data: bytes = get_object(video_object.video_key)
+        try:
+            video_data: bytes = get_object(video_object.video_key)
+        except Exception as e:
+            raise InvalidVideoException(f"Failed to download video from storage: {str(e)}")
         video_file = Video_file(f=video_data)
 
         # Start analysis process
@@ -190,10 +193,9 @@ def get_analysis_issues(analysis_id: UUID, db_session) -> list[GetAnalaysisIssue
 
 
 def delete_analysis_issue(analysis_issue_id: UUID, db_session) -> None:
-    analysis_issue_object: AnalysisIssue = db_session.get(
-        AnalysisIssue, analysis_issue_id
+    analysis_issue_object: AnalysisIssue = get_analysis_issue_by_id(
+        analysis_issue_id=analysis_issue_id, session=db_session
     )
-    
     if analysis_issue_object is None:
         raise NotFoundException("AnalysisIssue", str(analysis_issue_id))
 
