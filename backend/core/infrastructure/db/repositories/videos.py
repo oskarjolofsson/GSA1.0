@@ -29,6 +29,12 @@ def get_video_by_user_id(user_id: UUID, session: Session) -> Video:
     return session.scalars(stmt).first()
 
 
+def get_videos_by_user_id(user_id: UUID, session: Session) -> list[Video]:
+    """Get all videos for a user."""
+    stmt = select(Video).where(Video.user_id == user_id).order_by(Video.created_at.desc())
+    return session.scalars(stmt).all()
+
+
 # ------------ CREATE ------------
 
 
@@ -46,6 +52,15 @@ def update_video(video: Video, session: Session) -> Video:
     """Update an existing video."""
     session.add(video)
     session.flush()
+    return video
+
+
+def update_video_thumbnail_key(video_id: UUID, thumbnail_key: str, session: Session) -> Video:
+    """Update the thumbnail key for a video."""
+    video = session.get(Video, video_id)
+    if video:
+        video.thumbnail_key = thumbnail_key
+        session.flush()
     return video
 
 

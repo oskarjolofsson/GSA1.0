@@ -47,6 +47,14 @@ class R2Client:
             Bucket=self.bucket,
             Key=key,
         )
+        
+    def put_object(self, key: str, data: bytes, content_type: str = "application/octet-stream") -> None:
+        self.s3.put_object(
+            Bucket=self.bucket,
+            Key=key,
+            Body=data,
+            ContentType=content_type,
+        )
     
 # Instantiate a single global R2 client
 r2_client = R2Client()

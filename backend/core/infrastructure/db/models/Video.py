@@ -28,6 +28,7 @@ class Video(Base):
     )
 
     video_key: Mapped[str | None] = mapped_column(Text, nullable=True)
+    thumbnail_key: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     start_time: Mapped[timedelta | None] = mapped_column(Interval, nullable=True)
     end_time: Mapped[timedelta | None] = mapped_column(Interval, nullable=True)
