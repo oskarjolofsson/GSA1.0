@@ -16,7 +16,7 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 # Related models
 from .Video import Video
 from .AnalysisIssue import AnalysisIssue
-
+from .Prompt import Prompt
 
 class Analysis(Base):
     __tablename__ = "analysis"
@@ -66,5 +66,5 @@ class Analysis(Base):
         back_populates="analysis",
         cascade="all, delete-orphan",
     )
-
+    prompt = relationship("Prompt", back_populates="analysis", uselist=False, cascade="all, delete-orphan")
     __table_args__ = (Index("idx_analysis_video_id", "video_id"),)

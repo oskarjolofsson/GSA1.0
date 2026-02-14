@@ -36,6 +36,11 @@ from ..infrastructure.local_files.file_types.Video_file import Video_file
 from ..infrastructure.AI.google.client import GoogleAnalysisClient
 from ..infrastructure.AI.google.videoAnalyzer import analyze_video
 from uuid import UUID
+from ..infrastructure.db.repositories.prompts import (
+    create_prompt,
+    get_prompt_by_analysis_id,
+)
+from ..infrastructure.db.models.Prompt import Prompt
 
 
 def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
@@ -55,6 +60,16 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
         analysis: Analysis = create_analysis_in_db(
             analysis=analysis, session=db_session
         )
+
+        # Create prompt entry
+        prompt = Prompt(
+            analysis_id=analysis.id,
+            prompt_shape=dto.prompt_shape,
+            prompt_height=dto.prompt_height,
+            prompt_misses=dto.prompt_misses,
+            prompt_extra=dto.prompt_extra,
+        )
+        create_prompt(prompt=prompt, session=db_session)
 
         video_key = f"videos/{video.id}"
         video.video_key = video_key
@@ -87,6 +102,9 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         analysis_object.status = "processing"
         analysis_object = update_analysis(analysis=analysis_object, session=db_session)
 
+        # Fetch prompts for this analysis
+        prompt_object = get_prompt_by_analysis_id(analysis_id=analysis_object.id, session=db_session)
+
         # Download the video from R2 using the video_key in analysis, and save it to a temporary location
         video_object: Video = get_video_by_id(
             analysis_object.video_id, session=db_session
@@ -97,15 +115,15 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
             raise InvalidVideoException(f"Failed to download video from storage: {str(e)}")
         video_file = Video_file(f=video_data)
 
-        # Start analysis process
+        # Start analysis process with prompts from database
         analysis_results: dict = (
-            analyze_video(  # TODO : handle client and prompts properly
+            analyze_video(
                 client=GoogleAnalysisClient().client,
                 video_path=video_file.path(),
-                shape=None,
-                height=None,
-                misses=None,
-                extra=None,
+                shape=prompt_object.prompt_shape if prompt_object else None,
+                height=prompt_object.prompt_height if prompt_object else None,
+                misses=prompt_object.prompt_misses if prompt_object else None,
+                extra=prompt_object.prompt_extra if prompt_object else None,
                 model=analysis_object.model_version,
                 db_session=db_session,
             )
