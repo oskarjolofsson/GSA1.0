@@ -1,7 +1,7 @@
 from requests import session
 from uuid import UUID
 
-from ...core.infrastructure.db.repositories.drills import (
+from core.infrastructure.db.repositories.drills import (
     get_drill_by_id as repo_get_drill_by_id,
     create_drill as repo_create_drill,
     update_drill as repo_update_drill,
@@ -10,7 +10,7 @@ from ...core.infrastructure.db.repositories.drills import (
     get_drills_by_analysis_id as repo_get_drills_by_analysis_id,
     get_drills_by_user_id as repo_get_drills_by_user_id,
 )
-from ...core.infrastructure.db.models.Drill import Drill
+from core.infrastructure.db.models.Drill import Drill
 from .dtos.drill_service_dto import CreateDrillDTO, UpdateDrillDTO, DrillResponseDTO
 from ..infrastructure.db.session import SessionLocal
 

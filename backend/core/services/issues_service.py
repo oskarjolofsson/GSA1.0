@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 
-from ...core.infrastructure.db.repositories.issues import (
+from core.infrastructure.db.repositories.issues import (
     get_issue_by_id as repo_get_issue_by_id,
     create_issue as repo_create_issue,
     update_issue as repo_update_issue,
@@ -12,7 +12,7 @@ from ...core.infrastructure.db.repositories.issues import (
     get_issues_by_drill_id as repo_get_issues_by_drill_id,
     get_all_issues as repo_get_all_issues,
 )
-from ...core.infrastructure.db.models.Issue import Issue
+from core.infrastructure.db.models.Issue import Issue
 from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueResponseDTO
 
 
