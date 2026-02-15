@@ -15,3 +15,17 @@ def client(db_session):
         yield c
     app.dependency_overrides.clear()
 
+
+@pytest.fixture()
+def auth_headers(test_user):
+    """
+    Generate authentication headers for test requests.
+    
+    Args:
+        test_user: Test user fixture that provides access_token
+        
+    Returns:
+        dict: Headers with Bearer token for authentication
+    """
+    return {"Authorization": f"Bearer {test_user['access_token']}"}
+

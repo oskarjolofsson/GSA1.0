@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from uuid import UUID
 from datetime import timedelta
 from app.dependencies.db import get_db
+from app.dependencies.auth import get_current_user
 from sqlalchemy.orm import Session
 
 
@@ -32,13 +33,16 @@ router = APIRouter()
 @router.post("/", response_model=CreateAnalysisResponse, status_code=201)
 def create_analysis(
     request: CreateAnalysisRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
     ):
     """
     Create an analysis and return a signed upload URL.
     """
+    user_id = UUID(current_user["user_id"])
+    
     dto = CreateAnalysisDTO(
-        user_id=request.user_id,
+        user_id=user_id,
         model=request.model,
         start_time=timedelta(seconds=request.start_time),
         end_time=timedelta(seconds=request.end_time),
@@ -58,7 +62,11 @@ def create_analysis(
 
 
 @router.patch("/{analysis_id}/", response_model=GetAnalysis, status_code=200)
-def run_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
+def run_analysis(
+    analysis_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Confirm that the video upload has completed.
     Now the analysis processing can be triggered.
@@ -78,7 +86,11 @@ def run_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[GetAnalysis])
-def list_analyses(user_id: UUID, db: Session = Depends(get_db)):
+def list_analyses(
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     List all analyses for a specific user.
     """
@@ -88,7 +100,11 @@ def list_analyses(user_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/{analysis_id}", response_model=GetAnalysis)
-def get_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
+def get_analysis(
+    analysis_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get details of a specific analysis.
     """
@@ -98,7 +114,11 @@ def get_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/{analysis_id}/video-url")
-def get_analysis_video_url(analysis_id: UUID, db: Session = Depends(get_db)):
+def get_analysis_video_url(
+    analysis_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get a signed URL for downloading the original video associated with an analysis.
 
@@ -119,7 +139,11 @@ def get_analysis_video_url(analysis_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.delete("/{analysis_id}", status_code=204)
-def delete_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
+def delete_analysis(
+    analysis_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Delete a specific analysis and all associated data.
     """
@@ -127,7 +151,11 @@ def delete_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/{analysis_id}/issues", response_model=list[GetAnalysisIssue])
-def get_analysis_issues(analysis_id: UUID, db: Session = Depends(get_db)):
+def get_analysis_issues(
+    analysis_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get all issues associated with a specific analysis.
     """
@@ -137,7 +165,12 @@ def get_analysis_issues(analysis_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.delete("/{analysis_id}/issues/{analysis_issue_id}", status_code=204)
-def delete_analysis_issue(analysis_id: UUID, analysis_issue_id: UUID, db: Session = Depends(get_db)):
+def delete_analysis_issue(
+    analysis_id: UUID,
+    analysis_issue_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Delete a specific analysis issue.
     """
