@@ -25,18 +25,10 @@ from ...core.infrastructure.db.repositories.analysis_issues import create_analys
 from ...core.infrastructure.db.repositories.issue_drills import create_issue_drill
 
 
-@pytest.fixture(scope="function")
-def mock_issues_service_session(db_session, monkeypatch):
-    """Patch issues_service.db_session for isolated tests."""
-    from ...core.services import issues_service
-    monkeypatch.setattr(issues_service, "db_session", db_session)
-    yield db_session
-
-
 class TestCreateIssue:
     """Tests for create_issue function"""
 
-    def test_create_issue_with_all_fields(self, mock_issues_service_session):
+    def test_create_issue_with_all_fields(self, db_session):
         """Test that create_issue creates an issue with all fields"""
         # Arrange
         dto = CreateIssueDTO(
@@ -49,7 +41,7 @@ class TestCreateIssue:
         )
 
         # Act
-        result = create_issue(dto)
+        result = create_issue(dto, db_session=db_session)
 
         # Assert
         assert result is not None
@@ -62,17 +54,17 @@ class TestCreateIssue:
         assert isinstance(result.id, UUID)
 
         # Verify in database
-        issue_in_db = repo_get_issue_by_id(result.id, mock_issues_service_session)
+        issue_in_db = repo_get_issue_by_id(result.id, db_session)
         assert issue_in_db is not None
         assert issue_in_db.title == "Over the top swing"
 
-    def test_create_issue_with_minimal_fields(self, mock_issues_service_session):
+    def test_create_issue_with_minimal_fields(self, db_session):
         """Test that create_issue works with only required fields"""
         # Arrange
         dto = CreateIssueDTO(title="Minimal Issue")
 
         # Act
-        result = create_issue(dto)
+        result = create_issue(dto, db_session=db_session)
 
         # Assert
         assert result is not None
@@ -84,17 +76,17 @@ class TestCreateIssue:
 class TestGetIssueById:
     """Tests for get_issue_by_id function"""
 
-    def test_get_issue_by_id_exists(self, mock_issues_service_session):
+    def test_get_issue_by_id_exists(self, db_session):
         """Test getting an existing issue by ID"""
         # Arrange - Create an issue first
         dto = CreateIssueDTO(
             title="Test Issue",
             phase="IMPACT",
         )
-        created_issue = create_issue(dto)
+        created_issue = create_issue(dto, db_session=db_session)
 
         # Act
-        result = get_issue_by_id(created_issue.id)
+        result = get_issue_by_id(created_issue.id, db_session=db_session)
 
         # Assert
         assert result is not None
@@ -102,13 +94,13 @@ class TestGetIssueById:
         assert result.title == "Test Issue"
         assert result.phase == "IMPACT"
 
-    def test_get_issue_by_id_not_exists(self, mock_issues_service_session):
+    def test_get_issue_by_id_not_exists(self, db_session):
         """Test getting a non-existent issue returns None"""
         # Arrange
         fake_id = UUID("00000000-0000-0000-0000-000000000000")
 
         # Act
-        result = get_issue_by_id(fake_id)
+        result = get_issue_by_id(fake_id, db_session=db_session)
 
         # Assert
         assert result is None
@@ -117,16 +109,16 @@ class TestGetIssueById:
 class TestGetAllIssues:
     """Tests for get_all_issues function"""
 
-    def test_get_all_issues_returns_all_issues(self, mock_issues_service_session):
+    def test_get_all_issues_returns_all_issues(self, db_session):
         """Test that get_all_issues returns all issues"""
         # Arrange - Create multiple issues
         dto1 = CreateIssueDTO(title="Issue 1")
         dto2 = CreateIssueDTO(title="Issue 2")
-        create_issue(dto1)
-        create_issue(dto2)
+        create_issue(dto1, db_session=db_session)
+        create_issue(dto2, db_session=db_session)
 
         # Act
-        result = get_all_issues()
+        result = get_all_issues(db_session=db_session)
 
         # Assert
         assert len(result) >= 2
@@ -139,26 +131,26 @@ class TestGetIssuesByAnalysisId:
     """Tests for get_issues_by_analysis_id function"""
 
     def test_get_issues_by_analysis_id_returns_associated_issues(
-        self, mock_issues_service_session, test_user
+        self, db_session, test_user
     ):
         """Test that get_issues_by_analysis_id returns issues linked to an analysis"""
         # Arrange - Create a video and analysis
-        video = Video(user_id=test_user)
-        video = repo_create_video(video, mock_issues_service_session)
+        video = Video(user_id=test_user["user_id"])
+        video = repo_create_video(video, db_session)
 
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             video_id=video.id,
             model_version="v1.0",
             status="completed",
         )
-        analysis = repo_create_analysis(analysis, mock_issues_service_session)
+        analysis = repo_create_analysis(analysis, db_session)
 
         # Create issues
         issue1_dto = CreateIssueDTO(title="Issue 1", phase="BACKSWING")
         issue2_dto = CreateIssueDTO(title="Issue 2", phase="DOWNSWING")
-        issue1 = create_issue(issue1_dto)
-        issue2 = create_issue(issue2_dto)
+        issue1 = create_issue(issue1_dto, db_session=db_session)
+        issue2 = create_issue(issue2_dto, db_session=db_session)
 
         # Link issues to analysis
         analysis_issue1 = AnalysisIssue(
@@ -171,12 +163,12 @@ class TestGetIssuesByAnalysisId:
             issue_id=issue2.id,
             confidence=0.85,
         )
-        create_analysis_issue(analysis_issue1, mock_issues_service_session)
-        create_analysis_issue(analysis_issue2, mock_issues_service_session)
-        mock_issues_service_session.commit()
+        create_analysis_issue(analysis_issue1, db_session)
+        create_analysis_issue(analysis_issue2, db_session)
+        db_session.commit()
 
         # Act
-        result = get_issues_by_analysis_id(analysis.id)
+        result = get_issues_by_analysis_id(analysis.id, db_session=db_session)
 
         # Assert
         assert len(result) == 2
@@ -189,7 +181,7 @@ class TestGetIssuesByDrillId:
     """Tests for get_issues_by_drill_id function"""
 
     def test_get_issues_by_drill_id_returns_associated_issues(
-        self, mock_issues_service_session
+        self, db_session
     ):
         """Test that get_issues_by_drill_id returns issues linked to a drill"""
         # Arrange - Create a drill
@@ -199,23 +191,23 @@ class TestGetIssuesByDrillId:
             success_signal="Consistent contact",
             fault_indicator="Thin shots",
         )
-        drill = repo_create_drill(drill, mock_issues_service_session)
+        drill = repo_create_drill(drill, db_session)
 
         # Create issues
         issue1_dto = CreateIssueDTO(title="Issue 1")
         issue2_dto = CreateIssueDTO(title="Issue 2")
-        issue1 = create_issue(issue1_dto)
-        issue2 = create_issue(issue2_dto)
+        issue1 = create_issue(issue1_dto, db_session=db_session)
+        issue2 = create_issue(issue2_dto, db_session=db_session)
 
         # Link issues to drill
         issue_drill1 = IssueDrill(issue_id=issue1.id, drill_id=drill.id)
         issue_drill2 = IssueDrill(issue_id=issue2.id, drill_id=drill.id)
-        create_issue_drill(issue_drill1, mock_issues_service_session)
-        create_issue_drill(issue_drill2, mock_issues_service_session)
-        mock_issues_service_session.commit()
+        create_issue_drill(issue_drill1, db_session)
+        create_issue_drill(issue_drill2, db_session)
+        db_session.commit()
 
         # Act
-        result = get_issues_by_drill_id(drill.id)
+        result = get_issues_by_drill_id(drill.id, db_session=db_session)
 
         # Assert
         assert len(result) == 2
@@ -227,7 +219,7 @@ class TestGetIssuesByDrillId:
 class TestUpdateIssue:
     """Tests for update_issue function"""
 
-    def test_update_issue_partial_update(self, mock_issues_service_session):
+    def test_update_issue_partial_update(self, db_session):
         """Test that update_issue only updates provided fields"""
         # Arrange - Create an issue
         dto = CreateIssueDTO(
@@ -236,14 +228,14 @@ class TestUpdateIssue:
             current_motion="Original motion",
             expected_motion="Original expected",
         )
-        created_issue = create_issue(dto)
+        created_issue = create_issue(dto, db_session=db_session)
 
         # Act - Update only title and phase
         update_dto = UpdateIssueDTO(
             title="Updated Title",
             phase="DOWNSWING",
         )
-        updated_issue = update_issue(created_issue.id, update_dto)
+        updated_issue = update_issue(created_issue.id, update_dto, db_session=db_session)
 
         # Assert
         assert updated_issue is not None
@@ -252,7 +244,7 @@ class TestUpdateIssue:
         assert updated_issue.current_motion == "Original motion"
         assert updated_issue.expected_motion == "Original expected"
 
-    def test_update_issue_full_update(self, mock_issues_service_session):
+    def test_update_issue_full_update(self, db_session):
         """Test that update_issue can update all fields"""
         # Arrange - Create an issue
         dto = CreateIssueDTO(
@@ -263,7 +255,7 @@ class TestUpdateIssue:
             swing_effect="Original effect",
             shot_outcome="Original outcome",
         )
-        created_issue = create_issue(dto)
+        created_issue = create_issue(dto, db_session=db_session)
 
         # Act - Update all fields
         update_dto = UpdateIssueDTO(
@@ -274,7 +266,7 @@ class TestUpdateIssue:
             swing_effect="New effect",
             shot_outcome="New outcome",
         )
-        updated_issue = update_issue(created_issue.id, update_dto)
+        updated_issue = update_issue(created_issue.id, update_dto, db_session=db_session)
 
         # Assert
         assert updated_issue is not None
@@ -285,14 +277,14 @@ class TestUpdateIssue:
         assert updated_issue.swing_effect == "New effect"
         assert updated_issue.shot_outcome == "New outcome"
 
-    def test_update_issue_not_exists(self, mock_issues_service_session):
+    def test_update_issue_not_exists(self, db_session):
         """Test that update_issue returns None for non-existent issue"""
         # Arrange
         fake_id = UUID("00000000-0000-0000-0000-000000000000")
         update_dto = UpdateIssueDTO(title="Updated Title")
 
         # Act
-        result = update_issue(fake_id, update_dto)
+        result = update_issue(fake_id, update_dto, db_session=db_session)
 
         # Assert
         assert result is None
@@ -301,29 +293,29 @@ class TestUpdateIssue:
 class TestDeleteIssue:
     """Tests for delete_issue function"""
 
-    def test_delete_issue_success(self, mock_issues_service_session):
+    def test_delete_issue_success(self, db_session):
         """Test that delete_issue successfully deletes an issue"""
         # Arrange - Create an issue
         dto = CreateIssueDTO(title="To Delete")
-        created_issue = create_issue(dto)
+        created_issue = create_issue(dto, db_session=db_session)
 
         # Act
-        result = delete_issue(created_issue.id)
+        result = delete_issue(created_issue.id, db_session=db_session)
 
         # Assert
         assert result is True
 
         # Verify it's deleted
-        issue_in_db = repo_get_issue_by_id(created_issue.id, mock_issues_service_session)
+        issue_in_db = repo_get_issue_by_id(created_issue.id, db_session)
         assert issue_in_db is None
 
-    def test_delete_issue_not_exists(self, mock_issues_service_session):
+    def test_delete_issue_not_exists(self, db_session):
         """Test that delete_issue returns False for non-existent issue"""
         # Arrange
         fake_id = UUID("00000000-0000-0000-0000-000000000000")
 
         # Act
-        result = delete_issue(fake_id)
+        result = delete_issue(fake_id, db_session=db_session)
 
         # Assert
         assert result is False

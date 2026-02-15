@@ -22,7 +22,7 @@ class TestCreateAnalysis:
         """Test that create_analysis creates a video record with correct fields"""
         # Arrange
         dto = CreateAnalysisDTO(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model="v1.0",
             start_time=timedelta(seconds=5),
             end_time=timedelta(seconds=15),
@@ -38,7 +38,7 @@ class TestCreateAnalysis:
         # Verify video was created with correct fields
         video = get_video_by_id(analysis.video_id, session=db_session)
         assert video is not None
-        assert video.user_id == test_user
+        assert video.user_id == test_user["user_id"]
         assert video.start_time == timedelta(seconds=5)
         assert video.end_time == timedelta(seconds=15)
         assert video.video_key == f"videos/{video.id}"
@@ -47,7 +47,7 @@ class TestCreateAnalysis:
         """Test that create_analysis creates an analysis record with correct fields"""
         # Arrange
         dto = CreateAnalysisDTO(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model="v2.0",
             start_time=timedelta(seconds=10),
             end_time=timedelta(seconds=20),
@@ -60,7 +60,7 @@ class TestCreateAnalysis:
         # Assert
         analysis = get_analysis_by_id(result["analysis_id"], session=db_session)
         assert analysis is not None
-        assert analysis.user_id == test_user
+        assert analysis.user_id == test_user["user_id"]
         assert analysis.model_version == "v2.0"
         assert analysis.video_id is not None
 
@@ -68,7 +68,7 @@ class TestCreateAnalysis:
         """Test that create_analysis returns analysis_id and upload_url"""
         # Arrange
         dto = CreateAnalysisDTO(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model="v1.0",
             start_time=timedelta(seconds=0),
             end_time=timedelta(seconds=10),
@@ -89,7 +89,7 @@ class TestCreateAnalysis:
         """Test that video_key is set to videos/{video.id}"""
         # Arrange
         dto = CreateAnalysisDTO(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model="v1.0",
             start_time=timedelta(seconds=0),
             end_time=timedelta(seconds=5),
@@ -108,7 +108,7 @@ class TestCreateAnalysis:
         """Test that the created video is properly linked to the analysis"""
         # Arrange
         dto = CreateAnalysisDTO(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model="v1.0",
             start_time=timedelta(seconds=2),
             end_time=timedelta(seconds=8),
