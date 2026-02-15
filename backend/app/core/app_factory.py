@@ -34,18 +34,21 @@ def create_app() -> FastAPI:
         ValidationException,
         ServiceException,
     )
+    from core.infrastructure.auth.exceptions import AuthenticationError
     from app.exception_handlers import (
         not_found_exception_handler,
         invalid_state_exception_handler,
         validation_exception_handler,
         service_exception_handler,
         general_exception_handler,
+        invalid_authentication_exception_handler,
     )
     
     app.add_exception_handler(NotFoundException, not_found_exception_handler)
     app.add_exception_handler(InvalidStateException, invalid_state_exception_handler)
     app.add_exception_handler(ValidationException, validation_exception_handler)
     app.add_exception_handler(ServiceException, service_exception_handler)
+    app.add_exception_handler(AuthenticationError, invalid_authentication_exception_handler)
     app.add_exception_handler(Exception, general_exception_handler)
 
     # --- Routers ---

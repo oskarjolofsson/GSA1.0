@@ -4,7 +4,6 @@ from datetime import datetime
 
 
 class CreateFeedbackRequest(BaseModel):
-    user_id: UUID
     rating: int
     comments: str
 

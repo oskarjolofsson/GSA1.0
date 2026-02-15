@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 
 class CreateAnalysisRequest(BaseModel):
-    user_id: UUID
     model: str
     start_time: float
     end_time: float

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from uuid import UUID
 from app.dependencies.db import get_db
+from app.dependencies.auth import get_current_user
 from sqlalchemy.orm import Session
 
 from app.api.v1.schemas.drill import (
@@ -26,7 +27,8 @@ router = APIRouter()
 @router.post("/", response_model=CreateDrillResponse, status_code=201)
 def create_drill(
     request: CreateDrillRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Create a new drill.
@@ -58,7 +60,11 @@ def create_drill(
 
 
 @router.get("/{drill_id}", response_model=GetDrill)
-def get_drill(drill_id: UUID, db: Session = Depends(get_db)):
+def get_drill(
+    drill_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get details of a specific drill.
 
@@ -77,7 +83,11 @@ def get_drill(drill_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/by-analysis/{analysis_id}", response_model=list[GetDrill])
-def get_drills_by_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
+def get_drills_by_analysis(
+    analysis_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get all drills associated with a specific analysis.
 
@@ -93,7 +103,11 @@ def get_drills_by_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/by-issue/{issue_id}", response_model=list[GetDrill])
-def get_drills_by_issue(issue_id: UUID, db: Session = Depends(get_db)):
+def get_drills_by_issue(
+    issue_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get all drills associated with a specific issue.
 
@@ -109,7 +123,11 @@ def get_drills_by_issue(issue_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/by-user/{user_id}", response_model=list[GetDrill])
-def get_drills_by_user(user_id: UUID, db: Session = Depends(get_db)):
+def get_drills_by_user(
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get all drills associated with a specific user.
 
@@ -129,7 +147,8 @@ def get_drills_by_user(user_id: UUID, db: Session = Depends(get_db)):
 def update_drill(
     drill_id: UUID,
     request: UpdateDrillRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Update an existing drill.
@@ -163,7 +182,11 @@ def update_drill(
 
 # ONLY FOR INTERNAL USE, NOT EXPOSED TO FRONTEND AND PROTECTED BY AUTHENTICATION
 @router.delete("/{drill_id}", status_code=204)
-def delete_drill(drill_id: UUID, db: Session = Depends(get_db)):
+def delete_drill(
+    drill_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Delete a specific drill.
 

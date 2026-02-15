@@ -69,13 +69,13 @@ def test_user(supabase_client: Client, supabase_admin_client: Client):
     
     yield {
         "access_token": access_token,
-        "user_id": user_id,
+        "user_id": uuid.UUID(user_id),  # Convert string to UUID
         "email": test_email
     }
     
     # Cleanup: Delete test user using admin client
     try:
-        supabase_admin_client.auth.admin.delete_user(user_id)
+        supabase_admin_client.auth.admin.delete_user(str(user_id))  # Convert back to string for deletion
     except Exception as e:
         # Log but don't fail the test if cleanup fails
         print(f"Warning: Failed to cleanup test user {user_id}: {e}")

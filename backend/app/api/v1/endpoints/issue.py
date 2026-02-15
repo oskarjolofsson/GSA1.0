@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from uuid import UUID
 from app.dependencies.db import get_db
+from app.dependencies.auth import get_current_user
 from sqlalchemy.orm import Session
 
 from app.api.v1.schemas.issue import (
@@ -26,7 +27,8 @@ router = APIRouter()
 @router.post("/", response_model=CreateIssueResponse, status_code=201)
 def create_issue(
     request: CreateIssueRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Create a new issue.
@@ -57,7 +59,11 @@ def create_issue(
 
 
 @router.get("/{issue_id}", response_model=GetIssue)
-def get_issue(issue_id: UUID, db: Session = Depends(get_db)):
+def get_issue(
+    issue_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get details of a specific issue.
 
@@ -76,7 +82,11 @@ def get_issue(issue_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/by-analysis/{analysis_id}", response_model=list[GetIssue])
-def get_issues_by_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
+def get_issues_by_analysis(
+    analysis_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get all issues associated with a specific analysis.
 
@@ -92,7 +102,11 @@ def get_issues_by_analysis(analysis_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/by-drill/{drill_id}", response_model=list[GetIssue])
-def get_issues_by_drill(drill_id: UUID, db: Session = Depends(get_db)):
+def get_issues_by_drill(
+    drill_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get all issues associated with a specific drill.
 
@@ -108,7 +122,10 @@ def get_issues_by_drill(drill_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[GetIssue])
-def get_all_issues(db: Session = Depends(get_db)):
+def get_all_issues(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Get all issues.
 
@@ -124,7 +141,8 @@ def get_all_issues(db: Session = Depends(get_db)):
 def update_issue(
     issue_id: UUID,
     request: UpdateIssueRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Update an existing issue.
@@ -161,7 +179,11 @@ def update_issue(
 
 
 @router.delete("/{issue_id}", status_code=204)
-def delete_issue(issue_id: UUID, db: Session = Depends(get_db)):
+def delete_issue(
+    issue_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     """
     Delete a specific issue.
 
