@@ -46,6 +46,7 @@ OUTPUT RULES (STRICT):
 - The response MUST start with {{ and end with }}
 - Use exact issue_id values from the provided list
 - Do NOT add extra fields
+- No "```json``` or similar formatting
 
 MANDATORY OUTPUT FORMAT:
 
