@@ -1,6 +1,6 @@
 import { User, Settings, ArrowLeft, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from '../../../auth/authContext';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Link } from "react-router-dom";
 
 export default function ProfileBar({ showName = true, onOpenSidebar }) {

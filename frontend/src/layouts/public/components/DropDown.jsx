@@ -1,6 +1,6 @@
 import { User, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from '../../../auth/authContext';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export default function ProfileDropdown() {
     const [open, setOpen] = useState(false);

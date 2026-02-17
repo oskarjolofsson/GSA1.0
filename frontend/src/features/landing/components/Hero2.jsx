@@ -7,7 +7,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../../../auth/authContext.jsx';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import EmblaCarousel from './EmblaCarousel.jsx';
 
 function backgroundTexture() {

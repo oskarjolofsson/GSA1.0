@@ -1,4 +1,4 @@
-import { useAuth } from '../../../auth/authContext';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import InfoRow from '../components/InfoRow.jsx';
 import AnalyticsConsentToggle from '../components/AnalyticsConsentToggle.jsx';
 
