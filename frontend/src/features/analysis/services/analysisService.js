@@ -1,5 +1,4 @@
-import { auth } from '../../../lib/firebase';
-import { ensureUserReady } from './authHelper';
+import { supabase } from '@/lib/supabase';
 
 const API = (import.meta.env.VITE_API_URL || '');
 
@@ -10,34 +9,33 @@ class AnalysisService {
 
   // Helper method for authenticated fetch requests
   async fetchWithAuth(url, method = 'GET') {
-    await ensureUserReady();
-    console.log("Fetching URL with auth: " + url);
+    const {
+      data: { session },
+      error
+    } = await supabase.auth.getSession()
 
-    const user = auth.currentUser;
-    if (!user) throw new Error('Not signed in');
-
-    const idToken = await user.getIdToken();
+    if (error) throw error
+    if (!session) throw new Error('Not signed in')
 
     const response = await fetch(`${API}${url}`, {
-      method: method,
+      method,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`
+        Authorization: `Bearer ${session.access_token}`,
       },
-    });
+    })
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Server error ${response.status}: ${text || response.statusText}`);
+      const text = await response.text()
+      throw new Error(`Server error ${response.status}: ${text || response.statusText}`)
     }
 
-    return await response.json();
+    return response.json()
   }
 
   // Fetch all analyses for user
   async getAnalysesForUser() {
     try {
-      await ensureUserReady();
       const data = await this.fetchWithAuth('/api/v1/analysis');
       return Array.isArray(data?.analyses) ? data.analyses : [];
     } catch (error) {
@@ -73,7 +71,6 @@ class AnalysisService {
   // Get signed video URL for analysis with caching
   async getAnalysisVideoURL(analysisId, videoKey) {
     try {
-      await ensureUserReady();
 
       // Check cache first
       if (this.videoURLCache[analysisId]) {

@@ -1,4 +1,4 @@
-import { auth } from '../../../lib/firebase';
+import { supabase } from '@/lib/supabase';
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -13,10 +13,11 @@ class UploadService {
    * @throws {Error} If user is not signed in
    */
   async getAuthHeader() {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Not signed in');
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    if (!session) throw new Error('Not signed in');
 
-    const idToken = await user.getIdToken();
+    const idToken = await session.access_token;
     return {
       'Authorization': `Bearer ${idToken}`,
     };

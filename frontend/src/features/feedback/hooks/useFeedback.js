@@ -1,12 +1,13 @@
-import { auth } from "../../../lib/firebase.js";
+import { supabase } from '@/lib/supabase';
 import { feedbackService } from "../services/feedbackService.js";
 
 export function useFeedback() {
   const submit = async (rating, comments) => {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Not signed in");
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    if (!session) throw new Error("Not signed in");
 
-    const token = await user.getIdToken();
+    const token = session.access_token;
     return feedbackService.submitFeedback(fetch, token, rating, comments);
   };
 
