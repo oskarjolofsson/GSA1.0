@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../../../auth/authContext.jsx';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 // Components and icons
 import ProfileDropdown from './DropDown.jsx';

@@ -1,5 +1,5 @@
 import { Outlet, Navigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../auth/authContext.jsx';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 import Nav from './components/TopNav.jsx';
 import Footer from './components/footer.jsx';
