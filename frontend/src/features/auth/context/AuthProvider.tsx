@@ -44,7 +44,7 @@ export function AuthProvider({ children }: {children: React.ReactNode}) {
         return () => {
             authListener.subscription.unsubscribe();
         };
-    })
+    }, [])
 
     return (
         <AuthContext.Provider value={{ user, session, loading }}>
