@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { signInWithGoogle } from "@/features/auth/api/authApi";
 
 // Components and icons
 import ProfileDropdown from './DropDown.jsx';
@@ -35,7 +36,7 @@ function desktopNav(navItems) {
 import SignInPopup from '../../../shared/components/popup/signInPopup.jsx';
 
 function SignIn({ mobile = false }) {
-  const { login, loading, user } = useAuth();
+  const { loading, user } = useAuth();
   const [showPopup, setShowPopup] = useState(false);
 
   let text = "";
@@ -71,7 +72,7 @@ function SignIn({ mobile = false }) {
       </button>
 
       {showPopup && !user && (
-        <SignInPopup onStartSignIn={login} onClose={() => setShowPopup(false)} />
+        <SignInPopup onStartSignIn={signInWithGoogle} onClose={() => setShowPopup(false)} />
       )}
     </div>
   );
