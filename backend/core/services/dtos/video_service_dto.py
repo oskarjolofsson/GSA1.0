@@ -23,3 +23,9 @@ class VideoUrlResponseDTO:
     """Response DTO for video URL."""
     video_url: str
 
+
+@dataclass
+class VideoThumbnailListResponseDTO:
+    """Response DTO for mapping video IDs to thumbnail URLs."""
+    thumbnail_urls: dict[UUID, str]
+

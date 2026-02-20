@@ -4,13 +4,14 @@ from uuid import UUID
 from core.infrastructure.db.repositories.videos import (
     get_video_by_id as repo_get_video_by_id,
     get_video_by_analysis_id as repo_get_video_by_analysis_id,
+    get_videos_by_analysis_ids as repo_get_videos_by_analysis_ids,
     delete_video as repo_delete_video,
 )
 from core.infrastructure.db.models.Video import Video
 from core.infrastructure.db.session import SessionLocal
 from core.infrastructure.storage.r2Adaptor import generate_read_url
 from .exceptions import NotFoundException
-from .dtos.video_service_dto import VideoResponseDTO, VideoUrlResponseDTO
+from .dtos.video_service_dto import VideoResponseDTO, VideoUrlResponseDTO, VideoThumbnailListResponseDTO
 
 
 def get_video_by_id(video_id: UUID, db_session: Session) -> VideoResponseDTO:
@@ -48,6 +49,16 @@ def get_video_read_url_by_analysis(analysis_id: UUID, db_session: Session) -> Vi
     
     video_url = generate_read_url(video.video_key)
     return VideoUrlResponseDTO(video_url=video_url)
+
+
+def get_video_thumbnail_urls_from_analyses(analysis_ids: list[UUID], db_session: Session) -> VideoThumbnailListResponseDTO:
+    videos: list[Video] = repo_get_videos_by_analysis_ids(analysis_ids, db_session)
+    thumbnail_urls = {}
+    for video in videos:
+        if video.thumbnail_key:
+            url: str = generate_read_url(video.thumbnail_key)
+            thumbnail_urls[video.id] = url
+    return VideoThumbnailListResponseDTO(thumbnail_urls=thumbnail_urls)
 
 
 def delete_video(video_id: UUID, db_session: Session) -> None:

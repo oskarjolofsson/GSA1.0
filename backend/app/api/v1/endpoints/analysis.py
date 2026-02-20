@@ -25,7 +25,10 @@ from core.services.dtos.analysis_service_dto import (
     CreateAnalysisDTO,
     RunAnalysisDTO,
 )
-from core.services.video import get_video_read_url_by_analysis
+from core.services.video import (
+    get_video_read_url_by_analysis,
+    get_video_thumbnail_urls_from_analyses,
+)
 
 router = APIRouter()
 
@@ -109,8 +112,21 @@ def list_analyses(
     """
     user_id = UUID(current_user["user_id"])
     analyses = service_get_analyses_by_user_id(user_id, db_session=db)
+    
+    # Get thumbnail URLs for all analyses
+    analysis_ids = [analysis.analysis_id for analysis in analyses]
+    thumbnail_result = get_video_thumbnail_urls_from_analyses(analysis_ids, db_session=db)
+    
+    # Map thumbnail URLs by video_id for easy lookup
+    thumbnail_map = thumbnail_result.thumbnail_urls
 
-    return [GetAnalysis.from_domain(analysis) for analysis in analyses]
+    return [
+        GetAnalysis.from_domain(
+            analysis,
+            thumbnail_url=thumbnail_map.get(analysis.video_id)
+        )
+        for analysis in analyses
+    ]
 
 
 @router.get("/{analysis_id}/video-url")

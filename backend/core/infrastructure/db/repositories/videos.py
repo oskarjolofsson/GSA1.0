@@ -35,6 +35,16 @@ def get_videos_by_user_id(user_id: UUID, session: Session) -> list[Video]:
     return session.scalars(stmt).all()
 
 
+def get_videos_by_analysis_ids(analysis_ids: list[UUID], session: Session) -> list[Video]:
+    """Get all videos associated with the given analysis IDs."""
+    stmt = (
+        select(Video)
+        .join(Analysis, Video.id == Analysis.video_id)
+        .where(Analysis.id.in_(analysis_ids))
+    )
+    return session.scalars(stmt).all()
+
+
 # ------------ CREATE ------------
 
 
