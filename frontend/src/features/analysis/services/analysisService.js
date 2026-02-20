@@ -8,7 +8,7 @@ class AnalysisService {
   }
 
   // Helper method for authenticated fetch requests
-  async fetchWithAuth(url, method = 'GET') {
+  async fetchWithAuth(url, method = 'GET', body = null) {
     const {
       data: { session },
       error
@@ -17,13 +17,19 @@ class AnalysisService {
     if (error) throw error
     if (!session) throw new Error('Not signed in')
 
-    const response = await fetch(`${API}${url}`, {
+    const options = {
       method,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-    })
+    }
+
+    if (body) {
+      options.body = JSON.stringify(body)
+    }
+
+    const response = await fetch(`${API}${url}`, options)
 
     if (!response.ok) {
       const text = await response.text()
@@ -36,7 +42,7 @@ class AnalysisService {
   // Fetch all analyses for user
   async getAnalysesForUser() {
     try {
-      const data = await this.fetchWithAuth('/api/v1/analysis');
+      const data = await this.fetchWithAuth('/api/v1/analyses');
       return Array.isArray(data?.analyses) ? data.analyses : [];
     } catch (error) {
       console.error("Error in getAnalysesForUser:", error);
@@ -47,7 +53,7 @@ class AnalysisService {
   // Fetch single analysis by ID
   async getAnalysisById(analysisId) {
     try {
-      const data = await this.fetchWithAuth(`/api/v1/analysis/${analysisId}`);
+      const data = await this.fetchWithAuth(`/api/v1/analyses/${analysisId}`);
       return data.analysis || null;
     } catch (error) {
       console.error("Error in getAnalysisById:", error);
@@ -58,7 +64,7 @@ class AnalysisService {
   // Get paginated analyses
   async getPastAnalyses(offset = 0, limit = 10) {
     try {
-      const data = await this.fetchWithAuth(`/api/v1/analysis/get_previous_analyses?offset=${offset}&limit=${limit}`);
+      const data = await this.fetchWithAuth(`/api/v1/analyses/get_previous_analyses?offset=${offset}&limit=${limit}`);
       return {
         analyses: Array.isArray(data?.analyses) ? data.analyses : [],
         total: data?.total || 0
@@ -78,7 +84,7 @@ class AnalysisService {
         return this.videoURLCache[analysisId];
       }
 
-      const data = await this.fetchWithAuth(`/api/v1/analysis/${analysisId}/video-url?video_key=${encodeURIComponent(videoKey)}`);
+      const data = await this.fetchWithAuth(`/api/v1/analyses/${analysisId}/video-url?video_key=${encodeURIComponent(videoKey)}`);
       const url = data?.video_url || null;
 
       // Cache the result
@@ -97,7 +103,7 @@ class AnalysisService {
   async deleteAnalysis(analysisId) {
     console.log("Deleting analysis with ID: " + analysisId);
     try {
-      await this.fetchWithAuth(`/api/v1/analysis/${analysisId}`, 'DELETE');
+      await this.fetchWithAuth(`/api/v1/analyses/${analysisId}`, 'DELETE');
     } catch (error) {
       console.error("Error in deleteAnalysis:", error);
       throw new Error("Could not delete analysis. Please try again later.");
