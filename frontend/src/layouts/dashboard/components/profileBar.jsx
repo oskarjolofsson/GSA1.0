@@ -45,7 +45,7 @@ export default function ProfileBar({ showName = true, onOpenSidebar }) {
                     setOpen((v) => !v);
                     onOpenSidebar?.();
                 }}
-                className="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-700 hover:bg-opacity-40 w-full"
+                className="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-200 bg-gray-800 hover:bg-gray-700 hover:bg-opacity-40 w-full"
             >
                 <div className="flex-shrink-0">
                     {user.photoURL ? (

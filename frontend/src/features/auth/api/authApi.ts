@@ -28,6 +28,11 @@ export async function signUp(email: string, password: string) {
 export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
+    options: {
+      queryParams: {
+        prompt: 'select_account',
+      },
+    },
   })
 
   if (error) throw error
