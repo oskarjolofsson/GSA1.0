@@ -2,6 +2,16 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { Play, Pause, RotateCcw } from "lucide-react"
 import { Range } from "react-range"
 
+interface VideoDemoProps {
+    url: string | null;
+    mode?: "playback" | "trim";
+    start?: number;
+    end?: number | null;
+    onStartChange?: ((time: number) => void) | null;
+    onEndChange?: ((time: number) => void) | null;
+    onTrimClose?: (() => void) | null;
+}
+
 export default function VideoDemo({ 
   url, 
   mode = "playback",
@@ -10,7 +20,7 @@ export default function VideoDemo({
   onStartChange = null,
   onEndChange = null,
   onTrimClose = null
-}) {
+}: VideoDemoProps) {
   const videoRef = useRef(null)
   const containerRef = useRef(null)
   const progressBarRef = useRef(null)

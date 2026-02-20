@@ -1,6 +1,10 @@
 import { Share2 } from "lucide-react";
 
-export default function ShareButton({ onClick }) {
+interface ShareButtonProps {
+    onClick: () => void;
+}
+
+export default function ShareButton({ onClick }: ShareButtonProps) {
     return (
         <div className="flex justify-end mb-6">
             <button
