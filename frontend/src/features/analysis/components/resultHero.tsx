@@ -1,5 +1,16 @@
 import { Eye, Star } from "lucide-react";
 
+interface ResultHeroCardProps {
+    prioNumber?: number;
+    totalIssues?: number;
+    problemName?: string;
+    diagnosis?: string;
+    impactLine?: string;
+    onClickDrill: () => void;
+    onNextIssue: () => void;
+    onPreviousIssue: () => void;
+}
+
 export default function ResultHeroCard({
   prioNumber = 1,
   totalIssues = 1,
@@ -9,7 +20,7 @@ export default function ResultHeroCard({
   onClickDrill,
   onNextIssue,
   onPreviousIssue
-}) {
+}: ResultHeroCardProps) {
   return (
     <section className="w-full px-4 py-6 flex justify-center max-sm:px-0" aria-label="Top priority summary">
       <div className="relative w-full overflow-hidden rounded-3xl h-fit sm:h-auto">

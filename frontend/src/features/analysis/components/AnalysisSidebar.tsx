@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { ChevronRight, ChevronLeft, Calendar, Video } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { Analysis } from '../types';
 
-export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectAnalysis }) {
+interface AnalysisSidebarProps {
+    allAnalyses: Analysis[];
+    activeAnalysis: Analysis | null;
+    onSelectAnalysis: (analysisId: string) => Promise<void>;
+}
+
+export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectAnalysis }: AnalysisSidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     if (!dateString) return "Unknown date";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -15,7 +22,7 @@ export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectA
     });
   };
 
-  const formatTime = (dateString) => {
+  const formatTime = (dateString: string) => {
     if (!dateString) return "";
     const date = new Date(dateString);
     return date.toLocaleTimeString("en-US", {
@@ -92,13 +99,13 @@ export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectA
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
                         <span className="text-xs text-slate-400 font-medium">
                           
-                          {formatTime(analysis.createdAt)}
+                          {formatTime(analysis.created_at)}
                         </span>
                       </div>
 
                       {/* Time */}
                       <div className="text-sm text-slate-300 font-semibold mb-1">
-                        {formatDate(analysis.createdAt)}
+                        {formatDate(analysis.created_at)}
                       </div>
 
                       {/* Analysis ID (truncated) */}

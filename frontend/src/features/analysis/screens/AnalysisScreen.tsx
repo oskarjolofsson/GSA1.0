@@ -4,26 +4,27 @@ import { useNavigate } from "react-router-dom";
 import SessionHeader from "../../../shared/components/sessionHeader.jsx";
 
 // Components
-import ResultBox from "../components/ResultBox.jsx";
+import ResultBox from "../components/ResultBox";
 import SharePopup from "../../../shared/components/popup/SharePopup.jsx";
 import TextBox from "../../../shared/components/cards/textBox.jsx";
-import AnalysisSidebar from "../components/AnalysisSidebar.jsx";
+import AnalysisSidebar from "../components/AnalysisSidebar";
 import FeedbackBubble from "../../feedback/components/FeedbackBubble.jsx";
 import FeedbackPopup from "../../feedback/components/FeedbackPopup.jsx";
 
 // Custom hooks
-import useAnalyses from "../hooks/useAnalyses.js";
-import useAnalysisData from "../hooks/useAnalysisData.js";
+import useAnalyses from "../hooks/useAnalyses";
+import useAnalysisData from "../hooks/useAnalysisData";
+import type { UseAnalysesReturn } from "../hooks/useAnalyses";
 
 export default function AnalysisScreen() {
     const navigate = useNavigate();
     const { setAnalysis, issue, activeIssue, setActiveIssue, totalIssues, videoURL, analysisError } = useAnalysisData();
 
-    const { activeAnalysis, allAnalyses, setActiveAnalysisById, loading, error } = useAnalyses();
+    const { activeAnalysis, allAnalyses, setActiveAnalysisById, loading, error }: UseAnalysesReturn = useAnalyses();
 
-    const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
+    const [showFeedbackPopup, setShowFeedbackPopup] = useState<boolean>(false);
 
-    const [showSharePopup, setShowSharePopup] = useState(false);
+    const [showSharePopup, setShowSharePopup] = useState<boolean>(false);
     const share_button_url = window.location.origin + "/dashboard/analysis?analysisId=" + (activeAnalysis ? activeAnalysis.analysis_id : "");
 
     useEffect(() => {
@@ -31,7 +32,7 @@ export default function AnalysisScreen() {
     }, [activeAnalysis, setAnalysis]);
 
     // Handle switching analyses from sidebar
-    const handleSelectAnalysis = async (analysisId) => {
+    const handleSelectAnalysis = async (analysisId: string): Promise<void> => {
         await setActiveAnalysisById(analysisId);
         setActiveIssue(0); // Reset to first issue
     };
@@ -59,7 +60,7 @@ export default function AnalysisScreen() {
                 ) : activeAnalysis ? (
                     <>
                         <ResultBox
-                            analysis={activeAnalysis.analysis_results}
+                            analysis={activeAnalysis}
                             issue={issue}
                             totalIssues={totalIssues}
                             video_url={videoURL}
@@ -75,7 +76,12 @@ export default function AnalysisScreen() {
                         />
                     </>
                 ) : (
-                    <TextBox header={"You have no analysises made yet"} ctaOnClick={() => navigate("/dashboard/upload")} ctaText={"Create Analysis"} />
+                    <TextBox 
+                        header={"You have no analyses made yet"} 
+                        text={"Upload a video to get your first swing analysis"}
+                        ctaOnClick={() => navigate("/dashboard/upload")} 
+                        ctaText={"Create Analysis"} 
+                    />
                 )
 
                 }
