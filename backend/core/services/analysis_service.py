@@ -88,9 +88,14 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
         return {"analysis_id": analysis.id, "upload_url": upload_url}
     except Exception as e:
         if analysis:
-            analysis.error_message = str(e)
-            analysis.success = False
-            update_analysis(analysis=analysis, session=db_session)
+            try:
+                analysis.error_message = str(e)
+                analysis.success = False
+                analysis.status = "failed"
+                update_analysis(analysis=analysis, session=db_session)
+                db_session.commit()  # Commit error state before re-raising
+            except Exception:
+                pass  # If we can't save error state, continue with original exception
         raise
 
 
@@ -204,9 +209,14 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         
         return from_analysis_object_to_dto(analysis_object)
     except Exception as e:
-        analysis_object.error_message = str(e)
-        analysis_object.success = False
-        update_analysis(analysis=analysis_object, session=db_session)
+        try:
+            analysis_object.error_message = str(e)
+            analysis_object.success = False
+            analysis_object.status = "failed"
+            update_analysis(analysis=analysis_object, session=db_session)
+            db_session.commit()  # Commit error state before re-raising
+        except Exception:
+            pass  # If we can't save error state, continue with original exception
         raise
 
 
