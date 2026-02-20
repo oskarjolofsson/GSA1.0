@@ -17,7 +17,7 @@ async function feedbackFetch(
   const json = await res.json().catch(() => null);
 
   if (!res.ok) {
-    throw new Error(json?.error || `HTTP ${res.status}`);
+    throw new Error(json?.detail || `HTTP ${res.status}`);
   }
 
   return json;

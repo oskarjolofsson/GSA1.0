@@ -23,8 +23,13 @@ class DrillService {
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Server error ${response.status}: ${text || response.statusText}`);
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `Server error ${response.status}`);
+      } catch (jsonError) {
+        // Fallback if response is not JSON
+        throw new Error(`Server error ${response.status}: ${response.statusText}`);
+      }
     }
 
     return await response.json();

@@ -160,7 +160,7 @@ class UploadService {
   async parseErrorResponse(response) {
     try {
       const errorData = await response.json();
-      return errorData.error || 'Request failed';
+      return errorData.detail || 'Request failed';
     } catch {
       const text = await response.text();
       return text || 'Request failed';

@@ -23,8 +23,13 @@ class UserService {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Fetch error: ${response.status} ${response.statusText} - ${errorText}`);
+            try {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `Fetch error: ${response.status} ${response.statusText}`);
+            } catch (jsonError) {
+                // Fallback if response is not JSON
+                throw new Error(`Fetch error: ${response.status} ${response.statusText}`);
+            }
         }
 
         return response;
