@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 
 class CreateAnalysisRequest(BaseModel):
-    model: str
+    model: str | None = None
     start_time: float
     end_time: float
     prompt_shape: str | None = None
@@ -24,7 +24,7 @@ class GetAnalysis(BaseModel):
     user_id: UUID
     video_id: UUID
     
-    model_version: str
+    model_version: str | None = None
     status: str
     success: bool | None
     error_message: str | None

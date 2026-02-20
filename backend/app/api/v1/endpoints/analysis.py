@@ -30,6 +30,20 @@ from core.services.video import get_video_read_url_by_analysis
 router = APIRouter()
 
 
+@router.get("/{analysis_id}", response_model=GetAnalysis)
+def get_analysis(
+    analysis_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get details of a specific analysis.
+    """
+    analysis = service_get_analysis_by_id(analysis_id, db_session=db)
+
+    return GetAnalysis.from_domain(analysis)
+
+
 @router.post("/", response_model=CreateAnalysisResponse, status_code=201)
 def create_analysis(
     request: CreateAnalysisRequest,
@@ -87,30 +101,16 @@ def run_analysis(
 
 @router.get("/", response_model=list[GetAnalysis])
 def list_analyses(
-    user_id: UUID,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """
-    List all analyses for a specific user.
+    List all analyses for the current authenticated user.
     """
+    user_id = UUID(current_user["user_id"])
     analyses = service_get_analyses_by_user_id(user_id, db_session=db)
 
     return [GetAnalysis.from_domain(analysis) for analysis in analyses]
-
-
-@router.get("/{analysis_id}", response_model=GetAnalysis)
-def get_analysis(
-    analysis_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    Get details of a specific analysis.
-    """
-    analysis = service_get_analysis_by_id(analysis_id, db_session=db)
-
-    return GetAnalysis.from_domain(analysis)
 
 
 @router.get("/{analysis_id}/video-url")

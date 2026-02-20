@@ -3,10 +3,20 @@ import time
 from typing import Optional
 from google import genai
 from google.genai import types
+from pydantic import BaseModel, Field
 
 from .prompts import VIDEO_SYSTEM_INSTRUCTIONS2, format_content
 
 from ...db.repositories.issues import get_all_issues
+
+class MetaData(BaseModel):
+    camera_view: str = Field(..., description="Camera view of the swing (unknown | face_on | down_the_line)")
+    club_type: str = Field(..., description="Type of club used in the swing (unknown | driver | iron | wedge)")
+
+class AnalysisResponse(BaseModel):
+    metadata: MetaData
+    issues: list = Field(default_factory=list)
+    success: bool = Field(..., description="Indicates if the analysis was successful")
 
 
 def _upload_and_wait(client: genai.Client, video_path: str) -> types.File:
@@ -52,7 +62,9 @@ def _call_gemini_api(
             system_instruction=[{"text": VIDEO_SYSTEM_INSTRUCTIONS2}],
             temperature=0.0,
             top_p=0.1,
-            top_k=1
+            top_k=1,
+            response_mime_type="application/json",
+            response_json_schema=AnalysisResponse.model_json_schema()
         ),
         contents=contents
     )
