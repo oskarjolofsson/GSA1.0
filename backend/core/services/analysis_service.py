@@ -1,3 +1,5 @@
+from xmlrpc.client import DateTime
+
 from .dtos.analysis_service_dto import (
     CreateAnalysisDTO,
     GetAnalaysisIssueDTO,
@@ -44,6 +46,7 @@ from ..infrastructure.db.repositories.prompts import (
     get_prompt_by_analysis_id,
 )
 from ..infrastructure.db.models.Prompt import Prompt
+from datetime import datetime, timezone
 
 
 def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
@@ -105,6 +108,7 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
     try:
         # Set processing state on analysis object
         analysis_object.status = "processing"
+        analysis_object.started_at = datetime.now(timezone.utc)
         analysis_object = update_analysis(analysis=analysis_object, session=db_session)
 
         # Fetch prompts for this analysis
@@ -165,6 +169,9 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
             # Log thumbnail generation failure but don't fail the analysis
             print(f"Warning: Failed to generate thumbnail: {str(e)}")
             raise InvalidVideoException(f"Failed to generate thumbnail: {str(e)}")
+        finally:
+            analysis_object.completed_at = datetime.now(timezone.utc)
+            update_analysis(analysis=analysis_object, session=db_session)
         
         # Delete the video file from the temporary location
         video_file.remove()

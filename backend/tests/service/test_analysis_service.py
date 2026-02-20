@@ -139,6 +139,9 @@ class TestRunAnalysis:
         assert analysis.status == "completed", f"Expected analysis status to be 'completed', got '{analysis.status}'"
         assert analysis.success is True, "Analysis did not complete successfully."
         assert analysis.error_message is None, f"Unexpected error message: {analysis.error_message}"
+        assert analysis.started_at is not None, "Analysis started_at timestamp was not set."
+        assert analysis.completed_at is not None, "Analysis completed_at timestamp was not set."
+        assert analysis.completed_at >= analysis.started_at, "Analysis completed_at is before started_at."
 
     def test_run_analysis_creates_analysis_issues(
         self,
