@@ -8,6 +8,7 @@ export interface Analysis {
     status: string;
     success: boolean | null;
     error_message: string | null;
+    thumbnail_url: string | null;
     created_at: string;
     started_at: string | null;
     completed_at: string | null;

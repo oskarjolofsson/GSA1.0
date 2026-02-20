@@ -29,6 +29,8 @@ class GetAnalysis(BaseModel):
     success: bool | None
     error_message: str | None
     
+    thumbnail_url: str | None = None
+    
     created_at: datetime
     started_at: datetime | None
     completed_at: datetime | None
@@ -36,7 +38,7 @@ class GetAnalysis(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     
     @classmethod
-    def from_domain(cls, dto) -> "GetAnalysis":
+    def from_domain(cls, dto, thumbnail_url: str | None = None) -> "GetAnalysis":
         """Convert GetAnalaysisDTO to GetAnalysis schema."""
         return cls(
             analysis_id=dto.analysis_id,
@@ -46,6 +48,7 @@ class GetAnalysis(BaseModel):
             status=dto.status,
             success=dto.success,
             error_message=dto.error_message,
+            thumbnail_url=thumbnail_url,
             created_at=dto.created_at,
             started_at=dto.started_at,
             completed_at=dto.completed_at,
