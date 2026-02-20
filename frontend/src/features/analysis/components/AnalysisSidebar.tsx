@@ -94,34 +94,48 @@ export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectA
                           : "bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20"
                       }`}
                     >
-                      {/* Date header */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="text-xs text-slate-400 font-medium">
-                          
-                          {formatTime(analysis.created_at)}
-                        </span>
-                      </div>
+                      <div className="grid grid-cols-2 gap-2">
 
-                      {/* Time */}
-                      <div className="text-sm text-slate-300 font-semibold mb-1">
-                        {formatDate(analysis.created_at)}
-                      </div>
-
-                      {/* Analysis ID (truncated) */}
-                      <div className="text-xs text-slate-500 font-mono truncate">
-                        
-                      </div>
-
-                      {/* Active indicator */}
-                      {isActive && (
-                        <div className="mt-2 flex items-center gap-1.5">
-                          <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-xs text-emerald-400 font-medium">
-                            Active
+                        {/* Info */}
+                        <div>
+                        {/* Date header */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="text-xs text-slate-400 font-medium">
+                            
+                            {formatTime(analysis.created_at)}
                           </span>
                         </div>
-                      )}
+
+                        {/* Time */}
+                        <div className="text-sm text-slate-300 font-semibold mb-1">
+                          {formatDate(analysis.created_at)}
+                        </div>
+
+                        {/* Active indicator */}
+                        {isActive && (
+                          <div className="mt-2 flex items-center gap-1.5">
+                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="text-xs text-emerald-400 font-medium">
+                              Active
+                            </span>
+                          </div>
+                        )}
+                        </div>
+
+                        {/* Thumbnail */}
+                        <div className="flex items-center justify-end">
+                          {analysis.thumbnail_url ? (
+                            <img
+                              src={analysis.thumbnail_url}
+                              alt="Analysis thumbnail"
+                              className="w-16 h-16 rounded-md object-cover border border-white/10"
+                            />
+                          ) : (
+                            null
+                          )}
+                        </div>
+                      </div>
                     </button>
                   );
                 })
