@@ -1,13 +1,11 @@
 const API = import.meta.env.VITE_API_URL;
 
 async function feedbackFetch(
-  fetcher,
-  token,
-  endpoint,
-  method,
-  body
+  token: string,
+  method: string,
+  body?: any
 ) {
-  const res = await fetcher(`${API}/api/v1/feedback/${endpoint}`, {
+  const res = await fetch(`${API}/api/v1/feedback`, {
     method,
     headers: {
       "Content-Type": "application/json",
@@ -27,16 +25,15 @@ async function feedbackFetch(
 
 export const feedbackService = {
   async submitFeedback(
-    fetcher,
-    token,
-    rating,
-    comments
+    token: string,
+    rating: number,
+    comments?: string
   ) {
     if (!rating) {
       throw new Error("Rating is required");
     }
 
-    return feedbackFetch(fetcher, token, "give", "POST", {
+    return feedbackFetch(token, "POST", {
       rating,
       comments: comments ?? "",
     });
