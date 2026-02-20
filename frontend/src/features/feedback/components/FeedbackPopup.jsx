@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useFeedback } from '../hooks/useFeedback.js';
+import { useFeedback } from '../hooks/useFeedback';
 
 export default function FeedbackPopup({ isOpen, onClose }) {
   const [entered, setEntered] = useState(false);
@@ -52,9 +52,9 @@ export default function FeedbackPopup({ isOpen, onClose }) {
   }
 
   const ratingButtons = [
-    { id: 'bad', label: 'Bad', color: 'red' },
-    { id: 'medium', label: 'Medium', color: 'yellow' },
-    { id: 'good', label: 'Good', color: 'green' },
+    { id: 1, label: 'Bad', color: 'red' },
+    { id: 2, label: 'Medium', color: 'yellow' },
+    { id: 3, label: 'Good', color: 'green' },
   ];
 
   const colorClasses = {
