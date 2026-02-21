@@ -10,6 +10,7 @@ interface UseAnalysesReturn {
     setActiveAnalysisById: (analysisId: string) => Promise<void>;
     loading: boolean;
     error: string | null;
+    deleteActiveAnalysis: () => Promise<void>;
 }
 
 export type { UseAnalysesReturn };
@@ -135,11 +136,26 @@ export default function useAnalyses(): UseAnalysesReturn {
         }
     };
 
+    const deleteActiveAnalysis = async (): Promise<void> => {
+        if (!activeAnalysis) return;
+        try {
+            await analysisService.deleteAnalysis(activeAnalysis.analysis_id);
+            // Refresh the list of analyses after deletion
+            const updatedAnalyses = await analysisService.getAnalysesForUser();
+            setAllAnalyses(updatedAnalyses);
+            setActiveAnalysis(null);
+        } catch (err) {
+            console.error('Error deleting analysis:', err);
+            setError(err instanceof Error ? err.message : 'Failed to delete analysis');
+        }
+    };
+
     return {
         allAnalyses,
         activeAnalysis,
         setActiveAnalysisById,
         loading,
-        error
+        error,
+        deleteActiveAnalysis
     };
 }
