@@ -7,7 +7,7 @@ export function AnalyzingScreen({
   error = null,
   isComplete = false,
   onErrorDismiss,
-  estimatedTimeSeconds = 30,
+  estimatedTimeSeconds = 45,
 }) {
   const getStatusMessage = () => {
     if (isComplete) {
