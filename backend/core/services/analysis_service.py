@@ -128,6 +128,9 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         except Exception as e:
             raise InvalidVideoException(f"Failed to download video from storage: {str(e)}")
         video_file = Video_file(f=video_data)
+        if (video_object.end_time and video_object.start_time) and (video_object.end_time > video_object.start_time):
+            video_file = video_file.trim(start_seconds=video_object.start_time.total_seconds(), end_seconds=video_object.end_time.total_seconds())
+        put_object(key=video_object.video_key, data=video_file.read(), content_type="video/mp4")    # Update the video in R2 to be trimmed
 
         # Start analysis process with prompts from database
         analysis_results: dict = (
@@ -321,7 +324,7 @@ def _extract_thumbnail_webp(
         "-i", input_path,
         "-frames:v", "1",
         "-c:v", "libwebp",
-        "-quality", "85",
+        "-quality", "15",
         output_path,
     ]
 

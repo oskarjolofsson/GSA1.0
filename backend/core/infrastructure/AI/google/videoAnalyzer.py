@@ -124,7 +124,7 @@ def analyze_video(
     
     try:
         # Upload video and wait for processing
-        video_file = _upload_and_wait(client, video_path)
+        video_file: types.File = _upload_and_wait(client, video_path)
         
         # Get list of all issues in database
         if not db_session:

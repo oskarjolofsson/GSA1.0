@@ -207,3 +207,9 @@ class Video_file(File):
         self.remove()
         self._path = out_path
         return self
+    
+    
+    def read(self) -> bytes:
+        """Read video file content as bytes."""
+        with open(self.path(), "rb") as f:
+            return f.read()
