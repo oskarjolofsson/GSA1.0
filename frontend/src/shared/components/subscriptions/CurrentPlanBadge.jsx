@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../../auth/authContext';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Check } from 'lucide-react';
 import SubscriptionService from '../../../services/activeSubscription';
 

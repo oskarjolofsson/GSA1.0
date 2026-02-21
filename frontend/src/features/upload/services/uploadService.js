@@ -1,4 +1,4 @@
-import { auth } from '../../../lib/firebase';
+import { supabase } from '@/lib/supabase';
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -13,10 +13,11 @@ class UploadService {
    * @throws {Error} If user is not signed in
    */
   async getAuthHeader() {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Not signed in');
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    if (!session) throw new Error('Not signed in');
 
-    const idToken = await user.getIdToken();
+    const idToken = await session.access_token;
     return {
       'Authorization': `Bearer ${idToken}`,
     };
@@ -44,20 +45,29 @@ class UploadService {
       const authHeader = await this.getAuthHeader();
 
       // Step 1: Create analysis and get signed upload URL
-      const createForm = new FormData();
-      createForm.append('start_time', String(startTime));
-      createForm.append('end_time', String(endTime));
-      createForm.append('model', AImodel);
+      const requestBody = {
+        start_time: startTime,
+        end_time: endTime,
+        model: AImodel,
+      };
 
-      // Include advanced settings
-      for (const [key, value] of Object.entries(advancedInput)) {
-        createForm.append(key, String(value));
+      // Map advanced settings to backend field names
+      if (advancedInput.shape) requestBody.prompt_shape = advancedInput.shape;
+      if (advancedInput.height) requestBody.prompt_height = advancedInput.height;
+      if (advancedInput.miss) {
+        requestBody.prompt_misses = Array.isArray(advancedInput.miss) 
+          ? advancedInput.miss.join(',') 
+          : advancedInput.miss;
       }
+      if (advancedInput.extra) requestBody.prompt_extra = advancedInput.extra;
 
-      const createRes = await fetch(API + '/api/v1/analysis/create', {
+      const createRes = await fetch(API + '/api/v1/analyses/', {
         method: 'POST',
-        headers: authHeader,
-        body: createForm,
+        headers: {
+          ...authHeader,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
       });
 
       if (!createRes.ok) {
@@ -88,8 +98,8 @@ class UploadService {
       }
 
       // Step 3: Confirm upload and trigger analysis
-      const confirmRes = await fetch(API + `/api/v1/analysis/${newAnalysisId}/uploaded`, {
-        method: 'POST',
+      const confirmRes = await fetch(API + `/api/v1/analyses/${newAnalysisId}/`, {
+        method: 'PATCH',
         headers: authHeader,
       });
 
@@ -117,7 +127,7 @@ class UploadService {
     try {
       const authHeader = await this.getAuthHeader();
 
-      const response = await fetch(API + `/api/v1/analysis/${analysisId}`, {
+      const response = await fetch(API + `/api/v1/analyses/${analysisId}`, {
         method: 'GET',
         headers: authHeader,
       });
@@ -129,13 +139,11 @@ class UploadService {
 
       const data = await response.json();
       
-      // Extract status from analysis object
-      // The backend returns { success: true, analysis: {...}, video_url: "..." }
-      const analysis = data.analysis || {};
+      // Backend returns GetAnalysis directly, not wrapped
       return {
-        status: analysis.status || 'processing',
-        error_message: analysis.error_message || null,
-        analysis: analysis,
+        status: data.status || 'processing',
+        error_message: data.error_message || null,
+        analysis: data,
       };
     } catch (err) {
       throw err;
@@ -152,7 +160,7 @@ class UploadService {
   async parseErrorResponse(response) {
     try {
       const errorData = await response.json();
-      return errorData.error || 'Request failed';
+      return errorData.detail || 'Request failed';
     } catch {
       const text = await response.text();
       return text || 'Request failed';

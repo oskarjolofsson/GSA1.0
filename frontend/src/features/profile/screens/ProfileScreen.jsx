@@ -1,4 +1,4 @@
-import { useAuth } from '../../../auth/authContext';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import InfoRow from '../components/InfoRow.jsx';
 import AnalyticsConsentToggle from '../components/AnalyticsConsentToggle.jsx';
 
@@ -16,7 +16,7 @@ export default function ProfileScreen() {
                         <InfoRow
                             label="Name"
                             isLoading={loading}
-                            value={user?.displayName || '—'}
+                            value={user.name || '—'}
                         />
 
                         {/* Email */}
@@ -30,7 +30,7 @@ export default function ProfileScreen() {
                         {/* Helper text */}
                         <p className="text-sm text-gray-400 mb-4">
                             For any questions regarding your account, please contact support at{' '}
-                            <a href="mailto:trueswing25@gmail.com">trueswing25@gmail.com</a>.
+                            <a href="mailto:team@trueswing.se">team@trueswing.se</a>.
                         </p>
 
                         {/* Line */}

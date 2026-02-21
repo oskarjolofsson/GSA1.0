@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAuth } from "../../../auth/authContext.jsx"; // exposes { user, loading }
+import { useAuth } from "@/features/auth/hooks/useAuth"; // exposes { user, loading }
 import { useNavigate } from "react-router-dom";
+import { signInWithGoogle } from "@/features/auth/api/authApi";
 
 export default function SignInPopup({
-  onStartSignIn,         // () => Promise<void> | void  (start your sign-in flow)
   onClose,               // optional callback when the popup is closed (backdrop / escape)
   title = "Sign In",
   subtitle = "Get access to the best athletic trainer on the web",
@@ -27,7 +27,7 @@ export default function SignInPopup({
   const handleStart = async () => {
     setError("");
     try {
-      const maybePromise = onStartSignIn?.();
+      const maybePromise = signInWithGoogle?.();
       if (maybePromise && typeof maybePromise.then === "function") {
         await maybePromise;
       }
@@ -150,7 +150,7 @@ export default function SignInPopup({
           {/* Success hint (very brief; parent will unmount us) */}
           {user && (
             <p className="text-sm text-emerald-300">
-              Signed in — loading your app…
+              Signed in — loading your dashboard…
             </p>
           )}
         </div>

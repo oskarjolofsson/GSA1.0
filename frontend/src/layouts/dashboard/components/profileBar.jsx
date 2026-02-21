@@ -1,14 +1,15 @@
 import { User, Settings, ArrowLeft, LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from '../../../auth/authContext';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Link } from "react-router-dom";
+import { signOut } from "@/features/auth/api/authApi";
 
 export default function ProfileBar({ showName = true, onOpenSidebar }) {
     const [open, setOpen] = useState(false);
     const btnRef = useRef(null);
     const menuRef = useRef(null);
     const rootRef = useRef(null);
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
 
     // Close on outside click
     useEffect(() => {
@@ -44,7 +45,7 @@ export default function ProfileBar({ showName = true, onOpenSidebar }) {
                     setOpen((v) => !v);
                     onOpenSidebar?.();
                 }}
-                className="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-200 hover:bg-gray-700 hover:bg-opacity-40 w-full"
+                className="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-200 bg-gray-800 hover:bg-gray-700 hover:bg-opacity-40 w-full"
             >
                 <div className="flex-shrink-0">
                     {user.photoURL ? (
@@ -61,7 +62,7 @@ export default function ProfileBar({ showName = true, onOpenSidebar }) {
                 </div>
                 {showName && (
                     <div className="flex flex-col items-start">
-                        <span className="text-sm font-semibold text-white">{user.displayName}</span>
+                        <span className="text-sm font-semibold text-white">{user.name}</span>
                     </div>
                 )}
             </button>
@@ -80,7 +81,7 @@ export default function ProfileBar({ showName = true, onOpenSidebar }) {
                 <MenuItem name="Main Site" href="/?view=landing" icon={<ArrowLeft className="h-4 w-4" />} />
                 <MenuItem name="My Profile" href="/dashboard/profile" icon={<User className="h-4 w-4" />} />
                 <div className="my-1 h-px bg-gray-700" />
-                <MenuItem name="Sign Out" onClick={logout} icon={<LogOut className="h-4 w-4" />} />
+                <MenuItem name="Sign Out" onClick={signOut} icon={<LogOut className="h-4 w-4" />} />
             </div>
         </div>
     );
