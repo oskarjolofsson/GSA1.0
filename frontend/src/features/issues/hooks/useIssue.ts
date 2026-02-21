@@ -7,6 +7,7 @@ interface UseIssueReturn {
     loading: boolean;
     error: string | null;
     refreshIssues: () => Promise<void>;
+    activeIssue: Issue | null;
 }
 
 export type { UseIssueReturn };
@@ -18,6 +19,7 @@ export function useIssue(): UseIssueReturn {
     const [issues, setIssues] = useState<Issue[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [activeIssue, setActiveIssue] = useState<Issue | null>(null);
 
     const fetchIssues = async () => {
         try {
@@ -25,6 +27,7 @@ export function useIssue(): UseIssueReturn {
             setError(null);
             const data = await issueService.getUserIssues();
             setIssues(data);
+            setActiveIssue(data.length > 0 ? data[0] : null);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to fetch issues';
             setError(errorMessage);
@@ -43,6 +46,7 @@ export function useIssue(): UseIssueReturn {
         loading,
         error,
         refreshIssues: fetchIssues,
+        activeIssue,
     };
 }
 

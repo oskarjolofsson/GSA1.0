@@ -1,4 +1,4 @@
-import IssueExplainerScreen from "../../features/issues/screens/IssueExplainerScreen.jsx";
+import IssueExplainerScreen from "../../features/issues/screens/IssueExplainerScreen";
 
 export default function Issues() {
   return <IssueExplainerScreen />;
