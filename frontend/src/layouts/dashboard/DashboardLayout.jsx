@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
-import SessionHeader from "../../shared/components/sessionHeader.jsx";
-import TopographyBackground from '../../shared/layout/topography.jsx';
-import DashboardSidebar from "./components/dashboardSidebar.jsx";
+import SessionHeader from "../../shared/components/sessionHeader";
+import TopographyBackground from '../../shared/layout/topography';
+import DashboardSidebar from "./components/dashboardSidebar";
 
 export default function DashboardLayout() {
   return (
