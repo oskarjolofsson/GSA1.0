@@ -1,13 +1,16 @@
-import { auth } from "./firebase";
+import { supabase } from '@/lib/supabase';
 
 const API = import.meta.env.VITE_API_URL || '';
 
 class UserService {
 
     async fetchAuthenticated(url, options) {
-        const user = auth.currentUser;
-        if (!user) throw new Error('Not signed in');
-        const idToken = await user.getIdToken();
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        const session = data.session;
+        if (!session) throw new Error('Not signed in');
+        const idToken = session.access_token;
 
         const headers = {
             ...options?.headers,
@@ -20,8 +23,13 @@ class UserService {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Fetch error: ${response.status} ${response.statusText} - ${errorText}`);
+            try {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `Fetch error: ${response.status} ${response.statusText}`);
+            } catch (jsonError) {
+                // Fallback if response is not JSON
+                throw new Error(`Fetch error: ${response.status} ${response.statusText}`);
+            }
         }
 
         return response;
@@ -60,8 +68,14 @@ async function getAnalyticsConsent() {
         return cached === "true";
     }
 
-    const user = auth.currentUser;
-    if (user) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    const session = data.session;
+    if (!session) {
+        return false; // Not signed in, so no consent
+    }
+
+    if (session) {
         try {
             const consent = await userService.getConsent();    
             localStorage.setItem("analytics_consent", consent.toString());
@@ -81,8 +95,11 @@ async function setAnalyticsConsent(consent) {
     consent = Boolean(consent);
     localStorage.setItem("analytics_consent", consent.toString());
     
-    const user = auth.currentUser;
-    if (user) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    const session = data.session;
+    
+    if (session) {
         try {
             await userService.setConsent(consent);
         } catch (error) {

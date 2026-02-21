@@ -14,7 +14,7 @@ import HomeDashboard from "./dashboard/home.jsx";
 
 // Import components
 import PublicLayout from './public/layout.jsx';
-import RequireAuth from '../auth/requireAuth.jsx';
+import RequireAuth from '@/features/auth/routes/RequireAuth';
 import DashboardLayout from './dashboard/layout.jsx';
 
 export const router = createBrowserRouter([

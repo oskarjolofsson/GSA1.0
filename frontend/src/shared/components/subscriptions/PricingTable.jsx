@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import PlanCard from "./PlanCard";
 import SignInPopup from "../popup/signInPopup";
-import { useAuth } from "../../auth/authContext";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import MessagePopup from "../popup/MessagePopup";
 import SubscriptionService from "../../services/activeSubscription";
+import { signIn } from "@/features/auth/api/authApi";
 
 export default function PriceTable({ refreshTrigger = 0 }) {
   const [billingCycle, setBillingCycle] = useState("monthly");
@@ -11,7 +12,7 @@ export default function PriceTable({ refreshTrigger = 0 }) {
   const [message, setMessage] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { user, login } = useAuth();
+  const { user} = useAuth();
   const [activePriceId, setActivePriceId] = useState(null);
 
   const playerMonthlyPriceId = import.meta.env.VITE_PRICE_ID_PLAYER_MONTHLY;
@@ -227,7 +228,7 @@ export default function PriceTable({ refreshTrigger = 0 }) {
         </div>
 
         {showPopup && !user && (
-          <SignInPopup onStartSignIn={login} onClose={() => setShowPopup(false)} />
+          <SignInPopup onStartSignIn={signIn} onClose={() => setShowPopup(false)} />
         )}
 
         {message && (
