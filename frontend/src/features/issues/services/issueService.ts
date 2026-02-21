@@ -125,6 +125,19 @@ class IssueService {
     }
 
     /**
+     * Get all issues for the current user
+     */
+    async getUserIssues(): Promise<Issue[]> {
+        try {
+            const data = await this.fetchWithAuth<Issue[]>('/api/v1/issues/');
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Error in getUserIssues:', error);
+            throw new Error('Could not fetch user issues. Please try again later.');
+        }
+    }
+
+    /**
      * Update an issue
      */
     async updateIssue(issueId: string, request: UpdateIssueRequest): Promise<Issue> {

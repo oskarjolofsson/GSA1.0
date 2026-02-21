@@ -1,11 +1,6 @@
+import { Issue } from "@/features/issues/types"
 
-
-export default function PrimaryActionCard() {
-  const issue = {
-    id: 1,
-    title: "Over the Top",
-    progress: 70,
-  }
+export default function PrimaryActionCard({ issue }: { issue: Issue }) {
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50 shadow-xl">
@@ -19,11 +14,11 @@ export default function PrimaryActionCard() {
             <div className="h-2 w-full rounded-full bg-slate-700 overflow-hidden">
               <div
                 className="h-full rounded-full bg-emerald-400 transition-all duration-500"
-                style={{ width: `${issue.progress}%` }}
+                style={{ width: `${70}%` }}
               />
             </div>
             <p className="text-sm text-slate-400">
-              {issue.progress}% completed
+              {70}% completed
             </p>
           </div>
         </div>

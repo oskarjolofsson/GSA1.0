@@ -33,10 +33,10 @@ export default function ProfileScreen() {
                             <a href="mailto:team@trueswing.se">team@trueswing.se</a>.
                         </p>
 
-                        {/* Line */}
-                        <hr className="border-white/10 my-6" />
+                        {/* Line
+                        <hr className="border-white/10 my-6" /> */}
 
-                        <AnalyticsConsentToggle />
+                        {/* <AnalyticsConsentToggle /> */}
                     </div>
                 </section>
             </div>

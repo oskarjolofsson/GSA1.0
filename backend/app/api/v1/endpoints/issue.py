@@ -18,6 +18,7 @@ from core.services.issues_service import (
     get_issues_by_drill_id as service_get_issues_by_drill_id,
     update_issue as service_update_issue,
     delete_issue as service_delete_issue,
+    get_issues_by_user_id as service_get_issues_by_user_id,
 )
 from core.services.dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO
 
@@ -121,7 +122,7 @@ def get_issues_by_drill(
     return [GetIssue.from_domain(issue) for issue in issues]
 
 
-@router.get("/", response_model=list[GetIssue])
+@router.get("/all", response_model=list[GetIssue])
 def get_all_issues(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
@@ -133,7 +134,20 @@ def get_all_issues(
         JSON response with a list of all issues
     """
     issues = service_get_all_issues(db_session=db)
+    return [GetIssue.from_domain(issue) for issue in issues]
 
+@router.get("/", response_model=list[GetIssue])
+def get_issues_by_user(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    """
+    Get all issues created by a specific user.
+
+    Arguments:
+        user_id (UUID): User identifier
+
+    Returns:
+        List of issues created by the user
+    """
+    issues = service_get_issues_by_user_id(current_user["user_id"], db_session=db)
     return [GetIssue.from_domain(issue) for issue in issues]
 
 

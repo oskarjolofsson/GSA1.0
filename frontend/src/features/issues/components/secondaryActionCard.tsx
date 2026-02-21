@@ -1,5 +1,7 @@
-export default function SecondaryActionCard() {
-  const issue = {
+import { Issue } from "@/features/issues/types"
+
+export default function SecondaryActionCard({ issue }: { issue?: Issue }) {
+  const issueData = issue || {
     id: 2,
     title: "Early Extension",
     progress: 45,
@@ -17,7 +19,7 @@ export default function SecondaryActionCard() {
         <div className="flex-1 space-y-3">
 
           <h2 className="text-lg font-medium text-white/80">
-            {issue.title}
+            {issueData.title}
           </h2>
 
           {/* Progress bar */}
@@ -25,12 +27,12 @@ export default function SecondaryActionCard() {
             <div className="h-1.5 w-full rounded-full bg-slate-700/40 overflow-hidden">
               <div
                 className="h-full rounded-full bg-amber-400/60 transition-all duration-500"
-                style={{ width: `${issue.progress}%` }}
+                style={{ width: `${45}%` }}
               />
             </div>
 
             <p className="text-xs text-slate-500">
-              {issue.progress}% completed
+              {45}% completed
             </p>
           </div>
         </div>
