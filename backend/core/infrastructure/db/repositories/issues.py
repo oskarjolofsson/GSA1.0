@@ -1,6 +1,7 @@
 from ..models.Issue import Issue
 from ..models.AnalysisIssue import AnalysisIssue
 from ..models.IssueDrill import IssueDrill
+from ..models.Analysis import Analysis
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -33,6 +34,15 @@ def get_issues_by_drill_id(drill_id: UUID, session: Session) -> list[Issue]:
         .filter(IssueDrill.drill_id == drill_id)
         .all()
     )
+    
+    
+def get_issues_by_user_id(user_id: UUID, session: Session) -> list[Issue]:
+    return (session.query(Issue)
+        .join(AnalysisIssue, Issue.id == AnalysisIssue.issue_id)
+        .join(Analysis, AnalysisIssue.analysis_id == Analysis.id)
+        .filter(Analysis.user_id == user_id)
+        .distinct()
+        .all())
 
 
 # ------------ CREATE ------------

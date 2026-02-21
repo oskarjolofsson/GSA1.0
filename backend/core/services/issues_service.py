@@ -11,8 +11,11 @@ from core.infrastructure.db.repositories.issues import (
     get_issues_by_analysis_id as repo_get_issues_by_analysis_id,
     get_issues_by_drill_id as repo_get_issues_by_drill_id,
     get_all_issues as repo_get_all_issues,
+    get_issues_by_user_id as repo_get_issues_by_user_id,
 )
+#from core.infrastructure.db.repositories.analysis_issues import get_analysis_issue_by_user_id
 from core.infrastructure.db.models.Issue import Issue
+from core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueResponseDTO
 
 
@@ -60,6 +63,13 @@ def get_issues_by_drill_id(drill_id: UUID, db_session: Session) -> list[IssueRes
     """Get all issues associated with a specific drill."""
     issues = repo_get_issues_by_drill_id(drill_id, db_session)
 
+    return [from_issue_to_response_dto(issue) for issue in issues]
+
+
+def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
+    """Get all issues created by a specific user.""" 
+    #analysis_issues: list[AnalysisIssue] = get_analysis_issue_by_user_id(user_id, db_session)
+    issues: list[Issue] = repo_get_issues_by_user_id(user_id, db_session)
     return [from_issue_to_response_dto(issue) for issue in issues]
 
 
