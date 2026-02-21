@@ -8,6 +8,7 @@ interface UseIssueReturn {
     error: string | null;
     refreshIssues: () => Promise<void>;
     activeIssue: Issue | null;
+    selectIssue: (issueId: string) => void;
 }
 
 export type { UseIssueReturn };
@@ -41,12 +42,20 @@ export function useIssue(): UseIssueReturn {
         fetchIssues();
     }, []);
 
+    const selectIssue = (issueId: string) => {
+        const issue = issues.find((i) => i.id === issueId);
+        if (issue) {
+            setActiveIssue(issue);
+        }
+    };
+
     return {
         issues,
         loading,
         error,
         refreshIssues: fetchIssues,
         activeIssue,
+        selectIssue,
     };
 }
 

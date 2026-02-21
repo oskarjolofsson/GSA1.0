@@ -3,6 +3,7 @@ import ImagePlaceHolder from "../components/ImagePlaceHolder";
 import MainText from "../components/MainText";
 import DetailCard from "../components/DetailCard";
 import CTAButton from "../components/CTAButton";
+import IssuesSidebar from "../components/IssuesSidebar";
 import type { Issue } from "@/features/issues/types";
 import { useIssue } from "@/features/issues/hooks/useIssue";
 
@@ -31,7 +32,7 @@ const getExplainerCards = (issue: Issue) => [
 ];
 
 export default function IssueExplainerScreen() {
-    const { loading, error, activeIssue } = useIssue();
+    const { loading, error, activeIssue, issues, selectIssue } = useIssue();
 
     if (loading) {
         return (
@@ -60,31 +61,40 @@ export default function IssueExplainerScreen() {
     const explainerCards = getExplainerCards(activeIssue);
 
     return (
-        <div className="w-full h-full p-6 sm:p-8">
-            {/* Hero Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
-                <ImagePlaceHolder />
-                <MainText 
-                    title={activeIssue.title} 
-                    description={activeIssue.shot_outcome} 
-                />
-            </div>
-
-            {/* Info Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {explainerCards.map((card, index) => (
-                    <DetailCard
-                        key={card.title}
-                        icon={card.icon}
-                        title={card.title}
-                        description={card.description}
-                        colorClass={DETAIL_CARD_COLORS[index]}
+        <>
+            <div className="w-full h-full p-6 sm:p-8">
+                {/* Hero Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+                    <ImagePlaceHolder />
+                    <MainText 
+                        title={activeIssue.title} 
+                        description={activeIssue.shot_outcome} 
                     />
-                ))}
+                </div>
+
+                {/* Info Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {explainerCards.map((card, index) => (
+                        <DetailCard
+                            key={card.title}
+                            icon={card.icon}
+                            title={card.title}
+                            description={card.description}
+                            colorClass={DETAIL_CARD_COLORS[index]}
+                        />
+                    ))}
+                </div>
+
+                {/* CTA Button */}
+                <CTAButton />
             </div>
 
-            {/* CTA Button */}
-            <CTAButton />
-        </div>
+            {/* Issues Sidebar */}
+            <IssuesSidebar
+                allIssues={issues}
+                activeIssue={activeIssue}
+                onSelectIssue={selectIssue}
+            />
+        </>
     );
 }
