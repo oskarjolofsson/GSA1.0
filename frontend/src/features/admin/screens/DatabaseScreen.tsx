@@ -39,7 +39,7 @@ export default function DatabaseScreen() {
     }
 
     return (
-        <div className="justify-center p-10">
+        <div className="justify-center p-2 sm:p-6">
             <div className="flex items-center justify-between mb-6 ml-6 mr-6">
                 <h1 className="text-3xl font-bold text-white">Database Administration</h1>
                 <button
@@ -52,7 +52,7 @@ export default function DatabaseScreen() {
             </div>
             
             {/* Issues Section */}
-            <div className="ml-6 mr-6 mt-8">
+            <div className="mx-2 sm:mx-6 mt-8">
                 <div className="bg-[#0e1428]/80 backdrop-blur-md border border-white/10 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold text-white">
@@ -67,7 +67,7 @@ export default function DatabaseScreen() {
             </div>
 
             {/* Drills Section */}
-            <div className="ml-6 mr-6 mt-8">
+            <div className="mx-2 sm:mx-6 mt-8">
                 <div className="bg-[#0e1428]/80 backdrop-blur-md border border-white/10 rounded-lg p-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold text-white">
