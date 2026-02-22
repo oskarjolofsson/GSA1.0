@@ -138,6 +138,19 @@ class IssueService {
     }
 
     /**
+     * Get all issues (admin endpoint)
+     */
+    async getAllIssuesAdmin(): Promise<Issue[]> {
+        try {
+            const data = await this.fetchWithAuth<Issue[]>('/api/v1/issues/all');
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Error in getAllIssuesAdmin:', error);
+            throw new Error('Could not fetch all issues. Please try again later.');
+        }
+    }
+
+    /**
      * Update an issue
      */
     async updateIssue(issueId: string, request: UpdateIssueRequest): Promise<Issue> {

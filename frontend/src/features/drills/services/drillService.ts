@@ -125,6 +125,19 @@ class DrillService {
     }
 
     /**
+     * Get all drills (admin endpoint)
+     */
+    async getAllDrills(): Promise<Drill[]> {
+        try {
+            const data = await this.fetchWithAuth<Drill[]>('/api/v1/drills/all');
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Error in getAllDrills:', error);
+            throw new Error('Could not fetch all drills. Please try again later.');
+        }
+    }
+
+    /**
      * Update a drill
      */
     async updateDrill(drillId: string, request: UpdateDrillRequest): Promise<Drill> {

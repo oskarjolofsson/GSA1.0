@@ -13,6 +13,10 @@ def get_drill_by_id(drill_id, session: Session) -> Drill:
     return session.get(Drill, drill_id)
 
 
+def get_all_drills(session: Session) -> list[Drill]:
+    return session.query(Drill).all()
+
+
 def get_drills_by_issue_id(issue_id: UUID, session: Session) -> list[Drill]:
     return (
         session.query(Drill)

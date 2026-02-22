@@ -5,7 +5,6 @@ import AdminSidebar from "./components/AdminSidebar";
 export default function AdminLayout() {
   return (
     <div className="fixed inset-0 bg-[#0b1020] text-slate-100 overflow-auto flex flex-col min-h-screen">
-
       <TopographyBackground />
 
       {/* Sidebar and Content */}
