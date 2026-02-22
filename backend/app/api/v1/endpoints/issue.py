@@ -59,27 +59,19 @@ def create_issue(
     )
 
 
-@router.get("/{issue_id}", response_model=GetIssue)
-def get_issue(
-    issue_id: UUID,
+@router.get("/all", response_model=list[GetIssue])
+def get_all_issues(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Get details of a specific issue.
-
-    Arguments:
-        issue_id (UUID): Issue identifier
+    Get all issues.
 
     Returns:
-        JSON response with issue details
+        JSON response with a list of all issues
     """
-    issue = service_get_issue_by_id(issue_id, db_session=db)
-    
-    if not issue:
-        raise HTTPException(status_code=404, detail="Issue not found")
-
-    return GetIssue.from_domain(issue)
+    issues = service_get_all_issues(db_session=db)
+    return [GetIssue.from_domain(issue) for issue in issues]
 
 
 @router.get("/by-analysis/{analysis_id}", response_model=list[GetIssue])
@@ -122,20 +114,6 @@ def get_issues_by_drill(
     return [GetIssue.from_domain(issue) for issue in issues]
 
 
-@router.get("/all", response_model=list[GetIssue])
-def get_all_issues(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    Get all issues.
-
-    Returns:
-        JSON response with a list of all issues
-    """
-    issues = service_get_all_issues(db_session=db)
-    return [GetIssue.from_domain(issue) for issue in issues]
-
 @router.get("/", response_model=list[GetIssue])
 def get_issues_by_user(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     """
@@ -149,6 +127,29 @@ def get_issues_by_user(db: Session = Depends(get_db), current_user: dict = Depen
     """
     issues = service_get_issues_by_user_id(current_user["user_id"], db_session=db)
     return [GetIssue.from_domain(issue) for issue in issues]
+
+
+@router.get("/{issue_id}", response_model=GetIssue)
+def get_issue(
+    issue_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get details of a specific issue.
+
+    Arguments:
+        issue_id (UUID): Issue identifier
+
+    Returns:
+        JSON response with issue details
+    """
+    issue = service_get_issue_by_id(issue_id, db_session=db)
+    
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue not found")
+
+    return GetIssue.from_domain(issue)
 
 
 @router.put("/{issue_id}", response_model=GetIssue)

@@ -7,7 +7,7 @@ const items = [
   { to: "/admin/database", label: "Database", icon: <Database size={24} /> },
 ];
 
-export default function AdminNav({ isOpen, onClick }) {
+export default function AdminNav({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {
   return (
     <div className={`w-full px-2 ${isOpen ? 'flex-row' : 'flex-col items-center'}`}>
       {items.map((item) => (
