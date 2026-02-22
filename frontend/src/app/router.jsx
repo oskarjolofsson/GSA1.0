@@ -11,11 +11,13 @@ import Drills from './dashboard/drills.jsx';
 import Analysis from './dashboard/analysis.jsx';
 import Issues from './dashboard/issue.jsx';
 import HomeDashboard from "./dashboard/home.jsx";
+import Database from "./admin/database.jsx";
 
 // Import components
 import PublicLayout from './public/layout.jsx';
 import RequireAuth from '@/features/auth/routes/RequireAuth';
 import DashboardLayout from './dashboard/layout.jsx';
+import AdminLayout from './admin/layout.jsx';
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +46,20 @@ export const router = createBrowserRouter([
           { path: "profile", element: <Profile /> },
           { path: "drills", element: <Drills /> },
           { path: "issues", element: <Issues /> },
+          { path: "*", element: <NotFound /> },
+        ],
+      },
+    ],
+  },
+  {
+    path: "/admin",
+    errorElement: <NotFound />,
+    children: [
+      {
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <Navigate to="/admin/database" replace /> },
+          { path: "database", element: <Database /> },
           { path: "*", element: <NotFound /> },
         ],
       },
