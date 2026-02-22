@@ -44,8 +44,8 @@ export default function IssueExplainerScreen() {
 
     if (error) {
         return (
-            <div className="w-full h-full p-6 sm:p-8">
-                <p className="text-red-500">{error}</p>
+            <div className="w-full h-full p-6 sm:p-8 flex items-center justify-center p-10 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-500 items-center justify-center p-4 border rounded-xl border-red-500/30">Could not load issue details.</p>
             </div>
         );
     }
