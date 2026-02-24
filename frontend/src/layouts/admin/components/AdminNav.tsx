@@ -5,6 +5,7 @@ import {
   Dumbbell,
   AlertTriangle,
   Link2,
+  Users,
 } from "lucide-react";
 
 const items = [
@@ -12,6 +13,7 @@ const items = [
   { to: "/admin/drills", label: "Drills", icon: <Dumbbell size={24} /> },
   { to: "/admin/issues", label: "Issues", icon: <AlertTriangle size={24} /> },
   { to: "/admin/mappings", label: "Mappings", icon: <Link2 size={24} /> },
+  { to: "/admin/users", label: "Users", icon: <Users size={24} /> },
   { to: "/admin/database", label: "Database", icon: <Database size={24} /> },
 ];
 
