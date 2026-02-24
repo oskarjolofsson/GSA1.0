@@ -12,6 +12,7 @@ import Analysis from './dashboard/analysis.jsx';
 import Issues from './dashboard/issue.jsx';
 import HomeDashboard from "./dashboard/home.jsx";
 import Database from "./admin/database.jsx";
+import AdminHome from "./admin/home.jsx";
 
 // Import components
 import PublicLayout from './public/layout.jsx';
@@ -58,7 +59,8 @@ export const router = createBrowserRouter([
       {
         element: <AdminLayout />,
         children: [
-          { index: true, element: <Navigate to="/admin/database" replace /> },
+          { index: true, element: <Navigate to="/admin/home" replace /> },
+          { path: "home", element: <AdminHome /> },
           { path: "database", element: <Database /> },
           { path: "*", element: <NotFound /> },
         ],
