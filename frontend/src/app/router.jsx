@@ -14,6 +14,7 @@ import HomeDashboard from "./dashboard/home.jsx";
 import Database from "./admin/database.jsx";
 import AdminHome from "./admin/home.jsx";
 import AdminDrills from "./admin/drills.jsx";
+import AdminIssues from "./admin/issues.jsx";
 
 // Import components
 import PublicLayout from './public/layout.jsx';
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
           { index: true, element: <Navigate to="/admin/home" replace /> },
           { path: "home", element: <AdminHome /> },
           { path: "drills", element: <AdminDrills /> },
+          { path: "issues", element: <AdminIssues /> },
           { path: "database", element: <Database /> },
           { path: "*", element: <NotFound /> },
         ],
