@@ -2,10 +2,12 @@ import { NavLink } from "react-router-dom";
 import {
   Database,
   LayoutDashboard,
+  Dumbbell,
 } from "lucide-react";
 
 const items = [
   { to: "/admin/home", label: "Dashboard", icon: <LayoutDashboard size={24} /> },
+  { to: "/admin/drills", label: "Drills", icon: <Dumbbell size={24} /> },
   { to: "/admin/database", label: "Database", icon: <Database size={24} /> },
 ];
 
