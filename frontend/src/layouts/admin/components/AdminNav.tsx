@@ -14,7 +14,6 @@ const items = [
   { to: "/admin/issues", label: "Issues", icon: <AlertTriangle size={24} /> },
   { to: "/admin/mappings", label: "Mappings", icon: <Link2 size={24} /> },
   { to: "/admin/users", label: "Users", icon: <Users size={24} /> },
-  { to: "/admin/database", label: "Database", icon: <Database size={24} /> },
 ];
 
 export default function AdminNav({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {
