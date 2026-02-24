@@ -13,6 +13,7 @@ import Issues from './dashboard/issue.jsx';
 import HomeDashboard from "./dashboard/home.jsx";
 import Database from "./admin/database.jsx";
 import AdminHome from "./admin/home.jsx";
+import AdminDrills from "./admin/drills.jsx";
 
 // Import components
 import PublicLayout from './public/layout.jsx';
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/admin/home" replace /> },
           { path: "home", element: <AdminHome /> },
+          { path: "drills", element: <AdminDrills /> },
           { path: "database", element: <Database /> },
           { path: "*", element: <NotFound /> },
         ],
