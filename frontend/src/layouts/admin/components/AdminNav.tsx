@@ -4,12 +4,14 @@ import {
   LayoutDashboard,
   Dumbbell,
   AlertTriangle,
+  Link2,
 } from "lucide-react";
 
 const items = [
   { to: "/admin/home", label: "Dashboard", icon: <LayoutDashboard size={24} /> },
   { to: "/admin/drills", label: "Drills", icon: <Dumbbell size={24} /> },
   { to: "/admin/issues", label: "Issues", icon: <AlertTriangle size={24} /> },
+  { to: "/admin/mappings", label: "Mappings", icon: <Link2 size={24} /> },
   { to: "/admin/database", label: "Database", icon: <Database size={24} /> },
 ];
 
