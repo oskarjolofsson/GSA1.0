@@ -11,7 +11,6 @@ import Drills from './dashboard/drills.jsx';
 import Analysis from './dashboard/analysis.jsx';
 import Issues from './dashboard/issue.jsx';
 import HomeDashboard from "./dashboard/home.jsx";
-import Database from "./admin/database.jsx";
 import AdminHome from "./admin/home.jsx";
 import AdminDrills from "./admin/drills.jsx";
 import AdminIssues from "./admin/issues.jsx";
@@ -69,7 +68,6 @@ export const router = createBrowserRouter([
           { path: "issues", element: <AdminIssues /> },
           { path: "mappings", element: <AdminMappings /> },
           { path: "users", element: <AdminUsers /> },
-          { path: "database", element: <Database /> },
           { path: "*", element: <NotFound /> },
         ],
       },
