@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAdminData } from './useAdminData';
 import type { Issue } from '@/features/issues/types';
 import type { Drill } from '@/features/drills/types';
+import issueService from '@/features/issues/services/issueService';
 
 export type SortField = 'title' | 'phase' | 'created_at';
 export type SortDirection = 'asc' | 'desc';
@@ -40,7 +41,7 @@ export interface IssueTableActions {
     toggleSelect: (id: string) => void;
     toggleSelectAll: () => void;
     toggleExpand: (id: string) => void;
-    handleBulkDelete: () => void;
+    handleBulkDelete: () => Promise<void>;
     clearSelection: () => void;
     setEditingIssue: (issue: Issue | null) => void;
     setShowCreateModal: (show: boolean) => void;
@@ -178,11 +179,16 @@ export default function useIssueTable(): UseIssueTableReturn {
         }
     };
 
-    // Bulk actions (placeholder - not connected to API)
-    const handleBulkDelete = () => {
-        console.log('Delete issues:', Array.from(selectedIds));
-        // TODO: Implement bulk delete
-        setSelectedIds(new Set());
+    // Bulk actions
+    const handleBulkDelete = async () => {
+        try {
+            await issueService.bulkDeleteIssues(Array.from(selectedIds));
+            refetch();
+        } catch (err) {
+            console.error('Failed to delete issues:', err);
+        } finally {
+            setSelectedIds(new Set());
+        }
     };
 
     const clearSelection = () => {

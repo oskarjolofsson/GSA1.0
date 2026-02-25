@@ -33,15 +33,7 @@ export default function IssueEditModal({ issue, drills, onClose, onSave }: Issue
 
     // Common phase options for golf swing
     const phaseOptions = [
-        'Address',
-        'Takeaway',
-        'Backswing',
-        'Top of Swing',
-        'Transition',
-        'Downswing',
-        'Impact',
-        'Follow Through',
-        'Finish'
+        'SETUP','BACKSWING','TRANSITION','DOWNSWING','IMPACT','FOLLOW_THROUGH'
     ];
 
     // Filter drills for selector
