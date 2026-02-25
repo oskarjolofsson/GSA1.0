@@ -1,175 +1,14 @@
-import { useState, useMemo } from 'react';
-import { useAdminData } from '../hooks/useAdminData';
 import { 
-    RefreshCw, 
-    Search, 
-    ChevronDown, 
-    ChevronUp,
-    Plus,
-    Trash2,
-    Archive,
-    CheckCircle,
-    Filter,
-    ArrowUpDown,
-    ChevronLeft,
-    ChevronRight,
-    Edit,
-    X
+    RefreshCw, Search, Plus, Trash2, Filter, ArrowUpDown, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
-import type { Issue } from '@/features/issues/types';
-import type { Drill } from '@/features/drills/types';
 import IssueEditModal from '../components/IssueEditModal';
-
-type SortField = 'title' | 'phase' | 'created_at';
-type SortDirection = 'asc' | 'desc';
-
-const ITEMS_PER_PAGE = 10;
+import useIssueTable from '../hooks/useIssueTable';
+import { IssueRow } from '@/features/issues/components/adminTableRow';
 
 export default function IssuesScreen() {
-    const { issues, drills, loading, error, refetch } = useAdminData();
-    
-    // Search and filter state
-    const [searchTerm, setSearchTerm] = useState('');
-    const [phaseFilter, setPhaseFilter] = useState<string>('all');
-    const [showFilters, setShowFilters] = useState(false);
-    
-    // Sort state
-    const [sortField, setSortField] = useState<SortField>('created_at');
-    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-    
-    // Selection state for bulk actions
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    
-    // Expand state for row dropdowns
-    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-    
-    // Pagination state
-    const [currentPage, setCurrentPage] = useState(1);
-    
-    // Edit modal state
-    const [editingIssue, setEditingIssue] = useState<Issue | null>(null);
-    const [showCreateModal, setShowCreateModal] = useState(false);
+    const { state, data, actions } = useIssueTable();
 
-    // Get unique phases for filter
-    const uniquePhases = useMemo(() => {
-        const phases = new Set<string>();
-        issues.forEach(issue => {
-            if (issue.phase) phases.add(issue.phase);
-        });
-        return Array.from(phases).sort();
-    }, [issues]);
-
-    // Filter and sort issues
-    const filteredAndSortedIssues = useMemo(() => {
-        let result = [...issues];
-
-        // Apply search filter
-        if (searchTerm) {
-            const lowerSearch = searchTerm.toLowerCase();
-            result = result.filter(issue =>
-                issue.title.toLowerCase().includes(lowerSearch) ||
-                (issue.current_motion && issue.current_motion.toLowerCase().includes(lowerSearch)) ||
-                (issue.expected_motion && issue.expected_motion.toLowerCase().includes(lowerSearch))
-            );
-        }
-
-        // Apply phase filter
-        if (phaseFilter !== 'all') {
-            result = result.filter(issue => issue.phase === phaseFilter);
-        }
-
-        // Apply sorting
-        result.sort((a, b) => {
-            let comparison = 0;
-            switch (sortField) {
-                case 'title':
-                    comparison = a.title.localeCompare(b.title);
-                    break;
-                case 'phase':
-                    comparison = (a.phase || '').localeCompare(b.phase || '');
-                    break;
-                case 'created_at':
-                    comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-                    break;
-            }
-            return sortDirection === 'asc' ? comparison : -comparison;
-        });
-
-        return result;
-    }, [issues, searchTerm, phaseFilter, sortField, sortDirection]);
-
-    // Pagination
-    const totalPages = Math.ceil(filteredAndSortedIssues.length / ITEMS_PER_PAGE);
-    const paginatedIssues = useMemo(() => {
-        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-        return filteredAndSortedIssues.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    }, [filteredAndSortedIssues, currentPage]);
-
-    // Reset to page 1 when filters change
-    const handleSearch = (value: string) => {
-        setSearchTerm(value);
-        setCurrentPage(1);
-    };
-
-    const handlePhaseFilter = (value: string) => {
-        setPhaseFilter(value);
-        setCurrentPage(1);
-    };
-
-    // Toggle row expansion
-    const toggleExpand = (id: string) => {
-        const newExpanded = new Set(expandedIds);
-        if (newExpanded.has(id)) {
-            newExpanded.delete(id);
-        } else {
-            newExpanded.add(id);
-        }
-        setExpandedIds(newExpanded);
-    };
-
-    // Selection handlers
-    const toggleSelect = (id: string) => {
-        const newSelected = new Set(selectedIds);
-        if (newSelected.has(id)) {
-            newSelected.delete(id);
-        } else {
-            newSelected.add(id);
-        }
-        setSelectedIds(newSelected);
-    };
-
-    const toggleSelectAll = () => {
-        if (selectedIds.size === paginatedIssues.length) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(paginatedIssues.map(i => i.id)));
-        }
-    };
-
-    // Sort handler
-    const handleSort = (field: SortField) => {
-        if (sortField === field) {
-            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortField(field);
-            setSortDirection('asc');
-        }
-    };
-
-    // Bulk actions (placeholder - not connected to API)
-    const handleBulkDelete = () => {
-        console.log('Delete issues:', Array.from(selectedIds));
-        // TODO: Implement bulk delete
-        setSelectedIds(new Set());
-    };
-
-    const handleBulkArchive = () => {
-        console.log('Archive issues:', Array.from(selectedIds));
-        // TODO: Implement bulk archive
-        setSelectedIds(new Set());
-    };
-
-    if (loading) {
+    if (data.loading) {
         return (
             <div className="justify-center p-10">
                 <div className="text-3xl font-bold mb-6 text-white ml-6">Issues Management</div>
@@ -182,15 +21,15 @@ export default function IssuesScreen() {
         );
     }
 
-    if (error) {
+    if (data.error) {
         return (
             <div className="justify-center p-10">
                 <div className="text-3xl font-bold mb-6 text-white ml-6">Issues Management</div>
                 <div className="ml-6 mt-8">
                     <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
-                        <p className="text-red-500">{error}</p>
+                        <p className="text-red-500">{data.error}</p>
                         <button
-                            onClick={refetch}
+                            onClick={actions.refetch}
                             className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-white transition-colors"
                         >
                             Retry
@@ -208,14 +47,14 @@ export default function IssuesScreen() {
                 <h1 className="text-3xl font-bold text-white">Issues Management</h1>
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={() => setShowCreateModal(true)}
+                        onClick={() => actions.setShowCreateModal(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 rounded-lg text-white transition-colors"
                     >
                         <Plus size={16} />
                         New Issue
                     </button>
                     <button
-                        onClick={refetch}
+                        onClick={actions.refetch}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-white transition-colors"
                     >
                         <RefreshCw size={16} />
@@ -235,17 +74,17 @@ export default function IssuesScreen() {
                             <input
                                 type="text"
                                 placeholder="Search by title or motion..."
-                                value={searchTerm}
-                                onChange={(e) => handleSearch(e.target.value)}
+                                value={state.searchTerm}
+                                onChange={(e) => actions.setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 bg-[#0b1020] border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-blue-500/50 transition-colors"
                             />
                         </div>
                         
                         {/* Filter Toggle */}
                         <button
-                            onClick={() => setShowFilters(!showFilters)}
+                            onClick={() => actions.setShowFilters(!state.showFilters)}
                             className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-white transition-colors ${
-                                showFilters ? 'bg-blue-500/20 border-blue-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                state.showFilters ? 'bg-blue-500/20 border-blue-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10'
                             }`}
                         >
                             <Filter size={16} />
@@ -254,18 +93,18 @@ export default function IssuesScreen() {
                     </div>
 
                     {/* Expanded Filters */}
-                    {showFilters && (
+                    {state.showFilters && (
                         <div className="mb-4 p-4 bg-[#0b1020] border border-white/10 rounded-lg">
                             <div className="flex flex-wrap gap-4">
                                 <div>
                                     <label className="text-white/60 text-sm block mb-1">Phase</label>
                                     <select
-                                        value={phaseFilter}
-                                        onChange={(e) => handlePhaseFilter(e.target.value)}
+                                        value={state.phaseFilter}
+                                        onChange={(e) => actions.setPhaseFilter(e.target.value)}
                                         className="px-3 py-2 bg-[#0e1428] border border-white/10 rounded-lg text-white focus:outline-none focus:border-blue-500/50"
                                     >
                                         <option value="all">All Phases</option>
-                                        {uniquePhases.map(phase => (
+                                        {data.uniquePhases.map(phase => (
                                             <option key={phase} value={phase}>{phase}</option>
                                         ))}
                                     </select>
@@ -275,28 +114,21 @@ export default function IssuesScreen() {
                     )}
 
                     {/* Bulk Actions */}
-                    {selectedIds.size > 0 && (
+                    {state.selectedIds.size > 0 && (
                         <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-between">
                             <span className="text-white/80">
-                                {selectedIds.size} {selectedIds.size === 1 ? 'issue' : 'issues'} selected
+                                {state.selectedIds.size} {state.selectedIds.size === 1 ? 'issue' : 'issues'} selected
                             </span>
                             <div className="flex gap-2">
                                 <button
-                                    onClick={handleBulkArchive}
-                                    className="flex items-center gap-1 px-3 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/30 rounded text-white text-sm transition-colors"
-                                >
-                                    <Archive size={14} />
-                                    Archive
-                                </button>
-                                <button
-                                    onClick={handleBulkDelete}
+                                    onClick={actions.handleBulkDelete}
                                     className="flex items-center gap-1 px-3 py-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded text-white text-sm transition-colors"
                                 >
                                     <Trash2 size={14} />
                                     Delete
                                 </button>
                                 <button
-                                    onClick={() => setSelectedIds(new Set())}
+                                    onClick={actions.clearSelection}
                                     className="flex items-center gap-1 px-3 py-1 bg-white/10 hover:bg-white/20 border border-white/10 rounded text-white text-sm transition-colors"
                                 >
                                     <X size={14} />
@@ -308,7 +140,7 @@ export default function IssuesScreen() {
 
                     {/* Results count */}
                     <div className="mb-2 text-white/60 text-sm">
-                        Showing {paginatedIssues.length} of {filteredAndSortedIssues.length} issues
+                        Showing {data.paginatedIssues.length} of {data.filteredAndSortedIssues.length} issues
                     </div>
 
                     {/* Table */}
@@ -318,51 +150,51 @@ export default function IssuesScreen() {
                             <div className="flex items-center">
                                 <input
                                     type="checkbox"
-                                    checked={selectedIds.size === paginatedIssues.length && paginatedIssues.length > 0}
-                                    onChange={toggleSelectAll}
+                                    checked={state.selectedIds.size === data.paginatedIssues.length && data.paginatedIssues.length > 0}
+                                    onChange={actions.toggleSelectAll}
                                     className="w-4 h-4 rounded bg-[#0b1020] border-white/20"
                                 />
                             </div>
                             <button
-                                onClick={() => handleSort('title')}
+                                onClick={() => actions.handleSort('title')}
                                 className="flex items-center gap-1 text-left text-white/80 font-medium hover:text-white transition-colors"
                             >
                                 Title
-                                <ArrowUpDown size={14} className={sortField === 'title' ? 'text-blue-400' : 'text-white/40'} />
+                                <ArrowUpDown size={14} className={state.sortField === 'title' ? 'text-blue-400' : 'text-white/40'} />
                             </button>
                             <button
-                                onClick={() => handleSort('phase')}
+                                onClick={() => actions.handleSort('phase')}
                                 className="flex items-center gap-1 text-left text-white/80 font-medium hover:text-white transition-colors"
                             >
                                 Phase
-                                <ArrowUpDown size={14} className={sortField === 'phase' ? 'text-blue-400' : 'text-white/40'} />
+                                <ArrowUpDown size={14} className={state.sortField === 'phase' ? 'text-blue-400' : 'text-white/40'} />
                             </button>
                             <button
-                                onClick={() => handleSort('created_at')}
+                                onClick={() => actions.handleSort('created_at')}
                                 className="flex items-center gap-1 text-white/80 font-medium hover:text-white transition-colors"
                             >
                                 Created
-                                <ArrowUpDown size={14} className={sortField === 'created_at' ? 'text-blue-400' : 'text-white/40'} />
+                                <ArrowUpDown size={14} className={state.sortField === 'created_at' ? 'text-blue-400' : 'text-white/40'} />
                             </button>
                             <div className="text-white/80 font-medium text-center">Actions</div>
                         </div>
 
                         {/* Table Body */}
-                        {paginatedIssues.length === 0 ? (
+                        {data.paginatedIssues.length === 0 ? (
                             <div className="text-white/60 text-center py-8">
                                 No issues found matching your criteria.
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                {paginatedIssues.map((issue) => (
+                                {data.paginatedIssues.map((issue) => (
                                     <IssueRow
                                         key={issue.id}
                                         issue={issue}
-                                        isExpanded={expandedIds.has(issue.id)}
-                                        isSelected={selectedIds.has(issue.id)}
-                                        onToggleExpand={() => toggleExpand(issue.id)}
-                                        onToggleSelect={() => toggleSelect(issue.id)}
-                                        onEdit={() => setEditingIssue(issue)}
+                                        isExpanded={state.expandedIds.has(issue.id)}
+                                        isSelected={state.selectedIds.has(issue.id)}
+                                        onToggleExpand={() => actions.toggleExpand(issue.id)}
+                                        onToggleSelect={() => actions.toggleSelect(issue.id)}
+                                        onEdit={() => actions.setEditingIssue(issue)}
                                     />
                                 ))}
                             </div>
@@ -370,23 +202,23 @@ export default function IssuesScreen() {
                     </div>
 
                     {/* Pagination */}
-                    {totalPages > 1 && (
+                    {data.totalPages > 1 && (
                         <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
                             <div className="text-white/60 text-sm">
-                                Page {currentPage} of {totalPages}
+                                Page {state.currentPage} of {data.totalPages}
                             </div>
                             <div className="flex gap-2">
                                 <button
-                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                    disabled={currentPage === 1}
+                                    onClick={() => actions.setCurrentPage(Math.max(1, state.currentPage - 1))}
+                                    disabled={state.currentPage === 1}
                                     className="flex items-center gap-1 px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <ChevronLeft size={16} />
                                     Previous
                                 </button>
                                 <button
-                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                    disabled={currentPage === totalPages}
+                                    onClick={() => actions.setCurrentPage(Math.min(data.totalPages, state.currentPage + 1))}
+                                    disabled={state.currentPage === data.totalPages}
                                     className="flex items-center gap-1 px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Next
@@ -399,185 +231,29 @@ export default function IssuesScreen() {
             </div>
 
             {/* Edit Modal */}
-            {editingIssue && (
+            {state.editingIssue && (
                 <IssueEditModal
-                    issue={editingIssue}
-                    drills={drills}
-                    onClose={() => setEditingIssue(null)}
+                    issue={state.editingIssue}
+                    drills={data.drills}
+                    onClose={() => actions.setEditingIssue(null)}
                     onSave={() => {
-                        setEditingIssue(null);
-                        refetch();
+                        actions.setEditingIssue(null);
+                        actions.refetch();
                     }}
                 />
             )}
 
             {/* Create Modal */}
-            {showCreateModal && (
+            {state.showCreateModal && (
                 <IssueEditModal
                     issue={null}
-                    drills={drills}
-                    onClose={() => setShowCreateModal(false)}
+                    drills={data.drills}
+                    onClose={() => actions.setShowCreateModal(false)}
                     onSave={() => {
-                        setShowCreateModal(false);
-                        refetch();
+                        actions.setShowCreateModal(false);
+                        actions.refetch();
                     }}
                 />
-            )}
-        </div>
-    );
-}
-
-// Issue Row Component
-interface IssueRowProps {
-    issue: Issue;
-    isExpanded: boolean;
-    isSelected: boolean;
-    onToggleExpand: () => void;
-    onToggleSelect: () => void;
-    onEdit: () => void;
-}
-
-function IssueRow({ issue, isExpanded, isSelected, onToggleExpand, onToggleSelect, onEdit }: IssueRowProps) {
-    return (
-        <div className={`border border-white/5 rounded-lg overflow-hidden ${isSelected ? 'bg-blue-500/10 border-blue-500/20' : 'bg-[#0b1020]/50'}`}>
-            {/* Main Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-[auto_2fr_1fr_auto_auto] gap-2 sm:gap-4 p-3 sm:p-4 items-center">
-                {/* Checkbox - Hidden on mobile */}
-                <div className="hidden sm:flex items-center">
-                    <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={onToggleSelect}
-                        className="w-4 h-4 rounded bg-[#0b1020] border-white/20"
-                    />
-                </div>
-
-                {/* Title */}
-                <div className="flex items-center justify-between sm:justify-start gap-2">
-                    <span className="text-white font-medium">{issue.title}</span>
-                    {/* Mobile expand button */}
-                    <button
-                        onClick={onToggleExpand}
-                        className="sm:hidden p-1 hover:bg-white/10 rounded transition-colors"
-                    >
-                        {isExpanded ? (
-                            <ChevronUp size={18} className="text-white/60" />
-                        ) : (
-                            <ChevronDown size={18} className="text-white/60" />
-                        )}
-                    </button>
-                </div>
-
-                {/* Phase */}
-                <div>
-                    {issue.phase ? (
-                        <span className="px-2 py-1 bg-purple-500/20 border border-purple-500/30 rounded text-purple-300 text-sm">
-                            {issue.phase}
-                        </span>
-                    ) : (
-                        <span className="text-white/40 text-sm italic">No phase</span>
-                    )}
-                </div>
-
-                {/* Created Date */}
-                <div className="hidden sm:block text-white/60 text-sm whitespace-nowrap">
-                    {new Date(issue.created_at).toLocaleDateString()}
-                </div>
-
-                {/* Actions */}
-                <div className="hidden sm:flex items-center gap-2">
-                    <button
-                        onClick={onToggleExpand}
-                        className="p-2 hover:bg-white/10 rounded transition-colors"
-                        title={isExpanded ? 'Collapse' : 'Expand'}
-                    >
-                        {isExpanded ? (
-                            <ChevronUp size={18} className="text-white/60" />
-                        ) : (
-                            <ChevronDown size={18} className="text-white/60" />
-                        )}
-                    </button>
-                    <button
-                        onClick={onEdit}
-                        className="p-2 hover:bg-blue-500/20 rounded transition-colors"
-                        title="Edit"
-                    >
-                        <Edit size={18} className="text-blue-400" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Expanded Content */}
-            {isExpanded && (
-                <div className="px-4 pb-4 pt-2 border-t border-white/5 space-y-4">
-                    {/* Current Motion */}
-                    <div>
-                        <label className="text-white/50 text-xs font-medium uppercase tracking-wide mb-1 block">
-                            Current Motion
-                        </label>
-                        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                            <p className="text-amber-300 text-sm">{issue.current_motion || 'Not specified'}</p>
-                        </div>
-                    </div>
-
-                    {/* Expected Motion */}
-                    <div>
-                        <label className="text-white/50 text-xs font-medium uppercase tracking-wide mb-1 block">
-                            Expected Motion
-                        </label>
-                        <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                            <p className="text-green-300 text-sm">{issue.expected_motion || 'Not specified'}</p>
-                        </div>
-                    </div>
-
-                    {/* Swing Effect */}
-                    <div>
-                        <label className="text-white/50 text-xs font-medium uppercase tracking-wide mb-1 block">
-                            Swing Effect
-                        </label>
-                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                            <p className="text-blue-300 text-sm">{issue.swing_effect || 'Not specified'}</p>
-                        </div>
-                    </div>
-
-                    {/* Shot Outcome */}
-                    <div>
-                        <label className="text-white/50 text-xs font-medium uppercase tracking-wide mb-1 block">
-                            Shot Outcome
-                        </label>
-                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                            <p className="text-red-300 text-sm">{issue.shot_outcome || 'Not specified'}</p>
-                        </div>
-                    </div>
-
-                    {/* Mobile Actions */}
-                    <div className="flex gap-2 sm:hidden pt-2">
-                        <button
-                            onClick={onToggleSelect}
-                            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                                isSelected 
-                                    ? 'bg-blue-500/30 border border-blue-500/40 text-white' 
-                                    : 'bg-white/5 border border-white/10 text-white/70 hover:bg-white/10'
-                            }`}
-                        >
-                            <CheckCircle size={16} />
-                            {isSelected ? 'Selected' : 'Select'}
-                        </button>
-                        <button
-                            onClick={onEdit}
-                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-white text-sm transition-colors"
-                        >
-                            <Edit size={16} />
-                            Edit
-                        </button>
-                    </div>
-
-                    {/* Meta info */}
-                    <div className="flex flex-wrap gap-4 pt-2 border-t border-white/5 text-xs text-white/40">
-                        <span>ID: {issue.id.substring(0, 8)}...</span>
-                        <span>Created: {new Date(issue.created_at).toLocaleString()}</span>
-                    </div>
-                </div>
             )}
         </div>
     );
