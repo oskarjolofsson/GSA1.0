@@ -50,3 +50,7 @@ class UpdateIssueRequest(BaseModel):
     expected_motion: str | None = None
     swing_effect: str | None = None
     shot_outcome: str | None = None
+
+
+class BulkDeleteIssuesRequest(BaseModel):
+    issue_ids: list[UUID]

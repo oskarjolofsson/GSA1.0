@@ -4,12 +4,17 @@ from ..models.IssueDrill import IssueDrill
 from ..models.Analysis import Analysis
 from sqlalchemy.orm import Session
 from uuid import UUID
+from sqlalchemy import delete
 
 # ------------ GET ------------
 
 
 def get_issue_by_id(issue_id, session: Session) -> Issue:
     return session.get(Issue, issue_id)
+
+
+def get_issues_by_ids(issue_ids: list[UUID], session: Session) -> list[Issue]:
+    return session.query(Issue).filter(Issue.id.in_(issue_ids)).all()
 
 
 def get_all_issues(session: Session) -> list[Issue]:
@@ -68,4 +73,10 @@ def update_issue(issue: Issue, session: Session) -> Issue:
 
 def delete_issue(issue: Issue, session: Session) -> None:
     session.delete(issue)
+    session.flush()
+
+
+def delete_issues(issues: list[Issue], session: Session) -> None:
+    stmt = delete(Issue).where(Issue.id.in_([issue.id for issue in issues]))
+    session.execute(stmt)
     session.flush()
