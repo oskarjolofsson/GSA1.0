@@ -265,3 +265,66 @@ def test_delete_issue_not_found(client, auth_headers):
     
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
+
+
+def test_bulk_delete_issues(client, db_session, auth_headers):
+    """Test deleting multiple issues at once."""
+    # Create multiple issues to delete
+    issue_ids = []
+    for i in range(3):
+        response = client.post(
+            "/api/v1/issues/",
+            json={
+                "title": f"Issue to Bulk Delete {i}",
+                "phase": "IMPACT",
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        issue_ids.append(uuid.UUID(response.json()["issue_id"]))
+    
+    # Verify they exist
+    for issue_id in issue_ids:
+        assert get_issue_by_id(issue_id=issue_id, session=db_session) is not None
+    
+    # Bulk delete the issues
+    response = client.request(
+        "DELETE",
+        "/api/v1/issues/bulk",
+        json={"issue_ids": [str(i) for i in issue_ids]},
+        headers=auth_headers,
+    )
+    
+    assert response.status_code == 204
+    
+    # Verify they are all deleted
+    for issue_id in issue_ids:
+        assert get_issue_by_id(issue_id=issue_id, session=db_session) is None
+
+
+def test_bulk_delete_issues_partial(client, db_session, auth_headers):
+    """Test bulk delete with mix of existing and non-existing IDs."""
+    # Create one issue
+    response = client.post(
+        "/api/v1/issues/",
+        json={
+            "title": "Issue for Partial Bulk Delete",
+            "phase": "IMPACT",
+        },
+        headers=auth_headers,
+    )
+    real_issue_id = uuid.UUID(response.json()["issue_id"])
+    fake_issue_id = uuid.uuid4()
+    
+    # Bulk delete with one real and one fake ID
+    response = client.request(
+        "DELETE",
+        "/api/v1/issues/bulk",
+        json={"issue_ids": [str(real_issue_id), str(fake_issue_id)]},
+        headers=auth_headers,
+    )
+    
+    assert response.status_code == 404
+    
+    # Verify the real one is not deleted
+    assert get_issue_by_id(issue_id=real_issue_id, session=db_session) is not None
