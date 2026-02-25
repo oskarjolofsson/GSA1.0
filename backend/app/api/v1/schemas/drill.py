@@ -43,3 +43,7 @@ class UpdateDrillRequest(BaseModel):
     task: str | None = None
     success_signal: str | None = None
     fault_indicator: str | None = None
+
+
+class BulkDeleteDrillsRequest(BaseModel):
+    drill_ids: list[UUID]

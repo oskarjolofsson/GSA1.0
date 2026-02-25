@@ -141,7 +141,7 @@ def test_get_all_issues(client, db_session, auth_headers):
     )
     
     response = client.get(
-        "/api/v1/issues/",
+        "/api/v1/issues/all",  # Changed from "/" to "/all"
         headers=auth_headers,
     )
     

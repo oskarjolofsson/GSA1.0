@@ -6,6 +6,8 @@ from core.infrastructure.db.repositories.drills import (
     create_drill as repo_create_drill,
     update_drill as repo_update_drill,
     delete_drill as repo_delete_drill,
+    delete_drills as repo_delete_drills,
+    get_drills_by_ids as repo_get_drills_by_ids,
     get_drills_by_issue_id as repo_get_drills_by_issue_id,
     get_drills_by_analysis_id as repo_get_drills_by_analysis_id,
     get_drills_by_user_id as repo_get_drills_by_user_id,
@@ -15,6 +17,9 @@ from core.infrastructure.db.models.Drill import Drill
 from .dtos.drill_service_dto import CreateDrillDTO, UpdateDrillDTO, DrillResponseDTO
 from ..infrastructure.db.session import SessionLocal
 
+from core.services.exceptions import NotFoundException
+
+
 def create_drill(dto: CreateDrillDTO, db_session) -> DrillResponseDTO:
     new_drill = Drill(
         title=dto.title,
@@ -22,18 +27,14 @@ def create_drill(dto: CreateDrillDTO, db_session) -> DrillResponseDTO:
         success_signal=dto.success_signal,
         fault_indicator=dto.fault_indicator,
     )
-
     created_drill = repo_create_drill(new_drill, db_session)
-
     return from_drill_to_response_dto(created_drill)
 
 
 def get_drill_by_id(drill_id: UUID, db_session) -> DrillResponseDTO | None:
     drill = repo_get_drill_by_id(drill_id, db_session)
-
     if not drill:
-        return None
-
+        raise NotFoundException("Drill not found", str(drill_id))
     return from_drill_to_response_dto(drill)
 
 
@@ -45,24 +46,22 @@ def get_all_drills(db_session) -> list[DrillResponseDTO]:
 
 def get_drills_by_user_id(user_id: UUID, db_session) -> list[DrillResponseDTO]:
     drills = repo_get_drills_by_user_id(user_id, db_session)
-
     return [from_drill_to_response_dto(drill) for drill in drills]
 
 
 def get_drills_by_analysis_id(analysis_id: UUID, db_session) -> list[DrillResponseDTO]:
     drills = repo_get_drills_by_analysis_id(analysis_id, db_session)
-
     return [from_drill_to_response_dto(drill) for drill in drills]
 
 
 def get_drills_by_issue_id(issue_id: UUID, db_session) -> list[DrillResponseDTO]:
     drills = repo_get_drills_by_issue_id(issue_id, db_session)
-
     return [from_drill_to_response_dto(drill) for drill in drills]
 
 
-
-def update_drill(drill_id: UUID, dto: UpdateDrillDTO, db_session) -> DrillResponseDTO | None:
+def update_drill(
+    drill_id: UUID, dto: UpdateDrillDTO, db_session
+) -> DrillResponseDTO | None:
     """Update an existing drill.
 
     Args:
@@ -73,9 +72,8 @@ def update_drill(drill_id: UUID, dto: UpdateDrillDTO, db_session) -> DrillRespon
         DrillResponseDTO: The updated drill data.
     """
     drill = repo_get_drill_by_id(drill_id, db_session)
-
     if not drill:
-        return None
+        raise NotFoundException("Drill not found", str(drill_id))
 
     # Only update fields that are provided
     if dto.title is not None:
@@ -88,19 +86,29 @@ def update_drill(drill_id: UUID, dto: UpdateDrillDTO, db_session) -> DrillRespon
         drill.fault_indicator = dto.fault_indicator
 
     updated_drill = repo_update_drill(drill, db_session)
-
     return from_drill_to_response_dto(updated_drill)
 
 
-def delete_drill(drill_id: UUID, db_session) -> bool:
+def delete_drill(drill_id: UUID, db_session):
     drill = repo_get_drill_by_id(drill_id, db_session)
-
     if not drill:
-        return False
-
+        raise NotFoundException("Drill not found", str(drill_id))
     repo_delete_drill(drill, db_session)
 
-    return True
+
+def bulk_delete_drills(drill_ids: list[UUID], db_session):
+    """Delete multiple drills.
+
+    Args:
+        drill_ids (list[UUID]): The IDs of the drills to delete.
+
+    Returns:
+        bool: True if all drills were deleted, False otherwise.
+    """
+    drills: list[Drill] = repo_get_drills_by_ids(drill_ids, db_session)
+    if len(drills) != len(drill_ids):
+        raise NotFoundException("One or more drills not found", str(drill_ids))
+    repo_delete_drills(drills, db_session)
 
 
 # ------------ Helper Methods ------------

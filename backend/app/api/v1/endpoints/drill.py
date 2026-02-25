@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from uuid import UUID
+
+from flask import request
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
 from sqlalchemy.orm import Session
@@ -9,6 +11,7 @@ from app.api.v1.schemas.drill import (
     CreateDrillResponse,
     GetDrill,
     UpdateDrillRequest,
+    BulkDeleteDrillsRequest,
 )
 from core.services.drill_service import (
     create_drill as service_create_drill,
@@ -19,6 +22,7 @@ from core.services.drill_service import (
     get_all_drills as service_get_all_drills,
     update_drill as service_update_drill,
     delete_drill as service_delete_drill,
+    bulk_delete_drills as service_bulk_delete_drills,
 )
 from core.services.dtos.drill_service_dto import CreateDrillDTO, UpdateDrillDTO
 
@@ -212,7 +216,24 @@ def delete_drill(
     Returns:
         JSON response with success status
     """
-    success = service_delete_drill(drill_id, db_session=db)
+    service_delete_drill(drill_id, db_session=db)
     
-    if not success:
-        raise HTTPException(status_code=404, detail="Drill not found")
+
+
+# ONLY FOR INTERNAL USE, NOT EXPOSED TO FRONTEND AND PROTECTED BY AUTHENTICATION
+@router.delete("/bulk", status_code=204)
+def bulk_delete_drills(
+    request: BulkDeleteDrillsRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete multiple drills.
+
+    Arguments:
+        request (BulkDeleteDrillsRequest): Request body with list of drill IDs to delete
+
+    Returns:
+        JSON response with success status
+    """
+    service_bulk_delete_drills(request.drill_ids, db_session=db)
+    
