@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAdminData } from './useAdminData';
 import type { Drill } from '@/features/drills/types';
 import type { Issue } from '@/features/issues/types';
+import drillService from '@/features/drills/services/drillService';
 
 export type SortField = 'title' | 'task' | 'created_at';
 export type SortDirection = 'asc' | 'desc';
@@ -39,7 +40,7 @@ export interface DrillTableActions {
     toggleSelect: (id: string) => void;
     toggleSelectAll: () => void;
     toggleExpand: (id: string) => void;
-    handleBulkDelete: () => void;
+    handleBulkDelete: () => Promise<void>;
     clearSelection: () => void;
     setEditingDrill: (drill: Drill | null) => void;
     setShowCreateModal: (show: boolean) => void;
@@ -155,11 +156,16 @@ export default function useDrillTable(): UseDrillTableReturn {
         }
     };
 
-    // Bulk actions (placeholder - not connected to API)
-    const handleBulkDelete = () => {
-        console.log('Delete drills:', Array.from(selectedIds));
-        // TODO: Implement bulk delete
-        setSelectedIds(new Set());
+    // Bulk actions
+    const handleBulkDelete = async () => {
+        try {
+            await drillService.bulkDeleteDrills(Array.from(selectedIds));
+            refetch();
+        } catch (err) {
+            console.error('Failed to delete drills:', err);
+        } finally {
+            setSelectedIds(new Set());
+        }
     };
 
     const clearSelection = () => {

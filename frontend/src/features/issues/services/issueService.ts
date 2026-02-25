@@ -177,6 +177,19 @@ class IssueService {
             throw new Error('Could not delete issue. Please try again later.');
         }
     }
+
+    async bulkDeleteIssues(issueIds: string[]): Promise<void> {
+        try {
+            await this.fetchWithAuth<void>(
+                `/api/v1/issues/bulk`,
+                'DELETE',
+                { issue_ids: issueIds }
+            );
+        } catch (error) {
+            console.error('Error in bulkDeleteIssues:', error);
+            throw new Error('Could not bulk delete issues. Please try again later.');
+        }
+    }
 }
 
 export default new IssueService();

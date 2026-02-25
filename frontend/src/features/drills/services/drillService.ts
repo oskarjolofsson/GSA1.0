@@ -8,7 +8,7 @@ import type {
 
 const API = import.meta.env.VITE_API_URL || '';
 
-class DrillService {
+export class DrillService {
     /**
      * Helper method for authenticated fetch requests
      */
@@ -162,6 +162,22 @@ class DrillService {
         } catch (error) {
             console.error('Error in deleteDrill:', error);
             throw new Error('Could not delete drill. Please try again later.');
+        }
+    }
+
+    /**
+     * Bulk delete drills
+     */
+    async bulkDeleteDrills(drillIds: string[]): Promise<void> {
+        try {
+            await this.fetchWithAuth<void>(
+                '/api/v1/drills/bulk',
+                'DELETE',
+                { drill_ids: drillIds }
+            );
+        } catch (error) {
+            console.error('Error in bulkDeleteDrills:', error);
+            throw new Error('Could not bulk delete drills. Please try again later.');
         }
     }
 }
