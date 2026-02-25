@@ -200,6 +200,25 @@ def update_drill(
     return GetDrill.from_domain(result)
 
 
+
+# ONLY FOR INTERNAL USE, NOT EXPOSED TO FRONTEND AND PROTECTED BY AUTHENTICATION
+@router.delete("/bulk", status_code=204)
+def bulk_delete_drills(
+    request: BulkDeleteDrillsRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete multiple drills.
+
+    Arguments:
+        request (BulkDeleteDrillsRequest): Request body with list of drill IDs to delete
+
+    Returns:
+        JSON response with success status
+    """
+    service_bulk_delete_drills(request.drill_ids, db_session=db)
+
+
 # ONLY FOR INTERNAL USE, NOT EXPOSED TO FRONTEND AND PROTECTED BY AUTHENTICATION
 @router.delete("/{drill_id}", status_code=204)
 def delete_drill(
@@ -219,21 +238,4 @@ def delete_drill(
     service_delete_drill(drill_id, db_session=db)
     
 
-
-# ONLY FOR INTERNAL USE, NOT EXPOSED TO FRONTEND AND PROTECTED BY AUTHENTICATION
-@router.delete("/bulk", status_code=204)
-def bulk_delete_drills(
-    request: BulkDeleteDrillsRequest,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
-    """Delete multiple drills.
-
-    Arguments:
-        request (BulkDeleteDrillsRequest): Request body with list of drill IDs to delete
-
-    Returns:
-        JSON response with success status
-    """
-    service_bulk_delete_drills(request.drill_ids, db_session=db)
     

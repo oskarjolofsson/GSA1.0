@@ -221,3 +221,70 @@ def test_delete_drill_not_found(client, auth_headers):
     
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
+
+
+def test_bulk_delete_drills(client, db_session, auth_headers):
+    """Test deleting multiple drills at once."""
+    # Create multiple drills to delete
+    drill_ids = []
+    for i in range(3):
+        response = client.post(
+            "/api/v1/drills/",
+            json={
+                "title": f"Drill to Bulk Delete {i}",
+                "task": f"Task {i}",
+                "success_signal": "N/A",
+                "fault_indicator": "N/A",
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        drill_ids.append(uuid.UUID(response.json()["drill_id"]))
+    
+    # Verify they exist
+    for drill_id in drill_ids:
+        assert get_drill_by_id(drill_id=drill_id, session=db_session) is not None
+    
+    # Bulk delete the drills
+    response = client.request(
+        "DELETE",
+        "/api/v1/drills/bulk",
+        json={"drill_ids": [str(d) for d in drill_ids]},
+        headers=auth_headers,
+    )
+    
+    assert response.status_code == 204
+    
+    # Verify they are all deleted
+    for drill_id in drill_ids:
+        assert get_drill_by_id(drill_id=drill_id, session=db_session) is None
+
+
+def test_bulk_delete_drills_partial(client, db_session, auth_headers):
+    """Test bulk delete with mix of existing and non-existing IDs."""
+    # Create one drill
+    response = client.post(
+        "/api/v1/drills/",
+        json={
+            "title": "Drill for Partial Bulk Delete",
+            "task": "Task",
+            "success_signal": "N/A",
+            "fault_indicator": "N/A",
+        },
+        headers=auth_headers,
+    )
+    real_drill_id = uuid.UUID(response.json()["drill_id"])
+    fake_drill_id = uuid.uuid4()
+    
+    # Bulk delete with one real and one fake ID
+    response = client.request(
+        "DELETE",
+        "/api/v1/drills/bulk",
+        json={"drill_ids": [str(real_drill_id), str(fake_drill_id)]},
+        headers=auth_headers,
+    )
+    
+    assert response.status_code == 404      # All or nothing approach - if any ID is invalid, the whole operation fails
+    
+    # Verify the real one is not deleted
+    assert get_drill_by_id(drill_id=real_drill_id, session=db_session) is not None
