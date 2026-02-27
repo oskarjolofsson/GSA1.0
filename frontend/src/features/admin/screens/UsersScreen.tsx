@@ -11,186 +11,57 @@ import {
     AlertTriangle
 } from 'lucide-react';
 import UserDetailModal from '../components/UserDetailModal';
+import { useUserTable } from '../hooks/useUserTable';
+import type { DbUser } from '../types';
 
 // ============================================================================
-// MOCK DATA - This is placeholder data until API support is implemented
+// User type with missing fields from DbUser
+// TODO: Add these fields to DbUser type when backend supports them:
+// - created_at, last_sign_in, status, auth_provider, supabase_uid, analyses_count, drills_completed
 // ============================================================================
 
-interface MockUser {
-    id: string;
-    email: string;
-    name: string | null;
-    created_at: string;
-    last_sign_in: string | null;
-    role: 'user' | 'admin' | 'pro';
-    status: 'active' | 'disabled' | 'banned';
-    auth_provider: 'email' | 'google' | 'apple';
-    supabase_uid: string;
-    analyses_count: number;
-    drills_completed: number;
+export interface UserWithMissingFields extends DbUser {
+    // TODO: Missing from DbUser - add to backend/types when available
+    created_at?: string;
+    last_sign_in?: string | null;
+    status?: 'active' | 'disabled' | 'banned';
+    auth_provider?: 'email' | 'google' | 'apple';
+    supabase_uid?: string;
+    analyses_count?: number;
+    drills_completed?: number;
 }
 
-// Generate mock users
-const MOCK_USERS: MockUser[] = [
-    {
-        id: '1',
-        email: 'john.golfer@example.com',
-        name: 'John Golfer',
-        created_at: '2026-01-15T10:30:00Z',
-        last_sign_in: '2026-02-24T08:15:00Z',
-        role: 'pro',
-        status: 'active',
-        auth_provider: 'google',
-        supabase_uid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-        analyses_count: 45,
-        drills_completed: 120,
-    },
-    {
-        id: '2',
-        email: 'jane.smith@example.com',
-        name: 'Jane Smith',
-        created_at: '2026-01-20T14:00:00Z',
-        last_sign_in: '2026-02-23T16:45:00Z',
-        role: 'user',
-        status: 'active',
-        auth_provider: 'email',
-        supabase_uid: 'b2c3d4e5-f6a7-8901-bcde-f23456789012',
-        analyses_count: 12,
-        drills_completed: 34,
-    },
-    {
-        id: '3',
-        email: 'admin@trueswing.com',
-        name: 'Admin User',
-        created_at: '2026-01-01T00:00:00Z',
-        last_sign_in: '2026-02-24T09:00:00Z',
-        role: 'admin',
-        status: 'active',
-        auth_provider: 'email',
-        supabase_uid: 'c3d4e5f6-a7b8-9012-cdef-345678901234',
-        analyses_count: 0,
-        drills_completed: 0,
-    },
-    {
-        id: '4',
-        email: 'mike.wilson@example.com',
-        name: 'Mike Wilson',
-        created_at: '2026-02-01T09:00:00Z',
-        last_sign_in: '2026-02-20T11:30:00Z',
-        role: 'user',
-        status: 'active',
-        auth_provider: 'apple',
-        supabase_uid: 'd4e5f6a7-b8c9-0123-defa-456789012345',
-        analyses_count: 8,
-        drills_completed: 22,
-    },
-    {
-        id: '5',
-        email: 'suspended.user@example.com',
-        name: 'Suspended User',
-        created_at: '2026-01-25T13:00:00Z',
-        last_sign_in: '2026-02-10T14:00:00Z',
-        role: 'user',
-        status: 'disabled',
-        auth_provider: 'email',
-        supabase_uid: 'e5f6a7b8-c9d0-1234-efab-567890123456',
-        analyses_count: 3,
-        drills_completed: 5,
-    },
-    {
-        id: '6',
-        email: 'banned.spammer@example.com',
-        name: null,
-        created_at: '2026-02-05T08:00:00Z',
-        last_sign_in: '2026-02-06T10:00:00Z',
-        role: 'user',
-        status: 'banned',
-        auth_provider: 'email',
-        supabase_uid: 'f6a7b8c9-d0e1-2345-fabc-678901234567',
-        analyses_count: 0,
-        drills_completed: 0,
-    },
-    {
-        id: '7',
-        email: 'sarah.jones@example.com',
-        name: 'Sarah Jones',
-        created_at: '2026-02-10T16:00:00Z',
-        last_sign_in: '2026-02-24T07:00:00Z',
-        role: 'pro',
-        status: 'active',
-        auth_provider: 'google',
-        supabase_uid: 'a7b8c9d0-e1f2-3456-abcd-789012345678',
-        analyses_count: 67,
-        drills_completed: 189,
-    },
-    {
-        id: '8',
-        email: 'tom.beginner@example.com',
-        name: 'Tom Beginner',
-        created_at: '2026-02-20T10:00:00Z',
-        last_sign_in: null,
-        role: 'user',
-        status: 'active',
-        auth_provider: 'email',
-        supabase_uid: 'b8c9d0e1-f2a3-4567-bcde-890123456789',
-        analyses_count: 0,
-        drills_completed: 0,
-    },
-    {
-        id: '9',
-        email: 'david.pro@example.com',
-        name: 'David Professional',
-        created_at: '2026-01-18T11:00:00Z',
-        last_sign_in: '2026-02-22T18:30:00Z',
-        role: 'pro',
-        status: 'active',
-        auth_provider: 'apple',
-        supabase_uid: 'c9d0e1f2-a3b4-5678-cdef-901234567890',
-        analyses_count: 89,
-        drills_completed: 245,
-    },
-    {
-        id: '10',
-        email: 'lisa.casual@example.com',
-        name: 'Lisa Casual',
-        created_at: '2026-02-15T15:00:00Z',
-        last_sign_in: '2026-02-19T12:00:00Z',
-        role: 'user',
-        status: 'active',
-        auth_provider: 'google',
-        supabase_uid: 'd0e1f2a3-b4c5-6789-defa-012345678901',
-        analyses_count: 5,
-        drills_completed: 15,
-    },
-];
-
 // ============================================================================
 
-type SortField = 'email' | 'name' | 'created_at' | 'last_sign_in' | 'role' | 'status';
+// Only use fields available in DbUser for sorting until missing fields are added
+type SortField = 'email' | 'name' | 'role';
 type SortDirection = 'asc' | 'desc';
 
 const ITEMS_PER_PAGE = 10;
 
 export default function UsersScreen() {
+    // Fetch users from API
+    const { users } = useUserTable();
+    
     // Search and filter state
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [roleFilter, setRoleFilter] = useState<string>('all');
     const [showFilters, setShowFilters] = useState(false);
     
-    // Sort state
-    const [sortField, setSortField] = useState<SortField>('created_at');
+    // Sort state - defaulting to 'email' since 'created_at' is not in DbUser
+    const [sortField, setSortField] = useState<SortField>('email');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
     
     // Detail modal state
-    const [selectedUser, setSelectedUser] = useState<MockUser | null>(null);
+    const [selectedUser, setSelectedUser] = useState<UserWithMissingFields | null>(null);
 
     // Filter and sort users
     const filteredAndSortedUsers = useMemo(() => {
-        let result = [...MOCK_USERS];
+        let result: UserWithMissingFields[] = [...users];
 
         // Apply search filter (email exact or partial, name partial)
         if (searchTerm) {
@@ -202,6 +73,7 @@ export default function UsersScreen() {
         }
 
         // Apply status filter
+        // TODO: 'status' field is missing from DbUser - filter disabled until available
         if (statusFilter !== 'all') {
             result = result.filter(user => user.status === statusFilter);
         }
@@ -211,7 +83,7 @@ export default function UsersScreen() {
             result = result.filter(user => user.role === roleFilter);
         }
 
-        // Apply sorting
+        // Apply sorting - only using fields available in DbUser
         result.sort((a, b) => {
             let comparison = 0;
             switch (sortField) {
@@ -224,23 +96,16 @@ export default function UsersScreen() {
                 case 'role':
                     comparison = a.role.localeCompare(b.role);
                     break;
-                case 'status':
-                    comparison = a.status.localeCompare(b.status);
-                    break;
-                case 'created_at':
-                    comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-                    break;
-                case 'last_sign_in':
-                    const aTime = a.last_sign_in ? new Date(a.last_sign_in).getTime() : 0;
-                    const bTime = b.last_sign_in ? new Date(b.last_sign_in).getTime() : 0;
-                    comparison = aTime - bTime;
-                    break;
+                // TODO: Add sorting for these fields when they're added to DbUser:
+                // case 'status':
+                // case 'created_at':
+                // case 'last_sign_in':
             }
             return sortDirection === 'asc' ? comparison : -comparison;
         });
 
         return result;
-    }, [searchTerm, statusFilter, roleFilter, sortField, sortDirection]);
+    }, [users, searchTerm, statusFilter, roleFilter, sortField, sortDirection]);
 
     // Pagination
     const totalPages = Math.ceil(filteredAndSortedUsers.length / ITEMS_PER_PAGE);
@@ -276,7 +141,8 @@ export default function UsersScreen() {
     };
 
     // Get status badge styling
-    const getStatusBadge = (status: MockUser['status']) => {
+    // TODO: 'status' field is missing from DbUser
+    const getStatusBadge = (status?: UserWithMissingFields['status']) => {
         switch (status) {
             case 'active':
                 return 'bg-green-500/20 border-green-500/30 text-green-400';
@@ -284,17 +150,20 @@ export default function UsersScreen() {
                 return 'bg-amber-500/20 border-amber-500/30 text-amber-400';
             case 'banned':
                 return 'bg-red-500/20 border-red-500/30 text-red-400';
+            default:
+                return 'bg-white/10 border-white/20 text-white/60';
         }
     };
 
     // Get role badge styling
-    const getRoleBadge = (role: MockUser['role']) => {
+    const getRoleBadge = (role: string) => {
         switch (role) {
             case 'admin':
                 return 'bg-purple-500/20 border-purple-500/30 text-purple-400';
             case 'pro':
                 return 'bg-blue-500/20 border-blue-500/30 text-blue-400';
             case 'user':
+            default:
                 return 'bg-white/10 border-white/20 text-white/60';
         }
     };
@@ -319,11 +188,11 @@ export default function UsersScreen() {
                 </button>
             </div>
 
-            {/* Mock Data Warning */}
+            {/* Missing Fields Warning */}
             <div className="mx-2 sm:mx-6 mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-2">
                 <AlertTriangle size={18} className="text-amber-400 flex-shrink-0" />
                 <span className="text-amber-400 text-sm">
-                    <strong>Mock Data:</strong> This page displays placeholder data. API integration is not yet implemented.
+                    <strong>Note:</strong> Some fields (created_at, last_sign_in, status, auth_provider, etc.) are missing from the API response.
                 </span>
             </div>
 
@@ -427,32 +296,17 @@ export default function UsersScreen() {
                                             <ArrowUpDown size={14} className={sortField === 'role' ? 'text-blue-400' : 'text-white/40'} />
                                         </button>
                                     </th>
+                                    {/* TODO: Status sorting disabled - field missing from DbUser */}
                                     <th className="text-left py-3 px-3">
-                                        <button
-                                            onClick={() => handleSort('status')}
-                                            className="flex items-center gap-1 text-white/80 font-medium hover:text-white transition-colors"
-                                        >
-                                            Status
-                                            <ArrowUpDown size={14} className={sortField === 'status' ? 'text-blue-400' : 'text-white/40'} />
-                                        </button>
+                                        <span className="text-white/80 font-medium">Status</span>
                                     </th>
+                                    {/* TODO: Created sorting disabled - field missing from DbUser */}
                                     <th className="text-left py-3 px-3">
-                                        <button
-                                            onClick={() => handleSort('created_at')}
-                                            className="flex items-center gap-1 text-white/80 font-medium hover:text-white transition-colors"
-                                        >
-                                            Created
-                                            <ArrowUpDown size={14} className={sortField === 'created_at' ? 'text-blue-400' : 'text-white/40'} />
-                                        </button>
+                                        <span className="text-white/80 font-medium">Created</span>
                                     </th>
+                                    {/* TODO: Last Sign-in sorting disabled - field missing from DbUser */}
                                     <th className="text-left py-3 px-3">
-                                        <button
-                                            onClick={() => handleSort('last_sign_in')}
-                                            className="flex items-center gap-1 text-white/80 font-medium hover:text-white transition-colors"
-                                        >
-                                            Last Sign-in
-                                            <ArrowUpDown size={14} className={sortField === 'last_sign_in' ? 'text-blue-400' : 'text-white/40'} />
-                                        </button>
+                                        <span className="text-white/80 font-medium">Last Sign-in</span>
                                     </th>
                                     <th className="text-center py-3 px-3 text-white/80 font-medium">
                                         Actions
@@ -488,17 +342,23 @@ export default function UsersScreen() {
                                                 </span>
                                             </td>
                                             <td className="py-3 px-3">
+                                                {/* TODO: 'status' field missing from DbUser */}
                                                 <span className={`px-2 py-1 rounded text-xs border ${getStatusBadge(user.status)}`}>
-                                                    {user.status}
+                                                    {user.status ?? 'N/A'}
                                                 </span>
                                             </td>
                                             <td className="py-3 px-3 text-white/60 text-sm whitespace-nowrap">
-                                                {new Date(user.created_at).toLocaleDateString()}
+                                                {/* TODO: 'created_at' field missing from DbUser */}
+                                                {user.created_at 
+                                                    ? new Date(user.created_at).toLocaleDateString()
+                                                    : <span className="text-white/40 italic">N/A</span>
+                                                }
                                             </td>
                                             <td className="py-3 px-3 text-white/60 text-sm whitespace-nowrap">
+                                                {/* TODO: 'last_sign_in' field missing from DbUser */}
                                                 {user.last_sign_in 
                                                     ? new Date(user.last_sign_in).toLocaleDateString()
-                                                    : <span className="text-white/40 italic">Never</span>
+                                                    : <span className="text-white/40 italic">N/A</span>
                                                 }
                                             </td>
                                             <td className="py-3 px-3 text-center">
@@ -556,6 +416,3 @@ export default function UsersScreen() {
         </div>
     );
 }
-
-// Export the MockUser type for the modal
-export type { MockUser };

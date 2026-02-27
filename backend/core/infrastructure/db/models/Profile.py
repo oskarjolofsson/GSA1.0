@@ -26,3 +26,10 @@ class Profile(Base):
         nullable=False,
         server_default=func.now(),
     )
+    
+    updated_at: Mapped[DateTime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
