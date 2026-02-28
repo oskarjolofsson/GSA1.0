@@ -1,5 +1,8 @@
+import uuid
+
 from ..base import Base
 from sqlalchemy import (
+    UUID,
     Text,
     DateTime,
     Boolean,
@@ -13,8 +16,8 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 class Role(Base):
     __tablename__ = "roles"
 
-    id: Mapped[int] = mapped_column(
-        Integer,
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         primary_key=True,
         autoincrement=True,
     )
