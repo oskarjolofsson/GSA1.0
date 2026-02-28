@@ -9,6 +9,10 @@ class GetUser(BaseModel):
     name: str
     
     role: str | None = None
+    authProvider: str | None = None
+    status: str | None = None
+    analysesCount: int | None = None
+    drillsCompleted: int | None = None
     
     created_at: datetime
     updated_at: datetime | None
@@ -22,7 +26,11 @@ class GetUser(BaseModel):
             id=dto.id,
             email=dto.email,
             name=dto.name,
-            # role=dto.role,
+            role=dto.role,
+            authProvider=dto.auth_provider,
+            status=dto.status,
+            analysesCount=dto.analyses_count,
+            drillsCompleted=dto.drills_completed,
             created_at=dto.created_at,
             updated_at=dto.updated_at,
         )
