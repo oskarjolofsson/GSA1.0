@@ -1,10 +1,5 @@
-import { X, Mail, User, Calendar, Clock, Shield, Activity, Hash, LogIn } from 'lucide-react';
+import { X, Mail, User, Calendar, Clock, Shield, Activity, LogIn } from 'lucide-react';
 import type { DbUser } from '../types';
-
-// ============================================================================
-// NOTE: Some fields (created_at, last_sign_in, status, auth_provider, etc.)
-// are missing from DbUser and may display as N/A
-// ============================================================================
 
 interface UserDetailModalProps {
     user: DbUser;
@@ -12,19 +7,14 @@ interface UserDetailModalProps {
 }
 
 export default function UserDetailModal({ user, onClose }: UserDetailModalProps) {
-    // Get status badge styling
-    // TODO: 'status' field is missing from DbUser
-    const getStatusBadge = (status?: DbUser['status']) => {
-        switch (status) {
-            case 'active':
-                return 'bg-green-500/20 border-green-500/30 text-green-400';
-            case 'disabled':
-                return 'bg-amber-500/20 border-amber-500/30 text-amber-400';
-            case 'banned':
-                return 'bg-red-500/20 border-red-500/30 text-red-400';
-            default:
-                return 'bg-white/10 border-white/20 text-white/60';
+    // Get active badge styling
+    const getActiveBadge = (active?: boolean) => {
+        if (active === true) {
+            return 'bg-green-500/20 border-green-500/30 text-green-400';
+        } else if (active === false) {
+            return 'bg-amber-500/20 border-amber-500/30 text-amber-400';
         }
+        return 'bg-white/10 border-white/20 text-white/60';
     };
 
     // Get role badge styling
@@ -41,7 +31,6 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
     };
 
     // Get auth provider icon/label
-    // TODO: 'auth_provider' field is missing from DbUser
     const getAuthProviderLabel = (provider?: DbUser['authProvider']) => {
         switch (provider) {
             case 'email':
@@ -81,14 +70,10 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
 
                 {/* Content */}
                 <div className="p-6 overflow-y-auto flex-1">
-                    {/* Status and Role */}
+                    {/* Active Status and Role */}
                     <div className="flex gap-3 mb-6">
-                        {/* TODO: 'status' field missing from DbUser */}
-                        <span className={`px-3 py-1 rounded-lg text-sm border ${getStatusBadge(user.status)}`}>
-                            {user.status 
-                                ? user.status.charAt(0).toUpperCase() + user.status.slice(1)
-                                : 'N/A'
-                            }
+                        <span className={`px-3 py-1 rounded-lg text-sm border ${getActiveBadge(user.active)}`}>
+                            {user.active === true ? 'Active' : user.active === false ? 'Inactive' : 'N/A'}
                         </span>
                         <span className={`px-3 py-1 rounded-lg text-sm border ${getRoleBadge(user.role)}`}>
                             {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
@@ -114,7 +99,6 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
                             Authentication
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* TODO: 'auth_provider' field missing from DbUser */}
                             <InfoRow 
                                 icon={<LogIn size={16} />} 
                                 label="Auth Provider" 
@@ -130,7 +114,6 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
                             Timestamps
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* TODO: 'created_at' field missing from DbUser */}
                             <InfoRow 
                                 icon={<Calendar size={16} />} 
                                 label="Account Created" 
@@ -139,13 +122,12 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
                                     : 'N/A'
                                 } 
                             />
-                            {/* TODO: 'last_sign_in' field missing from DbUser */}
                             <InfoRow 
                                 icon={<Clock size={16} />} 
                                 label="Last Sign-in" 
                                 value={user.lastSignIn 
                                     ? new Date(user.lastSignIn).toLocaleString() 
-                                    : 'N/A'
+                                    : 'Never'
                                 } 
                             />
                         </div>
@@ -158,17 +140,10 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
                             Usage Statistics
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
-                            {/* TODO: 'analyses_count' field missing from DbUser */}
-                            <StatCard label="Analyses" value={user.analysesCount ?? 'N/A'} />
-                            {/* TODO: 'drills_completed' field missing from DbUser */}
-                            <StatCard label="Drills Completed" value={user.drillsCompleted ?? 'N/A'} />
+                            <StatCard label="Analyses" value={user.analysesCount ?? 0} />
+                            <StatCard label="Drills Completed" value={user.drillsCompleted ?? 0} />
                         </div>
                     </section>
-
-                    {/* Missing Fields Notice */}
-                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-400 text-sm">
-                        <strong>Note:</strong> Some fields are missing from the API response and display as N/A.
-                    </div>
                 </div>
 
                 {/* Footer */}

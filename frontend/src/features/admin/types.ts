@@ -7,7 +7,7 @@ export interface DbUser {
 
     role: string;
     authProvider?: 'email' | 'google' | 'apple';
-    status?: 'active' | 'disabled' | 'banned';
+    active?: boolean;
     analysesCount?: number;
     drillsCompleted?: number;
 

@@ -1,6 +1,7 @@
 from ..models.UserRole import UserRole
 from ..models.Role import Role
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from uuid import UUID
 
 
@@ -9,6 +10,32 @@ from uuid import UUID
 
 def get_user_role(user_id: UUID, role_id: int, session: Session) -> UserRole | None:
     return session.get(UserRole, (user_id, role_id))
+
+
+def get_roles_for_users(user_ids: list[UUID], session: Session) -> dict[UUID, str]:
+    """
+    Get the primary role for multiple users in a single query.
+    Returns a dict mapping user_id to role name.
+    If a user has multiple roles, returns the first one found.
+    """
+    if not user_ids:
+        return {}
+    
+    stmt = (
+        select(UserRole.user_id, Role.name)
+        .join(Role, UserRole.role_id == Role.id)
+        .where(UserRole.user_id.in_(user_ids))
+    )
+    
+    results = session.execute(stmt).all()
+    
+    # Build dict - first role found for each user
+    user_roles: dict[UUID, str] = {}
+    for user_id, role_name in results:
+        if user_id not in user_roles:
+            user_roles[user_id] = role_name
+    
+    return user_roles
 
 
 def get_roles_by_user_id(user_id: UUID, session: Session) -> list[Role]:
