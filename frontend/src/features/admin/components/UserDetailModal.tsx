@@ -1,5 +1,5 @@
 import { X, Mail, User, Calendar, Clock, Shield, Activity, Hash, LogIn } from 'lucide-react';
-import type { UserWithMissingFields } from '../screens/UsersScreen';
+import type { DbUser } from '../types';
 
 // ============================================================================
 // NOTE: Some fields (created_at, last_sign_in, status, auth_provider, etc.)
@@ -7,14 +7,14 @@ import type { UserWithMissingFields } from '../screens/UsersScreen';
 // ============================================================================
 
 interface UserDetailModalProps {
-    user: UserWithMissingFields;
+    user: DbUser;
     onClose: () => void;
 }
 
 export default function UserDetailModal({ user, onClose }: UserDetailModalProps) {
     // Get status badge styling
     // TODO: 'status' field is missing from DbUser
-    const getStatusBadge = (status?: UserWithMissingFields['status']) => {
+    const getStatusBadge = (status?: DbUser['status']) => {
         switch (status) {
             case 'active':
                 return 'bg-green-500/20 border-green-500/30 text-green-400';
@@ -42,7 +42,7 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
 
     // Get auth provider icon/label
     // TODO: 'auth_provider' field is missing from DbUser
-    const getAuthProviderLabel = (provider?: UserWithMissingFields['auth_provider']) => {
+    const getAuthProviderLabel = (provider?: DbUser['authProvider']) => {
         switch (provider) {
             case 'email':
                 return 'Email/Password';
@@ -118,17 +118,7 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
                             <InfoRow 
                                 icon={<LogIn size={16} />} 
                                 label="Auth Provider" 
-                                value={getAuthProviderLabel(user.auth_provider)} 
-                            />
-                            {/* TODO: 'supabase_uid' field missing from DbUser */}
-                            <InfoRow 
-                                icon={<Hash size={16} />} 
-                                label="Supabase UID" 
-                                value={
-                                    user.supabase_uid 
-                                        ? <span className="font-mono text-xs break-all">{user.supabase_uid}</span>
-                                        : 'N/A'
-                                } 
+                                value={getAuthProviderLabel(user.authProvider)} 
                             />
                         </div>
                     </section>
@@ -144,8 +134,8 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
                             <InfoRow 
                                 icon={<Calendar size={16} />} 
                                 label="Account Created" 
-                                value={user.created_at 
-                                    ? new Date(user.created_at).toLocaleString()
+                                value={user.createdAt 
+                                    ? new Date(user.createdAt).toLocaleString()
                                     : 'N/A'
                                 } 
                             />
@@ -153,8 +143,8 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
                             <InfoRow 
                                 icon={<Clock size={16} />} 
                                 label="Last Sign-in" 
-                                value={user.last_sign_in 
-                                    ? new Date(user.last_sign_in).toLocaleString() 
+                                value={user.lastSignIn 
+                                    ? new Date(user.lastSignIn).toLocaleString() 
                                     : 'N/A'
                                 } 
                             />
@@ -169,9 +159,9 @@ export default function UserDetailModal({ user, onClose }: UserDetailModalProps)
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                             {/* TODO: 'analyses_count' field missing from DbUser */}
-                            <StatCard label="Analyses" value={user.analyses_count ?? 'N/A'} />
+                            <StatCard label="Analyses" value={user.analysesCount ?? 'N/A'} />
                             {/* TODO: 'drills_completed' field missing from DbUser */}
-                            <StatCard label="Drills Completed" value={user.drills_completed ?? 'N/A'} />
+                            <StatCard label="Drills Completed" value={user.drillsCompleted ?? 'N/A'} />
                         </div>
                     </section>
 

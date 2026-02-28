@@ -17,24 +17,14 @@ import type { DbUser } from '../types';
 // ============================================================================
 // User type with missing fields from DbUser
 // TODO: Add these fields to DbUser type when backend supports them:
-// - created_at, last_sign_in, status, auth_provider, supabase_uid, analyses_count, drills_completed
+// - created_at, last_sign_in, status, auth_provider, analyses_count, drills_completed
 // ============================================================================
 
-export interface UserWithMissingFields extends DbUser {
-    // TODO: Missing from DbUser - add to backend/types when available
-    created_at?: string;
-    last_sign_in?: string | null;
-    status?: 'active' | 'disabled' | 'banned';
-    auth_provider?: 'email' | 'google' | 'apple';
-    supabase_uid?: string;
-    analyses_count?: number;
-    drills_completed?: number;
-}
 
 // ============================================================================
 
 // Only use fields available in DbUser for sorting until missing fields are added
-type SortField = 'email' | 'name' | 'role';
+type SortField = 'email' | 'name' | 'role' | 'created_at'; // TODO: Add 'status' and 'last_sign_in' when available
 type SortDirection = 'asc' | 'desc';
 
 const ITEMS_PER_PAGE = 10;
@@ -57,11 +47,11 @@ export default function UsersScreen() {
     const [currentPage, setCurrentPage] = useState(1);
     
     // Detail modal state
-    const [selectedUser, setSelectedUser] = useState<UserWithMissingFields | null>(null);
+    const [selectedUser, setSelectedUser] = useState<DbUser | null>(null);
 
     // Filter and sort users
     const filteredAndSortedUsers = useMemo(() => {
-        let result: UserWithMissingFields[] = [...users];
+        let result: DbUser[] = [...users];
 
         // Apply search filter (email exact or partial, name partial)
         if (searchTerm) {
@@ -96,9 +86,12 @@ export default function UsersScreen() {
                 case 'role':
                     comparison = a.role.localeCompare(b.role);
                     break;
+                case 'created_at':
+                    comparison = a.createdAt.getTime() - b.createdAt.getTime();
+                    break;
+
                 // TODO: Add sorting for these fields when they're added to DbUser:
                 // case 'status':
-                // case 'created_at':
                 // case 'last_sign_in':
             }
             return sortDirection === 'asc' ? comparison : -comparison;
@@ -142,7 +135,7 @@ export default function UsersScreen() {
 
     // Get status badge styling
     // TODO: 'status' field is missing from DbUser
-    const getStatusBadge = (status?: UserWithMissingFields['status']) => {
+    const getStatusBadge = (status?: DbUser['status']) => {
         switch (status) {
             case 'active':
                 return 'bg-green-500/20 border-green-500/30 text-green-400';
@@ -349,15 +342,15 @@ export default function UsersScreen() {
                                             </td>
                                             <td className="py-3 px-3 text-white/60 text-sm whitespace-nowrap">
                                                 {/* TODO: 'created_at' field missing from DbUser */}
-                                                {user.created_at 
-                                                    ? new Date(user.created_at).toLocaleDateString()
+                                                {user.createdAt 
+                                                    ? user.createdAt.toLocaleDateString()
                                                     : <span className="text-white/40 italic">N/A</span>
                                                 }
                                             </td>
                                             <td className="py-3 px-3 text-white/60 text-sm whitespace-nowrap">
                                                 {/* TODO: 'last_sign_in' field missing from DbUser */}
-                                                {user.last_sign_in 
-                                                    ? new Date(user.last_sign_in).toLocaleDateString()
+                                                {user.lastSignIn 
+                                                    ? user.lastSignIn.toLocaleDateString()
                                                     : <span className="text-white/40 italic">N/A</span>
                                                 }
                                             </td>
