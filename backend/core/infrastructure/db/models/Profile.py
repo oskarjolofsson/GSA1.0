@@ -33,3 +33,7 @@ class Profile(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+    
+    last_signed_in_at: Mapped[DateTime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,    )

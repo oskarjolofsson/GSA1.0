@@ -9,7 +9,7 @@ class GetUserDTO(BaseModel):
     
     role: str | None = None
     auth_provider: str | None = None
-    status: str | None = None
+    active: bool | None = None
     analyses_count: int | None = None
     drills_completed: int | None = None
     

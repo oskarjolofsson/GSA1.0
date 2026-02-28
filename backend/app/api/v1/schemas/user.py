@@ -10,7 +10,7 @@ class GetUser(BaseModel):
     
     role: str | None = None
     authProvider: str | None = None
-    status: str | None = None
+    active: bool | None = None
     analysesCount: int | None = None
     drillsCompleted: int | None = None
     
@@ -28,7 +28,7 @@ class GetUser(BaseModel):
             name=dto.name,
             role=dto.role,
             authProvider=dto.auth_provider,
-            status=dto.status,
+            active=dto.active,
             analysesCount=dto.analyses_count,
             drillsCompleted=dto.drills_completed,
             created_at=dto.created_at,
