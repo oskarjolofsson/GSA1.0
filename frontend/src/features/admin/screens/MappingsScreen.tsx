@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAdminData } from '../hooks/useAdminData';
 import { 
     RefreshCw, 
@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import type { Issue } from '@/features/issues/types';
 import type { Drill } from '@/features/drills/types';
+import mappingService from '@/features/mapping/services/mappingService';
+import type { IssueDrill } from '@/features/mapping/types';
 
 export default function MappingsScreen() {
     const { issues, drills, loading, error, refetch } = useAdminData();
@@ -23,8 +25,9 @@ export default function MappingsScreen() {
     const [issueSearchTerm, setIssueSearchTerm] = useState('');
     const [drillSearchTerm, setDrillSearchTerm] = useState('');
     
-    // Linked drills state (mock - would come from API in production)
-    const [linkedDrillIds, setLinkedDrillIds] = useState<Map<string, string[]>>(new Map());
+    // Linked drills state - maps issue_id to array of IssueDrill objects
+    const [issueDrillMappings, setIssueDrillMappings] = useState<Map<string, IssueDrill[]>>(new Map());
+    const [loadingMappings, setLoadingMappings] = useState(false);
     
     // Success/error feedback
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -36,6 +39,28 @@ export default function MappingsScreen() {
             return () => clearTimeout(timer);
         }
     }, [feedback]);
+
+    // Fetch mappings for a specific issue
+    const fetchMappingsForIssue = useCallback(async (issueId: string) => {
+        try {
+            const mappings = await mappingService.getIssueDrillsByIssueId(issueId);
+            setIssueDrillMappings(prev => {
+                const newMap = new Map(prev);
+                newMap.set(issueId, mappings);
+                return newMap;
+            });
+        } catch (err) {
+            console.error('Failed to fetch mappings for issue:', err);
+        }
+    }, []);
+
+    // Fetch mappings when issue is selected
+    useEffect(() => {
+        if (selectedIssueId && !issueDrillMappings.has(selectedIssueId)) {
+            setLoadingMappings(true);
+            fetchMappingsForIssue(selectedIssueId).finally(() => setLoadingMappings(false));
+        }
+    }, [selectedIssueId, issueDrillMappings, fetchMappingsForIssue]);
 
     // Filter issues based on search
     const filteredIssues = useMemo(() => {
@@ -52,18 +77,23 @@ export default function MappingsScreen() {
         return issues.find(i => i.id === selectedIssueId) || null;
     }, [issues, selectedIssueId]);
 
+    // Get linked drill IDs for selected issue
+    const linkedDrillIds = useMemo(() => {
+        if (!selectedIssueId) return [];
+        const mappings = issueDrillMappings.get(selectedIssueId) || [];
+        return mappings.map(m => m.drill_id);
+    }, [selectedIssueId, issueDrillMappings]);
+
     // Get linked drills for selected issue
     const linkedDrills = useMemo(() => {
         if (!selectedIssueId) return [];
-        const ids = linkedDrillIds.get(selectedIssueId) || [];
-        return drills.filter(d => ids.includes(d.id));
+        return drills.filter(d => linkedDrillIds.includes(d.id));
     }, [selectedIssueId, linkedDrillIds, drills]);
 
     // Get available (unlinked) drills
     const availableDrills = useMemo(() => {
         if (!selectedIssueId) return drills;
-        const ids = linkedDrillIds.get(selectedIssueId) || [];
-        let available = drills.filter(d => !ids.includes(d.id));
+        let available = drills.filter(d => !linkedDrillIds.includes(d.id));
         
         if (drillSearchTerm) {
             const lowerSearch = drillSearchTerm.toLowerCase();
@@ -77,44 +107,42 @@ export default function MappingsScreen() {
     }, [selectedIssueId, linkedDrillIds, drills, drillSearchTerm]);
 
     // Handle adding a drill to an issue
-    const handleAddDrill = (drillId: string) => {
+    const handleAddDrill = async (drillId: string) => {
         if (!selectedIssueId) return;
         
-        // TODO: Call API to create mapping
-        console.log('Create mapping:', { issueId: selectedIssueId, drillId });
-        
-        setLinkedDrillIds(prev => {
-            const newMap = new Map(prev);
-            const current = newMap.get(selectedIssueId) || [];
-            newMap.set(selectedIssueId, [...current, drillId]);
-            return newMap;
-        });
-        
         const drill = drills.find(d => d.id === drillId);
-        setFeedback({ type: 'success', message: `Linked "${drill?.title}" to issue` });
+        
+        try {
+            await mappingService.linkDrillToIssue(selectedIssueId, drillId);
+            // Refresh mappings for this issue
+            await fetchMappingsForIssue(selectedIssueId);
+            setFeedback({ type: 'success', message: `Linked "${drill?.title}" to issue` });
+        } catch (err) {
+            console.error('Failed to link drill:', err);
+            setFeedback({ type: 'error', message: `Failed to link "${drill?.title}"` });
+        }
     };
 
     // Handle removing a drill from an issue
-    const handleRemoveDrill = (drillId: string) => {
+    const handleRemoveDrill = async (drillId: string) => {
         if (!selectedIssueId) return;
         
-        // TODO: Call API to delete mapping
-        console.log('Delete mapping:', { issueId: selectedIssueId, drillId });
-        
-        setLinkedDrillIds(prev => {
-            const newMap = new Map(prev);
-            const current = newMap.get(selectedIssueId) || [];
-            newMap.set(selectedIssueId, current.filter(id => id !== drillId));
-            return newMap;
-        });
-        
         const drill = drills.find(d => d.id === drillId);
-        setFeedback({ type: 'success', message: `Removed "${drill?.title}" from issue` });
+        
+        try {
+            await mappingService.unlinkDrillFromIssue(selectedIssueId, drillId);
+            // Refresh mappings for this issue
+            await fetchMappingsForIssue(selectedIssueId);
+            setFeedback({ type: 'success', message: `Removed "${drill?.title}" from issue` });
+        } catch (err) {
+            console.error('Failed to unlink drill:', err);
+            setFeedback({ type: 'error', message: `Failed to remove "${drill?.title}"` });
+        }
     };
 
     // Get linked drill count for an issue
     const getLinkedCount = (issueId: string) => {
-        return linkedDrillIds.get(issueId)?.length || 0;
+        return issueDrillMappings.get(issueId)?.length || 0;
     };
 
     if (loading) {
@@ -187,13 +215,15 @@ export default function MappingsScreen() {
                 </div>
             )}
 
-            {/* API Note */}
-            <div className="mx-2 sm:mx-0 mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center gap-2">
-                <AlertTriangle size={18} className="text-amber-400 flex-shrink-0" />
-                <span className="text-amber-400 text-sm">
-                    Mapping changes are not persisted yet (API not connected). Changes are local to this session.
-                </span>
-            </div>
+            {/* Loading indicator for mappings */}
+            {loadingMappings && (
+                <div className="mx-2 sm:mx-0 mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center gap-2">
+                    <RefreshCw size={18} className="text-blue-400 animate-spin" />
+                    <span className="text-blue-400 text-sm">
+                        Loading mappings...
+                    </span>
+                </div>
+            )}
 
             {/* Three-Pane Layout */}
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
