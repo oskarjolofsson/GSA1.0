@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Issue, CreateIssueRequest, UpdateIssueRequest } from '@/features/issues/types';
 import type { Drill } from '@/features/drills/types';
 import { X, Plus, Trash2, Link2, Save, AlertCircle } from 'lucide-react';
 import issueService from '@/features/issues/services/issueService';
+import mappingService from '@/features/mapping/services/mappingService';
 
 interface IssueEditModalProps {
     issue: Issue | null; // null for create mode
@@ -22,10 +23,12 @@ export default function IssueEditModal({ issue, drills, onClose, onSave }: Issue
     const [swingEffect, setSwingEffect] = useState(issue?.swing_effect || '');
     const [shotOutcome, setShotOutcome] = useState(issue?.shot_outcome || '');
     
-    // Linked drills state (placeholder - would need API support)
+    // Linked drills state
     const [linkedDrillIds, setLinkedDrillIds] = useState<string[]>([]);
+    const [initialLinkedDrillIds, setInitialLinkedDrillIds] = useState<string[]>([]);
     const [showDrillSelector, setShowDrillSelector] = useState(false);
     const [drillSearchTerm, setDrillSearchTerm] = useState('');
+    const [loadingLinks, setLoadingLinks] = useState(false);
     
     // UI state
     const [saving, setSaving] = useState(false);
@@ -45,12 +48,19 @@ export default function IssueEditModal({ issue, drills, onClose, onSave }: Issue
 
     const linkedDrills = drills.filter(drill => linkedDrillIds.includes(drill.id));
 
-    // Load linked drills when editing (placeholder - would need API)
+    // Load linked drills when editing
     useEffect(() => {
         if (issue) {
-            // TODO: Fetch linked drills from API
-            // For now, just mock it
-            setLinkedDrillIds([]);
+            setLoadingLinks(true);
+            mappingService.getLinkedDrillIds(issue.id)
+                .then(ids => {
+                    setLinkedDrillIds(ids);
+                    setInitialLinkedDrillIds(ids);
+                })
+                .catch(err => {
+                    console.error('Failed to load linked drills:', err);
+                })
+                .finally(() => setLoadingLinks(false));
         }
     }, [issue]);
 
@@ -96,7 +106,16 @@ export default function IssueEditModal({ issue, drills, onClose, onSave }: Issue
                 await issueService.updateIssue(issue.id, request);
             }
 
-            // TODO: Update linked drills via API
+            // Update linked drills via API
+            if (!isCreateMode && issue) {
+                const toAdd = linkedDrillIds.filter(id => !initialLinkedDrillIds.includes(id));
+                const toRemove = initialLinkedDrillIds.filter(id => !linkedDrillIds.includes(id));
+                
+                await Promise.all([
+                    ...toAdd.map(drillId => mappingService.linkDrillToIssue(issue.id, drillId)),
+                    ...toRemove.map(drillId => mappingService.unlinkDrillFromIssue(issue.id, drillId)),
+                ]);
+            }
 
             onSave();
         } catch (err) {
@@ -318,7 +337,11 @@ export default function IssueEditModal({ issue, drills, onClose, onSave }: Issue
                         )}
 
                         {/* Linked Drills List */}
-                        {linkedDrills.length === 0 ? (
+                        {loadingLinks ? (
+                            <p className="text-white/40 text-sm italic">
+                                Loading linked drills...
+                            </p>
+                        ) : linkedDrills.length === 0 ? (
                             <p className="text-white/40 text-sm italic">
                                 No drills linked to this issue yet.
                             </p>
@@ -341,10 +364,6 @@ export default function IssueEditModal({ issue, drills, onClose, onSave }: Issue
                                 ))}
                             </div>
                         )}
-
-                        <p className="text-white/30 text-xs italic">
-                            Note: Drill linking is not connected to the API yet.
-                        </p>
                     </div>
 
                     {/* Meta Info (Edit mode only) */}

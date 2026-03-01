@@ -3,6 +3,7 @@ import type { Drill, CreateDrillRequest, UpdateDrillRequest } from '@/features/d
 import type { Issue } from '@/features/issues/types';
 import { X, Plus, Trash2, Link2, Save, AlertCircle } from 'lucide-react';
 import drillService from '@/features/drills/services/drillService';
+import mappingService from '@/features/mapping/services/mappingService';
 
 interface DrillEditModalProps {
     drill: Drill | null; // null for create mode
@@ -20,10 +21,12 @@ export default function DrillEditModal({ drill, issues, onClose, onSave }: Drill
     const [successSignal, setSuccessSignal] = useState(drill?.success_signal || '');
     const [faultIndicator, setFaultIndicator] = useState(drill?.fault_indicator || '');
     
-    // Linked issues state (placeholder - would need API support)
+    // Linked issues state
     const [linkedIssueIds, setLinkedIssueIds] = useState<string[]>([]);
+    const [initialLinkedIssueIds, setInitialLinkedIssueIds] = useState<string[]>([]);
     const [showIssueSelector, setShowIssueSelector] = useState(false);
     const [issueSearchTerm, setIssueSearchTerm] = useState('');
+    const [loadingLinks, setLoadingLinks] = useState(false);
     
     // UI state
     const [saving, setSaving] = useState(false);
@@ -38,12 +41,19 @@ export default function DrillEditModal({ drill, issues, onClose, onSave }: Drill
 
     const linkedIssues = issues.filter(issue => linkedIssueIds.includes(issue.id));
 
-    // Load linked issues when editing (placeholder - would need API)
+    // Load linked issues when editing
     useEffect(() => {
         if (drill) {
-            // TODO: Fetch linked issues from API
-            // For now, just mock it
-            setLinkedIssueIds([]);
+            setLoadingLinks(true);
+            mappingService.getLinkedIssueIds(drill.id)
+                .then(ids => {
+                    setLinkedIssueIds(ids);
+                    setInitialLinkedIssueIds(ids);
+                })
+                .catch(err => {
+                    console.error('Failed to load linked issues:', err);
+                })
+                .finally(() => setLoadingLinks(false));
         }
     }, [drill]);
 
@@ -89,8 +99,16 @@ export default function DrillEditModal({ drill, issues, onClose, onSave }: Drill
                 await drillService.updateDrill(drill.id, request);
             }
 
-            // TODO: Update linked issues via API
-
+            // Update linked issues via API
+            if (!isCreateMode && drill) {
+                const toAdd = linkedIssueIds.filter(id => !initialLinkedIssueIds.includes(id));
+                const toRemove = initialLinkedIssueIds.filter(id => !linkedIssueIds.includes(id));
+                
+                await Promise.all([
+                    ...toAdd.map(issueId => mappingService.linkDrillToIssue(issueId, drill.id)),
+                    ...toRemove.map(issueId => mappingService.unlinkDrillFromIssue(issueId, drill.id)),
+                ]);
+            }
             onSave();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save drill');
@@ -274,7 +292,11 @@ export default function DrillEditModal({ drill, issues, onClose, onSave }: Drill
                         )}
 
                         {/* Linked Issues List */}
-                        {linkedIssues.length === 0 ? (
+                        {loadingLinks ? (
+                            <p className="text-white/40 text-sm italic">
+                                Loading linked issues...
+                            </p>
+                        ) : linkedIssues.length === 0 ? (
                             <p className="text-white/40 text-sm italic">
                                 No issues linked to this drill yet.
                             </p>
@@ -304,10 +326,6 @@ export default function DrillEditModal({ drill, issues, onClose, onSave }: Drill
                                 ))}
                             </div>
                         )}
-
-                        <p className="text-white/30 text-xs italic">
-                            Note: Issue linking is not connected to the API yet.
-                        </p>
                     </div>
 
                     {/* Meta Info (Edit mode only) */}
