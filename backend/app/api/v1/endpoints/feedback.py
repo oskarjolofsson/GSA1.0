@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from uuid import UUID
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
+from app.dependencies.require_admin import require_admin
 from sqlalchemy.orm import Session
 
 from app.api.v1.schemas.feedback import (
@@ -54,7 +55,7 @@ def create_feedback(
 def get_feedback(
     feedback_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Get details of a specific feedback entry.
@@ -77,7 +78,7 @@ def get_feedback(
 def get_feedback_by_user(
     user_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Get all feedback entries for a specific user.
@@ -97,7 +98,7 @@ def get_feedback_by_user(
 def get_feedback_by_rating(
     rating: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Get all feedback entries with a specific rating.
@@ -117,7 +118,7 @@ def get_feedback_by_rating(
 def get_all_feedback(
     limit: int = Query(default=100, ge=1, le=1000),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Get all feedback entries.

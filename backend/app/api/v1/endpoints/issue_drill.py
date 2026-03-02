@@ -3,6 +3,7 @@ from uuid import UUID
 
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
+from app.dependencies.require_admin import require_admin
 from sqlalchemy.orm import Session
 
 from app.api.v1.schemas.issue_drill import (
@@ -28,7 +29,7 @@ router = APIRouter()
 def create_issue_drill(
     request: CreateIssueDrillRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     """
     Create a new issue-drill link.
@@ -59,7 +60,7 @@ def create_issue_drill(
 def get_issue_drill_by_id(
     issue_drill_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     """
     Get an issue-drill link by its ID.
@@ -81,7 +82,7 @@ def get_issue_drill_by_id(
 def get_issue_drills_by_issue_id(
     issue_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     """
     Get all issue-drill links for a specific issue.
@@ -100,7 +101,7 @@ def get_issue_drills_by_issue_id(
 def get_issue_drills_by_drill_id(
     drill_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     """
     Get all issue-drill links for a specific drill.
@@ -119,7 +120,7 @@ def get_issue_drills_by_drill_id(
 def delete_issue_drill(
     issue_drill_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
 ):
     """
     Delete an issue-drill link by its ID.

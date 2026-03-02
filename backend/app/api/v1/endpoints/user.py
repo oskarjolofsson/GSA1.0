@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from app.dependencies.auth import get_current_user
+from app.dependencies.require_admin import require_admin
 from core.services.user_service import get_user_by_id, get_all_users as service_get_all_users
 from app.dependencies.db import get_db
 from sqlalchemy.orm import Session
@@ -51,7 +52,7 @@ def get_user_consent():
 @router.get("/all")
 def get_all_users(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     print("Getting all users - ADMIN ONLY")
     users = service_get_all_users(db)

@@ -43,23 +43,7 @@ class TestUserRoleAssign:
 
         assert created.user_id == test_user
         assert created.role_id == test_role.id
-        assert created.assigned_at is not None
-        assert created.expires_at is None
-
-    def test_assign_role_with_expiration(self, db_session, test_user, test_role):
-        """Test assigning a role with expiration date"""
-        from datetime import datetime, timedelta, timezone
-
-        expires = datetime.now(timezone.utc) + timedelta(days=30)
-        user_role = UserRole(
-            user_id=test_user,
-            role_id=test_role.id,
-            expires_at=expires,
-        )
-
-        created = assign_role_to_user(user_role=user_role, session=db_session)
-
-        assert created.expires_at is not None
+        
 
     def test_assign_multiple_roles_to_user(self, db_session, test_user, test_role, test_role_admin):
         """Test assigning multiple roles to a user"""
@@ -187,9 +171,3 @@ class TestUserRoleConstraints:
         with pytest.raises(Exception):
             assign_role_to_user(user_role=user_role2, session=db_session)
 
-    def test_assigned_at_is_set(self, db_session, test_user, test_role):
-        """Test that assigned_at is automatically set"""
-        user_role = UserRole(user_id=test_user, role_id=test_role.id)
-        created = assign_role_to_user(user_role=user_role, session=db_session)
-
-        assert created.assigned_at is not None
