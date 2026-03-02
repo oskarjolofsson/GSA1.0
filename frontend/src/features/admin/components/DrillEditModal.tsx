@@ -81,6 +81,7 @@ export default function DrillEditModal({ drill, issues, onClose, onSave }: Drill
         setError(null);
 
         try {
+            let drillId: string;
             if (isCreateMode) {
                 const request: CreateDrillRequest = {
                     title: title.trim(),
@@ -88,7 +89,8 @@ export default function DrillEditModal({ drill, issues, onClose, onSave }: Drill
                     success_signal: successSignal.trim(),
                     fault_indicator: faultIndicator.trim(),
                 };
-                await drillService.createDrill(request);
+                const response = await drillService.createDrill(request);
+                drillId = response.drill_id;
             } else {
                 const request: UpdateDrillRequest = {
                     title: title.trim(),
@@ -97,18 +99,19 @@ export default function DrillEditModal({ drill, issues, onClose, onSave }: Drill
                     fault_indicator: faultIndicator.trim(),
                 };
                 await drillService.updateDrill(drill.id, request);
+                drillId = drill.id;
             }
 
             // Update linked issues via API
-            if (!isCreateMode && drill) {
-                const toAdd = linkedIssueIds.filter(id => !initialLinkedIssueIds.includes(id));
-                const toRemove = initialLinkedIssueIds.filter(id => !linkedIssueIds.includes(id));
-                
-                await Promise.all([
-                    ...toAdd.map(issueId => mappingService.linkDrillToIssue(issueId, drill.id)),
-                    ...toRemove.map(issueId => mappingService.unlinkDrillFromIssue(issueId, drill.id)),
-                ]);
-            }
+            
+            const toAdd = linkedIssueIds.filter(id => !initialLinkedIssueIds.includes(id));
+            const toRemove = initialLinkedIssueIds.filter(id => !linkedIssueIds.includes(id));
+            
+            await Promise.all([
+                ...toAdd.map(issueId => mappingService.linkDrillToIssue(issueId, drillId)),
+                ...toRemove.map(issueId => mappingService.unlinkDrillFromIssue(issueId, drillId)),
+            ]);
+            
             onSave();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save drill');
