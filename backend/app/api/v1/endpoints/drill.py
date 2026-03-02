@@ -4,6 +4,7 @@ from uuid import UUID
 from flask import request
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
+from app.dependencies.require_admin import require_admin
 from sqlalchemy.orm import Session
 
 from app.api.v1.schemas.drill import (
@@ -67,7 +68,7 @@ def create_drill(
 @router.get("/all", response_model=list[GetDrill])
 def get_all_drills(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Get all drills (admin endpoint).
@@ -162,13 +163,13 @@ def get_drill(
     return GetDrill.from_domain(drill)
 
 
-# ONLY FOR INTERNAL USE, NOT EXPOSED TO FRONTEND AND PROTECTED BY AUTHENTICATION
+# ONLY FOR INTERNAL USE, PROTECTED BY AUTHENTICATION
 @router.patch("/{drill_id}", response_model=GetDrill)
 def update_drill(
     drill_id: UUID,
     request: UpdateDrillRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Update an existing drill.
@@ -206,7 +207,7 @@ def update_drill(
 def bulk_delete_drills(
     request: BulkDeleteDrillsRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """Delete multiple drills.
 
@@ -224,7 +225,7 @@ def bulk_delete_drills(
 def delete_drill(
     drill_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Delete a specific drill.

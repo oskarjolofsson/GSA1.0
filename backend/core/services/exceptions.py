@@ -30,3 +30,15 @@ class InvalidVideoException(ServiceException):
     """Raised when video analysis fails (e.g., non-golf video, corrupted file)."""
     def __init__(self, message: str):
         super().__init__(message)
+        
+        
+class UnauthorizedException(ServiceException):
+    """Raised when a user tries to access a resource they are not authorized for."""
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
+class ForbiddenException(ServiceException):
+    """Raised when a user tries to access a resource they are forbidden from accessing."""
+    def __init__(self, message: str):
+        super().__init__(message)

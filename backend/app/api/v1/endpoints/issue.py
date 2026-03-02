@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Body
 from uuid import UUID
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
+from app.dependencies.require_admin import require_admin
 from sqlalchemy.orm import Session
 
 from app.api.v1.schemas.issue import (
@@ -31,7 +32,7 @@ router = APIRouter()
 def create_issue(
     request: CreateIssueRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Create a new issue.
@@ -64,7 +65,7 @@ def create_issue(
 @router.get("/all", response_model=list[GetIssue])
 def get_all_issues(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Get all issues.
@@ -156,7 +157,7 @@ def update_issue(
     issue_id: UUID,
     request: UpdateIssueRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Update an existing issue.
@@ -193,7 +194,7 @@ def update_issue(
 def delete_issues_bulk(
     request: BulkDeleteIssuesRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Delete multiple issues.
@@ -211,7 +212,7 @@ def delete_issues_bulk(
 def delete_issue(
     issue_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
     Delete a specific issue.
