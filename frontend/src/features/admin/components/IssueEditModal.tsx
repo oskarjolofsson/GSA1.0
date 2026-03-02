@@ -84,6 +84,8 @@ export default function IssueEditModal({ issue, drills, onClose, onSave }: Issue
         setError(null);
 
         try {
+            let issueId: string;
+            
             if (isCreateMode) {
                 const request: CreateIssueRequest = {
                     title: title.trim(),
@@ -93,7 +95,8 @@ export default function IssueEditModal({ issue, drills, onClose, onSave }: Issue
                     swing_effect: swingEffect.trim() || undefined,
                     shot_outcome: shotOutcome.trim() || undefined,
                 };
-                await issueService.createIssue(request);
+                const response = await issueService.createIssue(request);
+                issueId = response.issue_id;
             } else {
                 const request: UpdateIssueRequest = {
                     title: title.trim(),
@@ -104,18 +107,17 @@ export default function IssueEditModal({ issue, drills, onClose, onSave }: Issue
                     shot_outcome: shotOutcome.trim() || undefined,
                 };
                 await issueService.updateIssue(issue.id, request);
+                issueId = issue.id;
             }
 
             // Update linked drills via API
-            if (!isCreateMode && issue) {
-                const toAdd = linkedDrillIds.filter(id => !initialLinkedDrillIds.includes(id));
-                const toRemove = initialLinkedDrillIds.filter(id => !linkedDrillIds.includes(id));
-                
-                await Promise.all([
-                    ...toAdd.map(drillId => mappingService.linkDrillToIssue(issue.id, drillId)),
-                    ...toRemove.map(drillId => mappingService.unlinkDrillFromIssue(issue.id, drillId)),
-                ]);
-            }
+            const toAdd = linkedDrillIds.filter(id => !initialLinkedDrillIds.includes(id));
+            const toRemove = initialLinkedDrillIds.filter(id => !linkedDrillIds.includes(id));
+            
+            await Promise.all([
+                ...toAdd.map(drillId => mappingService.linkDrillToIssue(issueId, drillId)),
+                ...toRemove.map(drillId => mappingService.unlinkDrillFromIssue(issueId, drillId)),
+            ]);
 
             onSave();
         } catch (err) {

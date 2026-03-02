@@ -151,7 +151,7 @@ def get_issue(
     return GetIssue.from_domain(issue)
 
 
-@router.put("/{issue_id}", response_model=GetIssue)
+@router.patch("/{issue_id}", response_model=GetIssue)
 def update_issue(
     issue_id: UUID,
     request: UpdateIssueRequest,

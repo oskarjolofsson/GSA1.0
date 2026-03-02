@@ -163,7 +163,7 @@ def get_drill(
 
 
 # ONLY FOR INTERNAL USE, NOT EXPOSED TO FRONTEND AND PROTECTED BY AUTHENTICATION
-@router.put("/{drill_id}", response_model=GetDrill)
+@router.patch("/{drill_id}", response_model=GetDrill)
 def update_drill(
     drill_id: UUID,
     request: UpdateDrillRequest,
