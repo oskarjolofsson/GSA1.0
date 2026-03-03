@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { apiClient } from '@/lib/apiClient';
 import type {
     Issue,
     CreateIssueRequest,
@@ -6,189 +6,80 @@ import type {
     UpdateIssueRequest
 } from '../types';
 
-const API = import.meta.env.VITE_API_URL || '';
-
 class IssueService {
-    /**
-     * Helper method for authenticated fetch requests
-     */
-    private async fetchWithAuth<T>(
-        url: string,
-        method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
-        body: any = null
-    ): Promise<T> {
-        const {
-            data: { session },
-            error
-        } = await supabase.auth.getSession();
-
-        if (error) throw error;
-        if (!session) throw new Error('Not signed in');
-
-        const options: RequestInit = {
-            method,
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${session.access_token}`,
-            },
-        };
-
-        if (body) {
-            options.body = JSON.stringify(body);
-        }
-
-        const response = await fetch(`${API}${url}`, options);
-
-        if (!response.ok) {
-            try {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || `Server error ${response.status}`);
-            } catch (jsonError) {
-                // Fallback if response is not JSON
-                throw new Error(`Server error ${response.status}: ${response.statusText}`);
-            }
-        }
-
-        // Handle 204 No Content
-        if (response.status === 204) {
-            return {} as T;
-        }
-
-        return response.json();
-    }
-
     /**
      * Create a new issue
      */
     async createIssue(request: CreateIssueRequest): Promise<CreateIssueResponse> {
-        try {
-            return await this.fetchWithAuth<CreateIssueResponse>('/api/v1/issues/', 'POST', request);
-        } catch (error) {
-            console.error('Error in createIssue:', error);
-            throw new Error('Could not create issue. Please try again later.');
-        }
+        return apiClient.post<CreateIssueResponse>('/api/v1/issues/', request);
     }
 
     /**
      * Get issue by ID
      */
     async getIssueById(issueId: string): Promise<Issue> {
-        try {
-            return await this.fetchWithAuth<Issue>(`/api/v1/issues/${issueId}`);
-        } catch (error) {
-            console.error('Error in getIssueById:', error);
-            throw new Error('Could not fetch issue. Please try again later.');
-        }
+        return apiClient.get<Issue>(`/api/v1/issues/${issueId}`);
     }
 
     /**
      * Get all issues associated with an analysis
      */
     async getIssuesByAnalysis(analysisId: string): Promise<Issue[]> {
-        try {
-            const data = await this.fetchWithAuth<Issue[]>(
-                `/api/v1/issues/by-analysis/${analysisId}`
-            );
-            return Array.isArray(data) ? data : [];
-        } catch (error) {
-            console.error('Error in getIssuesByAnalysis:', error);
-            throw new Error('Could not fetch issues for analysis. Please try again later.');
-        }
+        const data = await apiClient.get<Issue[]>(`/api/v1/issues/by-analysis/${analysisId}`);
+        return Array.isArray(data) ? data : [];
     }
 
     /**
      * Get all issues associated with a drill
      */
     async getIssuesByDrill(drillId: string): Promise<Issue[]> {
-        try {
-            const data = await this.fetchWithAuth<Issue[]>(
-                `/api/v1/issues/by-drill/${drillId}`
-            );
-            return Array.isArray(data) ? data : [];
-        } catch (error) {
-            console.error('Error in getIssuesByDrill:', error);
-            throw new Error('Could not fetch issues for drill. Please try again later.');
-        }
+        const data = await apiClient.get<Issue[]>(`/api/v1/issues/by-drill/${drillId}`);
+        return Array.isArray(data) ? data : [];
     }
 
     /**
      * Get all issues
      */
     async getAllIssues(): Promise<Issue[]> {
-        try {
-            const data = await this.fetchWithAuth<Issue[]>('/api/v1/issues/');
-            return Array.isArray(data) ? data : [];
-        } catch (error) {
-            console.error('Error in getAllIssues:', error);
-            throw new Error('Could not fetch issues. Please try again later.');
-        }
+        const data = await apiClient.get<Issue[]>('/api/v1/issues/');
+        return Array.isArray(data) ? data : [];
     }
 
     /**
      * Get all issues for the current user
      */
     async getUserIssues(): Promise<Issue[]> {
-        try {
-            const data = await this.fetchWithAuth<Issue[]>('/api/v1/issues/');
-            return Array.isArray(data) ? data : [];
-        } catch (error) {
-            console.error('Error in getUserIssues:', error);
-            throw new Error('Could not fetch user issues. Please try again later.');
-        }
+        const data = await apiClient.get<Issue[]>('/api/v1/issues/');
+        return Array.isArray(data) ? data : [];
     }
 
     /**
      * Get all issues (admin endpoint)
      */
     async getAllIssuesAdmin(): Promise<Issue[]> {
-        try {
-            const data = await this.fetchWithAuth<Issue[]>('/api/v1/issues/all');
-            return Array.isArray(data) ? data : [];
-        } catch (error) {
-            console.error('Error in getAllIssuesAdmin:', error);
-            throw new Error('Could not fetch all issues. Please try again later.');
-        }
+        const data = await apiClient.get<Issue[]>('/api/v1/issues/all');
+        return Array.isArray(data) ? data : [];
     }
 
     /**
      * Update an issue
      */
     async updateIssue(issueId: string, request: UpdateIssueRequest): Promise<Issue> {
-        try {
-            return await this.fetchWithAuth<Issue>(
-                `/api/v1/issues/${issueId}`,
-                'PATCH',
-                request
-            );
-        } catch (error) {
-            console.error('Error in updateIssue:', error);
-            throw new Error('Could not update issue. Please try again later.');
-        }
+        return apiClient.patch<Issue>(`/api/v1/issues/${issueId}`, request);
     }
 
     /**
      * Delete an issue
      */
     async deleteIssue(issueId: string): Promise<void> {
-        try {
-            await this.fetchWithAuth<void>(`/api/v1/issues/${issueId}`, 'DELETE');
-        } catch (error) {
-            console.error('Error in deleteIssue:', error);
-            throw new Error('Could not delete issue. Please try again later.');
-        }
+        await apiClient.delete<void>(`/api/v1/issues/${issueId}`);
     }
 
+    /**
+     * Bulk delete issues
+     */
     async bulkDeleteIssues(issueIds: string[]): Promise<void> {
-        try {
-            await this.fetchWithAuth<void>(
-                `/api/v1/issues/bulk`,
-                'DELETE',
-                { issue_ids: issueIds }
-            );
-        } catch (error) {
-            console.error('Error in bulkDeleteIssues:', error);
-            throw new Error('Could not bulk delete issues. Please try again later.');
-        }
+        await apiClient.delete<void>('/api/v1/issues/bulk', { issue_ids: issueIds });
     }
 }
 

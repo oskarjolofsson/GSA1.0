@@ -9,6 +9,7 @@ import BulkActions from '../components/BulkActions';
 import SearchBar from '../components/SearchBar';
 import FilterPanel from '../components/FilterPanel';
 import FilterSelect from '../components/FilterSelect';
+import { LoadingState, ErrorState } from '../components/error';
 import useDrillTable, { SortField } from '../hooks/useDrillTable';
 import DrillRow from '@/features/drills/components/adminTableRow';
 import type { Drill } from '@/features/drills/types';
@@ -23,34 +24,16 @@ export default function DrillsScreen() {
     const { state, data, actions } = useDrillTable();
 
     if (data.loading) {
-        return (
-            <div className="justify-center p-10">
-                <div className="text-3xl font-bold mb-6 text-white ml-6">Drills Management</div>
-                <div className="ml-6 mt-8">
-                    <div className="bg-[#0e1428]/80 backdrop-blur-md border border-white/10 rounded-lg p-6">
-                        <p className="text-white/60">Loading drills...</p>
-                    </div>
-                </div>
-            </div>
-        );
+        return <LoadingState title="Drills Management" message="Loading drills..." />;
     }
 
     if (data.error) {
         return (
-            <div className="justify-center p-10">
-                <div className="text-3xl font-bold mb-6 text-white ml-6">Drills Management</div>
-                <div className="ml-6 mt-8">
-                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
-                        <p className="text-red-500">{data.error}</p>
-                        <button
-                            onClick={actions.refetch}
-                            className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-white transition-colors"
-                        >
-                            Retry
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <ErrorState
+                title="Drills Management"
+                error={data.error}
+                onRetry={actions.refetch}
+            />
         );
     }
 

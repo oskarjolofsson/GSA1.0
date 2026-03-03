@@ -30,7 +30,7 @@ export interface IssueTableData {
     paginatedIssues: Issue[];
     totalPages: number;
     loading: boolean;
-    error: string | null;
+    error: unknown;
 }
 
 export interface IssueTableActions {
