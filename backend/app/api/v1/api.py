@@ -2,7 +2,13 @@ from fastapi import APIRouter
 api_router = APIRouter()
 
 # Include endpoint routers
-from .endpoints import drill, feedback, user, analysis, issue, issue_drill
+from .endpoints import drill, feedback, user, analysis, issue, issue_drill, admin
+
+api_router.include_router(
+    router=admin.router,
+    prefix="/admin",
+    tags=["admin"],
+)
 
 api_router.include_router(
     router=drill.router,
