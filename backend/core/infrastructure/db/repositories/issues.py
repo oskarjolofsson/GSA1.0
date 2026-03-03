@@ -4,7 +4,7 @@ from ..models.IssueDrill import IssueDrill
 from ..models.Analysis import Analysis
 from sqlalchemy.orm import Session
 from uuid import UUID
-from sqlalchemy import delete
+from sqlalchemy import delete, select, func
 
 # ------------ GET ------------
 
@@ -80,3 +80,23 @@ def delete_issues(issues: list[Issue], session: Session) -> None:
     stmt = delete(Issue).where(Issue.id.in_([issue.id for issue in issues]))
     session.execute(stmt)
     session.flush()
+
+
+# ------------ COUNT ------------
+
+
+def get_issue_count(session: Session) -> int:
+    """Get total count of issues."""
+    stmt = select(func.count()).select_from(Issue)
+    return session.scalar(stmt) or 0
+
+
+def get_issues_with_no_drills_count(session: Session) -> int:
+    """Get count of issues that have no drill mappings."""
+    subquery = select(IssueDrill.issue_id).distinct()
+    stmt = (
+        select(func.count())
+        .select_from(Issue)
+        .where(Issue.id.notin_(subquery))
+    )
+    return session.scalar(stmt) or 0

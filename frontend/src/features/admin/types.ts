@@ -15,3 +15,14 @@ export interface DbUser {
     lastSignIn: Date | null;
     updatedAt: Date;
 }
+
+export interface AdminStats {
+    totalDrills: number;
+    totalIssues: number;
+    totalMappings: number;
+    totalUsers: number;
+    unmappedDrills: number;
+    issuesWithNoDrills: number;
+    newUsersLast7Days: number;
+    newUsersLast30Days: number;
+}

@@ -1,5 +1,6 @@
 from ..models.IssueDrill import IssueDrill
 from sqlalchemy.orm import Session
+from sqlalchemy import select, func
 from uuid import UUID
 
 
@@ -26,3 +27,12 @@ def delete_issue_drill(issue_drill_id: UUID, session: Session) -> None:
     if issue_drill:
         session.delete(issue_drill)
         session.flush()
+
+
+# ------------ COUNT ------------
+
+
+def get_mapping_count(session: Session) -> int:
+    """Get total count of issue-drill mappings."""
+    stmt = select(func.count()).select_from(IssueDrill)
+    return session.scalar(stmt) or 0

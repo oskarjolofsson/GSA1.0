@@ -5,28 +5,11 @@ import {
     Users, 
     Plus,
     Link2,
-    Clock
+    Loader2,
+    RefreshCw
 } from 'lucide-react';
-
-// Placeholder data - replace with actual API calls later
-const stats = {
-    totalDrills: 24,
-    totalIssues: 18,
-    totalMappings: 32,
-    unmappedDrills: 5,
-    issuesWithNoDrills: 3,
-    totalUsers: 156,
-    newUsersLast7Days: 12,
-    newUsersLast30Days: 43,
-};
-
-const recentChanges = [
-    { id: 1, action: 'Created drill', target: 'Hip Rotation Fix', user: 'admin', timestamp: '2 hours ago' },
-    { id: 2, action: 'Mapped issue to drill', target: 'Over-the-top → Hip Rotation Fix', user: 'admin', timestamp: '3 hours ago' },
-    { id: 3, action: 'Updated issue', target: 'Early Extension', user: 'admin', timestamp: '5 hours ago' },
-    { id: 4, action: 'Created issue', target: 'Casting', user: 'admin', timestamp: '1 day ago' },
-    { id: 5, action: 'Deleted drill', target: 'Old Grip Drill', user: 'admin', timestamp: '1 day ago' },
-];
+import { useAdminStats } from '../hooks/useAdminStats';
+import { ErrorState, LoadingState } from '../components/error';
 
 interface StatCardProps {
     label: string;
@@ -73,6 +56,8 @@ function QuickAction({ label, icon, onClick }: QuickActionProps) {
 }
 
 export default function AdminHomeScreen() {
+    const { stats, loading, error, refetch } = useAdminStats();
+
     const handleCreateDrill = () => {
         // TODO: Implement create drill modal/navigation
         console.log('Create drill');
@@ -88,11 +73,35 @@ export default function AdminHomeScreen() {
         console.log('Create mapping');
     };
 
+    if (loading) {
+        return <LoadingState title="Drills Management" message="Loading drills..." />;
+    }
+
+    if (error) {
+        return (
+            <ErrorState
+                title="Drills Management"
+                error={error}
+                onRetry={refetch}
+            />
+        );
+    }
+
     return (
         <div className="justify-center p-2 sm:p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6 ml-6 mr-6">
-                <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+                <div className="flex items-center gap-4">
+                    <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+                    <button
+                        onClick={refetch}
+                        disabled={loading}
+                        className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/60 hover:text-white transition-colors disabled:opacity-50"
+                        title="Refresh stats"
+                    >
+                        <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                    </button>
+                </div>
                 <Link
                     to="/admin/database"
                     className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/80 hover:text-white transition-colors"
@@ -101,6 +110,20 @@ export default function AdminHomeScreen() {
                     View Database
                 </Link>
             </div>
+
+            {/* Error State */}
+            {error && (
+                <div className="mx-2 sm:mx-6 mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300">
+                    Failed to load statistics. Please try again.
+                </div>
+            )}
+
+            {/* Loading State */}
+            {loading && !stats.totalDrills && (
+                <div className="flex items-center justify-center py-20">
+                    <Loader2 size={32} className="animate-spin text-blue-400" />
+                </div>
+            )}
 
             {/* Stats Grid */}
             <div className="mx-2 sm:mx-6">
@@ -181,36 +204,6 @@ export default function AdminHomeScreen() {
                     </div>
                 </div>
             </div>
-
-            {/* Recent Changes Feed */}
-            {/* <div className="mx-2 sm:mx-6 mt-8">
-                <div className="bg-[#0e1428]/80 backdrop-blur-md border border-white/10 rounded-lg p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Clock size={20} className="text-white/60" />
-                        <h2 className="text-xl font-semibold text-white">Recent Changes</h2>
-                    </div>
-                    <div className="space-y-3">
-                        {recentChanges.map((change) => (
-                            <div 
-                                key={change.id}
-                                className="flex items-center justify-between py-2 border-b border-white/5 last:border-0"
-                            >
-                                <div className="flex-1">
-                                    <span className="text-white/80">{change.action}</span>
-                                    <span className="text-white/40 mx-2">·</span>
-                                    <span className="text-blue-400">{change.target}</span>
-                                </div>
-                                <div className="text-white/40 text-sm">
-                                    {change.timestamp}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <p className="text-white/40 text-sm mt-4 text-center italic">
-                        Recent changes feed is not connected to API yet
-                    </p>
-                </div>
-            </div> */}
         </div>
     );
 }
