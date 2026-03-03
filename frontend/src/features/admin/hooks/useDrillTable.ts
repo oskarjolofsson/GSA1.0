@@ -29,7 +29,7 @@ export interface DrillTableData {
     paginatedDrills: Drill[];
     totalPages: number;
     loading: boolean;
-    error: string | null;
+    error: unknown;
 }
 
 export interface DrillTableActions {

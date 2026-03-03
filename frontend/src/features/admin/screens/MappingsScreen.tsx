@@ -14,6 +14,7 @@ import type { Issue } from '@/features/issues/types';
 import type { Drill } from '@/features/drills/types';
 import mappingService from '@/features/mapping/services/mappingService';
 import type { IssueDrill } from '@/features/mapping/types';
+import { LoadingState, ErrorState } from '../components/error';
 
 export default function MappingsScreen() {
     const { issues, drills, loading, error, refetch } = useAdminData();
@@ -146,34 +147,16 @@ export default function MappingsScreen() {
     };
 
     if (loading) {
-        return (
-            <div className="justify-center p-10">
-                <div className="text-3xl font-bold mb-6 text-white ml-6">Drill ↔ Issue Mappings</div>
-                <div className="ml-6 mt-8">
-                    <div className="bg-[#0e1428]/80 backdrop-blur-md border border-white/10 rounded-lg p-6">
-                        <p className="text-white/60">Loading data...</p>
-                    </div>
-                </div>
-            </div>
-        );
+        return <LoadingState title="Drill ↔ Issue Mappings" message="Loading data..." />;
     }
 
     if (error) {
         return (
-            <div className="justify-center p-10">
-                <div className="text-3xl font-bold mb-6 text-white ml-6">Drill ↔ Issue Mappings</div>
-                <div className="ml-6 mt-8">
-                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
-                        <p className="text-red-500">{error}</p>
-                        <button
-                            onClick={refetch}
-                            className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-white transition-colors"
-                        >
-                            Retry
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <ErrorState
+                title="Drill ↔ Issue Mappings"
+                error={error}
+                onRetry={refetch}
+            />
         );
     }
 

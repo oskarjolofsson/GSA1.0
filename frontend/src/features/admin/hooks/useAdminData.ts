@@ -8,7 +8,7 @@ interface AdminDataState {
     issues: Issue[];
     drills: Drill[];
     loading: boolean;
-    error: string | null;
+    error: unknown;
 }
 
 export const useAdminData = () => {
@@ -39,7 +39,7 @@ export const useAdminData = () => {
             setState(prev => ({
                 ...prev,
                 loading: false,
-                error: error instanceof Error ? error.message : 'Failed to fetch data',
+                error: error,
             }));
         }
     };
