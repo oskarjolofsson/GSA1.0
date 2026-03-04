@@ -16,6 +16,7 @@ import AdminDrills from "./admin/drills.jsx";
 import AdminIssues from "./admin/issues.jsx";
 import AdminMappings from "./admin/mappings.jsx";
 import AdminUsers from "./admin/users.jsx";
+import Feedback from "./admin/feedback.jsx";
 
 // Import components
 import PublicLayout from './public/layout.jsx';
@@ -68,6 +69,7 @@ export const router = createBrowserRouter([
           { path: "issues", element: <AdminIssues /> },
           { path: "mappings", element: <AdminMappings /> },
           { path: "users", element: <AdminUsers /> },
+          { path: "feedback", element: <Feedback /> },
           { path: "*", element: <NotFound /> },
         ],
       },

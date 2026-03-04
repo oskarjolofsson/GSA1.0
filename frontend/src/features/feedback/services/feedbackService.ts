@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/apiClient';
+import { Feedback } from '../types';
 
 export const feedbackService = {
   async submitFeedback(
@@ -14,4 +15,9 @@ export const feedbackService = {
       comments: comments ?? "",
     });
   },
+
+  async getFeedback() {
+    return apiClient.get<Feedback[]>('/api/v1/feedback') as Promise<Feedback[]>;
+  },
+
 };

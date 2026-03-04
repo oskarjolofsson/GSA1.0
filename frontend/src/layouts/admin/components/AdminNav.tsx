@@ -1,11 +1,11 @@
 import { NavLink } from "react-router-dom";
 import {
-  Database,
   LayoutDashboard,
   Dumbbell,
   AlertTriangle,
   Link2,
   Users,
+  PencilLine,
 } from "lucide-react";
 
 const items = [
@@ -14,6 +14,7 @@ const items = [
   { to: "/admin/issues", label: "Issues", icon: <AlertTriangle size={24} /> },
   { to: "/admin/mappings", label: "Mappings", icon: <Link2 size={24} /> },
   { to: "/admin/users", label: "Users", icon: <Users size={24} /> },
+  { to: "/admin/feedback", label: "Feedback", icon: <PencilLine size={24} /> }
 ];
 
 export default function AdminNav({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {
