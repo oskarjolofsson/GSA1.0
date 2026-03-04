@@ -5,5 +5,9 @@ export function useFeedback() {
     return feedbackService.submitFeedback(rating, comments);
   };
 
-  return { submit };
+  const getAll = async () => {
+    return await feedbackService.getFeedback();
+  };
+
+  return { submit, getAll };
 }
