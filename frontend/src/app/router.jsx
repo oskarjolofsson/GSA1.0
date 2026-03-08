@@ -9,7 +9,7 @@ import Privacy from './public/privacy.jsx';
 import DashboardUpload from './dashboard/upload.jsx';
 import Drills from './dashboard/drills.jsx';
 import Analysis from './dashboard/analysis.jsx';
-import Issues from './dashboard/issue.jsx';
+import Issues from './dashboard/issue/page.jsx';
 import HomeDashboard from "./dashboard/home.jsx";
 import AdminHome from "./admin/home.jsx";
 import AdminDrills from "./admin/drills.jsx";
