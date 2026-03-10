@@ -9,7 +9,7 @@ import BulkActions from '../components/BulkActions';
 import SearchBar from '../components/SearchBar';
 import FilterPanel from '../components/FilterPanel';
 import FilterSelect from '../components/FilterSelect';
-import { LoadingState, ErrorState } from '../components/error';
+import { LoadingState, ErrorState } from '../../../shared/components/cards/error';
 import useDrillTable, { SortField } from '../hooks/useDrillTable';
 import DrillRow from '@/features/drills/components/adminTableRow';
 import type { Drill } from '@/features/drills/types';

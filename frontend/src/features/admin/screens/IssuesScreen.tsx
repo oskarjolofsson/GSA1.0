@@ -8,7 +8,7 @@ import BulkActions from '../components/BulkActions';
 import SearchBar from '../components/SearchBar';
 import FilterPanel from '../components/FilterPanel';
 import FilterSelect from '../components/FilterSelect';
-import { LoadingState, ErrorState } from '../components/error';
+import { LoadingState, ErrorState } from '../../../shared/components/cards/error';
 import useIssueTable, { SortField } from '../hooks/useIssueTable';
 import { IssueRow } from '@/features/issues/components/adminTableRow';
 import type { Issue } from '@/features/issues/types';
