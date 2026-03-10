@@ -2,13 +2,21 @@ import ProgressBar from '../components/progressbar.jsx';
 import MediaPlaceholder from '../components/media_placeholder.jsx';
 import DrillExplainer from '../components/drill_explainer.jsx';
 import Indicator from '../components/indicator.jsx';
+import { ErrorState, LoadingState } from '@/shared/components/cards/error.js';
+import { usePracticeDrills } from '../hooks/usePracticeDrills.js';
+import { useSearchParams } from 'react-router-dom';
+
 
 // Libraries
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+
 
 export default function DrillsPracticeScreen() {
-
-    const total = 15;
+    const [searchParams] = useSearchParams();
+    const issueId = searchParams.get('issueID'); 
+    const { drills, loading, error } = usePracticeDrills(issueId || '');
+    const total = 12;
     const [succeeded, setSucceeded] = useState(0);
     const [failed, setFailed] = useState(0);
 
@@ -23,6 +31,24 @@ export default function DrillsPracticeScreen() {
             setSucceeded(succeeded + 1);
         }
     };
+
+    if (!issueId) {
+        return <ErrorState title="Issue Not Found" error={new Error('Issue ID is required to load drills')} onRetry={() => window.location.reload()} />;
+    }
+
+    if (loading) {
+        return (
+            <LoadingState title="Loading Drills" message="Fetching drills for this issue..." />
+        );
+    }
+
+    if (error) {
+        return <ErrorState title="Failed to Load Drills" error={error} onRetry={() => window.location.reload()} />;
+    }
+
+    if (!drills || drills.length === 0) {
+        return <ErrorState title="No Drills Found" error={new Error('No drills are available for this issue.')} onRetry={() => window.location.reload()} />;
+    }
 
     return (
         <div className="h-screen text-slate-100 reminder flex flex-col overflow-hidden">

@@ -9,7 +9,7 @@ import {
     RefreshCw
 } from 'lucide-react';
 import { useAdminStats } from '../hooks/useAdminStats';
-import { ErrorState, LoadingState } from '../components/error';
+import { ErrorState, LoadingState } from '../../../shared/components/cards/error';
 
 interface StatCardProps {
     label: string;
