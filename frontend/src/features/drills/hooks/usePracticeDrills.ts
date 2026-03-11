@@ -1,18 +1,30 @@
 import { useState, useEffect } from 'react';
 import { DrillService } from '@/features/drills/services/drillService';
+import { useActiveDrill } from './useActiveDrill';
 import type { Drill } from '../types';
 
 interface UsePracticeDrillsReturn {
-    drills: Drill[];
+    activeDrill: Drill | null;
+    remainingDrillsCount: number;
+    progress: {
+        succeeded: number;
+        failed: number;
+        total: number;
+    };
+    handleSuccess: () => void;
+    handleFailure: () => void;
     loading: boolean;
     error: string | null;
 }
 
 export function usePracticeDrills(issueId: string): UsePracticeDrillsReturn {
-    const [drills, setDrills] = useState<Drill[]>([]);
+    const [allDrills, setDrills] = useState<Drill[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const drillService = new DrillService();
+
+    const { activeDrill, progress, remainingDrillsCount, handleSuccess, handleFailure } =
+        useActiveDrill(allDrills, issueId);
 
     useEffect(() => {
         const fetchDrills = async () => {
@@ -39,5 +51,13 @@ export function usePracticeDrills(issueId: string): UsePracticeDrillsReturn {
         fetchDrills();
     }, [issueId]);
 
-    return { drills, loading, error };
+    return {
+        activeDrill,
+        remainingDrillsCount,
+        progress,
+        handleSuccess,
+        handleFailure,
+        loading,
+        error,
+    };
 }
