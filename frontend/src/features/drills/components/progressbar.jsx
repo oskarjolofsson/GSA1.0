@@ -9,8 +9,8 @@ export default function SuccessFailureProgress({ succeeded, failed, total }) {
   return (
     <div className="w-full mb-2">
       {/* Card container */}
-      <div className="rounded-xl border border-neutral-700 bg-neutral-800/50 px-6 py-2">
-        <div className="flex items-center justify-between mb-4">
+      <div className="rounded-xl border border-neutral-700 bg-neutral-800/50 px-3 xs:px-4 md:px-6 py-1 xs:py-2">
+        <div className="hidden xs:flex items-center justify-between mb-4">
           {/* Success section */}
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-sm font-bold transition-transform duration-500">
@@ -40,6 +40,13 @@ export default function SuccessFailureProgress({ succeeded, failed, total }) {
               <NumberFlow value={failed} duration={500} />
             </div>
           </div>
+        </div>
+        {/* Mobile compact view */}
+        <div className="xs:hidden text-center mb-3">
+          <div className="text-lg font-semibold text-slate-100 transition-transform duration-500">
+            <NumberFlow value={succeeded + failed} duration={500} /> / <NumberFlow value={total} />
+          </div>
+          <div className="text-xs text-neutral-400">Completed</div>
         </div>
 
         {/* Progress bar */}

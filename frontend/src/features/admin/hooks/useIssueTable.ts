@@ -92,7 +92,8 @@ export default function useIssueTable(): UseIssueTableReturn {
             result = result.filter(issue =>
                 issue.title.toLowerCase().includes(lowerSearch) ||
                 (issue.current_motion && issue.current_motion.toLowerCase().includes(lowerSearch)) ||
-                (issue.expected_motion && issue.expected_motion.toLowerCase().includes(lowerSearch))
+                (issue.expected_motion && issue.expected_motion.toLowerCase().includes(lowerSearch)) ||
+                (issue.id && issue.id.toLowerCase().includes(lowerSearch))
             );
         }
 

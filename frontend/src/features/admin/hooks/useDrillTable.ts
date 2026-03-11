@@ -80,7 +80,8 @@ export default function useDrillTable(): UseDrillTableReturn {
             const lowerSearch = searchTerm.toLowerCase();
             result = result.filter(drill =>
                 drill.title.toLowerCase().includes(lowerSearch) ||
-                drill.task.toLowerCase().includes(lowerSearch)
+                drill.task.toLowerCase().includes(lowerSearch) ||
+                (drill.id && drill.id.toLowerCase().includes(lowerSearch))
             );
         }
 
