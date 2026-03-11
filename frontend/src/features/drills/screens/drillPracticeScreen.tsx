@@ -7,30 +7,11 @@ import { usePracticeDrills } from '../hooks/usePracticeDrills.js';
 import { useSearchParams } from 'react-router-dom';
 
 
-// Libraries
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
-
-
 export default function DrillsPracticeScreen() {
     const [searchParams] = useSearchParams();
-    const issueId = searchParams.get('issueID'); 
-    const { drills, loading, error } = usePracticeDrills(issueId || '');
-    const total = 12;
-    const [succeeded, setSucceeded] = useState(0);
-    const [failed, setFailed] = useState(0);
-
-    const handleFailure = () => {
-        if (succeeded + failed < total) {
-            setFailed(failed + 1);
-        }
-    };
-
-    const handleSuccess = () => {
-        if (succeeded + failed < total) {
-            setSucceeded(succeeded + 1);
-        }
-    };
+    const issueId = searchParams.get('issueID');
+    const { activeDrill, remainingDrillsCount, progress, handleSuccess, handleFailure, loading, error } =
+        usePracticeDrills(issueId || '');
 
     if (!issueId) {
         return <ErrorState title="Issue Not Found" error={new Error('Issue ID is required to load drills')} onRetry={() => window.location.reload()} />;
@@ -46,7 +27,7 @@ export default function DrillsPracticeScreen() {
         return <ErrorState title="Failed to Load Drills" error={error} onRetry={() => window.location.reload()} />;
     }
 
-    if (!drills || drills.length === 0) {
+    if (!activeDrill) {
         return <ErrorState title="No Drills Found" error={new Error('No drills are available for this issue.')} onRetry={() => window.location.reload()} />;
     }
 
@@ -54,7 +35,7 @@ export default function DrillsPracticeScreen() {
         <div className="h-screen text-slate-100 reminder flex flex-col overflow-hidden">
             <div className="w-full max-w-4xl mx-auto px-4 py-4 md:py-6 flex flex-col gap-4 md:gap-6 h-full animate-fade-in">
 
-                <ProgressBar succeeded={succeeded} failed={failed} total={total} />
+                <ProgressBar succeeded={progress.succeeded} failed={progress.failed} total={progress.total} />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-center flex-1 min-h-0">
                     <MediaPlaceholder />
@@ -66,13 +47,13 @@ export default function DrillsPracticeScreen() {
                         type="success"
                         title="Mark as Successful"
                         description="Indicate that you performed this drill successfully."
-                        onClick={() => handleSuccess()}
+                        onClick={handleSuccess}
                     />
                     <Indicator
                         type="failure"
                         title="Mark as Unsuccessful"
                         description="Indicate that you need more practice with this drill."
-                        onClick={() => handleFailure()}
+                        onClick={handleFailure}
                     />
 
                 </div>
