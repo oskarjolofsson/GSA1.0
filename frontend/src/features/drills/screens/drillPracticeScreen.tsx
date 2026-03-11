@@ -13,6 +13,8 @@ export default function DrillsPracticeScreen() {
     const { activeDrill, remainingDrillsCount, progress, handleSuccess, handleFailure, loading, error } =
         usePracticeDrills(issueId || '');
 
+    console.log('Active Drill:', activeDrill);
+
     if (!issueId) {
         return <ErrorState title="Issue Not Found" error={new Error('Issue ID is required to load drills')} onRetry={() => window.location.reload()} />;
     }
@@ -33,26 +35,35 @@ export default function DrillsPracticeScreen() {
 
     return (
         <div className="h-screen text-slate-100 reminder flex flex-col overflow-hidden">
-            <div className="w-full max-w-4xl mx-auto px-4 py-4 md:py-6 flex flex-col gap-4 md:gap-6 h-full animate-fade-in">
+            <div className="w-full max-w-4xl mx-auto px-4 py-3 xs:py-4 md:py-6 flex flex-col gap-2 xs:gap-3 md:gap-6 h-full animate-fade-in">
 
-                <ProgressBar succeeded={progress.succeeded} failed={progress.failed} total={progress.total} />
+                <div className='mt-12 md:mt-2'>
+                    <ProgressBar succeeded={progress.succeeded} failed={progress.failed} total={progress.total} />
+                </div>
+                
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 items-center flex-1 min-h-0">
-                    <MediaPlaceholder />
-                    <DrillExplainer />
+                <div className="grid grid-cols-1 items-center flex-1 min-h-0 mx-auto ">
+                    {/* <div className="hidden 4xl:block">
+                        <MediaPlaceholder />
+                    </div> */}
+
+                    <DrillExplainer
+                        title={activeDrill.title}
+                        description={activeDrill.task}
+                    />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 md:gap-6 w-full flex-shrink-0">
+                <div className="grid grid-cols-2 gap-2 xs:gap-3 md:gap-6 w-full flex-shrink-0">
                     <Indicator
                         type="success"
                         title="Mark as Successful"
-                        description="Indicate that you performed this drill successfully."
+                        description={activeDrill.success_signal}
                         onClick={handleSuccess}
                     />
                     <Indicator
                         type="failure"
                         title="Mark as Unsuccessful"
-                        description="Indicate that you need more practice with this drill."
+                        description={activeDrill.fault_indicator}
                         onClick={handleFailure}
                     />
 
