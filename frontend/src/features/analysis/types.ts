@@ -1,4 +1,5 @@
 
+import type { Issue } from '@/features/issues/types';
 
 export interface Analysis {
     analysis_id: string;
@@ -45,28 +46,6 @@ export interface VideoUrlResponse {
 
 // Combined analysis with issues for component use
 export interface AnalysisWithIssues extends Analysis {
-    issues?: Array<{
-        id: string;
-        title: string;
-        phase: string | null;
-        current_motion: string | null;
-        expected_motion: string | null;
-        swing_effect: string | null;
-        shot_outcome: string | null;
-        confidence?: number; // From AnalysisIssue junction table
-    }>;
+    issues?: (Issue & { confidence?: number })[];
     video_key?: string;
-}
-
-// Display format for issue in components
-export interface IssueDisplay {
-    title: string;
-    phase: string;
-    priority: number;
-    shot_effect: string;
-    technical_effect: string;
-    what_is_happening: string;
-    what_should_happen: string;
-    drill: any; // Will type properly when drills are integrated
-    certainty: string;
 }

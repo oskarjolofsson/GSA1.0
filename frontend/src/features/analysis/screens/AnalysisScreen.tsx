@@ -84,7 +84,7 @@ export default function AnalysisScreen() {
                         </div>
                     </div>
                 ) : activeAnalysis ? (
-                    <>
+                    <div>
                         <ResultBox
                             analysis={activeAnalysis}
                             issue={issue}
@@ -100,7 +100,7 @@ export default function AnalysisScreen() {
                             activeAnalysis={activeAnalysis}
                             onSelectAnalysis={handleSelectAnalysis}
                         />
-                    </>
+                    </div>
                 ) : (
                     <TextBox 
                         header={"You have no analyses made yet"} 

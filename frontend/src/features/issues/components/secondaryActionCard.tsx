@@ -1,11 +1,9 @@
 import { Issue } from "@/features/issues/types"
+import { useNavigate } from "react-router-dom";
 
-export default function SecondaryActionCard({ issue }: { issue?: Issue }) {
-  const issueData = issue || {
-    id: 2,
-    title: "Early Extension",
-    progress: 45,
-  }
+export default function SecondaryActionCard({ issue }: { issue: Issue }) {
+  const navigate = useNavigate();
+  const issueData = issue;
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950/50 to-slate-900/50 border border-slate-700/20 shadow-md">
@@ -39,7 +37,10 @@ export default function SecondaryActionCard({ issue }: { issue?: Issue }) {
 
         {/* CTA */}
         <div className="shrink-0">
-          <button className="inline-flex items-center justify-center rounded-lg bg-slate-700/40 hover:bg-slate-700/60 px-4 py-2 text-xs font-medium text-slate-300 transition">
+          <button 
+              className="inline-flex items-center justify-center rounded-lg bg-slate-700/40 hover:bg-slate-700/60 px-4 py-2 text-xs font-medium text-slate-300 transition"
+              onClick={() => navigate(`/dashboard/drills/?issueId=${issueData.id}`)}
+              >
             Practice
           </button>
         </div>

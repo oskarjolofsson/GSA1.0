@@ -6,6 +6,7 @@ import CTAButton from "../components/CTAButton";
 import IssuesSidebar from "../components/IssuesSidebar";
 import type { Issue } from "@/features/issues/types";
 import { useIssue } from "@/features/issues/hooks/useIssue";
+import { useNavigate } from "react-router";
 
 const DETAIL_CARD_COLORS = [
     "from-red-500/10 to-red-500/5 border-red-500/20",
@@ -33,6 +34,7 @@ const getExplainerCards = (issue: Issue) => [
 
 export default function IssueExplainerScreen() {
     const { loading, error, activeIssue, issues, selectIssue } = useIssue();
+    const navigate = useNavigate();
 
     if (loading) {
         return (
@@ -86,7 +88,7 @@ export default function IssueExplainerScreen() {
                 </div>
 
                 {/* CTA Button */}
-                <CTAButton />
+                <CTAButton onClick={() => {navigate(`/dashboard/drills/?issueId=${activeIssue.id}`)}} />
             </div>
 
             {/* Issues Sidebar */}
