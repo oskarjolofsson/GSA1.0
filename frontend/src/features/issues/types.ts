@@ -7,6 +7,9 @@ export interface Issue {
     swing_effect: string | null;
     shot_outcome: string | null;
     created_at: string;
+    confidence?: number;
+    analysis_issue_id?: string; 
+    analysis_id?: string; 
 }
 
 export interface CreateIssueRequest {
