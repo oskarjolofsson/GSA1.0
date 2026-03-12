@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import useVideoURL from "./useVideoURL";
-import type { AnalysisWithIssues, IssueDisplay } from "../types";
+import type { AnalysisWithIssues } from "../types";
+import type { Issue } from "../../issues/types";
 
 interface UseAnalysisDataReturn {
     setAnalysis: (analysis: AnalysisWithIssues | null) => void;
-    issue: IssueDisplay | null;
+    issue: (Issue & { confidence?: number }) | null;
     activeIssue: number;
     setActiveIssue: (index: number) => void;
     totalIssues: number;
@@ -24,8 +25,8 @@ export default function useAnalysisData(): UseAnalysisDataReturn {
     // Call hook at top level, not inside useEffect
     const videoURL = useVideoURL(analysis);
 
-    // Default issue display object
-    const [issue, setIssue] = useState<IssueDisplay | null>(null);
+    // Current issue with confidence from analysis
+    const [issue, setIssue] = useState<(Issue & { confidence?: number }) | null>(null);
 
     useEffect(() => {
         // Check if analysis failed
@@ -42,19 +43,7 @@ export default function useAnalysisData(): UseAnalysisDataReturn {
         
         if (issues && issues.length > 0 && activeIssue < issues.length) {
             const issueData = issues[activeIssue];
-            
-            // Transform backend Issue to frontend IssueDisplay format
-            setIssue({
-                title: issueData.title || "",
-                phase: issueData.phase || "",
-                priority: activeIssue + 1, // Priority based on order
-                shot_effect: issueData.shot_outcome || "",
-                technical_effect: issueData.swing_effect || "",
-                what_is_happening: issueData.current_motion || "",
-                what_should_happen: issueData.expected_motion || "",
-                drill: null, // Will be implemented later
-                certainty: issueData.confidence ? `${Math.round(issueData.confidence * 100)}%` : "Unknown"
-            });
+            setIssue(issueData);
         } else {
             setIssue(null);
         }

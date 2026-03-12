@@ -9,7 +9,7 @@ import { useSearchParams } from 'react-router-dom';
 
 export default function DrillsPracticeScreen() {
     const [searchParams] = useSearchParams();
-    const issueId = searchParams.get('issueID');
+    const issueId = searchParams.get('issueId');
     const { activeDrill, remainingDrillsCount, progress, handleSuccess, handleFailure, loading, error } =
         usePracticeDrills(issueId || '');
 

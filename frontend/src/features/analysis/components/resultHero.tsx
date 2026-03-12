@@ -12,11 +12,11 @@ interface ResultHeroCardProps {
 }
 
 export default function ResultHeroCard({
-  prioNumber = 1,
-  totalIssues = 1,
-  problemName = "Hanging Back",
-  diagnosis = "You keep your weight on your trail foot instead of shifting forward.",
-  impactLine = "This typically reduces compression and consistency.",
+  prioNumber = 0,
+  totalIssues = 0,
+  problemName = "Issue title not available",
+  diagnosis = "Diagnosis not available",
+  impactLine = "Impact not available",
   onClickDrill,
   onNextIssue,
   onPreviousIssue
@@ -80,7 +80,7 @@ export default function ResultHeroCard({
               className="whitespace-nowrap rounded-xl bg-emerald-500/90 hover:bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-300"
               onClick={onClickDrill}
             >
-              Start Fix #{prioNumber}
+              Start Practice #{prioNumber}
             </button>
 
             <div className="flex items-center justify-end gap-3 max-sm:justify-center">

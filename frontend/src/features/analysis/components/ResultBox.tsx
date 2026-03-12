@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Search, Lightbulb, Brain } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 // Custom hooks
 import useResultNavigation from '../hooks/useResultNavigation';
@@ -8,14 +8,14 @@ import useResultNavigation from '../hooks/useResultNavigation';
 // Import Components
 import ResultHeroCard from "./resultHero";
 import VideoDemo from "./videoDemo";
-import DrillPopup from "../../../shared/components/popup/drillPopup";
 
 // Types
-import type { AnalysisWithIssues, IssueDisplay } from '../types';
+import type { AnalysisWithIssues } from '../types';
+import type { Issue } from '../../issues/types';
 
 interface ResultBoxProps {
     analysis: AnalysisWithIssues | null;
-    issue: IssueDisplay | null;
+    issue: (Issue & { confidence?: number }) | null;
     totalIssues: number;
     video_url: string | null;
     activeProblem: number;
@@ -53,8 +53,8 @@ const TAB_CONFIGS = {
 };
 
 export default function ResultBox({ analysis, issue, totalIssues, video_url, activeProblem, setActiveProblem }: ResultBoxProps) {
-
   if (!analysis || !issue) return null;
+  const navigate = useNavigate();
 
   const {
     direction,
@@ -79,10 +79,10 @@ export default function ResultBox({ analysis, issue, totalIssues, video_url, act
               prioNumber={activeProblem + 1}
               totalIssues={totalIssues}
               problemName={issue.title}
-              diagnosis={issue.what_is_happening}
-              impactLine={issue.what_should_happen}
+              diagnosis={issue.current_motion || ""}
+              impactLine={issue.expected_motion || ""}
               onClickDrill={() => {
-                // Do nothing
+                navigate(`/dashboard/drills/?issueId=${issue.id}`);
               }}
               onNextIssue={onNextIssue}
               onPreviousIssue={onPreviousIssue}
