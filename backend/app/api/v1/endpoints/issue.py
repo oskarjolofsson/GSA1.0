@@ -73,7 +73,7 @@ def get_all_issues(
     Returns:
         JSON response with a list of all issues
     """
-    issues = service_get_all_issues(db_session=db)
+    issues = service_get_all_issues(current_user["user_id"], db_session=db)
     return [GetIssue.from_domain(issue) for issue in issues]
 
 
@@ -92,7 +92,7 @@ def get_issues_by_analysis(
     Returns:
         JSON response with a list of issues
     """
-    issues = service_get_issues_by_analysis_id(analysis_id, db_session=db)
+    issues = service_get_issues_by_analysis_id(analysis_id, current_user["user_id"], db_session=db)
 
     return [GetIssue.from_domain(issue) for issue in issues]
 
@@ -112,7 +112,7 @@ def get_issues_by_drill(
     Returns:
         JSON response with a list of issues
     """
-    issues = service_get_issues_by_drill_id(drill_id, db_session=db)
+    issues = service_get_issues_by_drill_id(drill_id, current_user["user_id"], db_session=db)
 
     return [GetIssue.from_domain(issue) for issue in issues]
 
@@ -147,7 +147,7 @@ def get_issue(
     Returns:
         JSON response with issue details
     """
-    issue = service_get_issue_by_id(issue_id, db_session=db)
+    issue = service_get_issue_by_id(issue_id, current_user["user_id"], db_session=db)
 
     return GetIssue.from_domain(issue)
 

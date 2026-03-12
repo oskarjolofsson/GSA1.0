@@ -32,3 +32,6 @@ class IssueResponseDTO:
     swing_effect: str | None
     shot_outcome: str | None
     created_at: str
+    analysis_issue_id: str | None = None
+    analysis_id: str | None = None
+    confidence: float | None = None

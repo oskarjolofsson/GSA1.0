@@ -25,6 +25,9 @@ class GetIssue(BaseModel):
     swing_effect: str | None
     shot_outcome: str | None
     created_at: str
+    analysis_issue_id: str | None = None
+    analysis_id: str | None = None
+    confidence: float | None = None
 
     model_config = ConfigDict(from_attributes=True)
     
@@ -40,6 +43,9 @@ class GetIssue(BaseModel):
             swing_effect=dto.swing_effect,
             shot_outcome=dto.shot_outcome,
             created_at=dto.created_at,
+            analysis_issue_id=dto.analysis_issue_id,
+            analysis_id=dto.analysis_id,
+            confidence=dto.confidence,
         )
 
 

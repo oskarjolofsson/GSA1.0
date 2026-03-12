@@ -15,7 +15,9 @@ from core.infrastructure.db.repositories.issues import (
     get_issues_by_ids as repo_get_issues_by_ids,
     delete_issues as repo_delete_issues,
 )
-#from core.infrastructure.db.repositories.analysis_issues import get_analysis_issue_by_user_id
+from core.infrastructure.db.repositories.analysis_issues import (
+    get_analysis_issue_by_user_id_and_issue_id as repo_get_analysis_issue_by_user_id_and_issue_id
+)
 from core.infrastructure.db.models.Issue import Issue
 from core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueResponseDTO
@@ -38,41 +40,41 @@ def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
     return from_issue_to_response_dto(created_issue)
 
 
-def get_issue_by_id(issue_id: UUID, db_session: Session) -> IssueResponseDTO | None:
-    """Get an issue by its ID."""
+def get_issue_by_id(issue_id: UUID, user_id: UUID, db_session: Session) -> IssueResponseDTO | None:
+    """Get an issue by its ID with optional analysis_issue data for the user."""
     issue = repo_get_issue_by_id(issue_id, db_session)
 
     if not issue:
         raise NotFoundException(f"Issue with ID {issue_id} not found", str(issue_id))
 
-    return from_issue_to_response_dto(issue)
+    analysis_issue = _get_analysis_issue_for_user_and_issue(user_id, issue_id, db_session)
+    return from_issue_to_response_dto(issue, analysis_issue)
 
 
-def get_all_issues(db_session: Session) -> list[IssueResponseDTO]:
-    """Get all issues."""
+def get_all_issues(user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
+    """Get all issues with optional analysis_issue data for the user."""
     issues = repo_get_all_issues(db_session)
-    return [from_issue_to_response_dto(issue) for issue in issues]
+    return [from_issue_to_response_dto(issue, _get_analysis_issue_for_user_and_issue(user_id, issue.id, db_session)) for issue in issues]
 
 
-def get_issues_by_analysis_id(analysis_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
-    """Get all issues associated with a specific analysis."""
+def get_issues_by_analysis_id(analysis_id: UUID, user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
+    """Get all issues associated with a specific analysis with optional analysis_issue data."""
     issues = repo_get_issues_by_analysis_id(analysis_id, db_session)
 
-    return [from_issue_to_response_dto(issue) for issue in issues]
+    return [from_issue_to_response_dto(issue, _get_analysis_issue_for_user_and_issue(user_id, issue.id, db_session)) for issue in issues]
 
 
-def get_issues_by_drill_id(drill_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
-    """Get all issues associated with a specific drill."""
+def get_issues_by_drill_id(drill_id: UUID, user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
+    """Get all issues associated with a specific drill with optional analysis_issue data."""
     issues = repo_get_issues_by_drill_id(drill_id, db_session)
 
-    return [from_issue_to_response_dto(issue) for issue in issues]
+    return [from_issue_to_response_dto(issue, _get_analysis_issue_for_user_and_issue(user_id, issue.id, db_session)) for issue in issues]
 
 
 def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
-    """Get all issues created by a specific user.""" 
-    #analysis_issues: list[AnalysisIssue] = get_analysis_issue_by_user_id(user_id, db_session)
+    """Get all issues created by a specific user with analysis_issue data."""
     issues: list[Issue] = repo_get_issues_by_user_id(user_id, db_session)
-    return [from_issue_to_response_dto(issue) for issue in issues]
+    return [from_issue_to_response_dto(issue, _get_analysis_issue_for_user_and_issue(user_id, issue.id, db_session)) for issue in issues]
 
 
 def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> IssueResponseDTO | None:
@@ -125,8 +127,13 @@ def delete_issues_bulk(issue_ids: list[UUID], db_session: Session) -> bool:
 # ------------ Helper Methods ------------
 
 
-def from_issue_to_response_dto(issue: Issue) -> IssueResponseDTO:
-    """Transform an Issue object to IssueResponseDTO."""
+def _get_analysis_issue_for_user_and_issue(user_id: UUID, issue_id: UUID, db_session: Session) -> AnalysisIssue | None:
+    """Get the analysis_issue for a specific user and issue combination."""
+    return repo_get_analysis_issue_by_user_id_and_issue_id(user_id, issue_id, db_session)
+
+
+def from_issue_to_response_dto(issue: Issue, analysis_issue: AnalysisIssue | None = None) -> IssueResponseDTO:
+    """Transform an Issue object to IssueResponseDTO with optional analysis_issue data."""
     return IssueResponseDTO(
         id=issue.id,
         title=issue.title,
@@ -136,4 +143,7 @@ def from_issue_to_response_dto(issue: Issue) -> IssueResponseDTO:
         swing_effect=issue.swing_effect,
         shot_outcome=issue.shot_outcome,
         created_at=issue.created_at.isoformat() if issue.created_at else None,
+        analysis_issue_id=str(analysis_issue.id) if analysis_issue else None,
+        analysis_id=str(analysis_issue.analysis_id) if analysis_issue else None,
+        confidence=analysis_issue.confidence if analysis_issue else None,
     )
