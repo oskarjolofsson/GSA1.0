@@ -20,6 +20,11 @@ from .IssueDrill import IssueDrill
 from .UserRole import UserRole
 from .RolePermission import RolePermission
 
+# Import practice tracking models
+from .PracticeSession import PracticeSession
+from .PracticeDrillRun import PracticeDrillRun
+from .PracticeRep import PracticeRep
+
 # Export all models
 __all__ = [
     "Base",
@@ -37,4 +42,7 @@ __all__ = [
     "IssueDrill",
     "UserRole",
     "RolePermission",
+    "PracticeSession",
+    "PracticeDrillRun",
+    "PracticeRep",
 ]
