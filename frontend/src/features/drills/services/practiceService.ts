@@ -1,25 +1,31 @@
-import { Drill, PracticeSession, DrillRun } from '../types';
+import { apiClient } from '@/lib/apiClient';
+import { PracticeSession, DrillRun } from '../types';
 
-async function startPracticeSession(userId: string, drillId: string) {
 
+export async function startPracticeSession(analysisIssueId: string) {
+    return apiClient.post<PracticeSession>('/api/v1/sessions/start', {
+        analysis_issue_id: analysisIssueId,
+    });
 }
 
 
-async function endPracticeSession(userId: string, drillId: string) {
-
+export async function endPracticeSession(sessionId: string) {
+    return apiClient.post(`/api/v1/sessions/${sessionId}/complete`);
 }
 
 
-async function startDrillRun(sessionId: string, drillId: string) {
-
+export async function startDrillRun(sessionId: string, drillId: string) {
+    return apiClient.post<DrillRun>(`/api/v1/sessions/${sessionId}/drills/start`, {
+        drill_id: drillId,
+    });
 }
 
 
-async function endDrillRun(drillRunId: string) {
-
+export async function endDrillRun(drillRunId: string) {
+    return apiClient.post(`/api/v1/drill-runs/${drillRunId}/complete`);
 }
 
 
-async function recordRep(drillRunId: string, repData: any) {
-
+export async function getPracticeSessionResults(sessionId: string) {
+    return apiClient.get<PracticeSession>(`/api/v1/sessions/${sessionId}/results`);
 }

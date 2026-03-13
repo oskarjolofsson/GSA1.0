@@ -94,7 +94,13 @@ def record_drill_run_skip(drill_run_id: UUID, session: Session) -> PracticeDrill
     drill_run.completed_at = datetime.now(tz=timezone.utc)
     
     updated_drill_run = repo.update_practice_drill_run(drill_run, session)
-    return _drill_run_to_response_dto(updated_drill_run)    
+    return _drill_run_to_response_dto(updated_drill_run) 
+
+
+def get_practice_session_results(session_id: UUID, session: Session) -> list[PracticeDrillRunResponseDTO]:
+    """Retrieve the results of a completed practice session."""
+    drill_runs = repo.get_practice_drill_runs_by_session_id(session_id, session)
+    return [_drill_run_to_response_dto(run) for run in drill_runs]   
     
 # =========== PRACTICE REPS ============
 
