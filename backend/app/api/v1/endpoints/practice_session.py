@@ -22,6 +22,7 @@ from core.services.practice_session_service import (
     record_drill_run_completion as service_complete_drill_run,
     record_drill_run_skip as service_skip_drill_run,
     record_rep_completion as service_record_rep,
+    get_practice_session_results as service_get_practice_session_results,
 )
 
 router = APIRouter()
@@ -157,6 +158,25 @@ def skip_drill_run(
     """
     result = service_skip_drill_run(drill_run_id=drill_run_id, session=db)
     return PracticeDrillRunResponse.from_domain(result)
+
+
+@router.get("/sessions/{session_id}/results", response_model=list[PracticeDrillRunResponse])
+def get_practice_session_results(
+    session_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Retrieve the results of a completed practice session.
+
+    Arguments:
+        session_id (UUID): Practice session identifier
+
+    Returns:
+        JSON response with session results, including drill runs and reps
+    """
+    drill_runs = service_get_practice_session_results(session_id=session_id, session=db)
+    return [PracticeDrillRunResponse.from_domain(run) for run in drill_runs]
 
 
 # =========== PRACTICE REP ROUTES ===========
