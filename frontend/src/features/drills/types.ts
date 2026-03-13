@@ -25,3 +25,25 @@ export interface UpdateDrillRequest {
     success_signal?: string;
     fault_indicator?: string;
 }
+
+export interface PracticeSession {
+    id: string;
+    user_id: string;
+    analysis_issue_id?: string;
+    status: string;
+    started_at: Date;
+    completed_at?: Date;
+}
+
+
+export interface DrillRun {
+    id: string;
+    session_id: string;
+    drill_id: string;
+    status: string;
+    successful_reps: number;
+    failed_reps: number;
+    skipped: boolean;
+    started_at: Date;
+    completed_at?: Date;
+}

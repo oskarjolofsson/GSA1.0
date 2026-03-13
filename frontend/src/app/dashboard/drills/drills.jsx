@@ -1,4 +1,4 @@
-import DrillPracticeScreen from "../../features/drills/screens/drillPracticeScreen";
+import DrillPracticeScreen from "@/features/drills/screens/drillPracticeScreen";
 
 export default function Drills() {
 

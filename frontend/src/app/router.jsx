@@ -7,7 +7,7 @@ import Profile from "./dashboard/profile.jsx";
 import TermsAndCond from './public/termsAndCond.jsx';
 import Privacy from './public/privacy.jsx';
 import DashboardUpload from './dashboard/upload.jsx';
-import Drills from './dashboard/drills.jsx';
+import Drills from './dashboard/drills/drills';
 import Analysis from './dashboard/analysis.jsx';
 import Issues from './dashboard/issue/page.jsx';
 import HomeDashboard from "./dashboard/home.jsx";
@@ -17,6 +17,7 @@ import AdminIssues from "./admin/issues.jsx";
 import AdminMappings from "./admin/mappings.jsx";
 import AdminUsers from "./admin/users.jsx";
 import Feedback from "./admin/feedback.jsx";
+import DrillResults from "./dashboard/drills/results.jsx";
 
 // Import components
 import PublicLayout from './public/layout.jsx';
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
           { path: "analysis", element: <Analysis /> },
           { path: "profile", element: <Profile /> },
           { path: "drills", element: <Drills /> },
+          { path: "drills/results", element: <DrillResults /> },
           { path: "issues", element: <Issues /> },
           { path: "*", element: <NotFound /> },
         ],
