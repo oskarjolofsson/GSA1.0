@@ -26,6 +26,6 @@ export async function endDrillRun(drillRunId: string) {
 }
 
 
-export async function getPracticeSessionResults(sessionId: string) {
-    return apiClient.get<PracticeSession>(`/api/v1/sessions/${sessionId}/results`);
+export async function getPracticeSessionResults(sessionId: string): Promise<DrillRun[]> {
+    return apiClient.get<DrillRun[]>(`/api/v1/sessions/${sessionId}/results`);
 }
