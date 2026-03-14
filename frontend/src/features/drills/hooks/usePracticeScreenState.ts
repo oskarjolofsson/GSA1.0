@@ -45,7 +45,7 @@ export function usePracticeDrills(issueId: string): UsePracticeDrillsReturn {
                 setIssue(fetchedIssue);
             } catch (err) {
                 console.error('Error fetching drills or issue:', err);
-                setError(err instanceof Error ? err.message : 'Failed to fetch drills or issue');
+                setError(err instanceof Error ? err.message : 'Internal error occurred while loading drills');
                 setDrills([]);
                 setIssue(null);
             } finally {
