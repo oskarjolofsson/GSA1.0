@@ -45,7 +45,6 @@ export function usePracticeResults(): UsePracticeResultsReturn {
             setPracticeSession(newPracticeSession);
             return newPracticeSession;
         } catch (err) {
-            console.error("Error starting practice session:", err);
             setError(toErrorMessage(err, "Failed to start practice session"));
             throw err;
         } finally {
@@ -60,7 +59,6 @@ export function usePracticeResults(): UsePracticeResultsReturn {
             await endPracticeSession(sessionId);
             setPracticeSession(null);
         } catch (err) {
-            console.error("Error ending practice session:", err);
             setError(toErrorMessage(err, "Failed to end practice session"));
             throw err;
         } finally {
@@ -76,8 +74,7 @@ export function usePracticeResults(): UsePracticeResultsReturn {
             setDrillRuns((prev) => [...prev, drillRun]);
             return drillRun;
         } catch (err) {
-            console.error("Error starting drill run:", err);
-            setError("Failed to start drill run");
+            setError(toErrorMessage(err, "Failed to start drill run"));
             throw err;
         } finally {
             setLoading(false);
@@ -90,8 +87,7 @@ export function usePracticeResults(): UsePracticeResultsReturn {
             setError(null);
             await endDrillRun(drillRunId);
         } catch (err) {
-            console.error("Error ending drill run:", err);
-            setError("Failed to end drill run");
+            setError(toErrorMessage(err, "Failed to end drill run"));
             throw err;
         } finally {
             setLoading(false);

@@ -4,8 +4,6 @@ import type { Drill, DrillRun, PracticeSession } from '../types';
 import { usePracticeResults } from './usePracticeActions';
 import { Issue } from '@/features/issues/types';
 
-
-
 const REPS_PER_DRILL = 12;
 
 interface ActiveDrillProgress {
@@ -49,28 +47,18 @@ export function useActiveDrill(drills: Drill[], issue: Issue | null): UseActiveD
 
     useEffect(() => {
         let isMounted = true;
-
         const initializePractice = async () => {
+            hasInitializedRef.current = true;
+            const session = await startSession(issue?.analysis_id);
+            if (!isMounted) return;
+            setCurrentPracticeSession(session);
+            const firstDrillRun = await startDrill(session.id, drills[0].id);
 
-            try {
-                hasInitializedRef.current = true;
-                const session = await startSession(issue?.analysis_id);
-                if (!isMounted) return;
+            if (!isMounted) return;
 
-                setCurrentPracticeSession(session);
-                const firstDrillRun = await startDrill(session.id, drills[0].id);
-
-
-                if (!isMounted) return;
-
-                setCurrentDrillRun(firstDrillRun);
-            } catch (err) {
-                console.error('Error initializing practice flow:', err);
-            }
+            setCurrentDrillRun(firstDrillRun);
         };
-
         initializePractice();
-
         return () => {
             isMounted = false;
         };
@@ -116,7 +104,6 @@ export function useActiveDrill(drills: Drill[], issue: Issue | null): UseActiveD
 
     const handleSuccess = useCallback(() => {
         void handleRep('successful_reps');
-        console.log('Handled success rep. Current drill run state:', currentDrillRun);
     }, [handleRep]);
 
     const handleFailure = useCallback(() => {
