@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { DrillService } from '@/features/drills/services/drillService';
-import { useActiveDrill } from './useActiveDrill';
+import { IssueService }  from '@/features/issues/services/issueService';
+import { useActiveDrill } from './usePracticeFlow';
 import type { Drill } from '../types';
+import type { Issue } from '@/features/issues/types';
 
 interface UsePracticeDrillsReturn {
     activeDrill: Drill | null;
@@ -19,17 +21,17 @@ interface UsePracticeDrillsReturn {
 
 export function usePracticeDrills(issueId: string): UsePracticeDrillsReturn {
     const [allDrills, setDrills] = useState<Drill[]>([]);
+    const [issue, setIssue] = useState<Issue | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const drillService = new DrillService();
-
-    const { activeDrill, progress, remainingDrillsCount, handleSuccess, handleFailure } =
-        useActiveDrill(allDrills, issueId);
+    const issueService = new IssueService();
 
     useEffect(() => {
-        const fetchDrills = async () => {
+        const fetchIssueAndDrills = async () => {
             if (!issueId) {
                 setDrills([]);
+                setIssue(null);
                 setLoading(false);
                 return;
             }
@@ -38,18 +40,33 @@ export function usePracticeDrills(issueId: string): UsePracticeDrillsReturn {
                 setLoading(true);
                 setError(null);
                 const fetchedDrills = await drillService.getDrillsByIssue(issueId);
+                const fetchedIssue: Issue = await issueService.getIssueById(issueId);
                 setDrills(fetchedDrills);
+                setIssue(fetchedIssue);
             } catch (err) {
-                console.error('Error fetching drills:', err);
-                setError(err instanceof Error ? err.message : 'Failed to fetch drills');
+                console.error('Error fetching drills or issue:', err);
+                setError(err instanceof Error ? err.message : 'Failed to fetch drills or issue');
                 setDrills([]);
+                setIssue(null);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchDrills();
+        fetchIssueAndDrills();
+
     }, [issueId]);
+
+    const {
+        activeDrill,
+        progress,
+        remainingDrillsCount,
+        handleSuccess,
+        handleFailure,
+        loading: activeDrillLoading,
+        error: activeDrillError,
+    } =
+        useActiveDrill(allDrills, issue);
 
     return {
         activeDrill,
@@ -57,7 +74,7 @@ export function usePracticeDrills(issueId: string): UsePracticeDrillsReturn {
         progress,
         handleSuccess,
         handleFailure,
-        loading,
-        error,
+        loading: loading || activeDrillLoading,
+        error: error || activeDrillError,
     };
 }

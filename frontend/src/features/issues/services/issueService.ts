@@ -6,7 +6,7 @@ import type {
     UpdateIssueRequest
 } from '../types';
 
-class IssueService {
+export class IssueService {
     /**
      * Create a new issue
      */
