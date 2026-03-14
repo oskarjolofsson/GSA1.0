@@ -1,6 +1,6 @@
 
 
-export default function Indicator({ type, title, description, onClick }) {
+export default function Indicator({ type, title, description, onClick, disabled = false }) {
     const success = type === 'success';
 
     const colors = success
@@ -30,9 +30,11 @@ export default function Indicator({ type, title, description, onClick }) {
             </h3>
             <button
                 onClick={onClick}
+                disabled={disabled}
                 className={`rounded-2xl border ${colors.border} ${colors.bg} ${colors.hover}
                             p-2 xs:p-3 sm:p-6 w-full text-left transition-all duration-200
-                            hover:shadow-xl active:scale-[0.98] h-full ${colors.shadow}`}
+                            hover:shadow-xl active:scale-[0.98] h-full ${colors.shadow}
+                            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:active:scale-100`}
             >
                 <div className="flex items-start gap-2 xs:gap-3 sm:gap-4">
 

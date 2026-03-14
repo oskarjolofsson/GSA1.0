@@ -30,7 +30,7 @@ interface UsePracticeResultsReturn {
 const toErrorMessage = (err: unknown, fallback: string) =>
   err instanceof Error ? err.message : fallback;
 
-export function usePracticeResults(): UsePracticeResultsReturn {
+export function usePracticeActions(): UsePracticeResultsReturn {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [practiceSession, setPracticeSession] = useState<PracticeSession | null>(null);
