@@ -1,7 +1,7 @@
 import PrimaryActionCard from "../../issues/components/primaryActionCard.jsx";
 import SecondaryActionCard from "../../issues/components/secondaryActionCard.jsx";
 import DemoPreview from "../../upload/components/SimpleUploadCard.jsx";
-import { useIssue } from "@/features/issues/hooks/useIssue";
+import { useIssue } from "@/features/issues/hooks/useUserIssues.js";
 
 export default function DashboardHomeScreen() {
     const { issues, loading, error } = useIssue();

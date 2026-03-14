@@ -3,7 +3,7 @@ import MediaPlaceholder from '../components/media_placeholder.jsx';
 import DrillExplainer from '../components/drill_explainer.jsx';
 import Indicator from '../components/indicator.jsx';
 import { ErrorState, LoadingState } from '@/shared/components/cards/error.js';
-import { usePracticeDrills } from '../hooks/usePracticeDrills.js';
+import { usePracticeDrills } from '../hooks/usePracticeScreenState.js';
 import { useSearchParams } from 'react-router-dom';
 
 
@@ -13,7 +13,7 @@ export default function DrillsPracticeScreen() {
     const { activeDrill, remainingDrillsCount, progress, handleSuccess, handleFailure, loading, error } =
         usePracticeDrills(issueId || '');
 
-    console.log('Active Drill:', activeDrill);
+    console.log("Error:", error);
 
     if (!issueId) {
         return <ErrorState title="Issue Not Found" error={new Error('Issue ID is required to load drills')} onRetry={() => window.location.reload()} />;
@@ -26,7 +26,7 @@ export default function DrillsPracticeScreen() {
     }
 
     if (error) {
-        return <ErrorState title="Failed to Load Drills" error={error} onRetry={() => window.location.reload()} />;
+        return <ErrorState title="Failed to Load Drills" error={new Error(error)} onRetry={() => window.location.reload()} />;
     }
 
     if (!activeDrill) {

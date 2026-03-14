@@ -5,7 +5,7 @@ import DetailCard from "../components/DetailCard";
 import CTAButton from "../components/CTAButton";
 import IssuesSidebar from "../components/IssuesSidebar";
 import type { Issue } from "@/features/issues/types";
-import { useIssue } from "@/features/issues/hooks/useIssue";
+import { useIssue } from "@/features/issues/hooks/useUserIssues";
 import { useNavigate } from "react-router";
 
 const DETAIL_CARD_COLORS = [
