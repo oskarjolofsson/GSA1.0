@@ -3,17 +3,15 @@ import MediaPlaceholder from '../components/media_placeholder.jsx';
 import DrillExplainer from '../components/drill_explainer.jsx';
 import Indicator from '../components/indicator.jsx';
 import { ErrorState, LoadingState } from '@/shared/components/cards/error.js';
-import { usePracticeDrills } from '../hooks/usePracticeScreenState.js';
+import { usePracticeScreenState } from '../hooks/usePracticeScreenState.js';
 import { useSearchParams } from 'react-router-dom';
 
 
 export default function DrillsPracticeScreen() {
     const [searchParams] = useSearchParams();
     const issueId = searchParams.get('issueId');
-    const { activeDrill, remainingDrillsCount, progress, handleSuccess, handleFailure, loading, error } =
-        usePracticeDrills(issueId || '');
-
-    console.log("Error:", error);
+    const { activeDrill, remainingDrillsCount, practiceReady, progress, handleSuccess, handleFailure, loading, error } =
+        usePracticeScreenState(issueId || '');
 
     if (!issueId) {
         return <ErrorState title="Issue Not Found" error={new Error('Issue ID is required to load drills')} onRetry={() => window.location.reload()} />;
@@ -59,12 +57,14 @@ export default function DrillsPracticeScreen() {
                         title="Mark as Successful"
                         description={activeDrill.success_signal}
                         onClick={handleSuccess}
+                        disabled={!practiceReady}
                     />
                     <Indicator
                         type="failure"
                         title="Mark as Unsuccessful"
                         description={activeDrill.fault_indicator}
                         onClick={handleFailure}
+                        disabled={!practiceReady}
                     />
 
                 </div>
