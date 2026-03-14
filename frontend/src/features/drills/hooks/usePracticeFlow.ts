@@ -30,6 +30,7 @@ export function useActiveDrill(drills: Drill[], issue: Issue | null): UseActiveD
     const [currentDrillIndex, setCurrentDrillIndex] = useState<number>(0);
     const [currentDrillRun, setCurrentDrillRun] = useState<DrillRun | null>(null);
     const [currentPracticeSession, setCurrentPracticeSession] = useState<PracticeSession | null>(null);
+    const [flowError, setFlowError] = useState<string | null>(null);
     const hasInitializedRef = useRef(false);
 
     const activeDrill = currentDrillIndex < drills.length ? drills[currentDrillIndex] : null;
@@ -43,26 +44,51 @@ export function useActiveDrill(drills: Drill[], issue: Issue | null): UseActiveD
         setCurrentDrillIndex(0);
         setCurrentDrillRun(null);
         setCurrentPracticeSession(null);
-    }, [issue?.id, drills]);
+        setFlowError(null);
+    }, [issue?.id]);
 
     useEffect(() => {
         let isMounted = true;
+
         const initializePractice = async () => {
-            hasInitializedRef.current = true;
-            const session = await startSession(issue?.analysis_id);
-            if (!isMounted) return;
-            setCurrentPracticeSession(session);
-            const firstDrillRun = await startDrill(session.id, drills[0].id);
+            if (!issue) {
+                return;
+            }
 
-            if (!isMounted) return;
+            if (!issue.analysis_issue_id) {
+                hasInitializedRef.current = true;
+                setFlowError('Issue is missing analysis reference. Please refresh or choose another issue.');
+                return;
+            }
 
-            setCurrentDrillRun(firstDrillRun);
+            if (drills.length === 0 || currentPracticeSession || hasInitializedRef.current) {
+                return;
+            }
+
+            try {
+                hasInitializedRef.current = true;
+                setFlowError(null);
+                const session = await startSession(issue.analysis_issue_id);
+                if (!isMounted) return;
+                setCurrentPracticeSession(session);
+
+                const firstDrillRun = await startDrill(session.id, drills[0].id);
+                if (!isMounted) return;
+
+                setCurrentDrillRun(firstDrillRun);
+            } catch (err) {
+                if (!isMounted) return;
+                hasInitializedRef.current = false;
+                setFlowError(err instanceof Error ? err.message : 'Failed to initialize practice');
+            }
         };
-        initializePractice();
+
+        void initializePractice();
+
         return () => {
             isMounted = false;
         };
-    }, [currentPracticeSession, drills, issue?.id, startDrill, startSession]);
+    }, [currentPracticeSession, drills.length, issue, startDrill, startSession]);
 
     const moveToNextDrill = useCallback(async () => {
         if (!currentDrillRun || !currentPracticeSession) {
@@ -123,6 +149,6 @@ export function useActiveDrill(drills: Drill[], issue: Issue | null): UseActiveD
         handleSuccess,
         handleFailure,
         loading: state.loading,
-        error: state.error,
+        error: flowError || state.error,
     };
 }
