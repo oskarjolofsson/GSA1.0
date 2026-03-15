@@ -49,7 +49,7 @@ export default function DrillResults({ drillRuns }: { drillRuns: DrillRun[] }) {
                                     </Pie>
                                 </PieChart>
                                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-center">
-                                    <p className="text-xs font-semibold text-slate-100">{pieData[0].value / total * 100 || 0}%</p>
+                                    <p className="text-xs font-semibold text-slate-100">{Math.round((pieData[0].value / total) * 100) || 0}%</p>
                                 </div>
                             </div>
                             <p className="mt-1 text-xs text-slate-300 capitalize text-center">{result.drill_title}</p>
@@ -95,7 +95,7 @@ export default function DrillResults({ drillRuns }: { drillRuns: DrillRun[] }) {
                                 </PieChart>
                                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-center">
                                     <div>
-                                        <p className="text-base font-semibold text-slate-100">{pieData[0].value / total * 100 || 0}%</p>
+                                        <p className="text-base font-semibold text-slate-100">{Math.round((pieData[0].value / total) * 100) || 0}%</p>
                                         <p className="text-[10px] uppercase tracking-wide text-slate-400"></p>
                                     </div>
                                 </div>
@@ -113,7 +113,7 @@ export default function DrillResults({ drillRuns }: { drillRuns: DrillRun[] }) {
                                         Failed: {result.failed_reps}
                                     </div>
                                     <div className="rounded-lg bg-slate-700/60 border border-slate-600/70 px-2 py-1.5 text-slate-300">
-                                        Remaining: {remaining}
+                                        Skipped: {remaining}
                                     </div>
                                 </div>
                             </div>
