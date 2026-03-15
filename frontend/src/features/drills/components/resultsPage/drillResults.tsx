@@ -1,5 +1,5 @@
 import type { DrillRun } from "@/features/drills/types";
-import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import { Cell, Pie, PieChart } from "recharts";
 
 const CHART_COLORS = {
     success: "#22c55e",
@@ -32,26 +32,24 @@ export default function DrillResults({ drillRuns }: { drillRuns: DrillRun[] }) {
                     return (
                         <div key={result.id} className="flex flex-col items-center">
                             <div className="relative h-20 w-20">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={pieData}
-                                            dataKey="value"
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={20}
-                                            outerRadius={32}
-                                            stroke="none"
-                                            paddingAngle={2}
-                                        >
-                                            {pieData.map((entry) => (
-                                                <Cell key={`${result.id}-mobile-${entry.name}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                <PieChart width={80} height={80}>
+                                    <Pie
+                                        data={pieData}
+                                        dataKey="value"
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={20}
+                                        outerRadius={32}
+                                        stroke="none"
+                                        paddingAngle={2}
+                                    >
+                                        {pieData.map((entry) => (
+                                            <Cell key={`${result.id}-mobile-${entry.name}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                </PieChart>
                                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-center">
-                                    <p className="text-xs font-semibold text-slate-100">{completion}%</p>
+                                    <p className="text-xs font-semibold text-slate-100">{pieData[0].value / total * 100 || 0}%</p>
                                 </div>
                             </div>
                             <p className="mt-1 text-xs text-slate-300 capitalize text-center">{result.id}</p>
@@ -79,28 +77,26 @@ export default function DrillResults({ drillRuns }: { drillRuns: DrillRun[] }) {
                             className="rounded-xl border border-slate-700/60 bg-slate-800/70 px-3 py-3 md:px-4 md:py-4 flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4"
                         >
                             <div className="relative h-24 w-24 shrink-0 mx-auto sm:mx-0">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={pieData}
-                                            dataKey="value"
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={26}
-                                            outerRadius={40}
-                                            stroke="none"
-                                            paddingAngle={2}
-                                        >
-                                            {pieData.map((entry) => (
-                                                <Cell key={`${result.id}-${entry.name}`} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                <PieChart width={96} height={96}>
+                                    <Pie
+                                        data={pieData}
+                                        dataKey="value"
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={26}
+                                        outerRadius={40}
+                                        stroke="none"
+                                        paddingAngle={2}
+                                    >
+                                        {pieData.map((entry) => (
+                                            <Cell key={`${result.id}-${entry.name}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                </PieChart>
                                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-center">
                                     <div>
-                                        <p className="text-base font-semibold text-slate-100">{completion}%</p>
-                                        <p className="text-[10px] uppercase tracking-wide text-slate-400">done</p>
+                                        <p className="text-base font-semibold text-slate-100">{pieData[0].value / total * 100 || 0}%</p>
+                                        <p className="text-[10px] uppercase tracking-wide text-slate-400"></p>
                                     </div>
                                 </div>
                             </div>
