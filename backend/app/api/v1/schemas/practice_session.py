@@ -37,6 +37,7 @@ class StartDrillRunRequest(BaseModel):
 
 class PracticeDrillRun(BaseModel):
     id: UUID
+    drill_title: str
     session_id: UUID
     drill_id: UUID
     status: str
@@ -53,6 +54,7 @@ class PracticeDrillRun(BaseModel):
         """Convert PracticeDrillRunResponseDTO to schema response."""
         return cls(
             id=dto.id,
+            drill_title=dto.drill_title,
             session_id=dto.session_id,
             drill_id=dto.drill_id,
             status=dto.status,

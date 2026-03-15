@@ -1,5 +1,6 @@
 from core.infrastructure.db import models
 from core.infrastructure.db.repositories import practice_sessions as repo
+from core.infrastructure.db.repositories import drills as drill_repo
 from core.services import exceptions
 from core.services.dtos.practice_session_service_dto import (
     StartPracticeSessionDTO,
@@ -72,21 +73,24 @@ def record_drill_run_start(session_id: UUID, drill_id: UUID, order_index: int | 
         order_index=order_index,
     )
     created_drill_run = repo.create_practice_drill_run(new_drill_run, session)
-    return _drill_run_to_response_dto(created_drill_run)
-    
-    
+    drill: models.Drill = get_drill_by_id(drill_id, session)
+    return _drill_run_to_response_dto(created_drill_run, drill_title=drill.title)
+
+
 def record_drill_run_completion(drill_run_dto: CompleteDrillRunDTO, session: Session) -> PracticeDrillRunResponseDTO:
     """Record the completion of a drill run."""
     drill_run = repo.get_practice_drill_run_by_id(drill_run_dto.drill_run_id, session)
     if not drill_run:
         raise exceptions.NotFoundException(f"Drill run with ID {drill_run_dto.drill_run_id} not found", str(drill_run_dto.drill_run_id))
 
+    drill: models.Drill = get_drill_by_id(drill_run.drill_id, session)
+
     drill_run.completed_at = datetime.now(tz=timezone.utc)
     drill_run.successful_reps = drill_run_dto.successful_reps
     drill_run.failed_reps = drill_run_dto.failed_reps
     drill_run.skipped = drill_run_dto.skipped
     updated_drill_run = repo.update_practice_drill_run(drill_run, session)
-    return _drill_run_to_response_dto(updated_drill_run)
+    return _drill_run_to_response_dto(updated_drill_run, drill_title=drill.title)
     
     
 def record_drill_run_skip(drill_run_id: UUID, session: Session) -> PracticeDrillRunResponseDTO:
@@ -100,19 +104,23 @@ def record_drill_run_skip(drill_run_id: UUID, session: Session) -> PracticeDrill
     total_reps = len(reps)
     failed = sum(1 for rep in reps if not rep.success)
     
+    drill: models.Drill = get_drill_by_id(drill_run.drill_id, session)
+    
     drill_run.skipped = True
     drill_run.successful_reps = total_reps - failed
     drill_run.failed_reps = failed
     drill_run.completed_at = datetime.now(tz=timezone.utc)
     
     updated_drill_run = repo.update_practice_drill_run(drill_run, session)
-    return _drill_run_to_response_dto(updated_drill_run) 
+    return _drill_run_to_response_dto(updated_drill_run, drill_title=drill.title)
 
 
 def get_practice_session_results(session_id: UUID, session: Session) -> list[PracticeDrillRunResponseDTO]:
     """Retrieve the results of a completed practice session."""
     drill_runs = repo.get_practice_drill_runs_by_session_id(session_id, session)
-    return [_drill_run_to_response_dto(run) for run in drill_runs]   
+    drills: list[models.Drill] = drill_repo.get_drills_by_ids([run.drill_id for run in drill_runs], session)
+    drill_id_to_title = {drill.id: drill.title for drill in drills}
+    return [_drill_run_to_response_dto(run, drill_title=drill_id_to_title.get(run.drill_id, "Unknown Drill")) for run in drill_runs]
     
 # =========== PRACTICE REPS ============
 
@@ -141,12 +149,13 @@ def _session_to_response_dto(session: models.PracticeSession) -> PracticeSession
     )
 
 
-def _drill_run_to_response_dto(drill_run: models.PracticeDrillRun) -> PracticeDrillRunResponseDTO:
+def _drill_run_to_response_dto(drill_run: models.PracticeDrillRun, drill_title: str) -> PracticeDrillRunResponseDTO:
     """Convert PracticeDrillRun model to response DTO."""
     return PracticeDrillRunResponseDTO(
         id=drill_run.id,
         session_id=drill_run.session_id,
         drill_id=drill_run.drill_id,
+        drill_title=drill_title,
         status="completed" if drill_run.completed_at else "in_progress",
         successful_reps=drill_run.successful_reps,
         failed_reps=drill_run.failed_reps,
@@ -165,3 +174,11 @@ def _rep_to_response_dto(rep: models.PracticeRep) -> PracticeRepResponseDTO:
         success=rep.success,
         created_at=rep.created_at,
     )
+    
+    
+def get_drill_by_id(drill_id: UUID, session: Session) -> models.Drill:
+    """Helper function to retrieve a drill by ID."""
+    drill = drill_repo.get_drill_by_id(drill_id, session)
+    if not drill:
+        raise exceptions.NotFoundException(f"Drill with ID {drill_id} not found", str(drill_id))
+    return drill

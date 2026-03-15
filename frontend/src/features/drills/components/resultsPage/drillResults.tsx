@@ -11,13 +11,13 @@ export default function DrillResults({ drillRuns }: { drillRuns: DrillRun[] }) {
     const total = 12;
 
     return (
-        <section className="xl:col-span-2 rounded-2xl border border-slate-700/60 bg-slate-900/70 backdrop-blur-sm shadow-xl p-4 md:p-6">
-            <div className="mb-5 flex items-center justify-between">
+        <section className="xl:col-span-2 rounded-2xl border border-slate-700/60 bg-slate-900/70 backdrop-blur-sm shadow-xl p-4 md:p-6 items-center justify-center">
+            {/* <div className="mb-5 flex">
                 <h2 className="text-lg md:text-xl font-semibold text-slate-100">Drill Progress</h2>
-            </div>
+            </div> */}
 
             {/* If on mobile, show a compact pie chart view. On larger screens, show a detailed list with charts and stats. */}
-            <div className="grid grid-cols-3 gap-2 sm:hidden">
+            <div className="flex flex-wrap justify-center gap-4 sm:hidden">
                 {drillRuns.map((result) => {
                     const attempted = result.successful_reps + result.failed_reps;
                     const remaining = Math.max(total - attempted, 0);
@@ -30,7 +30,7 @@ export default function DrillResults({ drillRuns }: { drillRuns: DrillRun[] }) {
                     ];
 
                     return (
-                        <div key={result.id} className="flex flex-col items-center">
+                        <div key={result.id} className="flex flex-col items-center max-w-[45%]">
                             <div className="relative h-20 w-20">
                                 <PieChart width={80} height={80}>
                                     <Pie
@@ -52,12 +52,12 @@ export default function DrillResults({ drillRuns }: { drillRuns: DrillRun[] }) {
                                     <p className="text-xs font-semibold text-slate-100">{pieData[0].value / total * 100 || 0}%</p>
                                 </div>
                             </div>
-                            <p className="mt-1 text-xs text-slate-300 capitalize text-center">{result.id}</p>
+                            <p className="mt-1 text-xs text-slate-300 capitalize text-center">{result.drill_title}</p>
                         </div>
                     );
                 })}
             </div>
-
+        
             {/* If on larger screens, show a detailed list with charts and stats. */}
             <div className="hidden sm:block space-y-3 md:space-y-4">
                 {drillRuns.map((result) => {
@@ -102,7 +102,7 @@ export default function DrillResults({ drillRuns }: { drillRuns: DrillRun[] }) {
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-base md:text-lg font-medium text-slate-100 capitalize">{result.id}</h3>
+                                <h3 className="text-base md:text-lg font-medium text-slate-100 capitalize">{result.drill_title}</h3>
                                 <p className="text-xs md:text-sm text-slate-400">{attempted}/{total} attempts completed</p>
 
                                 <div className="mt-3 grid grid-cols-3 gap-2 text-xs md:text-sm">

@@ -29,6 +29,7 @@ class StartDrillRunDTO:
 @dataclass(frozen=True)
 class PracticeDrillRunResponseDTO:
     id: UUID
+    drill_title: str
     session_id: UUID
     drill_id: UUID
     status: str

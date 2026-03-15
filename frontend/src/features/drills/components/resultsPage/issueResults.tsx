@@ -28,13 +28,13 @@ export default function IssueResults({ drillRuns }: { drillRuns: DrillRun[] }) {
 
     return (
         <aside className="rounded-2xl border border-slate-700/60 bg-slate-900/70 backdrop-blur-sm shadow-xl p-4 md:p-6 h-fit">
-            <h2 className="text-lg md:text-xl font-semibold text-slate-100">Issue Progress</h2>
-            <p className="mt-1 text-sm text-slate-400">Overall status across all drills in this issue.</p>
+            <h2 className="text-lg md:text-xl font-semibold text-slate-100">Total</h2>
+            <p className="mt-1 text-sm text-slate-400">Overall result of all drills in this practice</p>
 
             <div className="mt-5 rounded-xl border border-slate-700/60 bg-slate-800/70 p-4">
                 <div className="flex items-end justify-between">
-                    <p className="text-sm text-slate-400">Completion</p>
-                    <p className="text-2xl font-semibold text-slate-100">{issueCompletionPercent}%</p>
+                    <p className="text-sm text-slate-400">Succeded</p>
+                    <p className="text-2xl font-semibold text-slate-100">{issueSuccessRate}%</p>
                 </div>
 
                 <div className="mt-3 h-3.5 w-full overflow-hidden rounded-full bg-slate-700">
