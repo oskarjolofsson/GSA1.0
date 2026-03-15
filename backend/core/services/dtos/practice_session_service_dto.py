@@ -37,6 +37,14 @@ class PracticeDrillRunResponseDTO:
     skipped: bool
     started_at: datetime
     completed_at: datetime | None
+    
+    
+@dataclass(frozen=True)
+class CompleteDrillRunDTO:
+    drill_run_id: UUID
+    successful_reps: int
+    failed_reps: int
+    skipped: bool
 
 
 @dataclass(frozen=True)

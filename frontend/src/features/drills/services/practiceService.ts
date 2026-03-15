@@ -21,11 +21,16 @@ export async function startDrillRun(sessionId: string, drillId: string) {
 }
 
 
-export async function endDrillRun(drillRunId: string) {
-    return apiClient.post(`/api/v1/practice/drill-runs/${drillRunId}/complete`);
+export async function endDrillRun(drillRun: DrillRun) {
+    return apiClient.post(`/api/v1/practice/drill-runs/complete`, drillRun);
 }
 
 
 export async function getPracticeSessionResults(sessionId: string): Promise<DrillRun[]> {
     return apiClient.get<DrillRun[]>(`/api/v1/practice/sessions/${sessionId}/results`);
+}
+
+
+export async function getPracticeSessionById(sessionId: string): Promise<PracticeSession> {
+    return apiClient.get<PracticeSession>(`/api/v1/practice/sessions/${sessionId}`);
 }

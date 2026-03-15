@@ -137,9 +137,10 @@ export function usePracticeScreenState(issueId: string): UsePracticeDrillsReturn
     }, [issue?.id, allDrills.length, startDrill, startSession]);
 
     const moveToNextDrill = useCallback(async (completedDrillRun: DrillRun) => {
+        console.log('Attempting to move to next drill. completedDrillRun:', completedDrillRun, 'currentDrillIndex:', currentDrillIndex);  // Debug log to trace drill completion
         if (!currentPracticeSession) return;    // Guard against missing practice session
         const nextIndex = currentDrillIndex + 1;                    // Calculate next drill index
-        await endDrill(completedDrillRun.id);                       // End current drill run before moving to the next one
+        await endDrill(completedDrillRun);                       // End current drill run before moving to the next one
 
         if (nextIndex >= allDrills.length) {
             // No more drills, end session and navigate to results

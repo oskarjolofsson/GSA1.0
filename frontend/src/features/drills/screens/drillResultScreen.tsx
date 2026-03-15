@@ -3,17 +3,13 @@ import { DrillRun } from "../types";
 // Components
 import DrillResults from "../components/resultsPage/drillResults";
 import IssueResults from "../components/resultsPage/issueResults";
+import { useSearchParams } from "react-router-dom";
+import { usePracticeResultsState } from "../hooks/usePracticeResultsState";
 
 export default function DrillResultsScreen() {
-    const mockDrillRuns: DrillRun[] = [
-        { id: "drill1", session_id: "session1", drill_id: "drill1", status: "completed", successful_reps: 7, failed_reps: 5, skipped: false, started_at: new Date(), completed_at: new Date(),
-        },
-        { id: "drill2", session_id: "session1", drill_id: "drill2", status: "completed", successful_reps: 9, failed_reps: 3, skipped: false, started_at: new Date(), completed_at: new Date(),
-        },
-        { id: "drill3", session_id: "session1", drill_id: "drill3", status: "completed", successful_reps: 10, failed_reps: 2, skipped: false, started_at: new Date(), completed_at: new Date(),
-        },
-    ]
-
+    const [searchParams] = useSearchParams();
+    const sessionId: string | null = searchParams.get('sessionId');
+    const drillRuns: DrillRun[] = usePracticeResultsState({ sessionId }).DrillRuns;
 
     return (
         <div className="w-full max-w-6xl mx-auto px-4 py-6 md:py-8 animate-fade-in
@@ -26,8 +22,8 @@ export default function DrillResultsScreen() {
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 
-                <DrillResults drillRuns={mockDrillRuns} />
-                <IssueResults drillRuns={mockDrillRuns} />
+                <DrillResults drillRuns={drillRuns} />
+                <IssueResults drillRuns={drillRuns} />
             </div>
         </div>
     );

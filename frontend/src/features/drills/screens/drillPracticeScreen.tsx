@@ -1,5 +1,4 @@
 import ProgressBar from '../components/progressbar.jsx';
-import MediaPlaceholder from '../components/media_placeholder.jsx';
 import DrillExplainer from '../components/drill_explainer.jsx';
 import Indicator from '../components/indicator.jsx';
 import { ErrorState, LoadingState } from '@/shared/components/cards/error.js';
