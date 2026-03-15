@@ -38,6 +38,7 @@ export interface PracticeSession {
 
 export interface DrillRun {
     id: string;
+    drill_title: string;
     session_id: string;
     drill_id: string;
     status: string;
