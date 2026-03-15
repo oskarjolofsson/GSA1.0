@@ -11,7 +11,7 @@ import FilterPanel from '../components/FilterPanel';
 import FilterSelect from '../components/FilterSelect';
 import { LoadingState, ErrorState } from '../../../shared/components/cards/error';
 import useDrillTable, { SortField } from '../hooks/useDrillTable';
-import DrillRow from '@/features/drills/components/adminTableRow';
+import DrillRow from '@/features/drills/components/admin/adminTableRow';
 import type { Drill } from '@/features/drills/types';
 
 const DRILL_COLUMNS: ColumnConfig<SortField>[] = [
