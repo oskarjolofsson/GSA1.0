@@ -1,14 +1,16 @@
 import { useCallback, useMemo, useState } from "react";
 
 // Custom 
-import { startDrillRun, startPracticeSession, endDrillRun, endPracticeSession } from "../services/practiceService";
+import { startDrillRun, startPracticeSession, endDrillRun, endPracticeSession, getPracticeSessionResults, getPracticeSessionById as getPracticeSessionByIdRequest } from "../services/practiceService";
 import { DrillRun, PracticeSession } from "../types";
 
 interface PracticeResultsActions {
     startSession: (analysisIssueId: string | undefined | null) => Promise<PracticeSession>;
     endSession: (sessionId: string) => Promise<void>;
     startDrill: (sessionId: string, drillId: string) => Promise<DrillRun>;
-    endDrill: (drillRunId: string) => Promise<void>;
+    endDrill: (drillRun: DrillRun) => Promise<void>;
+    getResults: (sessionId: string) => Promise<void>;
+    getPracticeSessionById: (sessionId: string) => Promise<void>;
 }
 
 interface PracticeResultsState {
@@ -81,13 +83,41 @@ export function usePracticeActions(): UsePracticeResultsReturn {
         }
     }, []);
 
-    const endDrill = useCallback(async (drillRunId: string) => {
+    const endDrill = useCallback(async (drillRun: DrillRun) => {
         try {
             setLoading(true);
             setError(null);
-            await endDrillRun(drillRunId);
+            await endDrillRun(drillRun);
         } catch (err) {
             setError(toErrorMessage(err, "Failed to end drill run"));
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const getResults = useCallback(async (sessionId: string) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const results: DrillRun[] = await getPracticeSessionResults(sessionId);
+            setDrillRuns(results);
+        } catch (err) {
+            setError(toErrorMessage(err, "Failed to get practice session results"));
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const getPracticeSessionById = useCallback(async (sessionId: string) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const session: PracticeSession = await getPracticeSessionByIdRequest(sessionId);
+            setPracticeSession(session);
+        } catch (err) {
+            setError(toErrorMessage(err, "Failed to get practice session"));
             throw err;
         } finally {
             setLoading(false);
@@ -100,8 +130,10 @@ export function usePracticeActions(): UsePracticeResultsReturn {
             endSession,
             startDrill,
             endDrill,
+            getResults,
+            getPracticeSessionById
         }),
-        [startSession, endSession, startDrill, endDrill],
+        [startSession, endSession, startDrill, endDrill, getResults, getPracticeSessionById],
     );
 
 

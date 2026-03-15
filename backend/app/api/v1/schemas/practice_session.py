@@ -35,7 +35,7 @@ class StartDrillRunRequest(BaseModel):
     order_index: int | None = None
 
 
-class PracticeDrillRunResponse(BaseModel):
+class PracticeDrillRun(BaseModel):
     id: UUID
     session_id: UUID
     drill_id: UUID
@@ -49,7 +49,7 @@ class PracticeDrillRunResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     @classmethod
-    def from_domain(cls, dto) -> "PracticeDrillRunResponse":
+    def from_domain(cls, dto) -> "PracticeDrillRun":
         """Convert PracticeDrillRunResponseDTO to schema response."""
         return cls(
             id=dto.id,

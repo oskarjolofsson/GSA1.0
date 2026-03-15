@@ -8,6 +8,7 @@ from core.services.dtos.practice_session_service_dto import (
     PracticeDrillRunResponseDTO,
     RecordRepCompletionDTO,
     PracticeRepResponseDTO,
+    CompleteDrillRunDTO,
 )
 
 from sqlalchemy.orm import Session
@@ -50,6 +51,14 @@ def record_practice_session_abandonment(session_id: UUID, session: Session) -> P
     practice_session.completed_at = datetime.now(tz=timezone.utc)
     updated_session = repo.update_practice_session(practice_session, session)
     return _session_to_response_dto(updated_session)
+
+
+def get_practice_session_by_id(session_id: UUID, session: Session) -> PracticeSessionResponseDTO:
+    """Retrieve a practice session by its ID."""
+    practice_session = repo.get_practice_session_by_id(session_id, session)
+    if not practice_session:
+        raise exceptions.NotFoundException(f"Practice session with ID {session_id} not found", str(session_id))
+    return _session_to_response_dto(practice_session)
     
     
 # =========== PRACTICE DRILL RUNS ============
@@ -66,13 +75,16 @@ def record_drill_run_start(session_id: UUID, drill_id: UUID, order_index: int | 
     return _drill_run_to_response_dto(created_drill_run)
     
     
-def record_drill_run_completion(drill_run_id: UUID, session: Session) -> PracticeDrillRunResponseDTO:
+def record_drill_run_completion(drill_run_dto: CompleteDrillRunDTO, session: Session) -> PracticeDrillRunResponseDTO:
     """Record the completion of a drill run."""
-    drill_run = repo.get_practice_drill_run_by_id(drill_run_id, session)
+    drill_run = repo.get_practice_drill_run_by_id(drill_run_dto.drill_run_id, session)
     if not drill_run:
-        raise exceptions.NotFoundException(f"Drill run with ID {drill_run_id} not found", str(drill_run_id))
+        raise exceptions.NotFoundException(f"Drill run with ID {drill_run_dto.drill_run_id} not found", str(drill_run_dto.drill_run_id))
 
     drill_run.completed_at = datetime.now(tz=timezone.utc)
+    drill_run.successful_reps = drill_run_dto.successful_reps
+    drill_run.failed_reps = drill_run_dto.failed_reps
+    drill_run.skipped = drill_run_dto.skipped
     updated_drill_run = repo.update_practice_drill_run(drill_run, session)
     return _drill_run_to_response_dto(updated_drill_run)
     
