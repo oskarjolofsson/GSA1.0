@@ -74,7 +74,7 @@ export default function IssueResults({ drillRuns }: { drillRuns: DrillRun[] }) {
                         Failed: {issueTotals.failed}
                     </div>
                     <div className="rounded-lg bg-slate-700/60 border border-slate-600/70 px-3 py-2 text-slate-300">
-                        Remaining: {issueRemaining}
+                        Skipped: {issueRemaining}
                     </div>
                 </div>
 
