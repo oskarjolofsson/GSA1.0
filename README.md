@@ -123,7 +123,7 @@ VITE_SUPABASE_ANON_KEY=
 
 #### Backend ```.env```
 
-```
+```env
 # URL to React Frontend
 VITE_API_URL=
 VITE_API_URL2=
