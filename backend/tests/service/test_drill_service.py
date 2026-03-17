@@ -116,7 +116,7 @@ class TestGetDrillsByIssueId:
         issue_drill2 = IssueDrill(issue_id=issue.id, drill_id=drill2.id)
         create_issue_drill(issue_drill1, db_session)
         create_issue_drill(issue_drill2, db_session)
-        db_session.commit()
+        db_session.flush()
 
         # Act
         result = get_drills_by_issue_id(issue.id, db_session=db_session)

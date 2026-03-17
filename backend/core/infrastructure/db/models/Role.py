@@ -19,19 +19,11 @@ class Role(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
-        autoincrement=True,
+        default=uuid.uuid4,
     )
 
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    is_system: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
-    is_paid: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
-
-    created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.now(),
-    )
 
     # Relationships
     user_roles = relationship(

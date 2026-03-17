@@ -109,4 +109,4 @@ class TestMandatoryConsentConstraints:
 
         with pytest.raises(Exception):
             create_mandatory_consent(mandatory_consent=consent2, session=db_session)
-            db_session.commit()
+            db_session.flush()

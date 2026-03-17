@@ -165,7 +165,7 @@ class TestGetIssuesByAnalysisId:
         )
         create_analysis_issue(analysis_issue1, db_session)
         create_analysis_issue(analysis_issue2, db_session)
-        db_session.commit()
+        db_session.flush()
 
         # Act
         result = get_issues_by_analysis_id(analysis.id, db_session=db_session)
@@ -204,7 +204,7 @@ class TestGetIssuesByDrillId:
         issue_drill2 = IssueDrill(issue_id=issue2.id, drill_id=drill.id)
         create_issue_drill(issue_drill1, db_session)
         create_issue_drill(issue_drill2, db_session)
-        db_session.commit()
+        db_session.flush()
 
         # Act
         result = get_issues_by_drill_id(drill.id, db_session=db_session)
