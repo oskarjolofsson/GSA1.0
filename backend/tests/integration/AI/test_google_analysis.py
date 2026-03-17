@@ -23,16 +23,17 @@ class TestGoogleAnalysisIntegration:
         result = analysis_result
         
         metadata = result["metadata"]
+        print("Analysis Metadata:", metadata)  # Debug print to inspect metadata structure
         
         # Verify metadata fields
         assert "camera_view" in metadata, "Missing camera_view"
-        assert "club-type" in metadata, "Missing club-type"
+        assert "club_type" in metadata, "Missing club_type"
         
         # Verify enum values
         assert metadata["camera_view"] in ["unknown", "face_on", "down_the_line"], \
             f"Invalid camera_view: {metadata['camera_view']}"
-        assert metadata["club-type"] in ["unknown", "iron", "driver"], \
-            f"Invalid club-type: {metadata['club-type']}"
+        assert metadata["club_type"] in ["unknown", "iron", "driver"], \
+            f"Invalid club_type: {metadata['club_type']}"
     
     def test_analyze_video_issues_structure(self, analysis_result):
         """Test that issues array has correct structure."""
