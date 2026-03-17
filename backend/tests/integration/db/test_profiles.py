@@ -128,7 +128,7 @@ class TestProfileConstraints:
 
         with pytest.raises(Exception):
             create_profile(profile=profile2, session=db_session)
-            db_session.commit()
+            db_session.flush()
 
     def test_profile_created_at_is_auto_set(self, db_session):
         """Test that created_at is automatically set"""

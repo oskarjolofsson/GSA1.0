@@ -125,7 +125,7 @@ class TestUserConsentConstraints:
 
         with pytest.raises(Exception):
             create_consent(consent=consent2, session=db_session)
-            db_session.commit()
+            db_session.flush()
 
     def test_consent_requires_user_id(self, db_session, test_mandatory_consent):
         """Test that user_id is required"""

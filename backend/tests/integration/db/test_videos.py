@@ -189,7 +189,7 @@ class TestVideoConstraints:
 
         with pytest.raises(Exception):
             create_video(video=video, session=db_session)
-            db_session.commit()
+            db_session.flush()
 
     def test_video_invalid_club_type(self, db_session, test_user):
         """Test that invalid club_type is rejected"""
@@ -202,4 +202,4 @@ class TestVideoConstraints:
 
         with pytest.raises(Exception):
             create_video(video=video, session=db_session)
-            db_session.commit()
+            db_session.flush()
