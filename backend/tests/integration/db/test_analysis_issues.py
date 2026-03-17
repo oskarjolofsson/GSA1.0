@@ -15,7 +15,7 @@ import pytest
 def test_analysis(db_session, test_user):
     """Create an analysis for testing"""
     analysis = Analysis(
-        user_id=test_user,
+        user_id=test_user["user_id"],
         model_version="v1.0",
     )
     return create_analysis(analysis=analysis, session=db_session)

@@ -16,7 +16,7 @@ class TestVideoCreate:
         """Test creating a video with required fields"""
         # Create video
         video = Video(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             video_key="videos/test_video.mp4",
             camera_view="unknown",
             club_type="unknown",
@@ -25,7 +25,7 @@ class TestVideoCreate:
         created = create_video(video=video, session=db_session)
 
         assert created.id is not None
-        assert created.user_id == test_user
+        assert created.user_id == test_user["user_id"]
         assert created.video_key == "videos/test_video.mp4"
         assert created.camera_view == "unknown"
         assert created.club_type == "unknown"
@@ -37,7 +37,7 @@ class TestVideoCreate:
         """Test creating a video with all optional fields"""
         # Create video
         video = Video(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             video_key="videos/full_video.mp4",
             start_time=timedelta(seconds=5),
             end_time=timedelta(seconds=15),
@@ -48,7 +48,7 @@ class TestVideoCreate:
         created = create_video(video=video, session=db_session)
 
         assert created.id is not None
-        assert created.user_id == test_user
+        assert created.user_id == test_user["user_id"]
         assert created.video_key == "videos/full_video.mp4"
         assert created.start_time == timedelta(seconds=5)
         assert created.end_time == timedelta(seconds=15)
@@ -59,7 +59,7 @@ class TestVideoCreate:
         """Test that created video is persisted to database"""
         # Create video
         video = Video(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             video_key="videos/persist_test.mp4",
             camera_view="down_the_line",
             club_type="iron",
@@ -83,7 +83,7 @@ class TestVideoRead:
         """Test retrieving a video by ID"""
         # Create video
         video = Video(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             video_key="videos/test_by_id.mp4",
             camera_view="face_on",
             club_type="driver",
@@ -108,17 +108,17 @@ class TestVideoRead:
         """Test retrieving a video by user ID"""
         # Create video
         video = Video(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             video_key="videos/test_by_user.mp4",
             camera_view="face_on",
             club_type="iron",
         )
         created = create_video(video=video, session=db_session)
 
-        fetched = get_video_by_user_id(test_user, session=db_session)
+        fetched = get_video_by_user_id(test_user["user_id"], session=db_session)
 
         assert fetched is not None
-        assert fetched.user_id == test_user
+        assert fetched.user_id == test_user["user_id"]
         assert fetched.video_key == "videos/test_by_user.mp4"
 
 
@@ -129,7 +129,7 @@ class TestVideoConstraints:
         """Test that video ID is a valid UUID"""
         # Create video
         video = Video(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             video_key="videos/uuid_test.mp4",
             camera_view="unknown",
             club_type="unknown",
@@ -145,7 +145,7 @@ class TestVideoConstraints:
 
         for idx, view in enumerate(valid_views):
             video = Video(
-                user_id=test_user,
+                user_id=test_user["user_id"],
                 video_key=f"videos/camera_{view}.mp4",
                 camera_view=view,
                 club_type="unknown",
@@ -159,7 +159,7 @@ class TestVideoConstraints:
 
         for idx, club_type in enumerate(valid_types):
             video = Video(
-                user_id=test_user,
+                user_id=test_user["user_id"],
                 video_key=f"videos/club_{club_type}.mp4",
                 camera_view="unknown",
                 club_type=club_type,
@@ -181,7 +181,7 @@ class TestVideoConstraints:
     def test_video_invalid_camera_view(self, db_session, test_user):
         """Test that invalid camera_view is rejected"""
         video = Video(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             video_key="videos/invalid_camera.mp4",
             camera_view="invalid_view",
             club_type="unknown",
@@ -194,7 +194,7 @@ class TestVideoConstraints:
     def test_video_invalid_club_type(self, db_session, test_user):
         """Test that invalid club_type is rejected"""
         video = Video(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             video_key="videos/invalid_club.mp4",
             camera_view="unknown",
             club_type="invalid_club",

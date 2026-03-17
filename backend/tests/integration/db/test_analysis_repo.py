@@ -19,14 +19,14 @@ class TestAnalysisCreate:
     def test_create_analysis_with_required_fields(self, db_session, test_user):
         """Test creating an analysis with only required fields"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="test-model-version",
         )
 
         created = create_analysis(analysis=analysis, session=db_session)
 
         assert created.id is not None
-        assert created.user_id == test_user
+        assert created.user_id == test_user["user_id"]
         assert created.model_version == "test-model-version"
         assert created.status == "awaiting_upload"
         assert created.created_at is not None
@@ -36,7 +36,7 @@ class TestAnalysisCreate:
     def test_create_analysis_with_all_fields(self, db_session, test_user):
         """Test creating an analysis with all optional fields"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
             status="completed",
             success=True,
@@ -46,7 +46,7 @@ class TestAnalysisCreate:
         created = create_analysis(analysis=analysis, session=db_session)
 
         assert created.id is not None
-        assert created.user_id == test_user
+        assert created.user_id == test_user["user_id"]
         assert created.model_version == "v1.0"
         assert created.status == "completed"
         assert created.success is True
@@ -54,7 +54,7 @@ class TestAnalysisCreate:
     def test_create_analysis_persists_to_database(self, db_session, test_user):
         """Test that created analysis is persisted to database"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="test-model-version",
         )
 
@@ -74,7 +74,7 @@ class TestAnalysisRead:
     def test_get_analysis_by_id(self, db_session, test_user):
         """Test retrieving an analysis by ID"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="test-model",
         )
         created = create_analysis(analysis=analysis, session=db_session)
@@ -83,7 +83,7 @@ class TestAnalysisRead:
 
         assert fetched is not None
         assert fetched.id == created.id
-        assert fetched.user_id == test_user
+        assert fetched.user_id == test_user["user_id"]
         assert fetched.model_version == "test-model"
 
     def test_get_analysis_by_id_not_found(self, db_session):
@@ -100,7 +100,7 @@ class TestAnalysisRead:
         """Test retrieving only completed and successful analyses for a user"""
         # Create completed and successful analysis
         completed_analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
             status="completed",
             success=True,
@@ -109,7 +109,7 @@ class TestAnalysisRead:
 
         # Create awaiting analysis (should not be returned)
         awaiting_analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v2.0",
             status="awaiting_upload",
         )
@@ -117,14 +117,14 @@ class TestAnalysisRead:
 
         # Create failed analysis (should not be returned)
         failed_analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v3.0",
             status="completed",
             success=False,
         )
         create_analysis(analysis=failed_analysis, session=db_session)
 
-        analyses = get_analyses_by_user_id(test_user, session=db_session)
+        analyses = get_analyses_by_user_id(test_user["user_id"], session=db_session)
 
         assert len(analyses) == 1
         assert analyses[0].id == completed_analysis.id
@@ -133,13 +133,13 @@ class TestAnalysisRead:
     def test_get_analyses_by_user_id_empty(self, db_session, test_user):
         """Test retrieving analyses for a user with no completed analyses"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
             status="awaiting_upload",
         )
         create_analysis(analysis=analysis, session=db_session)
 
-        analyses = get_analyses_by_user_id(test_user, session=db_session)
+        analyses = get_analyses_by_user_id(test_user["user_id"], session=db_session)
 
         assert len(analyses) == 0
 
@@ -148,7 +148,7 @@ class TestAnalysisRead:
         now = datetime.now(timezone.utc)
 
         analysis1 = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
             status="completed",
             success=True,
@@ -157,7 +157,7 @@ class TestAnalysisRead:
         create_analysis(analysis=analysis1, session=db_session)
 
         analysis2 = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v2.0",
             status="completed",
             success=True,
@@ -165,7 +165,7 @@ class TestAnalysisRead:
         )
         create_analysis(analysis=analysis2, session=db_session)
 
-        analyses = get_analyses_by_user_id(test_user, session=db_session)
+        analyses = get_analyses_by_user_id(test_user["user_id"], session=db_session)
 
         assert len(analyses) == 2
         assert analyses[0].id == analysis2.id, "Expected the newest analysis first"
@@ -178,7 +178,7 @@ class TestAnalysisUpdate:
     def test_update_analysis_status(self, db_session, test_user):
         """Test updating analysis status"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
             status="awaiting_upload",
         )
@@ -193,7 +193,7 @@ class TestAnalysisUpdate:
     def test_update_analysis_success_and_output(self, db_session, test_user):
         """Test updating analysis with success flag"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
             status="completed",
         )
@@ -208,7 +208,7 @@ class TestAnalysisUpdate:
     def test_update_analysis_error_message(self, db_session, test_user):
         """Test updating analysis with error message"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
             status="failed",
         )
@@ -225,7 +225,7 @@ class TestAnalysisUpdate:
     def test_update_analysis_with_video_id(self, db_session, test_user):
         """Test updating analysis with a video ID"""
         video = Video(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             video_key="test_video.mp4",
             camera_view="face_on",
             club_type="driver",
@@ -234,7 +234,7 @@ class TestAnalysisUpdate:
         video_id = create_video(video=video, session=db_session).id
 
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
         )
         created = create_analysis(analysis=analysis, session=db_session)
@@ -255,7 +255,7 @@ class TestAnalysisConstraints:
 
         for status in valid_statuses:
             analysis = Analysis(
-                user_id=test_user,
+                user_id=test_user["user_id"],
                 model_version="v1.0",
                 status=status,
             )
@@ -265,7 +265,7 @@ class TestAnalysisConstraints:
     def test_default_status_is_awaiting_upload(self, db_session, test_user):
         """Test that default status is awaiting_upload"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
         )
         created = create_analysis(analysis=analysis, session=db_session)
@@ -275,7 +275,7 @@ class TestAnalysisConstraints:
     def test_analysis_created_at_is_set(self, db_session, test_user):
         """Test that created_at is automatically set"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
         )
         created = create_analysis(analysis=analysis, session=db_session)
@@ -285,7 +285,7 @@ class TestAnalysisConstraints:
     def test_analysis_id_is_uuid(self, db_session, test_user):
         """Test that analysis ID is a valid UUID"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             model_version="v1.0",
         )
         created = create_analysis(analysis=analysis, session=db_session)
@@ -303,7 +303,7 @@ class TestAnalysisConstraints:
     def test_model_version_is_required(self, db_session, test_user):
         """Test that model_version is required"""
         analysis = Analysis(
-            user_id=test_user,
+            user_id=test_user["user_id"],
         )
         with pytest.raises(Exception):
             create_analysis(analysis=analysis, session=db_session)

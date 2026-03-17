@@ -17,13 +17,6 @@ def get_all_roles(session: Session) -> list[Role]:
     return session.query(Role).all()
 
 
-def get_system_roles(session: Session) -> list[Role]:
-    return session.query(Role).filter(Role.is_system == True).all()
-
-
-def get_paid_roles(session: Session) -> list[Role]:
-    return session.query(Role).filter(Role.is_paid == True).all()
-
 
 # ------------ CREATE ------------
 

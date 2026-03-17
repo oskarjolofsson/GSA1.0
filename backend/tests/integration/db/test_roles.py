@@ -1,11 +1,11 @@
+from uuid import UUID, uuid4
+
 from ....core.infrastructure.db.models.Role import Role
 from ....core.infrastructure.db.repositories.roles import (
     create_role,
     get_role_by_id,
     get_role_by_name,
     get_all_roles,
-    get_system_roles,
-    get_paid_roles,
     update_role,
     delete_role,
 )
@@ -24,17 +24,12 @@ class TestRoleCreate:
         assert created.id is not None
         assert created.name == "test_user"
         assert created.description is None
-        assert created.is_system is False
-        assert created.is_paid is False
-        assert created.created_at is not None
 
     def test_create_role_with_all_fields(self, db_session):
         """Test creating a role with all fields"""
         role = Role(
             name="premium_member",
-            description="Premium membership with full access",
-            is_system=False,
-            is_paid=True,
+            description="Premium membership with full access"
         )
 
         created = create_role(role=role, session=db_session)
@@ -42,20 +37,6 @@ class TestRoleCreate:
         assert created.id is not None
         assert created.name == "premium_member"
         assert created.description == "Premium membership with full access"
-        assert created.is_system is False
-        assert created.is_paid is True
-
-    def test_create_system_role(self, db_session):
-        """Test creating a system role"""
-        role = Role(
-            name="admin",
-            description="System administrator",
-            is_system=True,
-        )
-
-        created = create_role(role=role, session=db_session)
-
-        assert created.is_system is True
 
     def test_create_role_persists_to_database(self, db_session):
         """Test that created role is persisted to database"""
@@ -86,7 +67,7 @@ class TestRoleRead:
 
     def test_get_role_by_id_not_found(self, db_session):
         """Test retrieving a non-existent role returns None"""
-        result = get_role_by_id(99999, session=db_session)
+        result = get_role_by_id(uuid4(), session=db_session)
 
         assert result is None
 
@@ -118,32 +99,6 @@ class TestRoleRead:
         role_names = [r.name for r in roles]
         assert "role_one" in role_names
         assert "role_two" in role_names
-
-    def test_get_system_roles(self, db_session):
-        """Test retrieving only system roles"""
-        system_role = Role(name="sys_admin", is_system=True)
-        regular_role = Role(name="regular_user", is_system=False)
-        create_role(role=system_role, session=db_session)
-        create_role(role=regular_role, session=db_session)
-
-        system_roles = get_system_roles(session=db_session)
-
-        role_names = [r.name for r in system_roles]
-        assert "sys_admin" in role_names
-        assert "regular_user" not in role_names
-
-    def test_get_paid_roles(self, db_session):
-        """Test retrieving only paid roles"""
-        paid_role = Role(name="premium", is_paid=True)
-        free_role = Role(name="free_tier", is_paid=False)
-        create_role(role=paid_role, session=db_session)
-        create_role(role=free_role, session=db_session)
-
-        paid_roles = get_paid_roles(session=db_session)
-
-        role_names = [r.name for r in paid_roles]
-        assert "premium" in role_names
-        assert "free_tier" not in role_names
 
 
 class TestRoleUpdate:
@@ -195,14 +150,7 @@ class TestRoleConstraints:
         role = Role(name="int_test_role")
         created = create_role(role=role, session=db_session)
 
-        assert isinstance(created.id, int)
-
-    def test_role_created_at_is_set(self, db_session):
-        """Test that created_at is automatically set"""
-        role = Role(name="timestamp_test_role")
-        created = create_role(role=role, session=db_session)
-
-        assert created.created_at is not None
+        assert isinstance(created.id, UUID)
 
     def test_role_name_unique(self, db_session):
         """Test that role names must be unique"""
