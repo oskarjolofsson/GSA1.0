@@ -150,3 +150,24 @@ SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLL_KEY=
 ```
+
+### Tests
+
+#### Running Tests
+
+```bash
+cd backend
+pytest tests/
+```
+
+#### Test Videos (Required for running tests)
+
+To run the test suite, you'll need two sample golf swing videos in the backend:
+
+```bash
+# Create the videos directory if it doesn't exist
+mkdir -p backend/uploads/video
+
+# Add two golf swing videos (~2 seconds each):
+# - golf.mp4     (a golf swing video)
+# - non_golf.mp4 (another non golf swing video)
