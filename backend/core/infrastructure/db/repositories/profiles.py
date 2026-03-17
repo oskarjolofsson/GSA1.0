@@ -11,6 +11,13 @@ def get_profile_by_id(profile_id, session: Session) -> Profile:
 def get_all_profiles(session: Session) -> list[Profile]:
     return session.query(Profile).all()
 
+# ------------ CREATE ------------
+
+def create_profile(profile: Profile, session: Session) -> Profile:
+    session.add(profile)
+    session.flush()  
+    return profile
+
 
 # ------------ COUNT ------------
 

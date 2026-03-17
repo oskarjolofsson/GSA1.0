@@ -1,7 +1,7 @@
 import pytest
-from backend.core.infrastructure.auth.auth_adaptor import authenticate_request
-from backend.core.infrastructure.auth.auth_client import supabaseAuthClient
-from backend.core.infrastructure.auth.exceptions import AuthenticationError
+from core.infrastructure.auth.auth_adaptor import authenticate_request
+from core.infrastructure.auth.auth_client import supabaseAuthClient
+from core.infrastructure.auth.exceptions import AuthenticationError
 
 
 class TestAuthenticateRequest:
