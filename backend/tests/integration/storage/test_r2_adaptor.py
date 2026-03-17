@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from backend.core.infrastructure.storage.r2Adaptor import (
+from core.infrastructure.storage.r2Adaptor import (
     generate_upload_url,
     generate_read_url,
     get_object,
@@ -12,7 +12,7 @@ from backend.core.infrastructure.storage.r2Adaptor import (
 @pytest.fixture
 def mock_r2_client():
     """Mock the r2_client module"""
-    with patch("backend.core.infrastructure.storage.r2Adaptor.r2_client") as mock:
+    with patch("core.infrastructure.storage.r2Adaptor.r2_client") as mock:
         yield mock
 
 
