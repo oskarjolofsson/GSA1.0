@@ -37,7 +37,7 @@ def supabase_admin_client() -> Client:
     return admin_client
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def test_user(supabase_client: Client, supabase_admin_client: Client):
     """
     Function-scoped authenticated test user.
@@ -56,6 +56,9 @@ def test_user(supabase_client: Client, supabase_admin_client: Client):
         "email": test_email,
         "password": test_password,
         "email_confirm": True,
+        "user_metadata": {
+            "name": "Test User",
+        }
     })
     
     response = supabase_client.auth.sign_in_with_password({
@@ -66,11 +69,13 @@ def test_user(supabase_client: Client, supabase_admin_client: Client):
     # Extract the access token (bearer token)
     access_token = response.session.access_token
     user_id = response.user.id
+    name = response.user.user_metadata.get("name")
     
     yield {
         "access_token": access_token,
         "user_id": uuid.UUID(user_id),  # Convert string to UUID
-        "email": test_email
+        "email": test_email,
+        "name": name
     }
     
     # Cleanup: Delete test user using admin client

@@ -17,7 +17,7 @@ class TestFeedbackCreate:
     def test_create_feedback_with_required_fields(self, db_session, test_user):
         """Test creating feedback with all required fields"""
         feedback = UserFeedback(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             rating=2,
             comments="Great analysis, very helpful!",
         )
@@ -25,7 +25,7 @@ class TestFeedbackCreate:
         created = create_feedback(feedback=feedback, session=db_session)
 
         assert created.id is not None
-        assert created.user_id == test_user
+        assert created.user_id == test_user["user_id"]
         assert created.rating == 2
         assert created.comments == "Great analysis, very helpful!"
         assert created.created_at is not None
@@ -33,7 +33,7 @@ class TestFeedbackCreate:
     def test_create_feedback_with_rating_1(self, db_session, test_user):
         """Test creating feedback with rating 1 (minimum)"""
         feedback = UserFeedback(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             rating=1,
             comments="Not helpful",
         )
@@ -45,7 +45,7 @@ class TestFeedbackCreate:
     def test_create_feedback_with_rating_3(self, db_session, test_user):
         """Test creating feedback with rating 3 (maximum)"""
         feedback = UserFeedback(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             rating=3,
             comments="Excellent service!",
         )
@@ -57,7 +57,7 @@ class TestFeedbackCreate:
     def test_create_feedback_persists_to_database(self, db_session, test_user):
         """Test that created feedback is persisted to database"""
         feedback = UserFeedback(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             rating=2,
             comments="Good experience overall",
         )
@@ -70,20 +70,20 @@ class TestFeedbackCreate:
 
         assert fetched_feedback is not None
         assert fetched_feedback.id == created.id
-        assert fetched_feedback.user_id == test_user
+        assert fetched_feedback.user_id == test_user["user_id"]
         assert fetched_feedback.rating == 2
         assert fetched_feedback.comments == "Good experience overall"
 
     def test_create_multiple_feedback_entries(self, db_session, test_user):
         """Test creating multiple feedback entries for the same user"""
         feedback1 = UserFeedback(
-            user_id=test_user, rating=3, comments="First feedback"
+            user_id=test_user["user_id"], rating=3, comments="First feedback"
         )
         feedback2 = UserFeedback(
-            user_id=test_user, rating=2, comments="Second feedback"
+            user_id=test_user["user_id"], rating=2, comments="Second feedback"
         )
         feedback3 = UserFeedback(
-            user_id=test_user, rating=1, comments="Third feedback"
+            user_id=test_user["user_id"], rating=1, comments="Third feedback"
         )
 
         created1 = create_feedback(feedback=feedback1, session=db_session)
@@ -102,7 +102,7 @@ class TestFeedbackRead:
     def test_get_feedback_by_id(self, db_session, test_user):
         """Test retrieving feedback by ID"""
         feedback = UserFeedback(
-            user_id=test_user,
+            user_id=test_user["user_id"],
             rating=2,
             comments="Test feedback",
         )
@@ -126,32 +126,32 @@ class TestFeedbackRead:
     def test_get_feedback_by_user_id(self, db_session, test_user):
         """Test retrieving all feedback for a specific user"""
         feedback1 = UserFeedback(
-            user_id=test_user, rating=3, comments="First feedback"
+            user_id=test_user["user_id"], rating=3, comments="First feedback"
         )
         feedback2 = UserFeedback(
-            user_id=test_user, rating=2, comments="Second feedback"
+            user_id=test_user["user_id"], rating=2, comments="Second feedback"
         )
 
         create_feedback(feedback=feedback1, session=db_session)
         create_feedback(feedback=feedback2, session=db_session)
 
-        user_feedback = get_feedback_by_user_id(user_id=test_user, session=db_session)
+        user_feedback = get_feedback_by_user_id(user_id=test_user["user_id"], session=db_session)
 
         assert len(user_feedback) >= 2
-        assert all(f.user_id == test_user for f in user_feedback)
+        assert all(f.user_id == test_user["user_id"] for f in user_feedback)
 
     def test_get_feedback_by_user_id_ordered_by_recent(self, db_session, test_user):
         now = datetime.now(timezone.utc)
         older_time = now - timedelta(hours=2)
         
         feedback1 = UserFeedback(
-            user_id=test_user, 
-            rating=1, 
+            user_id=test_user["user_id"],
+            rating=1,
             comments="Older feedback",
             created_at=older_time
         )
         feedback2 = UserFeedback(
-            user_id=test_user, 
+            user_id=test_user["user_id"], 
             rating=2, 
             comments="Newer feedback",
             created_at=now # manually set timestamps to ensure order, not needed usually because created_at defaults to current time
@@ -160,7 +160,7 @@ class TestFeedbackRead:
         created1 = create_feedback(feedback=feedback1, session=db_session)
         created2 = create_feedback(feedback=feedback2, session=db_session)
 
-        user_feedback = get_feedback_by_user_id(user_id=test_user, session=db_session)
+        user_feedback = get_feedback_by_user_id(user_id=test_user["user_id"], session=db_session)
 
         # Most recent should be first
         assert user_feedback[0].id == created2.id
@@ -179,10 +179,10 @@ class TestFeedbackRead:
     def test_get_all_feedback(self, db_session, test_user):
         """Test retrieving all feedback entries"""
         feedback1 = UserFeedback(
-            user_id=test_user, rating=3, comments="Feedback 1"
+            user_id=test_user["user_id"], rating=3, comments="Feedback 1"
         )
         feedback2 = UserFeedback(
-            user_id=test_user, rating=2, comments="Feedback 2"
+            user_id=test_user["user_id"], rating=2, comments="Feedback 2"
         )
 
         create_feedback(feedback=feedback1, session=db_session)
@@ -195,13 +195,13 @@ class TestFeedbackRead:
     def test_get_feedback_by_rating(self, db_session, test_user):
         """Test retrieving feedback by specific rating"""
         feedback1 = UserFeedback(
-            user_id=test_user, rating=3, comments="Excellent"
+            user_id=test_user["user_id"], rating=3, comments="Excellent"
         )
         feedback2 = UserFeedback(
-            user_id=test_user, rating=3, comments="Great"
+            user_id=test_user["user_id"], rating=3, comments="Great"
         )
         feedback3 = UserFeedback(
-            user_id=test_user, rating=2, comments="Good"
+            user_id=test_user["user_id"], rating=2, comments="Good"
         )
 
         create_feedback(feedback=feedback1, session=db_session)
@@ -235,7 +235,7 @@ class TestFeedbackConstraints:
         valid_ratings = [1, 2, 3]
         for rating in valid_ratings:
             feedback = UserFeedback(
-                user_id=test_user,
+                user_id=test_user["user_id"],
                 rating=rating,
                 comments=f"Rating {rating}",
             )
