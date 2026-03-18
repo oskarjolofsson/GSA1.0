@@ -65,11 +65,6 @@ class PracticeDrillRun(Base):
 
     # Relationships
     session = relationship("PracticeSession", back_populates="drill_runs")
-    reps = relationship(
-        "PracticeRep",
-        back_populates="drill_run",
-        cascade="all, delete-orphan",
-    )
 
     __table_args__ = (
         Index("idx_practice_drill_runs_session", "session_id"),
