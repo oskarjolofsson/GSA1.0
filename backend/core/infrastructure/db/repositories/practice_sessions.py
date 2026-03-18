@@ -1,6 +1,5 @@
 from ..models.PracticeSession import PracticeSession
 from ..models.PracticeDrillRun import PracticeDrillRun
-from ..models.PracticeRep import PracticeRep
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -87,50 +86,3 @@ def delete_practice_drill_run(drill_run: PracticeDrillRun, session: Session) -> 
     session.delete(drill_run)
     session.flush()
 
-
-# ---------------- PRACTICE REPS ----------------
-
-def get_practice_rep_by_id(rep_id: UUID, session: Session) -> PracticeRep:
-    return session.get(PracticeRep, rep_id)
-
-
-def get_practice_reps_by_drill_run_id(drill_run_id: UUID, session: Session) -> list[PracticeRep]:
-    return (
-        session.query(PracticeRep)
-        .filter(PracticeRep.drill_run_id == drill_run_id)
-        .order_by(PracticeRep.rep_number)
-        .all()
-    )
-
-
-def get_practice_reps_by_drill_run_and_success(
-    drill_run_id: UUID, success: bool, session: Session
-) -> list[PracticeRep]:
-    return (
-        session.query(PracticeRep)
-        .filter(PracticeRep.drill_run_id == drill_run_id, PracticeRep.success == success)
-        .all()
-    )
-
-
-def create_practice_rep(rep: PracticeRep, session: Session) -> PracticeRep:
-    session.add(rep)
-    session.flush()
-    return rep
-
-
-def create_practice_reps(reps: list[PracticeRep], session: Session) -> list[PracticeRep]:
-    session.add_all(reps)
-    session.flush()
-    return reps
-
-
-def update_practice_rep(rep: PracticeRep, session: Session) -> PracticeRep:
-    session.add(rep)
-    session.flush()
-    return rep
-
-
-def delete_practice_rep(rep: PracticeRep, session: Session) -> None:
-    session.delete(rep)
-    session.flush()
