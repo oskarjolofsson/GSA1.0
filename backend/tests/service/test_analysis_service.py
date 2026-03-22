@@ -127,8 +127,7 @@ class TestCreateAnalysis:
 class TestRunAnalysis:
     def test_run_analysis_updates_analysis_status(
         self,
-        shared_db_session
-,
+        shared_db_session,
         completed_analysis_shared,
     ):
         analysis = get_analysis_by_id(
@@ -162,10 +161,9 @@ class TestRunAnalysis:
 
     def test_analysis_crud_operations(
         self,
-        shared_db_session
-,
+        shared_db_session,
         completed_analysis_shared,
-        shared_test_user,
+        test_user,
     ):
         """Test get, list, and delete operations on analyses and analysis issues"""
         # Test get_analysis_by_id
@@ -173,11 +171,11 @@ class TestRunAnalysis:
         
         assert analysis_dto is not None
         assert analysis_dto.analysis_id == completed_analysis_shared
-        assert analysis_dto.user_id == shared_test_user
+        assert analysis_dto.user_id == test_user["user_id"]
         assert analysis_dto.status == "completed"
         
         # Test get_analyses_by_user_id
-        user_analyses = get_analyses_by_user_id(shared_test_user, db_session=shared_db_session)
+        user_analyses = get_analyses_by_user_id(test_user["user_id"], db_session=shared_db_session)
         assert len(user_analyses) > 0
         analysis_ids = [a.analysis_id for a in user_analyses]
         assert completed_analysis_shared in analysis_ids

@@ -3,27 +3,12 @@ from .dtos.user_service_dto import (
 )
 from .exceptions import NotFoundException
 from core.infrastructure.db.repositories.profiles import get_all_profiles, get_profile_by_id
-from core.infrastructure.db.repositories.user_roles import user_has_role, get_roles_for_users, get_roles_by_user_id
-from core.infrastructure.db.repositories.analysis import get_analysis_count_by_user_id, get_analysis_counts_by_user_ids
+from core.infrastructure.db.repositories.user_roles import user_has_role, get_roles_for_users
+from core.infrastructure.db.repositories.analysis import get_analysis_counts_by_user_ids
 from core.infrastructure.db.models.Profile import Profile
 from sqlalchemy.orm import Session
 from uuid import UUID
 from datetime import datetime, timezone, timedelta
-
-
-def get_user_by_id(user_id: str, session: Session) -> GetUserDTO:
-    profile: Profile = get_profile_by_id(user_id, session)
-    if not profile:
-        raise NotFoundException(f"User with id {user_id} not found")
-    
-    # Get role for single user
-    roles = get_roles_by_user_id(UUID(user_id), session)
-    role_name = roles[0].name if roles else None
-    
-    # Get analysis count
-    analysis_count = get_analysis_count_by_user_id(UUID(user_id), session)
-    
-    return from_profile_to_dto(profile, role=role_name, analyses_count=analysis_count)
 
 
 def get_all_users(session: Session) -> list[GetUserDTO]:

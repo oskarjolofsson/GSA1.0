@@ -10,19 +10,14 @@ from app.api.v1.schemas.practice_session import (
     PracticeSessionResponse,
     StartDrillRunRequest,
     PracticeDrillRun,
-    RecordRepRequest,
-    PracticeRepResponse,
 )
 
 from core.services.dtos.practice_session_service_dto import CompleteDrillRunDTO
 from core.services.practice_session_service import (
     record_practice_session_start as service_start_session,
     record_practice_session_completion as service_complete_session,
-    record_practice_session_abandonment as service_abandon_session,
     record_drill_run_start as service_start_drill_run,
     record_drill_run_completion as service_complete_drill_run,
-    record_drill_run_skip as service_skip_drill_run,
-    record_rep_completion as service_record_rep,
     get_practice_session_results as service_get_practice_session_results,
     get_practice_session_by_id as service_get_practice_session_by_id,
 )
@@ -71,25 +66,6 @@ def complete_practice_session(
         JSON response with updated session details
     """
     result = service_complete_session(session_id=session_id, session=db)
-    return PracticeSessionResponse.from_domain(result)
-
-
-@router.post("/sessions/{session_id}/abandon", response_model=PracticeSessionResponse)
-def abandon_practice_session(
-    session_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-):
-    """
-    Mark a practice session as abandoned.
-
-    Arguments:
-        session_id (UUID): Practice session identifier
-
-    Returns:
-        JSON response with updated session details
-    """
-    result = service_abandon_session(session_id=session_id, session=db)
     return PracticeSessionResponse.from_domain(result)
 
 
@@ -189,35 +165,4 @@ def get_practice_session_results(
     """
     drill_runs = service_get_practice_session_results(session_id=session_id, session=db)
     return [PracticeDrillRun.from_domain(run) for run in drill_runs]
-
-
-# =========== PRACTICE REP ROUTES ===========
-
-@router.post("/drill-runs/{drill_run_id}/reps", response_model=PracticeRepResponse, status_code=201)
-def record_practice_rep(
-    drill_run_id: UUID,
-    request: RecordRepRequest,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
-):
-    """
-    Record the completion of a practice repetition.
-
-    Arguments:
-        drill_run_id (UUID): Drill run identifier
-
-    Arguments (JSON body):
-        rep_number (int): Sequential rep number within the drill run
-        success (bool): Whether the rep was successful
-
-    Returns:
-        JSON response with rep details
-    """
-    result = service_record_rep(
-        drill_run_id=drill_run_id,
-        rep_number=request.rep_number,
-        success=request.success,
-        session=db,
-    )
-    return PracticeRepResponse.from_domain(result)
 

@@ -30,14 +30,6 @@ export class IssueService {
     }
 
     /**
-     * Get all issues associated with a drill
-     */
-    async getIssuesByDrill(drillId: string): Promise<Issue[]> {
-        const data = await apiClient.get<Issue[]>(`/api/v1/issues/by-drill/${drillId}`);
-        return Array.isArray(data) ? data : [];
-    }
-
-    /**
      * Get all issues
      */
     async getAllIssues(): Promise<Issue[]> {

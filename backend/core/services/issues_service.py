@@ -109,7 +109,7 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> Is
     return from_issue_to_response_dto(updated_issue)
 
 
-def delete_issue(issue_id: UUID, db_session: Session) -> bool:
+def delete_issue(issue_id: UUID, db_session: Session) -> None:
     """Delete an issue by its ID."""
     issue = repo_get_issue_by_id(issue_id, db_session)
     if not issue:
@@ -117,7 +117,7 @@ def delete_issue(issue_id: UUID, db_session: Session) -> bool:
     repo_delete_issue(issue, db_session)
 
 
-def delete_issues_bulk(issue_ids: list[UUID], db_session: Session) -> bool:
+def delete_issues_bulk(issue_ids: list[UUID], db_session: Session) -> None:
     """Delete multiple issues by their IDs."""
     issues = repo_get_issues_by_ids(issue_ids, db_session)
     if len(issues) != len(issue_ids):

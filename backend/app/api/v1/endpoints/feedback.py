@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from uuid import UUID
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
@@ -12,10 +12,7 @@ from app.api.v1.schemas.feedback import (
 )
 from core.services.feedback_service import (
     create_feedback as service_create_feedback,
-    get_feedback_by_id as service_get_feedback_by_id,
-    get_feedback_by_user_id as service_get_feedback_by_user_id,
     get_all_feedback as service_get_all_feedback,
-    get_feedback_by_rating as service_get_feedback_by_rating,
 )
 from core.services.dtos.feedback_service_dto import CreateFeedbackDTO
 
@@ -49,69 +46,6 @@ def create_feedback(
         success=True,
         feedback_id=result.id,
     )
-
-
-@router.get("/{feedback_id}", response_model=GetFeedback)
-def get_feedback(
-    feedback_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
-):
-    """
-    Get details of a specific feedback entry.
-
-    Arguments:
-        feedback_id (UUID): Feedback identifier
-
-    Returns:
-        JSON response with feedback details
-    """
-    feedback = service_get_feedback_by_id(feedback_id, db_session=db)
-    
-    if not feedback:
-        raise HTTPException(status_code=404, detail="Feedback not found")
-
-    return GetFeedback.from_domain(feedback)
-
-
-@router.get("/by-user/{user_id}", response_model=list[GetFeedback])
-def get_feedback_by_user(
-    user_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
-):
-    """
-    Get all feedback entries for a specific user.
-
-    Arguments:
-        user_id (UUID): User identifier
-        
-    Returns:
-        JSON response with a list of feedback entries
-    """
-    feedbacks = service_get_feedback_by_user_id(user_id, db_session=db)
-
-    return [GetFeedback.from_domain(feedback) for feedback in feedbacks]
-
-    
-@router.get("/by-rating/{rating}", response_model=list[GetFeedback])
-def get_feedback_by_rating(
-    rating: int,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
-):
-    """
-    Get all feedback entries with a specific rating.
-
-    Arguments:
-        rating (int): Rating value to filter by
-
-    Returns:
-        JSON response with a list of feedback entries
-    """
-    feedbacks = service_get_feedback_by_rating(rating, db_session=db)
-
-    return [GetFeedback.from_domain(feedback) for feedback in feedbacks]
 
 
 @router.get("/", response_model=list[GetFeedback])

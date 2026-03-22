@@ -33,26 +33,15 @@ def shared_db_session(shared_connection):
         session.close()
 
 
-@pytest.fixture(scope="session")
-def shared_test_user(shared_db_session):
-    user_id = uuid.uuid4()
-    shared_db_session.execute(
-        text("INSERT INTO auth.users (id) VALUES (:id)"),
-        {"id": user_id},
-    )
-    shared_db_session.flush()
-    return user_id
-
-
 @pytest.fixture(scope="class")
-def completed_analysis_shared(shared_test_user, shared_db_session):
+def completed_analysis_shared(test_user, shared_db_session):
     """
     Run expensive analysis exactly once per TestRunAnalysis class.
     """
 
     create_result = create_analysis(
         CreateAnalysisDTO(
-            user_id=shared_test_user,
+            user_id=test_user["user_id"],
             model="gemini-3-pro-preview",
             start_time=timedelta(seconds=0),
             end_time=timedelta(seconds=10),
@@ -70,7 +59,7 @@ def completed_analysis_shared(shared_test_user, shared_db_session):
     run_analysis(
         RunAnalysisDTO(
             analysis_id=analysis_id,
-            user_id=shared_test_user,
+            user_id=test_user["user_id"],
         ),
         db_session=shared_db_session
     )
