@@ -19,7 +19,6 @@ from core.services.drill_service import (
     get_drill_by_id as service_get_drill_by_id,
     get_drills_by_analysis_id as service_get_drills_by_analysis_id,
     get_drills_by_issue_id as service_get_drills_by_issue_id,
-    get_drills_by_user_id as service_get_drills_by_user_id,
     get_all_drills as service_get_all_drills,
     update_drill as service_update_drill,
     delete_drill as service_delete_drill,
@@ -116,26 +115,6 @@ def get_drills_by_issue(
         JSON response with a list of drills
     """
     drills = service_get_drills_by_issue_id(issue_id, db_session=db)
-
-    return [GetDrill.from_domain(drill) for drill in drills]
-
-
-@router.get("/by-user/{user_id}", response_model=list[GetDrill])
-def get_drills_by_user(
-    user_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
-    """
-    Get all drills associated with a specific user.
-
-    Arguments:
-        user_id (UUID): User identifier
-
-    Returns:
-        JSON response with a list of drills
-    """
-    drills = service_get_drills_by_user_id(user_id, db_session=db)
 
     return [GetDrill.from_domain(drill) for drill in drills]
 

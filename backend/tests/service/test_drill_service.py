@@ -1,5 +1,7 @@
 import pytest
 from uuid import UUID
+
+from backend.core.infrastructure.AI import exceptions
 from ...core.services.drill_service import (
     create_drill,
     get_drill_by_id,
@@ -8,11 +10,12 @@ from ...core.services.drill_service import (
     delete_drill,
 )
 from ...core.services.dtos.drill_service_dto import CreateDrillDTO, UpdateDrillDTO
-from ...core.infrastructure.db.repositories.drills import get_drill_by_id as repo_get_drill_by_id
+from ...core.infrastructure.db.repositories.drills import get_drill_by_id as repo_get_drill_by_id, get_all_drills as repo_get_all_drills
 from ...core.infrastructure.db.models.Issue import Issue
 from ...core.infrastructure.db.models.IssueDrill import IssueDrill
 from ...core.infrastructure.db.repositories.issues import create_issue as repo_create_issue
 from ...core.infrastructure.db.repositories.issue_drills import create_issue_drill
+from core.services import exceptions
 
 
 class TestCreateDrill:
@@ -73,10 +76,8 @@ class TestGetDrillById:
         fake_id = UUID("00000000-0000-0000-0000-000000000000")
 
         # Act
-        result = get_drill_by_id(fake_id, db_session=db_session)
-
-        # Assert
-        assert result is None
+        with pytest.raises(exceptions.NotFoundException):
+            result = get_drill_by_id(fake_id, db_session=db_session)
 
 
 class TestGetDrillsByIssueId:
@@ -204,10 +205,8 @@ class TestUpdateDrill:
         update_dto = UpdateDrillDTO(title="Updated Title")
 
         # Act
-        result = update_drill(fake_id, update_dto, db_session=db_session)
-
-        # Assert
-        assert result is None
+        with pytest.raises(exceptions.NotFoundException):
+            result = update_drill(fake_id, update_dto, db_session=db_session)
 
 
 class TestDeleteDrill:
@@ -225,14 +224,12 @@ class TestDeleteDrill:
         created_drill = create_drill(dto, db_session=db_session)
 
         # Act
-        result = delete_drill(created_drill.id, db_session=db_session)
-
-        # Assert
-        assert result is True
-
+        delete_drill(created_drill.id, db_session=db_session)
+        
         # Verify it's deleted
-        drill_in_db = repo_get_drill_by_id(created_drill.id, db_session)
-        assert drill_in_db is None
+        drills_in_db = repo_get_all_drills(db_session)
+        drill_ids = [drill.id for drill in drills_in_db]
+        assert created_drill.id not in drill_ids, "Deleted drill should not be in the database anymore"
 
     def test_delete_drill_not_exists(self, db_session):
         """Test that delete_drill returns False for non-existent drill"""
@@ -240,7 +237,5 @@ class TestDeleteDrill:
         fake_id = UUID("00000000-0000-0000-0000-000000000000")
 
         # Act
-        result = delete_drill(fake_id, db_session=db_session)
-
-        # Assert
-        assert result is False
+        with pytest.raises(exceptions.NotFoundException):
+            result = delete_drill(fake_id, db_session=db_session)

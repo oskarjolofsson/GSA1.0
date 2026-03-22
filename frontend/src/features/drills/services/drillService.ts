@@ -15,33 +15,10 @@ export class DrillService {
     }
 
     /**
-     * Get drill by ID
-     */
-    async getDrillById(drillId: string): Promise<Drill> {
-        return apiClient.get<Drill>(`/api/v1/drills/${drillId}`);
-    }
-
-    /**
-     * Get all drills associated with an analysis
-     */
-    async getDrillsByAnalysis(analysisId: string): Promise<Drill[]> {
-        const data = await apiClient.get<Drill[]>(`/api/v1/drills/by-analysis/${analysisId}`);
-        return Array.isArray(data) ? data : [];
-    }
-
-    /**
      * Get all drills associated with an issue
      */
     async getDrillsByIssue(issueId: string): Promise<Drill[]> {
         const data = await apiClient.get<Drill[]>(`/api/v1/drills/by-issue/${issueId}`);
-        return Array.isArray(data) ? data : [];
-    }
-
-    /**
-     * Get all drills for current user
-     */
-    async getDrillsForUser(): Promise<Drill[]> {
-        const data = await apiClient.get<Drill[]>('/api/v1/drills/');
         return Array.isArray(data) ? data : [];
     }
 

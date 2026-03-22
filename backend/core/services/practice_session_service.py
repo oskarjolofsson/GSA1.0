@@ -3,12 +3,8 @@ from core.infrastructure.db.repositories import practice_sessions as repo
 from core.infrastructure.db.repositories import drills as drill_repo
 from core.services import exceptions
 from core.services.dtos.practice_session_service_dto import (
-    StartPracticeSessionDTO,
     PracticeSessionResponseDTO,
-    StartDrillRunDTO,
     PracticeDrillRunResponseDTO,
-    RecordRepCompletionDTO,
-    PracticeRepResponseDTO,
     CompleteDrillRunDTO,
 )
 
@@ -37,18 +33,6 @@ def record_practice_session_completion(session_id: UUID, session: Session) -> Pr
         raise exceptions.NotFoundException(f"Practice session with ID {session_id} not found", str(session_id))
     
     practice_session.status = "completed"
-    practice_session.completed_at = datetime.now(tz=timezone.utc)
-    updated_session = repo.update_practice_session(practice_session, session)
-    return _session_to_response_dto(updated_session)
-    
-    
-def record_practice_session_abandonment(session_id: UUID, session: Session) -> PracticeSessionResponseDTO:
-    """Mark a practice session as abandoned."""
-    practice_session = repo.get_practice_session_by_id(session_id, session)
-    if not practice_session:
-        raise exceptions.NotFoundException(f"Practice session with ID {session_id} not found", str(session_id))
-    
-    practice_session.status = "abandoned"
     practice_session.completed_at = datetime.now(tz=timezone.utc)
     updated_session = repo.update_practice_session(practice_session, session)
     return _session_to_response_dto(updated_session)
@@ -91,28 +75,6 @@ def record_drill_run_completion(drill_run_dto: CompleteDrillRunDTO, session: Ses
     drill_run.skipped = drill_run_dto.skipped
     updated_drill_run = repo.update_practice_drill_run(drill_run, session)
     return _drill_run_to_response_dto(updated_drill_run, drill_title=drill.title)
-    
-    
-def record_drill_run_skip(drill_run_id: UUID, session: Session) -> PracticeDrillRunResponseDTO:
-    """Record the skipping of a drill run."""
-    drill_run = repo.get_practice_drill_run_by_id(drill_run_id, session)
-    if not drill_run:
-        raise exceptions.NotFoundException(f"Drill run with ID {drill_run_id} not found", str(drill_run_id))
-    
-    # Total reps
-    reps = repo.get_practice_reps_by_drill_run_id(drill_run_id, session)
-    total_reps = len(reps)
-    failed = sum(1 for rep in reps if not rep.success)
-    
-    drill: models.Drill = get_drill_by_id(drill_run.drill_id, session)
-    
-    drill_run.skipped = True
-    drill_run.successful_reps = total_reps - failed
-    drill_run.failed_reps = failed
-    drill_run.completed_at = datetime.now(tz=timezone.utc)
-    
-    updated_drill_run = repo.update_practice_drill_run(drill_run, session)
-    return _drill_run_to_response_dto(updated_drill_run, drill_title=drill.title)
 
 
 def get_practice_session_results(session_id: UUID, session: Session) -> list[PracticeDrillRunResponseDTO]:
@@ -121,18 +83,6 @@ def get_practice_session_results(session_id: UUID, session: Session) -> list[Pra
     drills: list[models.Drill] = drill_repo.get_drills_by_ids([run.drill_id for run in drill_runs], session)
     drill_id_to_title = {drill.id: drill.title for drill in drills}
     return [_drill_run_to_response_dto(run, drill_title=drill_id_to_title.get(run.drill_id, "Unknown Drill")) for run in drill_runs]
-    
-# =========== PRACTICE REPS ============
-
-def record_rep_completion(drill_run_id: UUID, rep_number: int, success: bool, session: Session) -> PracticeRepResponseDTO:
-    """Record the completion of a practice rep."""
-    rep = models.PracticeRep(
-        drill_run_id=drill_run_id,
-        rep_number=rep_number,
-        success=success,
-    )
-    created_rep = repo.create_practice_rep(rep, session)
-    return _rep_to_response_dto(created_rep)
 
 
 # =========== HELPER FUNCTIONS ============
@@ -162,17 +112,6 @@ def _drill_run_to_response_dto(drill_run: models.PracticeDrillRun, drill_title: 
         skipped=drill_run.skipped,
         started_at=drill_run.started_at,
         completed_at=drill_run.completed_at,
-    )
-
-
-def _rep_to_response_dto(rep: models.PracticeRep) -> PracticeRepResponseDTO:
-    """Convert PracticeRep model to response DTO."""
-    return PracticeRepResponseDTO(
-        id=rep.id,
-        drill_run_id=rep.drill_run_id,
-        rep_number=rep.rep_number,
-        success=rep.success,
-        created_at=rep.created_at,
     )
     
     

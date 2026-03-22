@@ -12,6 +12,7 @@ from ...core.services.issues_service import (
 from ...core.services.dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO
 from ...core.infrastructure.db.repositories.issues import (
     get_issue_by_id as repo_get_issue_by_id,
+    get_all_issues as repo_get_all_issues,
 )
 from ...core.infrastructure.db.models.Analysis import Analysis
 from ...core.infrastructure.db.models.Video import Video
@@ -23,6 +24,8 @@ from ...core.infrastructure.db.repositories.videos import create_video as repo_c
 from ...core.infrastructure.db.repositories.drills import create_drill as repo_create_drill
 from ...core.infrastructure.db.repositories.analysis_issues import create_analysis_issue
 from ...core.infrastructure.db.repositories.issue_drills import create_issue_drill
+
+from core.services import exceptions
 
 
 class TestCreateIssue:
@@ -76,7 +79,7 @@ class TestCreateIssue:
 class TestGetIssueById:
     """Tests for get_issue_by_id function"""
 
-    def test_get_issue_by_id_exists(self, db_session):
+    def test_get_issue_by_id_exists(self, db_session, test_user):
         """Test getting an existing issue by ID"""
         # Arrange - Create an issue first
         dto = CreateIssueDTO(
@@ -86,7 +89,7 @@ class TestGetIssueById:
         created_issue = create_issue(dto, db_session=db_session)
 
         # Act
-        result = get_issue_by_id(created_issue.id, db_session=db_session)
+        result = get_issue_by_id(created_issue.id, user_id=test_user["user_id"], db_session=db_session)
 
         # Assert
         assert result is not None
@@ -94,22 +97,21 @@ class TestGetIssueById:
         assert result.title == "Test Issue"
         assert result.phase == "IMPACT"
 
-    def test_get_issue_by_id_not_exists(self, db_session):
+    def test_get_issue_by_id_not_exists(self, db_session, test_user):
         """Test getting a non-existent issue returns None"""
         # Arrange
         fake_id = UUID("00000000-0000-0000-0000-000000000000")
 
         # Act
-        result = get_issue_by_id(fake_id, db_session=db_session)
+        with pytest.raises(exceptions.NotFoundException):
+            result = get_issue_by_id(fake_id, user_id=test_user["user_id"], db_session=db_session)
 
-        # Assert
-        assert result is None
 
 
 class TestGetAllIssues:
     """Tests for get_all_issues function"""
 
-    def test_get_all_issues_returns_all_issues(self, db_session):
+    def test_get_all_issues_returns_all_issues(self, db_session, test_user):
         """Test that get_all_issues returns all issues"""
         # Arrange - Create multiple issues
         dto1 = CreateIssueDTO(title="Issue 1")
@@ -118,7 +120,7 @@ class TestGetAllIssues:
         create_issue(dto2, db_session=db_session)
 
         # Act
-        result = get_all_issues(db_session=db_session)
+        result = get_all_issues(user_id=test_user["user_id"], db_session=db_session)
 
         # Assert
         assert len(result) >= 2
@@ -168,7 +170,7 @@ class TestGetIssuesByAnalysisId:
         db_session.flush()
 
         # Act
-        result = get_issues_by_analysis_id(analysis.id, db_session=db_session)
+        result = get_issues_by_analysis_id(analysis_id=analysis.id, user_id=test_user["user_id"], db_session=db_session)
 
         # Assert
         assert len(result) == 2
@@ -181,7 +183,7 @@ class TestGetIssuesByDrillId:
     """Tests for get_issues_by_drill_id function"""
 
     def test_get_issues_by_drill_id_returns_associated_issues(
-        self, db_session
+        self, db_session, test_user
     ):
         """Test that get_issues_by_drill_id returns issues linked to a drill"""
         # Arrange - Create a drill
@@ -207,7 +209,7 @@ class TestGetIssuesByDrillId:
         db_session.flush()
 
         # Act
-        result = get_issues_by_drill_id(drill.id, db_session=db_session)
+        result = get_issues_by_drill_id(drill_id=drill.id, user_id=test_user["user_id"], db_session=db_session)
 
         # Assert
         assert len(result) == 2
@@ -284,11 +286,8 @@ class TestUpdateIssue:
         update_dto = UpdateIssueDTO(title="Updated Title")
 
         # Act
-        result = update_issue(fake_id, update_dto, db_session=db_session)
-
-        # Assert
-        assert result is None
-
+        with pytest.raises(exceptions.NotFoundException):
+            result = update_issue(fake_id, update_dto, db_session=db_session)
 
 class TestDeleteIssue:
     """Tests for delete_issue function"""
@@ -298,24 +297,32 @@ class TestDeleteIssue:
         # Arrange - Create an issue
         dto = CreateIssueDTO(title="To Delete")
         created_issue = create_issue(dto, db_session=db_session)
+        
+        # Verify it's created
+        issue_in_db_before = repo_get_issue_by_id(created_issue.id, db_session)
+        
+        assert issue_in_db_before is not None
 
         # Act
-        result = delete_issue(created_issue.id, db_session=db_session)
-
-        # Assert
-        assert result is True
+        delete_issue(created_issue.id, db_session=db_session)
 
         # Verify it's deleted
-        issue_in_db = repo_get_issue_by_id(created_issue.id, db_session)
-        assert issue_in_db is None
+        issues_in_db = repo_get_all_issues(db_session)
+        issue_ids = [issue.id for issue in issues_in_db]
+        assert created_issue.id not in issue_ids, "Deleted issue should not be in the database anymore"
+        
 
-    def test_delete_issue_not_exists(self, db_session):
+    def test_delete_issue_not_exists(self, db_session, test_user):
         """Test that delete_issue returns False for non-existent issue"""
         # Arrange
         fake_id = UUID("00000000-0000-0000-0000-000000000000")
+        
+        all_issues_before = get_all_issues(user_id=test_user["user_id"], db_session=db_session)
 
-        # Act
-        result = delete_issue(fake_id, db_session=db_session)
-
-        # Assert
-        assert result is False
+        with pytest.raises(exceptions.NotFoundException):
+            delete_issue(fake_id, db_session=db_session)
+            
+        all_issues_after = get_all_issues(user_id=test_user["user_id"], db_session=db_session)
+        assert len(all_issues_before) == len(all_issues_after), "No issues should be deleted when trying to delete a non-existent issue"
+            
+        

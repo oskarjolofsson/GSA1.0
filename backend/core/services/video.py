@@ -24,20 +24,6 @@ def get_video_by_id(video_id: UUID, db_session: Session) -> VideoResponseDTO:
     return from_video_to_response_dto(video)
 
 
-def get_video_read_url(video_id: UUID, db_session: Session) -> VideoUrlResponseDTO:
-    """Get a signed read URL for a video."""
-    video = repo_get_video_by_id(video_id, db_session)
-    
-    if not video:
-        raise NotFoundException("Video", str(video_id))
-    
-    if not video.video_key:
-        raise NotFoundException("Video key", f"for video {video_id}")
-    
-    video_url = generate_read_url(video.video_key)
-    return VideoUrlResponseDTO(video_url=video_url)
-
-
 def get_video_read_url_by_analysis(analysis_id: UUID, db_session: Session) -> VideoUrlResponseDTO:
     """Get a signed read URL for a video by analysis ID."""
     video = repo_get_video_by_analysis_id(analysis_id, db_session)

@@ -1,4 +1,3 @@
-from requests import session
 from uuid import UUID
 
 from core.infrastructure.db.repositories.drills import (
@@ -10,7 +9,6 @@ from core.infrastructure.db.repositories.drills import (
     get_drills_by_ids as repo_get_drills_by_ids,
     get_drills_by_issue_id as repo_get_drills_by_issue_id,
     get_drills_by_analysis_id as repo_get_drills_by_analysis_id,
-    get_drills_by_user_id as repo_get_drills_by_user_id,
     get_all_drills as repo_get_all_drills,
 )
 from core.infrastructure.db.models.Drill import Drill
@@ -41,11 +39,6 @@ def get_drill_by_id(drill_id: UUID, db_session) -> DrillResponseDTO | None:
 def get_all_drills(db_session) -> list[DrillResponseDTO]:
     """Get all drills."""
     drills: list[Drill] = repo_get_all_drills(db_session)
-    return [from_drill_to_response_dto(drill) for drill in drills]
-
-
-def get_drills_by_user_id(user_id: UUID, db_session) -> list[DrillResponseDTO]:
-    drills = repo_get_drills_by_user_id(user_id, db_session)
     return [from_drill_to_response_dto(drill) for drill in drills]
 
 
