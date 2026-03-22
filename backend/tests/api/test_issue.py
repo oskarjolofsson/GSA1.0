@@ -5,9 +5,18 @@ import uuid
 from core.infrastructure.db.repositories.issues import get_issue_by_id
 from core.infrastructure.db.models.Issue import Issue
 
+from core.services import user_service
+
+
+@pytest.fixture(scope="function", autouse=True)
+def assign_admin_user(test_user, db_session):
+    """Assign admin role to the test user for API authentication."""
+    user_service.set_admin(user_id=str(test_user["user_id"]), set_to_admin=True, session=db_session)
+    print(f"Assigned admin role to user {test_user['user_id']} for API tests.")
+
 
 @pytest.fixture()
-def issue_with_id(client, db_session, auth_headers):
+def issue_with_id(client, auth_headers):
     """Create an issue and return its ID for testing other endpoints."""
     response = client.post(
         "/api/v1/issues/",
@@ -185,7 +194,7 @@ def test_update_issue(client, issue_with_id, db_session, auth_headers):
     """Test updating an existing issue."""
     issue_id = issue_with_id
     
-    response = client.put(
+    response = client.patch(
         f"/api/v1/issues/{issue_id}",
         json={
             "title": "Updated Early Extension",
@@ -214,7 +223,7 @@ def test_update_issue_not_found(client, auth_headers):
     """Test updating a non-existent issue returns 404."""
     fake_id = uuid.uuid4()
     
-    response = client.put(
+    response = client.patch(
         f"/api/v1/issues/{fake_id}",
         json={
             "title": "Updated Title",

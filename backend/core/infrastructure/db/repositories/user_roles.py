@@ -73,8 +73,12 @@ def get_role_by_name(role_name: str, session: Session) -> Role | None:
 
 # ------------ CREATE ------------
 
-
-def create_user_role(user_role: UserRole, session: Session) -> UserRole:
+def assign_role_to_user(user_role: UserRole, session: Session) -> UserRole:
+    existing: UserRole | None = get_user_role(user_role.user_id, user_role.role_id, session)
+    
+    if existing:
+        return existing  # Role already assigned, return existing record
+    
     session.add(user_role)
     session.flush()
     return user_role
@@ -84,7 +88,7 @@ def create_user_role(user_role: UserRole, session: Session) -> UserRole:
 
 
 def remove_role_from_user(user_id: UUID, role_id: int, session: Session) -> None:
-    user_role = get_user_role(user_id, role_id, session)
+    user_role: UserRole | None = get_user_role(user_id, role_id, session)
     if user_role:
         session.delete(user_role)
         session.flush()

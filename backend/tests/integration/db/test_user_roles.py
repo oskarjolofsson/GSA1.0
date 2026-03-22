@@ -169,11 +169,18 @@ def test_remove_all_roles_from_user(db_session, test_user, test_role, test_role_
 ## ------------ CONSTRAINTS & EDGE CASES ------------
 
 def test_user_role_composite_primary_key(db_session, test_user, test_role):
-    """Test that user-role combination is unique"""
+    """Test that user-role combination is unique, but can be assigned multiple times without creating duplicates"""
     user_role1 = UserRole(user_id=test_user["user_id"], role_id=test_role.id)
     assign_role_to_user(user_role=user_role1, session=db_session)
+    
+    user_role = get_user_role(test_user["user_id"], test_role.id, session=db_session)
+    assert user_role.role_id == test_role.id
+    assert user_role.user_id == test_user["user_id"]
 
     user_role2 = UserRole(user_id=test_user["user_id"], role_id=test_role.id)
-    with pytest.raises(Exception):
-        assign_role_to_user(user_role=user_role2, session=db_session)
+    assign_role_to_user(user_role=user_role2, session=db_session)
+    
+    user_role = get_user_role(test_user["user_id"], test_role.id, session=db_session)
+    assert user_role.role_id == test_role.id
+    assert user_role.user_id == test_user["user_id"]
 

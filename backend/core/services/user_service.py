@@ -60,7 +60,7 @@ def set_admin(user_id: str, set_to_admin: bool, session: Session) -> None:
 
     if set_to_admin and not is_admin:
         new_role = models.UserRole(user_id=UUID(user_id), role_id=admin_role.id)
-        user_roles_repo.create_user_role(new_role, session)
+        user_roles_repo.assign_role_to_user(new_role, session)
         
     elif not set_to_admin and is_admin:
         user_roles_repo.remove_role_from_user(
