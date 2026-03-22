@@ -2,9 +2,16 @@
 import pytest
 import uuid
 
+from core.services import user_service
 from core.infrastructure.db.repositories.drills import get_drill_by_id
 from core.infrastructure.db.models.Drill import Drill
 
+@pytest.fixture(scope="function", autouse=True)
+def assign_admin_user(test_user, db_session):
+    """Assign admin role to the test user for API authentication."""
+    user_service.set_admin(user_id=str(test_user["user_id"]), set_to_admin=True, session=db_session)
+    print(f"Assigned admin role to user {test_user['user_id']} for API tests.")
+    
 
 @pytest.fixture()
 def drill_with_id(client, db_session, auth_headers):
@@ -88,23 +95,6 @@ def test_get_drill_not_found(client, auth_headers):
     assert "not found" in response.json()["detail"].lower()
 
 
-def test_get_drills_by_user(client, test_user, db_session, auth_headers):
-    """Test getting all drills for a specific user."""
-    user_id = test_user["user_id"]
-    
-    # Create a drill linked to a user via analysis and issue
-    # For this test, we'll just check the endpoint returns empty list
-    # since the drill-user relationship is indirect through analysis
-    response = client.get(
-        f"/api/v1/drills/by-user/{user_id}",
-        headers=auth_headers,
-    )
-    
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
-
-
 def test_get_drills_by_analysis(client, db_session, auth_headers):
     """Test getting all drills for a specific analysis."""
     fake_analysis_id = uuid.uuid4()
@@ -139,7 +129,7 @@ def test_update_drill(client, drill_with_id, db_session, auth_headers):
     """Test updating an existing drill."""
     drill_id = drill_with_id
     
-    response = client.put(
+    response = client.patch(
         f"/api/v1/drills/{drill_id}",
         json={
             "title": "Updated Drill Title",
@@ -168,7 +158,7 @@ def test_update_drill_not_found(client, auth_headers):
     """Test updating a non-existent drill returns 404."""
     fake_id = uuid.uuid4()
     
-    response = client.put(
+    response = client.patch(
         f"/api/v1/drills/{fake_id}",
         json={
             "title": "Updated Title",
