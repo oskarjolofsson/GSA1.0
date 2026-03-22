@@ -13,8 +13,6 @@ class TestAuthenticateRequest:
         access_token = test_user["access_token"]
         auth_header = f"Bearer {access_token}"
         
-        print(f"Testing with access token: {access_token}")  # Debugging output
-        
         # Act
         result = authenticate_request(auth_header, supabaseAuthClient)
         
@@ -22,7 +20,7 @@ class TestAuthenticateRequest:
         assert result is not None
         assert "user_id" in result
         assert "email" in result
-        assert result["user_id"] == test_user["user_id"]
+        assert result["user_id"] == str(test_user["user_id"])
         assert result["email"] == test_user["email"]
     
     def test_authenticate_with_fake_bearer_token(self):
