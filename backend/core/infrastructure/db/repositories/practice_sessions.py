@@ -28,6 +28,15 @@ def get_practice_sessions_by_user_and_status(
         .order_by(PracticeSession.started_at.desc())
         .all()
     )
+    
+
+def get_practice_sessions_by_analysis_issue_id(analysis_issue_id: str, session: Session) -> list[PracticeSession]:
+    return (
+        session.query(PracticeSession)
+        .filter(PracticeSession.analysis_issue_id == analysis_issue_id)
+        .order_by(PracticeSession.started_at.desc())
+        .all()
+    )
 
 
 def create_practice_session(practice_session: PracticeSession, session: Session) -> PracticeSession:
@@ -58,6 +67,14 @@ def get_practice_drill_runs_by_session_id(session_id: UUID, session: Session) ->
         session.query(PracticeDrillRun)
         .filter(PracticeDrillRun.session_id == session_id)
         .order_by(PracticeDrillRun.order_index)
+        .all()
+    )
+    
+def get_practice_drill_runs_by_session_ids(session_ids: list[UUID], session: Session) -> list[PracticeDrillRun]:
+    return (
+        session.query(PracticeDrillRun)
+        .filter(PracticeDrillRun.session_id.in_(session_ids))
+        .order_by(PracticeDrillRun.session_id, PracticeDrillRun.order_index)
         .all()
     )
 

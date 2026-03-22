@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from uuid import UUID
+from datetime import datetime
 
 
 class CreateIssueRequest(BaseModel):
@@ -16,6 +17,20 @@ class CreateIssueResponse(BaseModel):
     issue_id: UUID
 
 
+class IssueProgress(BaseModel):
+    """Progress tracking for an analysis issue."""
+    completed_sessions: int
+    in_progress_sessions: int
+    abandoned_sessions: int
+    total_successful_reps: int
+    total_failed_reps: int
+    total_reps: int
+    overall_success_rate: float | None
+    recent_session_success_rates: list[float]
+    trend: str
+    last_completed_at: str | None = None
+
+
 class GetIssue(BaseModel):
     id: UUID
     title: str
@@ -28,12 +43,35 @@ class GetIssue(BaseModel):
     analysis_issue_id: str | None = None
     analysis_id: str | None = None
     confidence: float | None = None
+    progress: IssueProgress | None = None
 
     model_config = ConfigDict(from_attributes=True)
     
     @classmethod
     def from_domain(cls, dto) -> "GetIssue":
-        """Convert IssueResponseDTO to GetIssue schema."""
+        """Convert IssueResponseDTO to GetIssue schema.
+        
+        Progress data is already included in the DTO if available.
+        """
+        progress = None
+        
+        # Convert progress DTO to schema model if present
+        if dto.progress:
+            progress = IssueProgress(
+                completed_sessions=dto.progress.completed_sessions,
+                in_progress_sessions=dto.progress.in_progress_sessions,
+                abandoned_sessions=dto.progress.abandoned_sessions,
+                total_successful_reps=dto.progress.total_successful_reps,
+                total_failed_reps=dto.progress.total_failed_reps,
+                total_reps=dto.progress.total_reps,
+                overall_success_rate=dto.progress.overall_success_rate,
+                recent_session_success_rates=dto.progress.recent_session_success_rates,
+                trend=dto.progress.trend,
+                last_completed_at=dto.progress.last_completed_at.isoformat()
+                if isinstance(dto.progress.last_completed_at, datetime)
+                else dto.progress.last_completed_at,
+            )
+        
         return cls(
             id=dto.id,
             title=dto.title,
@@ -46,6 +84,7 @@ class GetIssue(BaseModel):
             analysis_issue_id=dto.analysis_issue_id,
             analysis_id=dto.analysis_id,
             confidence=dto.confidence,
+            progress=progress,
         )
 
 
