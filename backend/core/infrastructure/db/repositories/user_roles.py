@@ -64,12 +64,17 @@ def user_has_role(user_id: UUID, role_name: str, session: Session) -> bool:
         .first()
         is not None
     )
+    
+    
+def get_role_by_name(role_name: str, session: Session) -> Role | None:
+    role = session.query(Role).filter(Role.name == role_name).first()
+    return role
 
 
 # ------------ CREATE ------------
 
 
-def assign_role_to_user(user_role: UserRole, session: Session) -> UserRole:
+def create_user_role(user_role: UserRole, session: Session) -> UserRole:
     session.add(user_role)
     session.flush()
     return user_role
