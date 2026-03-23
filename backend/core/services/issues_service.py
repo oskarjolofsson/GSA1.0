@@ -1,9 +1,5 @@
-
-
 from sqlalchemy.orm import Session
 from uuid import UUID
-from collections import defaultdict
-from datetime import datetime
 
 from core.infrastructure.db.repositories.issues import (
     get_issue_by_id as repo_get_issue_by_id,
@@ -17,15 +13,15 @@ from core.infrastructure.db.repositories.issues import (
     get_issues_by_ids as repo_get_issues_by_ids,
     delete_issues as repo_delete_issues,
 )
-from core.infrastructure.db.repositories.analysis_issues import (
-    get_analysis_issue_by_user_id_and_issue_id as repo_get_analysis_issue_by_user_id_and_issue_id
-)
-from core.infrastructure.db.repositories import practice_sessions as ps_repo
+from core.infrastructure.db.repositories import analysis_issues as repo_analysis_issues
+
+from core.infrastructure.db.repositories import practice_sessions as ps
 from core.infrastructure.db.models.Issue import Issue
-from core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from core.infrastructure.db import models
-from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueResponseDTO, IssueProgressDTO
+from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueResponseDTO, SimplifiedIssueProgressDTO
 from core.services.exceptions import NotFoundException
+
+from core.services.progress.analysis_issue_progress import Analysis_progress_service
 
 
 def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
@@ -40,7 +36,6 @@ def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
     )
 
     created_issue = repo_create_issue(new_issue, db_session)
-
     return from_issue_to_response_dto(created_issue)
 
 
@@ -51,69 +46,34 @@ def get_issue_by_id(issue_id: UUID, user_id: UUID, db_session: Session) -> Issue
     if not issue:
         raise NotFoundException(f"Issue with ID {issue_id} not found", str(issue_id))
 
-    analysis_issue = _get_analysis_issue_for_user_and_issue(user_id, issue_id, db_session)
-    progress = _get_analysis_issue_progress(analysis_issue.id, db_session) if analysis_issue else None
-    return from_issue_to_response_dto(issue, analysis_issue, progress)
-
-
-def _get_issue_response_with_progress(issue: Issue, analysis_issue: AnalysisIssue | None, db_session: Session) -> IssueResponseDTO:
-    """Helper to create IssueResponseDTO with progress data."""
-    progress = _get_analysis_issue_progress(analysis_issue.id, db_session) if analysis_issue else None
-    return from_issue_to_response_dto(issue, analysis_issue, progress)
+    analysis_issue: models.AnalysisIssue = repo_analysis_issues.get_analysis_issue_by_user_id_and_issue_id(user_id, issue_id, db_session)
+    if analysis_issue:
+        progress: SimplifiedIssueProgressDTO = _get_progress_for_issues([analysis_issue], db_session)[0]  # Get progress for this specific analysis issue
+        return from_issue_to_response_dto(issue, analysis_issue, progress)
+    return from_issue_to_response_dto(issue)
 
 
 def get_all_issues(user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
-    """Get all issues with optional analysis_issue and progress data for the user."""
-    issues = repo_get_all_issues(db_session)
-    return [
-        _get_issue_response_with_progress(
-            issue,
-            _get_analysis_issue_for_user_and_issue(user_id, issue.id, db_session),
-            db_session
-        )
-        for issue in issues
-    ]
-
-
-def get_issues_by_analysis_id(analysis_id: UUID, user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
-    """Get all issues associated with a specific analysis with optional analysis_issue and progress data."""
-    issues = repo_get_issues_by_analysis_id(analysis_id, db_session)
-
-    return [
-        _get_issue_response_with_progress(
-            issue,
-            _get_analysis_issue_for_user_and_issue(user_id, issue.id, db_session),
-            db_session
-        )
-        for issue in issues
-    ]
+    issues: list[models.Issue] = repo_get_all_issues(db_session)
+    return [from_issue_to_response_dto(issue) for issue in issues]
 
 
 def get_issues_by_drill_id(drill_id: UUID, user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
     """Get all issues associated with a specific drill with optional analysis_issue and progress data."""
     issues = repo_get_issues_by_drill_id(drill_id, db_session)
+    return [from_issue_to_response_dto(issue) for issue in issues]
 
-    return [
-        _get_issue_response_with_progress(
-            issue,
-            _get_analysis_issue_for_user_and_issue(user_id, issue.id, db_session),
-            db_session
-        )
-        for issue in issues
-    ]
+
+def get_issues_by_analysis_id(analysis_id: UUID, user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
+    """Get all issues associated with a specific analysis with optional analysis_issue and progress data."""
+    issues = repo_get_issues_by_analysis_id(analysis_id, db_session)
+    return _batch_fetch_analysis_issues_and_progress(issues, db_session)
 
 
 def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
     """Get all issues created by a specific user with analysis_issue and progress data."""
     issues: list[Issue] = repo_get_issues_by_user_id(user_id, db_session)
-    return [
-        _get_issue_response_with_progress(
-            issue,
-            _get_analysis_issue_for_user_and_issue(user_id, issue.id, db_session),
-            db_session
-        )
-        for issue in issues
-    ]
+    return _batch_fetch_analysis_issues_and_progress(issues, db_session)
 
 
 def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> IssueResponseDTO | None:
@@ -168,12 +128,7 @@ def delete_issues_bulk(issue_ids: list[UUID], db_session: Session) -> None:
 # ------------ Helper Methods ------------
 
 
-def _get_analysis_issue_for_user_and_issue(user_id: UUID, issue_id: UUID, db_session: Session) -> AnalysisIssue | None:
-    """Get the analysis_issue for a specific user and issue combination."""
-    return repo_get_analysis_issue_by_user_id_and_issue_id(user_id, issue_id, db_session)
-
-
-def from_issue_to_response_dto(issue: Issue, analysis_issue: AnalysisIssue | None = None, progress: IssueProgressDTO | None = None) -> IssueResponseDTO:
+def from_issue_to_response_dto(issue: Issue, analysis_issue: models.AnalysisIssue | None = None, progress: SimplifiedIssueProgressDTO | None = None) -> IssueResponseDTO:
     """Transform an Issue object to IssueResponseDTO with optional analysis_issue and progress data."""
     return IssueResponseDTO(
         id=issue.id,
@@ -191,110 +146,38 @@ def from_issue_to_response_dto(issue: Issue, analysis_issue: AnalysisIssue | Non
     )
 
 
-# ------------ Progress Tracking Helpers (moved from progress_service) ------------
-
-
-def _get_analysis_issue_progress(analysis_issue_id: str, db_session: Session) -> IssueProgressDTO | None:
-    """Fetch progress data for an analysis issue."""
-    analysis_issue = db_session.get(models.AnalysisIssue, analysis_issue_id)
-    if not analysis_issue: raise NotFoundException(f"AnalysisIssue with ID {analysis_issue_id} not found", analysis_issue_id)
-
-    sessions: list[models.PracticeSession] = ps_repo.get_practice_sessions_by_analysis_issue_id(
-        analysis_issue_id=analysis_issue_id,
-        session=db_session,
+def _get_progress_for_issues(analysis_issues: list[models.AnalysisIssue], db_session: Session) -> list[SimplifiedIssueProgressDTO]:
+    """Fetch progress data for a list of analysis issues and return a mapping of issue_id to progress."""
+    if not analysis_issues:
+        return []
+    
+    practice_sessions: list[models.PracticeSession] = ps.get_practice_sessions_by_analysis_issue_ids([analysis_issue.id for analysis_issue in analysis_issues], db_session)
+    drill_runs: list[models.PracticeDrillRun] = ps.get_practice_drill_runs_by_session_ids([session.id for session in practice_sessions], db_session)
+    
+    progress_service = Analysis_progress_service(
+        analysis_issue=analysis_issues,
+        practice_sessions=practice_sessions,
+        drill_runs=drill_runs
     )
+    
+    progress_data: list[SimplifiedIssueProgressDTO] = progress_service.get_total_simple_progress()
+    return progress_data
 
-    drill_runs: list[models.PracticeDrillRun] = ps_repo.get_practice_drill_runs_by_session_ids(
-        [session.id for session in sessions],
-        session=db_session,
-    )
 
-    completed_sessions = sum(1 for session in sessions if session.status == "completed")
-    in_progress_sessions = sum(1 for session in sessions if session.status == "in_progress")
-    abandoned_sessions = sum(1 for session in sessions if session.status == "abandoned")
+def _batch_fetch_analysis_issues_and_progress(issues: list[Issue], db_session: Session) -> list[IssueResponseDTO]:
+    """Batch fetch analysis issues and progress data for a list of issues."""
+    issue_ids: list[UUID] = [issue.id for issue in issues]
+    analysis_issues: list[models.AnalysisIssue] = repo_analysis_issues.get_analysis_issues_by_issue_ids(issue_ids, db_session)
+    progress_data: list[SimplifiedIssueProgressDTO] = _get_progress_for_issues(analysis_issues, db_session)
+    
+    if not analysis_issues or not progress_data:
+        # If there are no analysis issues or progress data, we can return the issues without progress data
+        return [from_issue_to_response_dto(issue) for issue in issues]
 
-    total_successful_reps = sum(drill_run.successful_reps for drill_run in drill_runs)
-    total_failed_reps = sum(drill_run.failed_reps for drill_run in drill_runs)
-    total_reps = total_successful_reps + total_failed_reps
+    analysis_issues_by_issue_id: dict[UUID, models.AnalysisIssue] = {ai.issue_id: ai for ai in analysis_issues}
+    progress_by_issue_id: dict[UUID, SimplifiedIssueProgressDTO] = {ai.issue_id: p for ai, p in zip(analysis_issues, progress_data, strict=True)}
 
-    overall_success_rate = _compute_success_rate(total_successful_reps, total_failed_reps)
-
-    last_completed_at = max(
-        (
-            session.completed_at
-            for session in sessions
-            if session.status == "completed" and session.completed_at is not None
-        ),
-        default=None,
-    )
-
-    runs_by_session_id: dict[str, list[models.PracticeDrillRun]] = defaultdict(list)
-    for drill_run in drill_runs:
-        runs_by_session_id[str(drill_run.session_id)].append(drill_run)
-
-    completed_session_rates: list[tuple[datetime, float]] = []
-
-    for session in sessions:
-        if session.status != "completed":
-            continue
-
-        session_runs = runs_by_session_id.get(str(session.id), [])
-
-        session_successful_reps = sum(run.successful_reps for run in session_runs)
-        session_failed_reps = sum(run.failed_reps for run in session_runs)
-
-        session_success_rate = _compute_success_rate(
-            session_successful_reps,
-            session_failed_reps,
-        )
-
-        if session_success_rate is None:
-            continue
-
-        session_time = session.completed_at or session.started_at
-        completed_session_rates.append((session_time, session_success_rate))
-
-    completed_session_rates.sort(key=lambda item: item[0])
-
-    recent_session_success_rates = [
-        rate for _, rate in completed_session_rates[-5:]
+    return [
+        from_issue_to_response_dto(issue, analysis_issues_by_issue_id.get(issue.id), progress_by_issue_id.get(issue.id))
+        for issue in issues
     ]
-
-    trend = _compute_trend(recent_session_success_rates)
-
-    return IssueProgressDTO(
-        completed_sessions=completed_sessions,
-        in_progress_sessions=in_progress_sessions,
-        abandoned_sessions=abandoned_sessions,
-        total_successful_reps=total_successful_reps,
-        total_failed_reps=total_failed_reps,
-        total_reps=total_reps,
-        overall_success_rate=overall_success_rate,
-        recent_session_success_rates=recent_session_success_rates,
-        trend=trend,
-        last_completed_at=last_completed_at,
-    )
-
-
-def _compute_success_rate(successful_reps: int, failed_reps: int) -> float | None:
-    """Compute success rate from reps."""
-    total = successful_reps + failed_reps
-    if total == 0:
-        return None
-    return successful_reps / total
-
-
-def _compute_trend(recent_rates: list[float]) -> str:
-    """Compute trend from recent success rates."""
-    if len(recent_rates) < 2:
-        return "insufficient_data"
-
-    first = recent_rates[0]
-    last = recent_rates[-1]
-    delta = last - first
-
-    if delta >= 0.10:
-        return "improving"
-    if delta <= -0.10:
-        return "declining"
-    return "stable"

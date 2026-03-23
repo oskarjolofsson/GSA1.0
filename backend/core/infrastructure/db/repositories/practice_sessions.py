@@ -39,6 +39,16 @@ def get_practice_sessions_by_analysis_issue_id(analysis_issue_id: str, session: 
     )
 
 
+def get_practice_sessions_by_analysis_issue_ids(analysis_issue_ids: list[str], session: Session) -> list[PracticeSession]:
+    """Batch fetch practice sessions for multiple analysis issues in a single query."""
+    return (
+        session.query(PracticeSession)
+        .filter(PracticeSession.analysis_issue_id.in_(analysis_issue_ids))
+        .order_by(PracticeSession.analysis_issue_id, PracticeSession.started_at.desc())
+        .all()
+    )
+
+
 def create_practice_session(practice_session: PracticeSession, session: Session) -> PracticeSession:
     session.add(practice_session)
     session.flush()

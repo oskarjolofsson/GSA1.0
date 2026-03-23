@@ -20,14 +20,9 @@ class CreateIssueResponse(BaseModel):
 class IssueProgress(BaseModel):
     """Progress tracking for an analysis issue."""
     completed_sessions: int
-    in_progress_sessions: int
-    abandoned_sessions: int
     total_successful_reps: int
-    total_failed_reps: int
-    total_reps: int
     overall_success_rate: float | None
-    recent_session_success_rates: list[float]
-    trend: str
+    recent_session_success_rates: float | None
     last_completed_at: str | None = None
 
 
@@ -59,14 +54,9 @@ class GetIssue(BaseModel):
         if dto.progress:
             progress = IssueProgress(
                 completed_sessions=dto.progress.completed_sessions,
-                in_progress_sessions=dto.progress.in_progress_sessions,
-                abandoned_sessions=dto.progress.abandoned_sessions,
                 total_successful_reps=dto.progress.total_successful_reps,
-                total_failed_reps=dto.progress.total_failed_reps,
-                total_reps=dto.progress.total_reps,
                 overall_success_rate=dto.progress.overall_success_rate,
                 recent_session_success_rates=dto.progress.recent_session_success_rates,
-                trend=dto.progress.trend,
                 last_completed_at=dto.progress.last_completed_at.isoformat()
                 if isinstance(dto.progress.last_completed_at, datetime)
                 else dto.progress.last_completed_at,
