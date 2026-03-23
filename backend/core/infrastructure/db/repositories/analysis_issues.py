@@ -1,3 +1,5 @@
+from sqlalchemy import UUID
+
 from ..models.AnalysisIssue import AnalysisIssue
 from ..models.Analysis import Analysis
 from sqlalchemy.orm import Session
@@ -20,6 +22,11 @@ def get_analysis_issue_by_user_id_and_issue_id(user_id, issue_id, session: Sessi
         .filter(Analysis.user_id == user_id, AnalysisIssue.issue_id == issue_id)
         .first()
     )
+    
+
+def get_analysis_issues_by_issue_ids(issue_ids: list[UUID], session: Session) -> list[AnalysisIssue]:
+    return session.query(AnalysisIssue).filter(AnalysisIssue.issue_id.in_(issue_ids)).all()
+
 
 def get_analysis_issues_by_analysis_id(analysis_id, session: Session) -> list[AnalysisIssue]:
     return session.query(AnalysisIssue).filter(AnalysisIssue.analysis_id == analysis_id).all()

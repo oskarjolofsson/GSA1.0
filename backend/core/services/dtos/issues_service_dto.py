@@ -24,17 +24,12 @@ class UpdateIssueDTO:
 
 
 @dataclass
-class IssueProgressDTO:
+class SimplifiedIssueProgressDTO:
     """Progress tracking for an analysis issue."""
     completed_sessions: int
-    in_progress_sessions: int
-    abandoned_sessions: int
     total_successful_reps: int
-    total_failed_reps: int
-    total_reps: int
     overall_success_rate: float | None
-    recent_session_success_rates: list[float]
-    trend: str
+    recent_session_success_rates: float | None       # Success rates for the most recent sessions, used for trend analysis
     last_completed_at: datetime | None = None
 
 
@@ -51,4 +46,4 @@ class IssueResponseDTO:
     analysis_issue_id: str | None = None
     analysis_id: str | None = None
     confidence: float | None = None
-    progress: IssueProgressDTO | None = None
+    progress: SimplifiedIssueProgressDTO | None = None
