@@ -177,7 +177,17 @@ def _batch_fetch_analysis_issues_and_progress(issues: list[Issue], db_session: S
     analysis_issues_by_issue_id: dict[UUID, models.AnalysisIssue] = {ai.issue_id: ai for ai in analysis_issues}
     progress_by_issue_id: dict[UUID, SimplifiedIssueProgressDTO] = {ai.issue_id: p for ai, p in zip(analysis_issues, progress_data, strict=True)}
 
-    return [
+    return_li = [
         from_issue_to_response_dto(issue, analysis_issues_by_issue_id.get(issue.id), progress_by_issue_id.get(issue.id))
         for issue in issues
     ]
+    
+    return_li.sort(
+        key=lambda x: (
+            x.progress.overall_success_rate
+            if x.progress and x.progress.overall_success_rate is not None
+            else -1.0
+        ),
+        reverse=True,
+    )
+    return return_li
