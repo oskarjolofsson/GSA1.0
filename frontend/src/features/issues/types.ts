@@ -1,3 +1,5 @@
+import { n } from "node_modules/framer-motion/dist/types.d-BJcRxCew";
+
 export interface Issue {
     id: string;
     title: string;
@@ -10,6 +12,7 @@ export interface Issue {
     confidence?: number;
     analysis_issue_id: string; 
     analysis_id?: string; 
+    progress?: AnalysisIssueProgress;
 }
 
 export interface CreateIssueRequest {
@@ -33,4 +36,13 @@ export interface UpdateIssueRequest {
     expected_motion?: string;
     swing_effect?: string;
     shot_outcome?: string;
+}
+
+
+interface AnalysisIssueProgress {
+    completed_sessions: number;
+    total_successful_reps: number;
+    overall_success_rate: number | null;
+    recent_session_success_rates: number | null;
+    last_completed_at: string | null;
 }

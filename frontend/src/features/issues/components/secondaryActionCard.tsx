@@ -5,6 +5,8 @@ export default function SecondaryActionCard({ issue }: { issue: Issue }) {
   const navigate = useNavigate();
   const issueData = issue;
 
+  const progressPercent = Math.round((issueData.progress?.recent_session_success_rates ?? 0) * 100);
+
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950/50 to-slate-900/50 border border-slate-700/20 shadow-md">
       
@@ -25,12 +27,12 @@ export default function SecondaryActionCard({ issue }: { issue: Issue }) {
             <div className="h-1.5 w-full rounded-full bg-slate-700/40 overflow-hidden">
               <div
                 className="h-full rounded-full bg-amber-400/60 transition-all duration-500"
-                style={{ width: `${45}%` }}
+                style={{ width: `${progressPercent}%` }}
               />
             </div>
 
             <p className="text-xs text-slate-500">
-              {45}% completed
+              {progressPercent}% Recent Success Rate 
             </p>
           </div>
         </div>
