@@ -15,7 +15,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Add .dockerignore to exclude unnecessary files
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app", "-w", "2", "--threads", "4", "--timeout", "90", "--graceful-timeout", "30", "--keep-alive", "5"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "app.main:app", "-w", "2", "--timeout", "90", "--graceful-timeout", "30", "--keep-alive", "5"]
+
+# To copy the .env.production into prodction, use:
+# scp entire/path/to/.env.production root@188.245.42.39:/root/.env
+
 
 # To build multi-architecture Docker images, use the following commands:
 # cd <your-backend-repo>
@@ -28,3 +32,15 @@ CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app", "-w", "2", "--threads", "4", "
 # cd /srv/trueswing
 # docker compose pull
 # docker compose up -d
+
+
+# To test the image locally, use:
+# docker build --no-cache -t trueswing-backend-test .
+# docker run --rm -p 8000:8000 --env-file .env trueswing-backend-test
+
+
+# To stop running containers, use:
+# docker ps
+# docker stop <container_id> 
+# or 
+# docker stop <container_name>

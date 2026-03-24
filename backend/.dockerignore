@@ -38,6 +38,7 @@ htmlcov/
 *.log
 .env
 *.md
+uploads/
 
 # Environment variables
 .env
