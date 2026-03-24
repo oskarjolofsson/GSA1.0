@@ -18,6 +18,7 @@ import AdminMappings from "./admin/mappings.jsx";
 import AdminUsers from "./admin/users.jsx";
 import Feedback from "./admin/feedback.jsx";
 import DrillResults from "./dashboard/drills/results.jsx";
+import AuthCallback from "./public/auth/callback/page";
 
 // Import components
 import PublicLayout from './public/layout.jsx';
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Landing /> },
       { path: "legal/terms-and-conditions", element: <TermsAndCond /> },
       { path: "legal/privacy-policy", element: <Privacy /> },
+      { path: "auth/callback", element: <AuthCallback /> },
       { path: "*", element: <NotFound /> },
     ],
   },
