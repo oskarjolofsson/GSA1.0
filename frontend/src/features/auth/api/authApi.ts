@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { AuthError, Session, User } from '@supabase/supabase-js'
-import { data } from 'react-router-dom'
+import { Session, User } from '@supabase/supabase-js'
 
 export async function signUp(email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({
@@ -12,19 +11,6 @@ export async function signUp(email: string, password: string) {
   return data
 }
 
-// export async function signInWithPassword(
-//   email: string,
-//   password: string
-// ) {
-//   const { data, error } = await supabase.auth.signInWithPassword({
-//     email,
-//     password,
-//   })
-
-//   if (error) throw error
-//   return data
-// }
-
 export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -32,6 +18,7 @@ export async function signInWithGoogle() {
       queryParams: {
         prompt: 'select_account',
       },
+      redirectTo: `${window.location.origin}/auth/callback`,
     },
   })
 
