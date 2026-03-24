@@ -33,7 +33,7 @@ from core.services.video import (
 router = APIRouter()
 
 
-@router.get("/{analysis_id}", response_model=GetAnalysis)
+@router.get("/{analysis_id}/", response_model=GetAnalysis)
 def get_analysis(
     analysis_id: UUID,
     db: Session = Depends(get_db),
@@ -129,7 +129,7 @@ def list_analyses(
     ]
 
 
-@router.get("/{analysis_id}/video-url")
+@router.get("/{analysis_id}/video-url/")
 def get_analysis_video_url(
     analysis_id: UUID,
     db: Session = Depends(get_db),
@@ -154,7 +154,7 @@ def get_analysis_video_url(
     }
 
 
-@router.delete("/{analysis_id}", status_code=204)
+@router.delete("/{analysis_id}/", status_code=204)
 def delete_analysis(
     analysis_id: UUID,
     db: Session = Depends(get_db),
@@ -166,7 +166,7 @@ def delete_analysis(
     service_delete_analysis(analysis_id, db_session=db)
 
 
-@router.get("/{analysis_id}/issues", response_model=list[GetAnalysisIssue])
+@router.get("/{analysis_id}/issues/", response_model=list[GetAnalysisIssue])
 def get_analysis_issues(
     analysis_id: UUID,
     db: Session = Depends(get_db),
@@ -180,7 +180,7 @@ def get_analysis_issues(
     return [GetAnalysisIssue.from_domain(issue) for issue in issues]
 
 
-@router.delete("/{analysis_id}/issues/{analysis_issue_id}", status_code=204)
+@router.delete("/{analysis_id}/issues/{analysis_issue_id}/", status_code=204)
 def delete_analysis_issue(
     analysis_id: UUID,
     analysis_issue_id: UUID,

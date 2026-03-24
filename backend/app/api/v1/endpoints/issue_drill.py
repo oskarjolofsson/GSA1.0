@@ -55,7 +55,7 @@ def create_issue_drill(
     )
 
 
-@router.get("/{issue_drill_id}", response_model=GetIssueDrill)
+@router.get("/{issue_drill_id}/", response_model=GetIssueDrill)
 def get_issue_drill_by_id(
     issue_drill_id: UUID,
     db: Session = Depends(get_db),
@@ -77,7 +77,7 @@ def get_issue_drill_by_id(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/issue/{issue_id}", response_model=list[GetIssueDrill])
+@router.get("/issue/{issue_id}/", response_model=list[GetIssueDrill])
 def get_issue_drills_by_issue_id(
     issue_id: UUID,
     db: Session = Depends(get_db),
@@ -96,7 +96,7 @@ def get_issue_drills_by_issue_id(
     return [GetIssueDrill.from_domain(id) for id in issue_drills]
 
 
-@router.get("/drill/{drill_id}", response_model=list[GetIssueDrill])
+@router.get("/drill/{drill_id}/", response_model=list[GetIssueDrill])
 def get_issue_drills_by_drill_id(
     drill_id: UUID,
     db: Session = Depends(get_db),
@@ -115,7 +115,7 @@ def get_issue_drills_by_drill_id(
     return [GetIssueDrill.from_domain(id) for id in issue_drills]
 
 
-@router.delete("/{issue_drill_id}", response_model=DeleteIssueDrillResponse)
+@router.delete("/{issue_drill_id}/", response_model=DeleteIssueDrillResponse)
 def delete_issue_drill(
     issue_drill_id: UUID,
     db: Session = Depends(get_db),

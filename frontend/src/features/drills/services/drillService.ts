@@ -18,7 +18,7 @@ export class DrillService {
      * Get all drills associated with an issue
      */
     async getDrillsByIssue(issueId: string): Promise<Drill[]> {
-        const data = await apiClient.get<Drill[]>(`/api/v1/drills/by-issue/${issueId}`);
+        const data = await apiClient.get<Drill[]>(`/api/v1/drills/by-issue/${issueId}/`);
         return Array.isArray(data) ? data : [];
     }
 
@@ -26,7 +26,7 @@ export class DrillService {
      * Get all drills (admin endpoint)
      */
     async getAllDrills(): Promise<Drill[]> {
-        const data = await apiClient.get<Drill[]>('/api/v1/drills/all');
+        const data = await apiClient.get<Drill[]>('/api/v1/drills/all/');
         return Array.isArray(data) ? data : [];
     }
 
@@ -34,21 +34,21 @@ export class DrillService {
      * Update a drill
      */
     async updateDrill(drillId: string, request: UpdateDrillRequest): Promise<Drill> {
-        return apiClient.patch<Drill>(`/api/v1/drills/${drillId}`, request);
+        return apiClient.patch<Drill>(`/api/v1/drills/${drillId}/`, request);
     }
 
     /**
      * Delete a drill
      */
     async deleteDrill(drillId: string): Promise<void> {
-        await apiClient.delete<void>(`/api/v1/drills/${drillId}`);
+        await apiClient.delete<void>(`/api/v1/drills/${drillId}/`);
     }
 
     /**
      * Bulk delete drills
      */
     async bulkDeleteDrills(drillIds: string[]): Promise<void> {
-        await apiClient.delete<void>('/api/v1/drills/bulk', { drill_ids: drillIds });
+        await apiClient.delete<void>('/api/v1/drills/bulk/', { drill_ids: drillIds });
     }
 }
 

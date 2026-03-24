@@ -64,7 +64,7 @@ def create_drill(
     )
     
     
-@router.get("/all", response_model=list[GetDrill])
+@router.get("/all/", response_model=list[GetDrill])
 def get_all_drills(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_admin)
@@ -79,7 +79,7 @@ def get_all_drills(
     return [GetDrill.from_domain(drill) for drill in drills]
 
 
-@router.get("/by-analysis/{analysis_id}", response_model=list[GetDrill])
+@router.get("/by-analysis/{analysis_id}/", response_model=list[GetDrill])
 def get_drills_by_analysis(
     analysis_id: UUID,
     db: Session = Depends(get_db),
@@ -99,7 +99,7 @@ def get_drills_by_analysis(
     return [GetDrill.from_domain(drill) for drill in drills]
 
 
-@router.get("/by-issue/{issue_id}", response_model=list[GetDrill])
+@router.get("/by-issue/{issue_id}/", response_model=list[GetDrill])
 def get_drills_by_issue(
     issue_id: UUID,
     db: Session = Depends(get_db),
@@ -119,7 +119,7 @@ def get_drills_by_issue(
     return [GetDrill.from_domain(drill) for drill in drills]
 
 
-@router.get("/{drill_id}", response_model=GetDrill)
+@router.get("/{drill_id}/", response_model=GetDrill)
 def get_drill(
     drill_id: UUID,
     db: Session = Depends(get_db),
@@ -143,7 +143,7 @@ def get_drill(
 
 
 # ONLY FOR INTERNAL USE, PROTECTED BY AUTHENTICATION
-@router.patch("/{drill_id}", response_model=GetDrill)
+@router.patch("/{drill_id}/", response_model=GetDrill)
 def update_drill(
     drill_id: UUID,
     request: UpdateDrillRequest,
@@ -182,7 +182,7 @@ def update_drill(
 
 
 # ONLY FOR INTERNAL USE, NOT EXPOSED TO FRONTEND AND PROTECTED BY AUTHENTICATION
-@router.delete("/bulk", status_code=204)
+@router.delete("/bulk/", status_code=204)
 def bulk_delete_drills(
     request: BulkDeleteDrillsRequest,
     db: Session = Depends(get_db),
@@ -200,7 +200,7 @@ def bulk_delete_drills(
 
 
 # ONLY FOR INTERNAL USE, NOT EXPOSED TO FRONTEND AND PROTECTED BY AUTHENTICATION
-@router.delete("/{drill_id}", status_code=204)
+@router.delete("/{drill_id}/", status_code=204)
 def delete_drill(
     drill_id: UUID,
     db: Session = Depends(get_db),

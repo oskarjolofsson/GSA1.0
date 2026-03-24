@@ -12,7 +12,7 @@ class AnalysisService {
      * Fetch all analyses for current user
      */
     async getAnalysesForUser(): Promise<Analysis[]> {
-        const data = await apiClient.get<Analysis[]>('/api/v1/analyses');
+        const data = await apiClient.get<Analysis[]>('/api/v1/analyses/');
         return Array.isArray(data) ? data : [];
     }
 
@@ -20,7 +20,7 @@ class AnalysisService {
      * Fetch single analysis by ID
      */
     async getAnalysisById(analysisId: string): Promise<Analysis> {
-        return apiClient.get<Analysis>(`/api/v1/analyses/${analysisId}`);
+        return apiClient.get<Analysis>(`/api/v1/analyses/${analysisId}/`);
     }
 
     /**
@@ -34,7 +34,7 @@ class AnalysisService {
         }
 
         const data = await apiClient.get<VideoUrlResponse>(
-            `/api/v1/analyses/${analysisId}/video-url?video_key=${encodeURIComponent(videoKey)}`
+            `/api/v1/analyses/${analysisId}/video-url/?video_key=${encodeURIComponent(videoKey)}`
         );
         
         const url = data?.video_url || null;
@@ -52,7 +52,7 @@ class AnalysisService {
      */
     async deleteAnalysis(analysisId: string): Promise<void> {
         console.log('Deleting analysis with ID:', analysisId);
-        await apiClient.delete<void>(`/api/v1/analyses/${analysisId}`);
+        await apiClient.delete<void>(`/api/v1/analyses/${analysisId}/`);
     }
 
     /**
@@ -60,7 +60,7 @@ class AnalysisService {
      */
     async getAnalysisIssues(analysisId: string): Promise<AnalysisIssue[]> {
         const data = await apiClient.get<AnalysisIssue[]>(
-            `/api/v1/analyses/${analysisId}/issues`
+            `/api/v1/analyses/${analysisId}/issues/`
         );
         return Array.isArray(data) ? data : [];
     }
@@ -70,7 +70,7 @@ class AnalysisService {
      */
     async deleteAnalysisIssue(analysisId: string, analysisIssueId: string): Promise<void> {
         await apiClient.delete<void>(
-            `/api/v1/analyses/${analysisId}/issues/${analysisIssueId}`
+            `/api/v1/analyses/${analysisId}/issues/${analysisIssueId}/`
         );
     }
 }

@@ -27,7 +27,7 @@ router = APIRouter()
 
 # =========== PRACTICE SESSION ROUTES ===========
 
-@router.post("/sessions/start", response_model=PracticeSessionResponse, status_code=201)
+@router.post("/sessions/start/", response_model=PracticeSessionResponse, status_code=201)
 def start_practice_session(
     request: StartPracticeSessionRequest,
     db: Session = Depends(get_db),
@@ -50,7 +50,7 @@ def start_practice_session(
     return PracticeSessionResponse.from_domain(result)
 
 
-@router.post("/sessions/{session_id}/complete", response_model=PracticeSessionResponse)
+@router.post("/sessions/{session_id}/complete/", response_model=PracticeSessionResponse)
 def complete_practice_session(
     session_id: UUID,
     db: Session = Depends(get_db),
@@ -69,7 +69,7 @@ def complete_practice_session(
     return PracticeSessionResponse.from_domain(result)
 
 
-@router.get("/sessions/{session_id}", response_model=PracticeSessionResponse)
+@router.get("/sessions/{session_id}/", response_model=PracticeSessionResponse)
 def get_practice_session_by_id(
     session_id: UUID,
     db: Session = Depends(get_db),
@@ -90,7 +90,7 @@ def get_practice_session_by_id(
 
 # =========== DRILL RUN ROUTES ===========
 
-@router.post("/sessions/{session_id}/drills/start", response_model=PracticeDrillRun, status_code=201)
+@router.post("/sessions/{session_id}/drills/start/", response_model=PracticeDrillRun, status_code=201)
 def start_drill_run(
     session_id: UUID,
     request: StartDrillRunRequest,
@@ -119,7 +119,7 @@ def start_drill_run(
     return PracticeDrillRun.from_domain(result)
 
 
-@router.post("/drill-runs/complete", response_model=PracticeDrillRun)
+@router.post("/drill-runs/complete/", response_model=PracticeDrillRun)
 def complete_drill_run(
     request: PracticeDrillRun,
     db: Session = Depends(get_db),
@@ -148,7 +148,7 @@ def complete_drill_run(
     return PracticeDrillRun.from_domain(result)
 
 
-@router.get("/sessions/{session_id}/results", response_model=list[PracticeDrillRun])
+@router.get("/sessions/{session_id}/results/", response_model=list[PracticeDrillRun])
 def get_practice_session_results(
     session_id: UUID,
     db: Session = Depends(get_db),

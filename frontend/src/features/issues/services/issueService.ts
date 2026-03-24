@@ -18,14 +18,14 @@ export class IssueService {
      * Get issue by ID
      */
     async getIssueById(issueId: string): Promise<Issue> {
-        return apiClient.get<Issue>(`/api/v1/issues/${issueId}`);
+        return apiClient.get<Issue>(`/api/v1/issues/${issueId}/`);
     }
 
     /**
      * Get all issues associated with an analysis
      */
     async getIssuesByAnalysis(analysisId: string): Promise<Issue[]> {
-        const data = await apiClient.get<Issue[]>(`/api/v1/issues/by-analysis/${analysisId}`);
+        const data = await apiClient.get<Issue[]>(`/api/v1/issues/by-analysis/${analysisId}/`);
         return Array.isArray(data) ? data : [];
     }
 
@@ -49,7 +49,7 @@ export class IssueService {
      * Get all issues (admin endpoint)
      */
     async getAllIssuesAdmin(): Promise<Issue[]> {
-        const data = await apiClient.get<Issue[]>('/api/v1/issues/all');
+        const data = await apiClient.get<Issue[]>('/api/v1/issues/all/');
         return Array.isArray(data) ? data : [];
     }
 
@@ -57,21 +57,21 @@ export class IssueService {
      * Update an issue
      */
     async updateIssue(issueId: string, request: UpdateIssueRequest): Promise<Issue> {
-        return apiClient.patch<Issue>(`/api/v1/issues/${issueId}`, request);
+        return apiClient.patch<Issue>(`/api/v1/issues/${issueId}/`, request);
     }
 
     /**
      * Delete an issue
      */
     async deleteIssue(issueId: string): Promise<void> {
-        await apiClient.delete<void>(`/api/v1/issues/${issueId}`);
+        await apiClient.delete<void>(`/api/v1/issues/${issueId}/`);
     }
 
     /**
      * Bulk delete issues
      */
     async bulkDeleteIssues(issueIds: string[]): Promise<void> {
-        await apiClient.delete<void>('/api/v1/issues/bulk', { issue_ids: issueIds });
+        await apiClient.delete<void>('/api/v1/issues/bulk/', { issue_ids: issueIds });
     }
 }
 

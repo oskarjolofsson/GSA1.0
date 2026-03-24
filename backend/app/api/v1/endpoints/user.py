@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 # ADMIN ONLY
-@router.get("/all")
+@router.get("/all/")
 def get_all_users(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_admin)
