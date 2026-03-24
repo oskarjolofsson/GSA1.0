@@ -10,14 +10,14 @@ export const feedbackService = {
       throw new Error("Rating is required");
     }
 
-    return apiClient.post('/api/v1/feedback', {
+    return apiClient.post('/api/v1/feedback/', {
       rating,
       comments: comments ?? "",
     });
   },
 
   async getFeedback() {
-    return apiClient.get<Feedback[]>('/api/v1/feedback') as Promise<Feedback[]>;
+    return apiClient.get<Feedback[]>('/api/v1/feedback/') as Promise<Feedback[]>;
   },
 
 };

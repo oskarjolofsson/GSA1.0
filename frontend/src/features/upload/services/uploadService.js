@@ -127,7 +127,7 @@ class UploadService {
     try {
       const authHeader = await this.getAuthHeader();
 
-      const response = await fetch(API + `/api/v1/analyses/${analysisId}`, {
+      const response = await fetch(API + `/api/v1/analyses/${analysisId}/`, {
         method: 'GET',
         headers: authHeader,
       });

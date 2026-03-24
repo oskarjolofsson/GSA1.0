@@ -62,7 +62,7 @@ def create_issue(
     )
 
 
-@router.get("/all", response_model=list[GetIssue])
+@router.get("/all/", response_model=list[GetIssue])
 def get_all_issues(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_admin)
@@ -77,7 +77,7 @@ def get_all_issues(
     return [GetIssue.from_domain(issue) for issue in issues]
 
 
-@router.get("/by-analysis/{analysis_id}", response_model=list[GetIssue])
+@router.get("/by-analysis/{analysis_id}/", response_model=list[GetIssue])
 def get_issues_by_analysis(
     analysis_id: UUID,
     db: Session = Depends(get_db),
@@ -97,7 +97,7 @@ def get_issues_by_analysis(
     return [GetIssue.from_domain(issue) for issue in issues]
 
 
-@router.get("/by-drill/{drill_id}", response_model=list[GetIssue])
+@router.get("/by-drill/{drill_id}/", response_model=list[GetIssue])
 def get_issues_by_drill(
     drill_id: UUID,
     db: Session = Depends(get_db),
@@ -132,7 +132,7 @@ def get_issues_by_user(db: Session = Depends(get_db), current_user: dict = Depen
     return [GetIssue.from_domain(issue) for issue in issues]
 
 
-@router.get("/{issue_id}", response_model=GetIssue)
+@router.get("/{issue_id}/", response_model=GetIssue)
 def get_issue(
     issue_id: UUID,
     db: Session = Depends(get_db),
@@ -152,7 +152,7 @@ def get_issue(
     return GetIssue.from_domain(issue)
 
 
-@router.patch("/{issue_id}", response_model=GetIssue)
+@router.patch("/{issue_id}/", response_model=GetIssue)
 def update_issue(
     issue_id: UUID,
     request: UpdateIssueRequest,
@@ -190,7 +190,7 @@ def update_issue(
     return GetIssue.from_domain(result)
 
 
-@router.delete("/bulk", status_code=204)
+@router.delete("/bulk/", status_code=204)
 def delete_issues_bulk(
     request: BulkDeleteIssuesRequest,
     db: Session = Depends(get_db),
@@ -208,7 +208,7 @@ def delete_issues_bulk(
     service_delete_issues_bulk(request.issue_ids, db_session=db)
 
 
-@router.delete("/{issue_id}", status_code=204)
+@router.delete("/{issue_id}/", status_code=204)
 def delete_issue(
     issue_id: UUID,
     db: Session = Depends(get_db),

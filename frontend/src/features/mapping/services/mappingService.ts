@@ -18,28 +18,28 @@ export class MappingService {
      * Get issue-drill link by ID
      */
     async getIssueDrillById(issueDrillId: string): Promise<IssueDrill> {
-        return apiClient.get<IssueDrill>(`/api/v1/issue-drills/${issueDrillId}`);
+        return apiClient.get<IssueDrill>(`/api/v1/issue-drills/${issueDrillId}/`);
     }
 
     /**
      * Get all issue-drill links for a specific issue
      */
     async getIssueDrillsByIssueId(issueId: string): Promise<IssueDrill[]> {
-        return apiClient.get<IssueDrill[]>(`/api/v1/issue-drills/issue/${issueId}`);
+        return apiClient.get<IssueDrill[]>(`/api/v1/issue-drills/issue/${issueId}/`);
     }
 
     /**
      * Get all issue-drill links for a specific drill
      */
     async getIssueDrillsByDrillId(drillId: string): Promise<IssueDrill[]> {
-        return apiClient.get<IssueDrill[]>(`/api/v1/issue-drills/drill/${drillId}`);
+        return apiClient.get<IssueDrill[]>(`/api/v1/issue-drills/drill/${drillId}/`);
     }
 
     /**
      * Delete an issue-drill link
      */
     async deleteIssueDrill(issueDrillId: string): Promise<DeleteIssueDrillResponse> {
-        return apiClient.delete<DeleteIssueDrillResponse>(`/api/v1/issue-drills/${issueDrillId}`);
+        return apiClient.delete<DeleteIssueDrillResponse>(`/api/v1/issue-drills/${issueDrillId}/`);
     }
 
     /**
