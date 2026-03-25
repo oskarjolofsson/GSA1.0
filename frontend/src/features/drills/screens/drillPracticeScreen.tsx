@@ -1,7 +1,8 @@
 import ProgressBar from '../components/practicePage/progressbar.jsx';
 import DrillExplainer from '../components/practicePage/drill_explainer.js';
 import Indicator from '../components/practicePage/indicator.jsx';
-import { ErrorState, LoadingState } from '@/shared/components/cards/error.js';
+import { ErrorState, } from '@/shared/components/cards/error.js';
+import { LoadingState } from '@/shared/components/cards/loading.js';
 import { usePracticeScreenState } from '../hooks/usePracticeScreenState.js';
 import { useSearchParams } from 'react-router-dom';
 
