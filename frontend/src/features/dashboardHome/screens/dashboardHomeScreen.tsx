@@ -1,10 +1,11 @@
 import PrimaryActionCard from "../../issues/components/primaryActionCard.jsx";
 import SecondaryActionCard from "../../issues/components/secondaryActionCard.jsx";
-import DemoPreview from "../../upload/components/SimpleUploadCard.jsx";
 import { useIssue } from "@/features/issues/hooks/useUserIssues.js";
+import { ErrorState } from "@/shared/components/cards/error.js";
+import { LoadingState } from "@/shared/components/cards/loading.js";
 
 export default function DashboardHomeScreen() {
-    const { issues, loading, error } = useIssue();
+    const { issues, error, loading } = useIssue();
 
     if (error) {
         return (
@@ -14,23 +15,33 @@ export default function DashboardHomeScreen() {
         );
     }
 
+    
+
+    if (loading) {
+        return (
+            <LoadingState title="Loading Issues" message="Fetching your issues..." />
+        );
+    }
+
+    if (error) {
+        return (
+            <ErrorState
+                title="Failed to Load Issues"
+                error={new Error('Error occurred while loading issues.')}
+                onRetry={() => window.location.reload()}
+            />
+        );
+    }
+
     return (
-        <div className="justify-center p-10">
+        <div className="justify-center p-10 text-center">
             <div className="text-3xl font-bold mb-6 text-white ml-6">Jump Back In</div>
 
-            {loading && <p className="text-white/60">Loading issues...</p>}
-            {!loading && !error && issues.length > 0 && (
-                <PrimaryActionCard issue={issues[0]} />
-            )}
-            {!loading && !error && issues.length === 0 && (
-                <p className="text-white/60">No primary issue found.</p>
-            )}
+            <PrimaryActionCard issue={issues[0]} />
 
             {/* Recent issues */}
             <div className="text-xl font-bold mb-5 mt-10 text-white/60 ml-6">Recent Issues</div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-                {loading && <p className="text-white/60">Loading issues...</p>}
-                {error && <p className="text-red-500">Error occurred while loading issues.</p>}
                 {!loading && !error && issues.length === 0 && (
                     <p className="text-white/60">No recent issues found.</p>
                 )}

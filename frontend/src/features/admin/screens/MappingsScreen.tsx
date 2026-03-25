@@ -14,7 +14,8 @@ import type { Issue } from '@/features/issues/types';
 import type { Drill } from '@/features/drills/types';
 import mappingService from '@/features/mapping/services/mappingService';
 import type { IssueDrill } from '@/features/mapping/types';
-import { LoadingState, ErrorState } from '../../../shared/components/cards/error';
+import { ErrorState } from '../../../shared/components/cards/error';
+import { LoadingState } from '@/shared/components/cards/loading';
 
 export default function MappingsScreen() {
     const { issues, drills, loading, error, refetch } = useAdminData();
