@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/apiClient';
-import type { AdminStats } from '../types';
+import type { AdminStats, VerifyAdminResponse } from '../types';
 
 
 
@@ -9,9 +9,8 @@ export async function getStats(): Promise<AdminStats> {
 
 export async function verifyAdmin(): Promise<boolean> {
     try {
-        await apiClient.get('/api/v1/admin/is_admin/');
-        return true;
-    } catch (error) {
-        return false;
-    }
+        const response : VerifyAdminResponse = await apiClient.get<VerifyAdminResponse>('/api/v1/admin/verify/');
+        return response.is_admin;
+    } 
+    catch (error) {return false;}
 }

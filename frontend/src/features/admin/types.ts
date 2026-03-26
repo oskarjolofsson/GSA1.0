@@ -26,3 +26,8 @@ export interface AdminStats {
     newUsersLast7Days: number;
     newUsersLast30Days: number;
 }
+
+
+export type VerifyAdminResponse = {
+    is_admin: boolean;
+}

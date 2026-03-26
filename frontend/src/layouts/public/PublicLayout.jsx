@@ -6,7 +6,7 @@ import Footer from './components/footer.jsx';
 import { ConsentBanner } from '../../shared/components/popup/consentBanner.jsx';
 import TopographyBackground from '../../shared/layout/topography.jsx';
 
-export default function Layout() {
+export default function Layout({ children }) {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
@@ -23,7 +23,7 @@ export default function Layout() {
       <Nav />
 
       <main className="flex-1">
-        <Outlet />
+        {children ?? <Outlet />}
       </main>
       <ConsentBanner />
       <Footer />
