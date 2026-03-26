@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import adminStatsService from '../services/adminStatsService';
+import { getStats } from '../services/adminService';
 import type { AdminStats } from '../types';
 
 interface AdminStatsState {
@@ -30,7 +30,7 @@ export const useAdminStats = () => {
         setState(prev => ({ ...prev, loading: true, error: null }));
 
         try {
-            const data = await adminStatsService.getStats();
+            const data = await getStats();
             setState({
                 stats: data,
                 loading: false,
