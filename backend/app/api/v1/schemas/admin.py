@@ -29,3 +29,6 @@ class AdminStatsResponse(BaseModel):
             newUsersLast7Days=dto.new_users_last_7_days,
             newUsersLast30Days=dto.new_users_last_30_days,
         )
+
+class AdminVerifyResponse(BaseModel):
+    is_admin: bool
