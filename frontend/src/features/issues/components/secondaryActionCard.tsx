@@ -13,6 +13,13 @@ export default function SecondaryActionCard({ issue }: { issue: Issue }) {
       {/* Subtle background glow - more faded */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(56,189,248,0.05),transparent_60%)]" />
 
+      <button
+        className="absolute bottom-3 right-3 z-10 inline-flex items-center justify-center w-12 h-6 text-slate-400 hover:text-red-400 text-[8px] border border-slate-600/40 hover:border-red-400/50 rounded-full transition-all duration-200"
+        aria-label="Delete or mark as done"
+      >
+        Remove
+      </button>
+
       <div className="relative p-5 md:p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         
         {/* Left content */}

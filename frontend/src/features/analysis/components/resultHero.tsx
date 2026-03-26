@@ -1,14 +1,14 @@
 import { Eye, Star } from "lucide-react";
 
 interface ResultHeroCardProps {
-    prioNumber?: number;
-    totalIssues?: number;
-    problemName?: string;
-    diagnosis?: string;
-    impactLine?: string;
-    onClickDrill: () => void;
-    onNextIssue: () => void;
-    onPreviousIssue: () => void;
+  prioNumber?: number;
+  totalIssues?: number;
+  problemName?: string;
+  diagnosis?: string;
+  impactLine?: string;
+  onClickDrill: () => void;
+  onNextIssue: () => void;
+  onPreviousIssue: () => void;
 }
 
 export default function ResultHeroCard({
@@ -26,6 +26,9 @@ export default function ResultHeroCard({
       <div className="relative w-full overflow-hidden rounded-3xl h-fit sm:h-auto">
         {/* Card */}
         <div className="relative rounded-3xl bg-[#0e1428]/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] p-6 sm:p-8 min-h-[450px]  sm:min-h-[300px] flex flex-col">
+
+
+
           {/* Top row */}
           <div className="flex items-center justify-between gap-3 mb-4">
             {/* Kicker */}
@@ -38,6 +41,13 @@ export default function ResultHeroCard({
                 Summary
               </span>
             </div>
+
+            <button
+              className="inline-flex justify-center w-12 h-6 text-slate-400 hover:text-red-400 text-[8px] border border-slate-600/40 hover:border-red-400/50 rounded-full transition-all duration-200"
+              aria-label="Delete or mark as done"
+            >
+              Remove
+            </button>
 
             {/* Priority pill */}
             <div className="inline-flex items-baseline gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
