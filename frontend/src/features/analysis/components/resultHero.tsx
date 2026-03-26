@@ -42,13 +42,6 @@ export default function ResultHeroCard({
               </span>
             </div>
 
-            <button
-              className="inline-flex justify-center w-12 h-6 text-slate-400 hover:text-red-400 text-[8px] border border-slate-600/40 hover:border-red-400/50 rounded-full transition-all duration-200"
-              aria-label="Delete or mark as done"
-            >
-              Remove
-            </button>
-
             {/* Priority pill */}
             <div className="inline-flex items-baseline gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
               <span className="text-xs uppercase tracking-widest text-slate-400">

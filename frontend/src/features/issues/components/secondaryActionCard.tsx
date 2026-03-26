@@ -1,7 +1,12 @@
 import { Issue } from "@/features/issues/types"
 import { useNavigate } from "react-router-dom";
 
-export default function SecondaryActionCard({ issue }: { issue: Issue }) {
+interface SecondaryActionCardProps {
+  issue: Issue;
+  onDeleteIssue?: (issueId: string) => void;
+}
+
+export default function SecondaryActionCard({ issue, onDeleteIssue }: SecondaryActionCardProps) {
   const navigate = useNavigate();
   const issueData = issue;
 
@@ -16,6 +21,10 @@ export default function SecondaryActionCard({ issue }: { issue: Issue }) {
       <button
         className="absolute bottom-3 right-3 z-10 inline-flex items-center justify-center w-12 h-6 text-slate-400 hover:text-red-400 text-[8px] border border-slate-600/40 hover:border-red-400/50 rounded-full transition-all duration-200"
         aria-label="Delete or mark as done"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDeleteIssue?.(issue.analysis_issue_id!);
+        }}
       >
         Remove
       </button>

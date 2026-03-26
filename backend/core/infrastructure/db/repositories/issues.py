@@ -45,7 +45,7 @@ def get_issues_by_user_id(user_id: UUID, session: Session) -> list[models.Issue]
     return (session.query(models.Issue)
         .join(AnalysisIssue, models.Issue.id == AnalysisIssue.issue_id)
         .join(Analysis, AnalysisIssue.analysis_id == Analysis.id)
-        .filter(Analysis.user_id == user_id)
+        .filter((Analysis.user_id == user_id) & (AnalysisIssue.active == True))
         .distinct()
         .all())
 
