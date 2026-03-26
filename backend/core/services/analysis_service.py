@@ -28,6 +28,7 @@ from ..infrastructure.db.repositories.analysis_issues import (
     get_analysis_issue_by_id,
     get_analysis_issues_by_analysis_id,
     delete_analysis_issue as delete_analysis_issue_in_db,
+    modify_analysis_issue as modify_analysis_issue_in_db
 )
 from ..infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from ..infrastructure.storage.r2Adaptor import get_object
@@ -271,8 +272,9 @@ def delete_analysis_issue(analysis_issue_id: UUID, db_session) -> None:
     )
     if analysis_issue_object is None:
         raise NotFoundException("AnalysisIssue", str(analysis_issue_id))
-
-    delete_analysis_issue_in_db(
+    
+    analysis_issue_object.active = False
+    modify_analysis_issue_in_db(
         analysis_issue=analysis_issue_object, session=db_session
     )
 
