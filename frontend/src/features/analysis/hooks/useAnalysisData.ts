@@ -39,7 +39,8 @@ export default function useAnalysisData(): UseAnalysisDataReturn {
         // Clear error if analysis is successful
         setAnalysisError(null);
         
-        const issues = analysis?.issues;
+        // Sort based on confidence
+        const issues = analysis?.issues?.sort((a, b) => (b.confidence || 0) - (a.confidence || 0)) || [];
         
         if (issues && issues.length > 0 && activeIssue < issues.length) {
             const issueData = issues[activeIssue];

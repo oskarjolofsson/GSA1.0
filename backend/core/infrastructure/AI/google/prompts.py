@@ -56,7 +56,7 @@ Return ONLY this exact JSON structure:
 
 CONSTRAINTS (HARD):
 
-- Maximum 6 issues total
+- Maximum 2 issues total
 - Only include issues with confidence ≥ 0.5
 - Only use issue_id values from the predefined list
 - confidence must be a number between 0.0 and 1.0
