@@ -180,9 +180,8 @@ def get_analysis_issues(
     return [GetAnalysisIssue.from_domain(issue) for issue in issues]
 
 
-@router.delete("/{analysis_id}/issues/{analysis_issue_id}/", status_code=204)
+@router.delete("/issues/{analysis_issue_id}/", status_code=204)
 def delete_analysis_issue(
-    analysis_id: UUID,
     analysis_issue_id: UUID,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)

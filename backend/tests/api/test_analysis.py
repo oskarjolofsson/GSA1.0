@@ -224,12 +224,15 @@ def test_run_analysis(client, run_analysis_and_set_completed, db_session, auth_h
     # Cleanup - delete the created analysis issues
     for issue in analysis_issues:
         response = client.delete(
-            f"/api/v1/analyses/{analysis_id}/issues/{issue.id}",
+            f"/api/v1/analyses/issues/{issue.id}",
             headers=auth_headers,
         )
     
         # Assert that the issue was deleted successfully with no return content
         assert response.status_code == 204
         
-        # Verify its deleted from the database
-        assert get_analysis_issue_by_id(analysis_issue_id=issue.id, session=db_session) is None
+        # Verify its not deleted from the database
+        ai: AnalysisIssue = get_analysis_issue_by_id(analysis_issue_id=issue.id, session=db_session) 
+        assert ai is not None
+        # Verify its inactive
+        assert ai.active == False
