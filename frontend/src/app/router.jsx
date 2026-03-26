@@ -23,6 +23,7 @@ import AuthCallback from "./public/auth/callback/page";
 // Import components
 import PublicLayout from './public/layout.jsx';
 import RequireAuth from '@/features/auth/routes/RequireAuth';
+import RequireAdmin from '@/features/admin/routes/RequireAdmin';
 import DashboardLayout from './dashboard/layout.jsx';
 import AdminLayout from './admin/layout.jsx';
 
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    element: <RequireAdmin />,
     path: "/admin",
     errorElement: <NotFound />,
     children: [
