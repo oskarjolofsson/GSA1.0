@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronRight, ChevronLeft, AlertTriangle, Image } from "lucide-react";
+import { ChevronRight, ChevronLeft, AlertTriangle, Image, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Issue } from '../types';
 
@@ -72,12 +72,19 @@ export default function IssuesSidebar({ allIssues, activeIssue, onSelectIssue }:
                       key={issue.id}
                       data-testid={`issue-button-${issue.id}`}
                       onClick={() => onSelectIssue(issue.id)}
-                      className={`w-full text-left rounded-xl p-4 transition-all ${
+                      className={`relative w-full text-left rounded-xl p-4 transition-all ${
                         isActive
                           ? "bg-red-500/10 border-2 border-red-500/30"
                           : "bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20"
                       }`}
                     >
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute bottom-1 right-2 z-10 inline-flex items-center justify-center w-5 h-5 text-slate-500 hover:text-red-400 border border-slate-600/40 hover:border-red-400/50 rounded-full transition-all duration-200"
+                        aria-label="Delete issue"
+                      >
+                        <p className="text-[7px]">Remove</p>
+                      </button>
                       <div className="flex gap-3">
                         {/* Image/Thumbnail placeholder */}
                         <div className="flex-shrink-0">

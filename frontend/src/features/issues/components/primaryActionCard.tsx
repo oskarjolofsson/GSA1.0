@@ -1,5 +1,6 @@
 import { Issue } from "@/features/issues/types"
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 
 export default function PrimaryActionCard({ issue }: { issue: Issue }) {
   const navigate = useNavigate();
@@ -9,6 +10,13 @@ export default function PrimaryActionCard({ issue }: { issue: Issue }) {
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50 shadow-xl">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(56,189,248,0.12),transparent_60%)]" />
+      <button
+        className="absolute top-3 right-3 z-10 inline-flex items-center justify-center w-12 h-6 text-slate-400 hover:text-red-400 text-[8px] border border-slate-600/40 hover:border-red-400/50 rounded-full transition-all duration-200"
+        aria-label="Delete or mark as done"
+      >
+        Remove
+      </button>
+      
       <div className="relative p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div className="flex-1 space-y-4">
           <h2 className="text-2xl font-semibold text-white">
