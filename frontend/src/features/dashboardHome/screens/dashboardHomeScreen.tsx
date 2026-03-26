@@ -7,16 +7,6 @@ import { LoadingState } from "@/shared/components/cards/loading.js";
 export default function DashboardHomeScreen() {
     const { issues, error, loading } = useIssue();
 
-    if (error) {
-        return (
-            <div className="w-full h-full p-6 sm:p-8 flex items-center justify-center p-10 bg-red-500/10 border border-red-500/20 rounded-lg">
-                <p className="text-red-500 items-center justify-center p-4 border rounded-xl border-red-500/30">Error occurred while loading issues.</p>
-            </div>
-        );
-    }
-
-    
-
     if (loading) {
         return (
             <LoadingState title="Loading Issues" message="Fetching your issues..." />
@@ -27,7 +17,7 @@ export default function DashboardHomeScreen() {
         return (
             <ErrorState
                 title="Failed to Load Issues"
-                error={new Error('Error occurred while loading issues.')}
+                error={new Error('Error occurred while loading the home dashboard page.')}
                 onRetry={() => window.location.reload()}
             />
         );

@@ -11,6 +11,8 @@ import AnalysisSidebar from "../components/AnalysisSidebar";
 import FeedbackBubble from "../../feedback/components/FeedbackBubble.jsx";
 import FeedbackPopup from "../../feedback/components/FeedbackPopup.jsx";
 import ConfirmationPopup from "../../../shared/components/popup/ConfirmationPopup.jsx";
+import { LoadingState } from "@/shared/components/cards/loading.js";
+import { ErrorState } from "@/shared/components/cards/error.js";
 
 // Custom hooks
 import useAnalyses from "../hooks/useAnalyses";
@@ -57,9 +59,7 @@ export default function AnalysisScreen() {
 
     if (error) {
         return (
-            <div className="w-full h-full p-6 sm:p-8 flex items-center justify-center p-10 bg-red-500/10 border border-red-500/20 rounded-lg">
-                <p className="text-red-500 items-center justify-center p-4 border rounded-xl border-red-500/30">Could not load analysis details.</p>
-            </div>
+            <ErrorState title="Could not load analyses" error={error} onRetry={() => window.location.reload()} />
         );
     }
 
@@ -68,9 +68,7 @@ export default function AnalysisScreen() {
             <SessionHeader onShareClick={() => setShowSharePopup(true)} showShare={!!activeAnalysis} onDeleteClick={handleDeleteAnalysis()} />
             <div className="w-full mx-auto px-4 py-6 h-full items-center justify-center">
                 {loading ? (
-                    <p className="text-center text-gray-500">Loading analyses...</p>
-                ) : error ? (
-                    <p className="text-center text-red-500">Error: {error}</p>
+                    <LoadingState title="Loading Analysis"/>
                 ) : analysisError ? (
                     <div className="flex flex-col items-center justify-center h-full">
                         <div className="glass-container p-8 rounded-xl max-w-md text-center">
