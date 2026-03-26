@@ -1,11 +1,14 @@
 import { Eye, AlertCircle, CheckCircle } from "lucide-react";
+import { useState } from "react";
 import ImagePlaceHolder from "../components/ImagePlaceHolder";
 import MainText from "../components/MainText";
 import DetailCard from "../components/DetailCard";
 import CTAButton from "../components/CTAButton";
 import IssuesSidebar from "../components/IssuesSidebar";
+import ConfirmationPopup from "@/shared/components/popup/ConfirmationPopup";
 import type { Issue } from "@/features/issues/types";
 import { useIssue } from "@/features/issues/hooks/useUserIssues";
+import issueService from "../services/issueService";
 import { useNavigate } from "react-router";
 
 const DETAIL_CARD_COLORS = [
@@ -33,8 +36,12 @@ const getExplainerCards = (issue: Issue) => [
 ];
 
 export default function IssueExplainerScreen() {
-    const { loading, error, activeIssue, issues, selectIssue } = useIssue();
+    const { loading, error, activeIssue, issues, selectIssue, refreshIssues } = useIssue();
     const navigate = useNavigate();
+    const [confirmPopup, setConfirmPopup] = useState<{ isOpen: boolean; issueId: string | null }>({
+        isOpen: false,
+        issueId: null,
+    });
 
     if (loading) {
         return (
@@ -61,6 +68,26 @@ export default function IssueExplainerScreen() {
     }
 
     const explainerCards = getExplainerCards(activeIssue);
+
+    const handleDeleteClick = (analysisIssueId: string) => {
+        setConfirmPopup({
+            isOpen: true,
+            issueId: analysisIssueId,
+        });
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!confirmPopup.issueId) return;
+
+        try {
+            await issueService.markIssueAsDone(confirmPopup.issueId);
+            console.log("Marking issue as done with analysis_issue_id:", confirmPopup.issueId);
+            await refreshIssues();
+            setConfirmPopup({ isOpen: false, issueId: null });
+        } catch (err) {
+            console.error("Error deleting issue:", err);
+        }
+    };
 
     return (
         <>
@@ -96,6 +123,15 @@ export default function IssueExplainerScreen() {
                 allIssues={issues}
                 activeIssue={activeIssue}
                 onSelectIssue={selectIssue}
+                onDeleteIssue={handleDeleteClick}
+            />
+
+            {/* Delete Confirmation Popup */}
+            <ConfirmationPopup
+                isOpen={confirmPopup.isOpen}
+                text="Are you sure you want to remove this issue? You can always add it back later."
+                onClose={() => setConfirmPopup({ isOpen: false, issueId: null })}
+                onConfirm={handleConfirmDelete}
             />
         </>
     );

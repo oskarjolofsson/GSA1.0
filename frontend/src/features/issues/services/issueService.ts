@@ -73,6 +73,11 @@ export class IssueService {
     async bulkDeleteIssues(issueIds: string[]): Promise<void> {
         await apiClient.delete<void>('/api/v1/issues/bulk/', { issue_ids: issueIds });
     }
+
+
+    async markIssueAsDone(analysis_issue_id: string): Promise<Issue> {
+        return apiClient.delete(`/api/v1/analyses/issues/${analysis_issue_id}/`);
+    }
 }
 
 export default new IssueService();
