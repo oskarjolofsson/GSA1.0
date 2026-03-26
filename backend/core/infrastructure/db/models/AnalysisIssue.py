@@ -7,6 +7,8 @@ from sqlalchemy import (
     UniqueConstraint,
     Integer,
     ForeignKey,
+    Boolean,
+    text
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
@@ -44,6 +46,12 @@ class AnalysisIssue(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+
+    active: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=text("true"),
     )
 
     analysis = relationship("Analysis", back_populates="issues")
