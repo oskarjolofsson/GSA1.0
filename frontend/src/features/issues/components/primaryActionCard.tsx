@@ -2,7 +2,12 @@ import { Issue } from "@/features/issues/types"
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 
-export default function PrimaryActionCard({ issue }: { issue: Issue }) {
+interface PrimaryActionCardProps {
+  issue: Issue;
+  onDeleteIssue?: (issueId: string) => void;
+}
+
+export default function PrimaryActionCard({ issue, onDeleteIssue }: PrimaryActionCardProps) {
   const navigate = useNavigate();
 
   const progressPercent = Math.round((issue.progress?.recent_session_success_rates ?? 0) * 100);
@@ -13,6 +18,10 @@ export default function PrimaryActionCard({ issue }: { issue: Issue }) {
       <button
         className="absolute top-3 right-3 z-10 inline-flex items-center justify-center w-12 h-6 text-slate-400 hover:text-red-400 text-[8px] border border-slate-600/40 hover:border-red-400/50 rounded-full transition-all duration-200"
         aria-label="Delete or mark as done"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDeleteIssue?.(issue.analysis_issue_id!);
+        }}
       >
         Remove
       </button>

@@ -81,7 +81,6 @@ export default function IssueExplainerScreen() {
 
         try {
             await issueService.markIssueAsDone(confirmPopup.issueId);
-            console.log("Marking issue as done with analysis_issue_id:", confirmPopup.issueId);
             await refreshIssues();
             setConfirmPopup({ isOpen: false, issueId: null });
         } catch (err) {
@@ -129,7 +128,7 @@ export default function IssueExplainerScreen() {
             {/* Delete Confirmation Popup */}
             <ConfirmationPopup
                 isOpen={confirmPopup.isOpen}
-                text="Are you sure you want to remove this issue? You can always add it back later."
+                text="Are you sure you want to remove this issue?"
                 onClose={() => setConfirmPopup({ isOpen: false, issueId: null })}
                 onConfirm={handleConfirmDelete}
             />
