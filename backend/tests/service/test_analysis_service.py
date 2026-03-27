@@ -256,7 +256,7 @@ class TestRunAnalysis:
         first_issue_id = issues[0].analysis_issue_id
         
         # Test delete_analysis_issue
-        delete_analysis_issue(first_issue_id, db_session=shared_db_session)
+        delete_analysis_issue(first_issue_id, db_session=shared_db_session, user_id=test_user["user_id"])
         remaining_issues = get_analysis_issues(completed_analysis_shared, db_session=shared_db_session)
         assert len(remaining_issues) == len(issues) - 1
         remaining_issue_ids = [i.analysis_issue_id for i in remaining_issues]

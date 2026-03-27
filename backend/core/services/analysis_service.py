@@ -9,6 +9,8 @@ from .exceptions import NotFoundException, InvalidStateException, InvalidVideoEx
 
 # Infrastructure imports
 from ..infrastructure.storage.r2Adaptor import generate_upload_url, put_object
+from core.infrastructure.db.repositories import issues as issues_repo
+from core.infrastructure.db import models
 from ..infrastructure.db.repositories.analysis import (
     create_analysis as create_analysis_in_db,
     get_analysis_by_id as get_analysis_by_id_in_db,
@@ -28,7 +30,10 @@ from ..infrastructure.db.repositories.analysis_issues import (
     get_analysis_issue_by_id,
     get_analysis_issues_by_analysis_id,
     delete_analysis_issue as delete_analysis_issue_in_db,
-    modify_analysis_issue as modify_analysis_issue_in_db
+    modify_analysis_issue as modify_analysis_issue_in_db,
+    modify_analysis_issues as modify_analysis_issues_in_db,
+    get_analysis_issues_by_user_id_and_issue_id
+    
 )
 from ..infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from ..infrastructure.storage.r2Adaptor import get_object
@@ -270,17 +275,21 @@ def get_analysis_issues(analysis_id: UUID, db_session) -> list[GetAnalaysisIssue
     return analysis_issue_dtos
 
 
-def delete_analysis_issue(analysis_issue_id: UUID, db_session) -> None:
+def delete_analysis_issue(analysis_issue_id: UUID, db_session, user_id: UUID) -> None:
+    # Check that it exists
     analysis_issue_object: AnalysisIssue = get_analysis_issue_by_id(
         analysis_issue_id=analysis_issue_id, session=db_session
     )
     if analysis_issue_object is None:
         raise NotFoundException("AnalysisIssue", str(analysis_issue_id))
     
-    analysis_issue_object.active = False
-    modify_analysis_issue_in_db(
-        analysis_issue=analysis_issue_object, session=db_session
-    )
+    # Get all analysis_issues with the same user_id and issue_id
+    all_analysis_issues: list[models.AnalysisIssue] = get_analysis_issues_by_user_id_and_issue_id(user_id=user_id, issue_id=analysis_issue_object.issue_id, session=db_session)
+    
+    for ai in all_analysis_issues:      # Change status
+        ai.active = False
+        
+    modify_analysis_issues_in_db(all_analysis_issues, db_session)   # Update in DB
 
 
 # ------------------------------ Helper functions ------------------------------

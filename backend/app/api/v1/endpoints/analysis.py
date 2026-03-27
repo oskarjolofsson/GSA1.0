@@ -189,4 +189,4 @@ def delete_analysis_issue(
     """
     Delete a specific analysis issue.
     """
-    service_delete_analysis_issue(analysis_issue_id, db_session=db)
+    service_delete_analysis_issue(analysis_issue_id, db_session=db, user_id=current_user["user_id"])

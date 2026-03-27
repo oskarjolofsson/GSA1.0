@@ -46,10 +46,10 @@ def get_issue_by_id(issue_id: UUID, user_id: UUID, db_session: Session) -> Issue
     if not issue:
         raise NotFoundException(f"Issue with ID {issue_id} not found", str(issue_id))
 
-    analysis_issue: models.AnalysisIssue = repo_analysis_issues.get_analysis_issue_by_user_id_and_issue_id(user_id, issue_id, db_session)
+    analysis_issue: models.AnalysisIssue = repo_analysis_issues.get_analysis_issues_by_user_id_and_issue_id(user_id, issue_id, db_session)
     if analysis_issue:
-        progress: SimplifiedIssueProgressDTO = _get_progress_for_issues([analysis_issue], db_session)[0]  # Get progress for this specific analysis issue
-        return from_issue_to_response_dto(issue, analysis_issue, progress)
+        progress: SimplifiedIssueProgressDTO = _get_progress_for_issues([analysis_issue[0]], db_session)[0]  # Get progress for this specific analysis issue
+        return from_issue_to_response_dto(issue, analysis_issue[0], progress)
     return from_issue_to_response_dto(issue)
 
 
