@@ -27,7 +27,7 @@ class PracticeSession(Base):
 
     analysis_issue_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("analysis_issues.id", ondelete="SET NULL"),
+        ForeignKey("analysis_issues.id", ondelete="CASCADE"),
     )
 
     started_at: Mapped[DateTime] = mapped_column(

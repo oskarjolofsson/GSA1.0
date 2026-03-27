@@ -29,7 +29,7 @@ class PracticeDrillRun(Base):
 
     drill_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("drills.id", ondelete="CASCADE"),
+        ForeignKey("drills.id", ondelete="SET NULL"),
         nullable=False,
     )
 
