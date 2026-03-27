@@ -10,6 +10,10 @@ interface PrimaryActionCardProps {
 export default function PrimaryActionCard({ issue, onDeleteIssue }: PrimaryActionCardProps) {
   const navigate = useNavigate();
 
+  if (!issue) {
+    return null; // or a placeholder card
+  }
+
   const progressPercent = Math.round((issue.progress?.recent_session_success_rates ?? 0) * 100);
 
   return (

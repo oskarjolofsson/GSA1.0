@@ -2,7 +2,7 @@
 
 export default function TextBox({ header, text, ctaOnClick, ctaText }) {
   return (
-    <section className="relative w-full max-w-4xl mx-auto px-4 mt-[14vh] mb-12">
+    <section className="relative w-full max-w-4xl mx-auto px-4 mt-[14vh] mb-12 text-center">
       <div
         className="rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 sm:p-10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]"
       >
@@ -19,7 +19,7 @@ export default function TextBox({ header, text, ctaOnClick, ctaText }) {
         )}
 
         {ctaOnClick && ctaText && (
-          <div className="mt-6">
+          <div className="mt-6 flex justify-center">
             <button
               onClick={ctaOnClick}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-lg text-sm sm:text-base font-medium transition-colors duration-200"

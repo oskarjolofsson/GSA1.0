@@ -10,6 +10,10 @@ export default function SecondaryActionCard({ issue, onDeleteIssue }: SecondaryA
   const navigate = useNavigate();
   const issueData = issue;
 
+  if (!issueData) {
+    return null; // or a placeholder card
+  }
+
   const progressPercent = Math.round((issueData.progress?.recent_session_success_rates ?? 0) * 100);
 
   return (

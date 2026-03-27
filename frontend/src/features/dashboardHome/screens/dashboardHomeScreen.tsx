@@ -6,8 +6,11 @@ import { ErrorState } from "@/shared/components/cards/error.js";
 import { LoadingState } from "@/shared/components/cards/loading.js";
 import ConfirmationPopup from "@/shared/components/popup/ConfirmationPopup.jsx";
 import issueService from "@/features/issues/services/issueService.js";
+import TextBox from "@/shared/components/cards/textBox.jsx";
+import { useNavigate } from "react-router-dom";
 
 export default function DashboardHomeScreen() {
+    const navigate = useNavigate();
     const { issues, error, loading, refreshIssues } = useIssue();
     const [confirmPopup, setConfirmPopup] = useState<{ isOpen: boolean; AnalysisIssueId: string | null }>({
         isOpen: false,
@@ -48,6 +51,17 @@ export default function DashboardHomeScreen() {
             console.error("Error deleting issue:", err);
         }
     };
+
+    if (issues.length === 0) {
+        return (
+            <TextBox
+                header={"Welcome to TrueSwing! 👋"} 
+                text={"Upload a swing video. Get better. It’s that simple!"}
+                ctaOnClick={() => navigate("/dashboard/upload")} 
+                ctaText={"Create Analysis"} 
+            />
+        )
+    }
 
     return (
         <div className="justify-center p-10 text-center">
