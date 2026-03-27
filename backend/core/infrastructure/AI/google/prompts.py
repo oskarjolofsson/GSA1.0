@@ -35,7 +35,7 @@ CRITICAL RULES:
    - Identify which issues from the list match what you observe
    - Assign confidence based on visibility and clarity
    - Rank issues by impact on ball flight and consistency
-   - Select only the most impactful issues (maximum 6)
+   - Select only the most impactful issues (maximum 2)
 
 OUTPUT RULES (STRICT):
 

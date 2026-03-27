@@ -20,8 +20,7 @@ def test_delete_analysis_issues(test_user, db_session):
     to: AnalysisTestObject = create_analysis_and_analysis_issues(db_session, test_user["user_id"])
     
     # Delete one analysis_issue
-    to.analysis_issues[0].active = False
-    analysis_issues_repo.modify_analysis_issue(to.analysis_issues[0], session=db_session)
+    analysis_service.delete_analysis_issue(analysis_issue_id=to.analysis_issues[0].id, db_session=db_session, user_id=test_user["user_id"])
     
     # Make sure that thay are all still there, but that one of them is inactive
     fetched_analysis_issue0: models.AnalysisIssue = analysis_issues_repo.get_analysis_issue_by_id(to.analysis_issues[0].id, db_session)
@@ -48,10 +47,22 @@ def test_delete_analysis_and_cascade(test_user, db_session):
     with pytest.raises(exceptions.NotFoundException):
         assert analysis_service.get_analysis_issues(analysis_id=to.analysis.id, db_session=db_session)
         
-    
     assert analysis_issues_repo.get_analysis_issues_by_analysis_id(to.analysis.id, session=db_session) == []
     
+
+def test_delete_one_analysis_issue_and_all_other_should_also_be_dissableed(test_user, db_session):
+    to1: AnalysisTestObject = create_analysis_and_analysis_issues(db_session, test_user["user_id"])
+    to2: AnalysisTestObject = create_analysis_and_analysis_issues(db_session, test_user["user_id"])
     
+    analysis_service.delete_analysis_issue(to1.analysis_issues[0].id, db_session=db_session, user_id=test_user["user_id"])
+    
+    assert to1.analysis_issues[0].active == False
+    assert to1.analysis_issues[1].active == True
+    assert to1.analysis_issues[2].active == True
+    
+    assert to2.analysis_issues[0].active == False
+    assert to2.analysis_issues[1].active == True
+    assert to2.analysis_issues[2].active == True
 
 # =================== Helper Methods ====================
 
