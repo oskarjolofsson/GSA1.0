@@ -3,9 +3,10 @@ from core.infrastructure.db.repositories import issues as issues_repo
 from core.infrastructure.db.repositories import analysis_issues as analysis_issues_repo
 from core.infrastructure.db.repositories import analysis as analysis_repo
 from core.services import analysis_service
+from core.services import exceptions
+import pytest
 
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
 from uuid import UUID
 from dataclasses import dataclass
 
@@ -35,6 +36,22 @@ def test_delete_analysis_issues(test_user, db_session):
     fetched_analysis_issue_list: list[models.AnalysisIssue] = analysis_issues_repo.get_analysis_issues_by_analysis_id(to.analysis.id, db_session)
     assert len(fetched_analysis_issue_list) == 2
 
+
+def test_delete_analysis_and_cascade(test_user, db_session):
+    to: AnalysisTestObject = create_analysis_and_analysis_issues(db_session, test_user["user_id"])
+    
+    analysis_service.delete_analysis(to.analysis.id, db_session=db_session)
+    
+    with pytest.raises(exceptions.NotFoundException):
+        assert analysis_service.get_analysis_by_id(analysis_id=to.analysis.id, db_session=db_session)
+    
+    with pytest.raises(exceptions.NotFoundException):
+        assert analysis_service.get_analysis_issues(analysis_id=to.analysis.id, db_session=db_session)
+        
+    
+    assert analysis_issues_repo.get_analysis_issues_by_analysis_id(to.analysis.id, session=db_session) == []
+    
+    
 
 # =================== Helper Methods ====================
 
