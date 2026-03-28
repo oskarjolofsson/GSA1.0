@@ -67,13 +67,13 @@ def get_issues_by_drill_id(drill_id: UUID, user_id: UUID, db_session: Session) -
 def get_issues_by_analysis_id(analysis_id: UUID, user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
     """Get all issues associated with a specific analysis with optional analysis_issue and progress data."""
     issues = repo_get_issues_by_analysis_id(analysis_id, db_session)
-    return _batch_fetch_analysis_issues_and_progress(issues, db_session)
+    return _batch_fetch_analysis_issues_and_progress(user_id, issues, db_session)
 
 
 def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
     """Get all issues created by a specific user with analysis_issue and progress data."""
     issues: list[Issue] = repo_get_issues_by_user_id(user_id, db_session)
-    return _batch_fetch_analysis_issues_and_progress(issues, db_session)
+    return _batch_fetch_analysis_issues_and_progress(user_id, issues, db_session)
 
 
 def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> IssueResponseDTO | None:
@@ -164,10 +164,10 @@ def _get_progress_for_issues(analysis_issues: list[models.AnalysisIssue], db_ses
     return progress_data
 
 
-def _batch_fetch_analysis_issues_and_progress(issues: list[Issue], db_session: Session) -> list[IssueResponseDTO]:
+def _batch_fetch_analysis_issues_and_progress(user_id: UUID, issues: list[Issue], db_session: Session) -> list[IssueResponseDTO]:
     """Batch fetch analysis issues and progress data for a list of issues."""
     issue_ids: list[UUID] = [issue.id for issue in issues]
-    analysis_issues: list[models.AnalysisIssue] = repo_analysis_issues.get_analysis_issues_by_issue_ids(issue_ids, db_session)
+    analysis_issues: list[models.AnalysisIssue] = repo_analysis_issues.get_analysis_issues_by_user_id_and_issue_ids(user_id=user_id, issue_ids=issue_ids, session=db_session)
     progress_data: list[SimplifiedIssueProgressDTO] = _get_progress_for_issues(analysis_issues, db_session)
     
     if not analysis_issues or not progress_data:

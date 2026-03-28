@@ -7,7 +7,8 @@ from pydantic import BaseModel, Field
 
 from .prompts import VIDEO_SYSTEM_INSTRUCTIONS2, format_content
 
-from ...db.repositories.issues import get_all_issues
+from core.infrastructure.db.repositories import issues as issue_repo
+from core.infrastructure.db import models
 
 class MetaData(BaseModel):
     camera_view: str = Field(..., description="Camera view of the swing (unknown | face_on | down_the_line)")
@@ -129,7 +130,17 @@ def analyze_video(
         # Get list of all issues in database
         if not db_session:
             raise ValueError("Database session is required to retrieve issues")
-        issues = get_all_issues(db_session) 
+        
+        
+        
+        
+        # issues = get_all_issues(db_session) 
+        issues: list[models.Issue] = issue_repo.get_all_unused_issues_for_user
+        
+        
+        
+        
+        
         issues = [ {
             "issue_id": str(issue.id), 
             "name": issue.title, 
