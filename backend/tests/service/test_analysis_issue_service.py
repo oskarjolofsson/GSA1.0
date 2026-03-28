@@ -63,6 +63,17 @@ def test_delete_one_analysis_issue_and_all_other_should_also_be_dissableed(test_
     assert to2.analysis_issues[0].active == False
     assert to2.analysis_issues[1].active == True
     assert to2.analysis_issues[2].active == True
+    
+    
+def test_get_unused_issues_of_user_id(test_user, db_session):
+    to: AnalysisTestObject = create_analysis_and_analysis_issues(db_session, test_user["user_id"])
+    created_issues: list[models.Issue] = issues_repo.get_issues_by_user_id(test_user["user_id"], session=db_session)
+    assert len(created_issues) > 0
+    
+    remain_issues: list[models.Issue] = issues_repo.get_unused_issues_of_user_id(test_user["user_id"], db_session)
+    assert len(remain_issues) > 0
+    assert set(created_issues).isdisjoint(remain_issues)
+    
 
 # =================== Helper Methods ====================
 

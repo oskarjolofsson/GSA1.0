@@ -48,6 +48,17 @@ def get_issues_by_user_id(user_id: UUID, session: Session) -> list[models.Issue]
         .filter((Analysis.user_id == user_id) & (AnalysisIssue.active == True))
         .distinct()
         .all())
+    
+    
+def get_unused_issues_of_user_id(user_id: UUID, session: Session) -> list[models.Issue]:
+    return (
+        session.query(models.Issue)
+        .join(AnalysisIssue, models.Issue.id == AnalysisIssue.issue_id)
+        .join(Analysis, AnalysisIssue.analysis_id == Analysis.id)
+        .filter((Analysis.user_id != user_id) & (AnalysisIssue.active == False))
+        .distinct()
+        .all()
+    )
 
 
 # ------------ CREATE ------------

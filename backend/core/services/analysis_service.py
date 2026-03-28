@@ -29,8 +29,6 @@ from ..infrastructure.db.repositories.analysis_issues import (
     create_analysis_issue,
     get_analysis_issue_by_id,
     get_analysis_issues_by_analysis_id,
-    delete_analysis_issue as delete_analysis_issue_in_db,
-    modify_analysis_issue as modify_analysis_issue_in_db,
     modify_analysis_issues as modify_analysis_issues_in_db,
     get_analysis_issues_by_user_id_and_issue_id
     
