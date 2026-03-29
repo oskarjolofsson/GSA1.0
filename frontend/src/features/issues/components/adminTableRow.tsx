@@ -86,6 +86,17 @@ export function IssueRow({ issue, isExpanded, isSelected, onToggleExpand, onTogg
             {/* Expanded Content */}
             {isExpanded && (
                 <div className="px-4 pb-4 pt-2 border-t border-white/5 space-y-4">
+
+                    {/* Description */}
+                    <div>
+                        <label className="text-white/50 text-xs font-medium uppercase tracking-wide mb-1 block">
+                            Description
+                        </label>
+                        <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
+                            <p className="text-white/70 text-sm whitespace-pre-wrap">{issue.description || 'No description provided.'}</p>
+                        </div>
+                    </div>
+
                     {/* Current Motion */}
                     <div>
                         <label className="text-white/50 text-xs font-medium uppercase tracking-wide mb-1 block">
@@ -95,6 +106,7 @@ export function IssueRow({ issue, isExpanded, isSelected, onToggleExpand, onTogg
                             <p className="text-amber-300 text-sm">{issue.current_motion || 'Not specified'}</p>
                         </div>
                     </div>
+
 
                     {/* Expected Motion */}
                     <div>

@@ -6,6 +6,7 @@ from datetime import datetime
 class CreateIssueRequest(BaseModel):
     title: str
     phase: str | None = None
+    descrition: str | None = None
     current_motion: str | None = None
     expected_motion: str | None = None
     swing_effect: str | None = None
@@ -30,6 +31,7 @@ class GetIssue(BaseModel):
     id: UUID
     title: str
     phase: str | None
+    description: str | None
     current_motion: str | None
     expected_motion: str | None
     swing_effect: str | None
@@ -66,6 +68,7 @@ class GetIssue(BaseModel):
             id=dto.id,
             title=dto.title,
             phase=dto.phase,
+            description=dto.description,
             current_motion=dto.current_motion,
             expected_motion=dto.expected_motion,
             swing_effect=dto.swing_effect,

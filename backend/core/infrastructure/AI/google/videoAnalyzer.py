@@ -4,6 +4,7 @@ from typing import Optional
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
+from uuid import UUID
 
 from .prompts import VIDEO_SYSTEM_INSTRUCTIONS2, format_content
 
@@ -95,6 +96,7 @@ def _parse_response(response: types.GenerateContentResponse) -> dict:
 def analyze_video(
     client: genai.Client,
     video_path: str,
+    user_id: UUID,
     shape: Optional[str] = None,
     height: Optional[str] = None,
     misses: Optional[str] = None,
@@ -130,22 +132,17 @@ def analyze_video(
         # Get list of all issues in database
         if not db_session:
             raise ValueError("Database session is required to retrieve issues")
-        
-        
-        
-        
-        # issues = get_all_issues(db_session) 
-        issues: list[models.Issue] = issue_repo.get_all_unused_issues_for_user
-        
-        
-        
-        
+    
+        issues: list[models.Issue] = issue_repo.get_unused_issues_of_user_id(user_id=user_id, session=db_session)
+        print(f"Retrieved {len(issues)} issues from database for user_id: {user_id}")
+        print(f"Issue names: {[str(issue.title) for issue in issues]}")
         
         issues = [ {
             "issue_id": str(issue.id), 
             "name": issue.title, 
-            "current motion": issue.current_motion, 
-            "expected motion": issue.expected_motion
+            "current motion that causes the issue": issue.current_motion, 
+            "desired motion that fixes the issue": issue.expected_motion,
+            "description of the issue": issue.description
         } for issue in issues ] if issues else []
         
         # Format user prompt
@@ -156,6 +153,7 @@ def analyze_video(
         
         # Call Gemini API
         response = _call_gemini_api(client, contents, model)
+        print(f"Received response from Gemini API: {response.text[:500]}")  # Log first 500 chars of response
         
         # Parse response
         result = _parse_response(response)

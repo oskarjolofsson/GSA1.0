@@ -28,6 +28,8 @@ class Issue(Base):
             "phase IN ('SETUP','BACKSWING','TRANSITION','DOWNSWING','IMPACT','FOLLOW_THROUGH')"
         ),
     )
+    
+    description: Mapped[str] = mapped_column(Text, nullable=False)
 
     current_motion: Mapped[str | None] = mapped_column(Text)
     expected_motion: Mapped[str | None] = mapped_column(Text)

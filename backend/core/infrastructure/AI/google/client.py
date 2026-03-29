@@ -5,6 +5,7 @@ from google import genai
 
 from ..ports import AnalysisAI
 from . import videoAnalyzer
+from uuid import UUID
 
 
 
@@ -25,6 +26,7 @@ class GoogleAnalysisClient(AnalysisAI):
     def analyze_video(
         self,
         video_path: str,
+        user_id: Optional[UUID] = None,
         shape: Optional[str] = None,
         height: Optional[str] = None,
         misses: Optional[str] = None,
@@ -49,6 +51,7 @@ class GoogleAnalysisClient(AnalysisAI):
         return videoAnalyzer.analyze_video(
             client=self.client,
             video_path=video_path,
+            user_id=user_id,
             shape=shape,
             height=height,
             misses=misses,

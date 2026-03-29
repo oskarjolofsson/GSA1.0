@@ -134,6 +134,7 @@ def from_issue_to_response_dto(issue: Issue, analysis_issue: models.AnalysisIssu
         id=issue.id,
         title=issue.title,
         phase=issue.phase,
+        description=issue.description,
         current_motion=issue.current_motion,
         expected_motion=issue.expected_motion,
         swing_effect=issue.swing_effect,

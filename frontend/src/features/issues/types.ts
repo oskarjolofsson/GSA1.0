@@ -4,6 +4,7 @@ export interface Issue {
     id: string;
     title: string;
     phase: string | null;
+    description: string | null;
     current_motion: string | null;
     expected_motion: string | null;
     swing_effect: string | null;

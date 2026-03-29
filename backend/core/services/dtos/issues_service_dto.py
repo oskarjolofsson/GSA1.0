@@ -7,6 +7,7 @@ from datetime import datetime
 class CreateIssueDTO:
     title: str
     phase: str | None = None
+    description: str | None = None
     current_motion: str | None = None
     expected_motion: str | None = None
     swing_effect: str | None = None
@@ -17,6 +18,7 @@ class CreateIssueDTO:
 class UpdateIssueDTO:
     title: str | None = None
     phase: str | None = None
+    description: str | None = None
     current_motion: str | None = None
     expected_motion: str | None = None
     swing_effect: str | None = None
@@ -38,6 +40,7 @@ class IssueResponseDTO:
     id: UUID
     title: str
     phase: str | None
+    description: str | None
     current_motion: str | None
     expected_motion: str | None
     swing_effect: str | None
