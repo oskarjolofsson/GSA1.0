@@ -1,5 +1,5 @@
 import { useState, CSSProperties } from "react";
-import { PacmanLoader } from "react-spinners";
+import { ClipLoader } from "react-spinners";
 
 const override: CSSProperties = {
   display: "block",
@@ -24,7 +24,7 @@ export function LoadingState({ title, message }: LoadingStateProps) {
 
     <div className="w-full flex justify-center mt-8">
       <div className="flex flex-col items-center justify-center gap-4">
-        <PacmanLoader
+        <ClipLoader
           color={color}
           size={25}
           aria-label="Loading Spinner"
