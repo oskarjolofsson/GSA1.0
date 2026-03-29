@@ -56,6 +56,8 @@ export default function ResultBox({ analysis, issue, totalIssues, video_url, act
   if (!analysis || !issue) return null;
   const navigate = useNavigate();
 
+  console.log("analysis_issue_id:", issue.analysis_issue_id);
+
   const {
     direction,
     onNextIssue,
@@ -79,9 +81,11 @@ export default function ResultBox({ analysis, issue, totalIssues, video_url, act
               prioNumber={activeProblem + 1}
               totalIssues={totalIssues}
               issue={issue}
-              onClickDrill={() => {
-                navigate(`/dashboard/drills/?issueId=${issue.id}`);
-              }}
+              onClickDrill={
+                issue.analysis_issue_id
+                  ? () => navigate(`/dashboard/drills/?issueId=${issue.id}`)
+                  : undefined
+              }
               onNextIssue={onNextIssue}
               onPreviousIssue={onPreviousIssue}
             />
