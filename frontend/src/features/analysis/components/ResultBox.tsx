@@ -65,7 +65,7 @@ export default function ResultBox({ analysis, issue, totalIssues, video_url, act
   return (
     <>
       {/* Asymmetric grid: 2fr card, 1fr video. Stacks on mobile */}
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
+      <div className="w-full max-w-5xl mx-auto px-1 md:px-4 sm:px-6 lg:px-8 mt-1 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
         <div className="w-full flex justify-center overflow-hidden">
           <motion.div
             key={activeProblem}
@@ -78,9 +78,7 @@ export default function ResultBox({ analysis, issue, totalIssues, video_url, act
             <ResultHeroCard
               prioNumber={activeProblem + 1}
               totalIssues={totalIssues}
-              problemName={issue.title}
-              diagnosis={issue.current_motion || ""}
-              impactLine={issue.expected_motion || ""}
+              issue={issue}
               onClickDrill={() => {
                 navigate(`/dashboard/drills/?issueId=${issue.id}`);
               }}

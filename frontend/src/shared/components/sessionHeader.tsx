@@ -5,7 +5,7 @@ export default function SessionHeader({ onShareClick, showShare, onDeleteClick }
     // Session-header placed on top of the screen
     // Delete button on the left, Share-button on the right side
     return (
-        <div className="h-16 border-b border-l border-white/10 rounded-l-xl flex items-center justify-between px-6 w-full ml-2">
+        <div className="h-16 border-b border-l border-white/10 rounded-l-xl flex items-center justify-between px-6 w-full">
 
             {/* Delete Button */}
             {onDeleteClick && (
