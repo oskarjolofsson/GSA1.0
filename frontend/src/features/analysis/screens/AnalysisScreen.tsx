@@ -66,7 +66,7 @@ export default function AnalysisScreen() {
     return (
         <>
             <SessionHeader onShareClick={() => setShowSharePopup(true)} showShare={!!activeAnalysis} onDeleteClick={handleDeleteAnalysis()} />
-            <div className="w-full mx-auto px-4 py-6 h-full items-center justify-center">
+            <div className="w-full mx-auto md:px-4 md:py-6 h-full items-center justify-center">
                 {loading ? (
                     <LoadingState title="Loading Analysis"/>
                 ) : analysisError ? (
