@@ -5,7 +5,7 @@ interface ResultHeroCardProps {
   prioNumber?: number;
   totalIssues?: number;
   issue: Issue;
-  onClickDrill: () => void;
+  onClickDrill?: () => void;
   onNextIssue: () => void;
   onPreviousIssue: () => void;
 }
@@ -18,6 +18,11 @@ export default function ResultHeroCard({
   onNextIssue,
   onPreviousIssue
 }: ResultHeroCardProps) {
+
+  if (!onClickDrill) {
+    console.warn("onClickDrill function is not provided. Drill button will not be shown.");
+  }
+
   return (
     <section className="w-full md:px-4 md:py-6 flex justify-center max-sm:px-0" aria-label="Top priority summary">
       <div className="relative w-full overflow-hidden rounded-3xl h-fit sm:h-auto">
@@ -106,13 +111,15 @@ export default function ResultHeroCard({
 
           {/* Actions */}
           <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-6 max-sm:flex-col max-sm:items-stretch">
-            <button
-              type="button"
-              className="whitespace-nowrap rounded-xl bg-emerald-500/90 hover:bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-300"
-              onClick={onClickDrill}
-            >
-              Start Practice #{prioNumber}
-            </button>
+            {onClickDrill && (
+              <button
+                type="button"
+                className="whitespace-nowrap rounded-xl bg-emerald-500/90 hover:bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                onClick={onClickDrill}
+              >
+                Start Practice #{prioNumber}
+              </button>
+            )}
 
             <div className="flex items-center justify-end gap-3 max-sm:justify-center">
 
