@@ -139,6 +139,7 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
             analyze_video(
                 client=GoogleAnalysisClient().client,
                 video_path=video_file.path(),
+                user_id=analysis_object.user_id,
                 shape=prompt_object.prompt_shape if prompt_object else None,
                 height=prompt_object.prompt_height if prompt_object else None,
                 misses=prompt_object.prompt_misses if prompt_object else None,

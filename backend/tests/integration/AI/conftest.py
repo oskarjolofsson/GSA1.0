@@ -66,17 +66,18 @@ def google_client(gemini_api_key):
 
 
 @pytest.fixture(scope="module")
-def analysis_result(google_client, test_video_path, db_session):
+def analysis_result(google_client, test_video_path, db_session, test_user):
     """Run analysis once and share result across all tests."""
-    result = google_client.analyze_video(video_path=test_video_path[0], db_session=db_session)
+    result = google_client.analyze_video(video_path=test_video_path[0], db_session=db_session, user_id=test_user["user_id"])
     return result
 
 
 @pytest.fixture(scope="module")
-def analysis_result_with_context(google_client, test_video_path, db_session):
+def analysis_result_with_context(google_client, test_video_path, db_session, test_user):
     """Run analysis with user context once."""
     result = google_client.analyze_video(
         video_path=test_video_path[0],  # Use the first video for this test
+        user_id=test_user["user_id"],
         shape="draw",
         height="mid",
         misses="right",

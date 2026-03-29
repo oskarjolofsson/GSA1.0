@@ -70,9 +70,19 @@ def test_get_unused_issues_of_user_id(test_user, db_session):
     created_issues: list[models.Issue] = issues_repo.get_issues_by_user_id(test_user["user_id"], session=db_session)
     assert len(created_issues) > 0
     
+    all_issues : list[models.Issue] = issues_repo.get_all_issues(session=db_session)
     remain_issues: list[models.Issue] = issues_repo.get_unused_issues_of_user_id(test_user["user_id"], db_session)
-    assert len(remain_issues) > 0
+    assert len(remain_issues) == len(all_issues) - len(created_issues)
     assert set(created_issues).isdisjoint(remain_issues)
+    
+    
+def test_get_unused_issues_of_user_id_with_no_issues(test_user, db_session):
+    remain_issues: list[models.Issue] = issues_repo.get_unused_issues_of_user_id(test_user["user_id"], db_session)
+    all_issues : list[models.Issue] = issues_repo.get_all_issues(session=db_session)
+    
+    assert len(remain_issues) == len(all_issues)
+    
+    
     
 
 # =================== Helper Methods ====================
