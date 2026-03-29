@@ -21,9 +21,9 @@ export default function VideoDemo({
   onEndChange = null,
   onTrimClose = null
 }: VideoDemoProps) {
-  const videoRef = useRef(null)
-  const containerRef = useRef(null)
-  const progressBarRef = useRef(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const progressBarRef = useRef<HTMLDivElement | null>(null)
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -33,10 +33,11 @@ export default function VideoDemo({
   const [duration, setDuration] = useState(0)
   const [trimStart, setTrimStart] = useState(0)
   const [trimEnd, setTrimEnd] = useState(0)
-  const seekTimeoutRef = useRef(null)
+  const seekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const suppressToggleRef = useRef(false)
 
   useEffect(() => {
-    let timeout
+    let timeout: ReturnType<typeof setTimeout> | undefined
     if (isPlaying) {
       timeout = setTimeout(() => setShowControls(false), 1500)
     }
@@ -71,7 +72,8 @@ export default function VideoDemo({
   }, [])
 
   const togglePlay = () => {
-    if (!videoRef.current) return
+    if (suppressToggleRef.current) return;
+    if (!videoRef.current) return;
 
     if (videoRef.current.paused) {
       videoRef.current.play()
@@ -95,7 +97,7 @@ export default function VideoDemo({
   }
 
   // Debounced seek with seeked event - fixes frame preview on mobile
-  const jumpVideo = useCallback((t) => {
+  const jumpVideo = useCallback((t: number) => {
     const v = videoRef.current
     if (!v) return
 
@@ -126,7 +128,8 @@ export default function VideoDemo({
     }, 5)
   }, [isSeeking])
 
-  const handleSeek = (e) => {
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoRef.current) return
     const rect = e.currentTarget.getBoundingClientRect()
     const percent = (e.clientX - rect.left) / rect.width
     const time = percent * videoRef.current.duration
@@ -134,12 +137,21 @@ export default function VideoDemo({
     jumpVideo(time)
   }
 
-  const handleMouseDown = () => {
-    setIsDragging(true)
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    suppressToggleRef.current = true;
+    setIsDragging(true);
+
+    if (videoRef.current && !videoRef.current.paused) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+      setShowControls(true);
+    }
   }
 
-  const handleMouseMove = useCallback((e) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return
+    if (!progressBarRef.current || !videoRef.current) return
     const rect = progressBarRef.current.getBoundingClientRect()
     const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
     setProgress(percent * 100)
@@ -147,7 +159,11 @@ export default function VideoDemo({
   }, [isDragging, jumpVideo])
 
   const handleMouseUp = () => {
-    setIsDragging(false)
+    setIsDragging(false);
+    // Clear after click cycle so release-click can't toggle play
+    requestAnimationFrame(() => {
+      suppressToggleRef.current = false;
+    });
   }
 
   useEffect(() => {
@@ -163,24 +179,26 @@ export default function VideoDemo({
   }, [isDragging, handleMouseMove])
 
   // Handle range slider change with both handles
-  const onRangeChange = useCallback((values) => {
-    const prevStart = trimStart
-    const prevEnd = trimEnd
+  const onRangeChange = useCallback((values: number[]) => {
+    if (videoRef.current && !videoRef.current.paused) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+      setShowControls(true);
+    }
 
-    setTrimStart(values[0])
-    setTrimEnd(values[1])
+    const prevStart = trimStart;
+    const prevEnd = trimEnd;
+    setTrimStart(values[0]);
+    setTrimEnd(values[1]);
 
-    // Jump to whichever handle moved
     if (Math.abs(values[0] - prevStart) > Math.abs(values[1] - prevEnd)) {
-      // Start handle moved
-      jumpVideo(values[0])
+      jumpVideo(values[0]);
     } else {
-      // End handle moved
-      jumpVideo(values[1])
+      jumpVideo(values[1]);
     }
   }, [jumpVideo, trimStart, trimEnd])
 
-  function formatTime(s, digits = 2) {
+  function formatTime(s: number, digits = 2) {
     if (!Number.isFinite(s)) return "0.00"
     return s.toFixed(digits)
   }
@@ -235,8 +253,8 @@ export default function VideoDemo({
                 ref={progressBarRef}
                 className="absolute bottom-0 left-0 right-0 h-2.5 bg-white/20 cursor-pointer border-t border-white"
                 onClick={(e) => {
-                  e.stopPropagation()
-                  handleSeek(e)
+                  e.stopPropagation();
+                  handleSeek(e);
                 }}
                 onMouseDown={handleMouseDown}
               >
