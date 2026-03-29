@@ -128,55 +128,58 @@ export default function VideoDemo({
     }, 5)
   }, [isSeeking])
 
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!videoRef.current) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const percent = (e.clientX - rect.left) / rect.width
-    const time = percent * videoRef.current.duration
+  const seekAtClientX = useCallback((clientX: number) => {
+    if (!progressBarRef.current || !videoRef.current) return
+    const rect = progressBarRef.current.getBoundingClientRect()
+    const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
     setProgress(percent * 100)
-    jumpVideo(time)
+    jumpVideo(percent * videoRef.current.duration)
+  }, [jumpVideo])
+
+  const handleSeekClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoRef.current) return
+    seekAtClientX(e.clientX)
   }
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    suppressToggleRef.current = true;
-    setIsDragging(true);
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation()
+    suppressToggleRef.current = true
+    setIsDragging(true)
+    seekAtClientX(e.clientX)
 
     if (videoRef.current && !videoRef.current.paused) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-      setShowControls(true);
+      videoRef.current.pause()
+      setIsPlaying(false)
+      setShowControls(true)
     }
   }
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handlePointerMove = useCallback((e: PointerEvent) => {
     if (!isDragging) return
-    if (!progressBarRef.current || !videoRef.current) return
-    const rect = progressBarRef.current.getBoundingClientRect()
-    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-    setProgress(percent * 100)
-    jumpVideo(percent * videoRef.current.duration)
-  }, [isDragging, jumpVideo])
+    seekAtClientX(e.clientX)
+  }, [isDragging, seekAtClientX])
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
+  const handlePointerUp = useCallback(() => {
+    setIsDragging(false)
     // Clear after click cycle so release-click can't toggle play
     requestAnimationFrame(() => {
-      suppressToggleRef.current = false;
-    });
-  }
+      suppressToggleRef.current = false
+    })
+  }, [])
 
   useEffect(() => {
     if (isDragging) {
       setShowControls(false)
-      document.addEventListener("mousemove", handleMouseMove)
-      document.addEventListener("mouseup", handleMouseUp)
+      document.addEventListener("pointermove", handlePointerMove)
+      document.addEventListener("pointerup", handlePointerUp)
+      document.addEventListener("pointercancel", handlePointerUp)
       return () => {
-        document.removeEventListener("mousemove", handleMouseMove)
-        document.removeEventListener("mouseup", handleMouseUp)
+        document.removeEventListener("pointermove", handlePointerMove)
+        document.removeEventListener("pointerup", handlePointerUp)
+        document.removeEventListener("pointercancel", handlePointerUp)
       }
     }
-  }, [isDragging, handleMouseMove])
+  }, [isDragging, handlePointerMove, handlePointerUp])
 
   // Handle range slider change with both handles
   const onRangeChange = useCallback((values: number[]) => {
@@ -206,12 +209,10 @@ export default function VideoDemo({
   return (
     <>
       {url ? (
-        <div className="w-full px-4 py-6 flex justify-center max-sm:px-0">
+        <div className="w-full px-4 pt-6 pb-0 flex justify-center max-sm:px-0">
           <div
             ref={containerRef}
-            className={`relative w-full overflow-hidden rounded-3xl bg-black/40 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] ${
-              mode === "trim" ? "" : "max-h-[400px]"
-            }`}
+            className="relative w-full  overflow-hidden rounded-3xl bg-black/40 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)]"
             onClick={mode === "trim" ? undefined : togglePlay}
           >
             <video
@@ -229,7 +230,7 @@ export default function VideoDemo({
                   }
                 }
               }}
-              className={`w-full ${mode === "trim" ? "h-auto" : "h-full object-cover"}`}
+              className="w-full h-auto object-contain bg-black"
             />
 
             {/* Center Play / Pause - Playback mode only */}
@@ -251,12 +252,12 @@ export default function VideoDemo({
             {mode === "playback" && (
               <div
                 ref={progressBarRef}
-                className="absolute bottom-0 left-0 right-0 h-2.5 bg-white/20 cursor-pointer border-t border-white"
+                className="absolute bottom-0 left-0 right-0 h-2.5 bg-white/20 cursor-pointer border-t border-white touch-none"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  handleSeek(e);
+                  e.stopPropagation()
+                  handleSeekClick(e)
                 }}
-                onMouseDown={handleMouseDown}
+                onPointerDown={handlePointerDown}
               >
                 <div
                   className="h-full bg-white"

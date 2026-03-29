@@ -53,10 +53,7 @@ const TAB_CONFIGS = {
 };
 
 export default function ResultBox({ analysis, issue, totalIssues, video_url, activeProblem, setActiveProblem }: ResultBoxProps) {
-  if (!analysis || !issue) return null;
   const navigate = useNavigate();
-
-  console.log("analysis_issue_id:", issue.analysis_issue_id);
 
   const {
     direction,
@@ -64,10 +61,12 @@ export default function ResultBox({ analysis, issue, totalIssues, video_url, act
     onPreviousIssue,
   } = useResultNavigation(activeProblem, setActiveProblem, totalIssues);
 
+  if (!analysis || !issue) return null;
+
   return (
     <>
       {/* Asymmetric grid: 2fr card, 1fr video. Stacks on mobile */}
-      <div className="w-full max-w-5xl mx-auto px-1 md:px-4 sm:px-6 lg:px-8 mt-1 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start">
+      <div className="w-full max-w-5xl mx-auto px-1 md:px-4 sm:px-6 lg:px-8 mt-1 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6 items-start pb-[max(2px,env(safe-area-inset-bottom))] lg:pb-0">
         <div className="w-full flex justify-center overflow-hidden">
           <motion.div
             key={activeProblem}
@@ -92,8 +91,10 @@ export default function ResultBox({ analysis, issue, totalIssues, video_url, act
           </motion.div>
         </div>
 
-        {/* Video constrained to match card height */}
-        <VideoDemo url={video_url} />
+        {/* Video under card on mobile, right column on desktop */}
+        <div className="w-full lg:self-start mb-4">
+          <VideoDemo url={video_url} />
+        </div>
       </div>
     </>
   );
