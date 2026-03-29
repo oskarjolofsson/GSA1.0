@@ -10,7 +10,7 @@ interface AnalysisSidebarProps {
 }
 
 export default function AnalysisSidebar({ allAnalyses, activeAnalysis, onSelectAnalysis }: AnalysisSidebarProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "Unknown date";
