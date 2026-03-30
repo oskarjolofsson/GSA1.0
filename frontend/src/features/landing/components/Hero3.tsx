@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import '@fontsource/patrick-hand';
 
 type HeroSectionProps = {
   imageUrl?: string;
@@ -8,18 +9,14 @@ export default function HeroSection({ imageUrl }: HeroSectionProps) {
     const navigate = useNavigate();
 
   return (
-    <section className="relative overflow-hidden bg-slate-950 text-white">
+    <section className="relative overflow-hidden text-white">
       {/* Background glow */}
       <div className="absolute inset-0">
         <div className="absolute left-1/2 top-0 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-emerald-500/20 blur-3xl" />
         <div className="absolute right-[-120px] top-24 h-[320px] w-[320px] rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="absolute left-[-100px] bottom-0 h-[280px] w-[280px] rounded-full bg-lime-400/10 blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_35%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(15,23,42,0.35),rgba(2,6,23,0.95))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_35%)]" /> 
       </div>
-
-      {/* Grid texture */}
-      <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] [background-size:56px_56px]" />
 
       <div className="relative mx-auto flex min-h-[100svh] max-w-7xl items-center px-6 py-20 sm:px-8 lg:px-12">
         <div className="grid w-full items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
@@ -101,8 +98,7 @@ export default function HeroSection({ imageUrl }: HeroSectionProps) {
                     <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/35">Before</p>
                       <div className="mt-2.5 space-y-1.5 text-white/68">
-                        <p className="text-base font-medium sm:text-lg">Inconsistent shots</p>
-                        <p className="text-base font-medium sm:text-lg">Guessing what to practice</p>
+                        <p className="text-base font-medium sm:text-xl text-red-300" style={{ fontFamily: '"Patrick Hand", cursive' }}>Hard Work</p>
                       </div>
                     </div>
 
@@ -117,8 +113,8 @@ export default function HeroSection({ imageUrl }: HeroSectionProps) {
                       <div className="relative">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-300/90">After using TrueSwing</p>
                         <div className="mt-2.5 space-y-1.5 text-white">
-                          <p className="text-base font-semibold sm:text-lg">Clear plan</p>
-                          <p className="text-base font-semibold sm:text-lg">Consistent, confident shots</p>
+                          {/* <p className="text-base font-semibold sm:text-lg">Clear plan</p> */}
+                          <p className="text-base font-semibold sm:text-lg">Smart Practice</p>
                         </div>
                       </div>
                     </div>
