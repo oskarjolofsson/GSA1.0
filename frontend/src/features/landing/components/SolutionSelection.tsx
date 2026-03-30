@@ -1,4 +1,5 @@
 import { TypeAnimation } from 'react-type-animation';
+import '@fontsource/patrick-hand';
 
 export default function SolutionSection() {
   const solutionSteps = [
@@ -9,15 +10,15 @@ export default function SolutionSection() {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-slate-950 text-white">
+    <section className="relative overflow-hidden text-white">
       <div className="absolute inset-0">
         <div className="absolute left-1/2 top-0 h-[320px] w-[320px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="absolute left-0 top-32 h-[240px] w-[240px] rounded-full bg-white/5 blur-3xl" />
         <div className="absolute right-0 top-20 h-[240px] w-[240px] rounded-full bg-cyan-400/5 blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))]" />
+        {/* <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,6,23,0.95),rgba(2,6,23,1))]" /> */}
       </div>
-
-      <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.65)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.65)_1px,transparent_1px)] [background-size:56px_56px]" />
+      {/* 
+      <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.65)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.65)_1px,transparent_1px)] [background-size:56px_56px]" /> */}
 
       <div className="relative mx-auto max-w-7xl px-6 py-20 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-3xl text-center">
@@ -33,7 +34,7 @@ export default function SolutionSection() {
         <div className="mx-auto mt-12 max-w-6xl">
           <div className="grid gap-4 md:gap-5 lg:grid-cols-[0.9fr_auto_1.1fr] lg:items-stretch">
             {/* Problem side */}
-            <div className="relative overflow-hidden rounded-[2rem] border border-rose-400/10 bg-white/[0.03] p-4 shadow-2xl shadow-black/30 backdrop-blur-xl">
+            <div className="flex items-center relative overflow-hidden rounded-[2rem] border border-rose-400/10 bg-white/[0.03] p-4 shadow-2xl shadow-black/30 backdrop-blur-xl">
               <div className="absolute right-8 top-8 h-32 w-32 rounded-full bg-rose-400/18 blur-3xl" />
               <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(244,63,94,0.14),transparent_48%)]" />
 
@@ -51,22 +52,23 @@ export default function SolutionSection() {
                 </p>
 
                 <div className="mt-8 rounded-[1.5rem] border border-rose-400/10 bg-rose-950/20 p-5">
-                  <div className="space-y-3 text-white/72">
+                  <div className="flex min-h-[3.5rem] items-center space-y-3 text-white/72 sm:min-h-[2rem]">
                     <TypeAnimation
-                        sequence={[
-                            "Hitting balls without direction",
-                            3000,
-                            "Guessing what to work on",
-                            3000,
-                            "Reinforcing the same mistakes",
-                            3000,
-                        ]}
-                        repeat={Infinity}
-                        cursor={false}
-                        className="text-base sm:text-lg"
-                        wrapper="p"
-                        speed={70}
-                        deletionSpeed={90}
+                      sequence={[
+                        "Hitting balls without direction?",
+                        3000,
+                        "Guessing what to work on?",
+                        3000,
+                        "Reinforcing the same mistakes?",
+                        3000,
+                      ]}
+                      repeat={Infinity}
+                      cursor={false}
+                      className="text-base leading-7 sm:text-lg sm:leading-7 text-red-300"
+                      wrapper="p"
+                      speed={70}
+                      deletionSpeed={90}
+                      style={{ fontFamily: '"Patrick Hand", cursive' }}
                     />
                   </div>
                 </div>
