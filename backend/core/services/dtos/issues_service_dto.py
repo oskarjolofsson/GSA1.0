@@ -32,6 +32,7 @@ class SimplifiedIssueProgressDTO:
     total_successful_reps: int
     overall_success_rate: float | None
     recent_session_success_rates: float | None       # Success rates for the most recent sessions, used for trend analysis
+    delta: float | None
     last_completed_at: datetime | None = None
 
 
