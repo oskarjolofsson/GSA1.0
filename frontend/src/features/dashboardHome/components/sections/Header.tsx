@@ -1,18 +1,18 @@
 import { Flame, LandPlot, LineChart, Target } from "lucide-react"
 import { motion } from "framer-motion"
 import StatCard from "../StatCard"
+import { useAuth } from "@/features/auth/hooks/useAuth"
+import { LoadingState } from "@/shared/components/cards/loading"
 
 
-const user = {
-  name: "Alex",
-  totalAnalyses: 24,
-  activeIssues: 5,
-  streak: 9,
-  weeklySessions: 3,
-};
 
 
 export default function Header() {
+    const { user } = useAuth();
+
+    if (!user) {
+        return <LoadingState title="Loading User" />;
+    }
 
     return (
         <section>
@@ -36,18 +36,18 @@ export default function Header() {
 
                     <StatCard
                         label="Total analyses"
-                        value={user.totalAnalyses}
+                        value={24}
                         icon={LineChart}
                     />
                     <StatCard
                         label="Active issues"
-                        value={user.activeIssues}
+                        value={5}
 
                         icon={Target}
                     />
                     <StatCard
                         label="Practice streak"
-                        value={`${user.streak} days`}
+                        value={`${9} days`}
                         icon={Flame}
                     />
                 </div>

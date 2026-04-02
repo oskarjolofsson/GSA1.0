@@ -1,7 +1,7 @@
 import { LineChart, TrendingDown, TrendingUp } from "lucide-react";
 
-export function getTrendMeta(trend: string) {
-  if (trend === "up") {
+export function getTrendMeta(trend: number) {
+  if (trend > 0) {
     return {
       label: "Improving",
       icon: TrendingUp,
@@ -11,7 +11,7 @@ export function getTrendMeta(trend: string) {
     };
   }
 
-  if (trend === "down") {
+  if (trend < 0) {
     return {
       label: "Needs attention",
       icon: TrendingDown,
