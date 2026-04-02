@@ -42,9 +42,9 @@ export default function HeroSection({ imageUrl }: HeroSectionProps) {
                 <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
               </button>
 
-              <button className="inline-flex min-w-[220px] items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-4 text-base font-semibold text-white backdrop-blur-md transition hover:bg-white/10">
+              {/* <button className="inline-flex min-w-[220px] items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-4 text-base font-semibold text-white backdrop-blur-md transition hover:bg-white/10">
                 See a Demo
-              </button>
+              </button> */}
             </div>
 
             <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-white/55 lg:justify-start">

@@ -34,7 +34,7 @@ export default function Header() {
 
                 <div className="hidden xl:grid w-full grid-cols-1 gap-3 sm:grid-cols-3 lg:max-w-3xl">
 
-                    <StatCard
+                    {/* <StatCard
                         label="Total analyses"
                         value={24}
                         icon={LineChart}
@@ -44,12 +44,12 @@ export default function Header() {
                         value={5}
 
                         icon={Target}
-                    />
-                    <StatCard
+                    /> */}
+                    {/* <StatCard
                         label="Practice streak"
                         value={`${9} days`}
                         icon={Flame}
-                    />
+                    /> */}
                 </div>
             </motion.div>
         </section>
