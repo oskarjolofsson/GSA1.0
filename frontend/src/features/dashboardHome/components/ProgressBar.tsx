@@ -2,8 +2,8 @@ import { getTrendMeta } from "../utils/getTrendData";
 import { motion } from "framer-motion";
 import { cn } from "../utils/cn";
 
-export default function ProgressBar({ value, trend }: { value: number; trend?: string }) {
-  const meta = getTrendMeta(trend || "flat");
+export default function ProgressBar({ value, delta }: { value: number; delta?: number }) {
+  const meta = getTrendMeta(delta || 0);
 
   return (
     <div className="w-full">

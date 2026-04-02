@@ -45,5 +45,6 @@ interface AnalysisIssueProgress {
     total_successful_reps: number;
     overall_success_rate: number | null;
     recent_session_success_rates: number | null;
+    delta: number | null;
     last_completed_at: string | null;
 }

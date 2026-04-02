@@ -1,4 +1,5 @@
 import IssueMiniCard from "../IssueMiniCard";
+import type { Issue } from "@/features/issues/types";
 
 const issueMomentum = [
   { name: "Early Extension", score: 74, trend: "up", status: "Improving" },
@@ -9,7 +10,7 @@ const issueMomentum = [
   { name: "Early Release", score: 51, trend: "down", status: "Needs attention" },
 ];
 
-export default function IssueProgress() {
+export default function IssueProgress( {issues} : {issues: Issue[]}) {
     return (
         <section className="mt-8">
             <div className="flex items-end justify-between gap-4">
@@ -23,8 +24,8 @@ export default function IssueProgress() {
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {issueMomentum.map((issue) => (
-                    <IssueMiniCard key={issue.name} {...issue} />
+                {issues.map((issue) => (
+                    <IssueMiniCard key={issue.id} issue={issue} />
                 ))}
             </div>
         </section>
