@@ -13,14 +13,10 @@ type HeroProps = {
     issue: Issue;
 };
 
-
-
-
-
 export default function Hero( {issue} : HeroProps ) {
 
-    const hasStarted = (issue.progress?.completed_sessions ?? 0) > 0;
-    const focusTrend = getTrendMeta(issue.progress?.delta ?? 0);
+    const hasStarted = (issue?.progress?.completed_sessions ?? 0) > 0;
+    const focusTrend = getTrendMeta(issue?.progress?.delta ?? 0);
     const FocusTrendIcon = focusTrend.icon;
 
     const navigate = useNavigate();
