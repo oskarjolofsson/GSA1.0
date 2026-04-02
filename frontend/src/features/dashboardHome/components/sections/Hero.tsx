@@ -54,7 +54,7 @@ export default function Hero( {issue} : HeroProps ) {
                                 {hasStarted ? (
                                     <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white/62">
                                         <ArrowUpRight className="h-4 w-4 text-sky-200" />
-                                        Up {issue.progress?.delta ?? 0 }% over your last 5 sessions
+                                        Up {Math.floor((issue.progress?.delta ?? 0) * 100) }% over your last {Math.min(issue.progress?.completed_sessions ?? 0, 5)} sessions
                                     </div>
                                 ) : (
                                     <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white/62">

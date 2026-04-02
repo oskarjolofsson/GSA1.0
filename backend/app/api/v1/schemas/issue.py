@@ -24,6 +24,7 @@ class IssueProgress(BaseModel):
     total_successful_reps: int
     overall_success_rate: float | None
     recent_session_success_rates: float | None
+    delta: float | None
     last_completed_at: str | None = None
 
 
@@ -59,6 +60,7 @@ class GetIssue(BaseModel):
                 total_successful_reps=dto.progress.total_successful_reps,
                 overall_success_rate=dto.progress.overall_success_rate,
                 recent_session_success_rates=dto.progress.recent_session_success_rates,
+                delta=dto.progress.delta,
                 last_completed_at=dto.progress.last_completed_at.isoformat()
                 if isinstance(dto.progress.last_completed_at, datetime)
                 else dto.progress.last_completed_at,

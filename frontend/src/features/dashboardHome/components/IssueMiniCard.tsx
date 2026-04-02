@@ -32,7 +32,7 @@ export default function IssueMiniCard({ issue }: {issue: Issue}) {
           <div>
             <p className="text-sm font-medium text-white">{issue.title}</p>
             {hasStarted && (
-                <p className="mt-1 text-xs text-white/45">Last 5 sessions average</p>
+                <p className="mt-1 text-xs text-white/45">Last {Math.min(issue.progress?.completed_sessions ?? 0, 5)} sessions average</p>
             )}
           </div>
           <div className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium", meta.tone)}>
