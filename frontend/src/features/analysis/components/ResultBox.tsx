@@ -92,7 +92,7 @@ export default function ResultBox({ analysis, issue, totalIssues, video_url, act
         </div>
 
         {/* Video under card on mobile, right column on desktop */}
-        <div className="w-full lg:self-start mb-4">
+        <div className="w-full lg:self-start mb-4 pb-20">
           <VideoDemo url={video_url} />
         </div>
       </div>
