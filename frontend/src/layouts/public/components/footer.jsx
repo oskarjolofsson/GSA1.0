@@ -64,10 +64,10 @@ function LowerBar() {
         {LowerLeft()}
 
         <div className="flex items-center gap-3">
-          <Reddit/>
+          {/* <Reddit/> */}
           <FaceBook/>
           <Instagram/>
-          <X/>
+          {/* <X/> */}
           <LinkedIn/>
         </div>
         
