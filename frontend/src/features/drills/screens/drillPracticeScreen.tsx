@@ -1,87 +1,111 @@
-import ProgressBar from '../components/practicePage/progressbar.jsx';
-import DrillPopup from '../components/practicePage/instructions';
-import Indicator from '../components/practicePage/indicator.jsx';
-import { ErrorState, } from '@/shared/components/cards/error.js';
-import { LoadingState } from '@/shared/components/cards/loading.js';
-import { usePracticeScreenState } from '../hooks/usePracticeScreenState.js';
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-
+import ProgressBar from "../components/practicePage/progressbar";
+import DrillPopup from "../components/practicePage/instructions";
+import PracticeActionCard from "../components/practicePage/practiceActioncard";
+import { ErrorState } from "@/shared/components/cards/error";
+import { LoadingState } from "@/shared/components/cards/loading";
+import { usePracticeScreenState } from "../hooks/usePracticeScreenState";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 export default function DrillsPracticeScreen() {
     const [searchParams] = useSearchParams();
-    const issueId = searchParams.get('issueId');
+    const issueId = searchParams.get("issueId");
     const [isInstructionsOpen, setIsInstructionsOpen] = useState(true);
-    const { activeDrill, remainingDrillsCount, practiceReady, progress, handleSuccess, handleFailure, loading, error } =
-        usePracticeScreenState(issueId || '');
+
+    const {
+        activeDrill,
+        progress,
+        handleSuccess,
+        handleFailure,
+        loading,
+        error,
+    } = usePracticeScreenState(issueId || "");
 
     useEffect(() => {
         setIsInstructionsOpen(true);
     }, [activeDrill?.id]);
 
     if (!issueId) {
-        return <ErrorState title="Issue Not Found" error={new Error('Issue ID is required to load drills')} onRetry={() => window.location.reload()} />;
+        return (
+            <ErrorState
+                title="Issue Not Found"
+                error={new Error("Issue ID is required to load drills")}
+                onRetry={() => window.location.reload()}
+            />
+        );
     }
 
     if (loading) {
         return (
-            <LoadingState title="Loading Drills" message="Fetching drills for this issue..." />
+            <LoadingState
+                title="Loading Drills"
+                message="Fetching drills for this issue..."
+            />
         );
     }
 
     if (error) {
-        return <ErrorState title="Failed to Load Drills" error={new Error(error)} onRetry={() => window.location.reload()} />;
+        return (
+            <ErrorState
+                title="Failed to Load Drills"
+                error={new Error(error)}
+                onRetry={() => window.location.reload()}
+            />
+        );
     }
 
     if (!activeDrill) {
-        return <ErrorState title="No Drills Found" error={new Error('No drills are available for this issue.')} onRetry={() => window.location.reload()} />;
+        return (
+            <ErrorState
+                title="No Drills Found"
+                error={new Error("No drills are available for this issue.")}
+                onRetry={() => window.location.reload()}
+            />
+        );
     }
 
     return (
-        <div className="h-screen text-slate-100 reminder flex flex-col overflow-hidden">
-            <div className="w-full max-w-4xl mx-auto px-4 py-3 xs:py-4 md:py-6 flex flex-col gap-2 xs:gap-3 md:gap-6 h-full animate-fade-in">
-
-                <div className='mt-12 md:mt-2'>
-                    <ProgressBar succeeded={progress.succeeded} failed={progress.failed} total={progress.total} />
-                </div>
-                
-
-                <div className="grid grid-cols-1 items-center flex-1 min-h-0 mx-auto w-full">
-                    <button
-                        type="button"
-                        onClick={() => setIsInstructionsOpen(true)}
-                        className="mx-auto rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-500 hover:text-white"
-                    >
-                        Show Drill Instructions
-                    </button>
+        <div className="h-[100dvh] overflow-hidden text-slate-100 reminder">
+            <div className="mx-auto grid h-full w-full max-w-4xl grid-rows-[auto_minmax(0,1fr)] gap-3 px-4 py-3 md:gap-4 md:px-6 md:py-6">
+                <div className="min-h-0">
+                    <ProgressBar
+                        succeeded={progress.succeeded}
+                        failed={progress.failed}
+                        total={progress.total}
+                    />
                 </div>
 
-                <DrillPopup
-                    title={activeDrill.title}
-                    instructions={activeDrill.task}
-                    isOpen={isInstructionsOpen}
-                    onClose={() => setIsInstructionsOpen(false)}
-                />
-
-                <div className="grid grid-cols-2 gap-2 xs:gap-3 md:gap-6 w-full flex-shrink-0">
-                    <Indicator
+                <div className="min-h-0 grid gap-2 sm:gap-3 grid-rows-[1fr_auto_1fr] [@media(orientation:landscape)]:grid-rows-none [@media(orientation:landscape)]:grid-cols-[1fr_minmax(130px,0.46fr)_1fr] min-[900px]:grid-rows-none min-[900px]:grid-cols-[1fr_minmax(150px,0.55fr)_1fr] pb-4 sm:pb-6">
+                    <PracticeActionCard
                         type="success"
-                        title="Mark as Successful"
-                        description={activeDrill.success_signal}
+                        title="Successful"
+                        description="Hips maintain depth and do not move closer to the ball. Chest stays down and posture is maintained. Contact feels more centered and controlled."
                         onClick={handleSuccess}
-                        disabled={!practiceReady}
                     />
-                    <Indicator
-                        type="failure"
-                        title="Mark as Unsuccessful"
-                        description={activeDrill.fault_indicator}
+
+                    <PracticeActionCard
+                        type="instructions"
+                        title=""
+                        description=""
+                        onClick={() => setIsInstructionsOpen(true)}
+                        compact
+                    />
+
+                    <PracticeActionCard
+                        type="fail"
+                        title="Unsuccessful"
+                        description="Hips move toward the ball during the downswing (early extension). Chest lifts up out of posture. Contact becomes inconsistent or thin."
                         onClick={handleFailure}
-                        disabled={!practiceReady}
                     />
-
                 </div>
-
             </div>
+
+            <DrillPopup
+                title={activeDrill.title}
+                instructions={activeDrill.task}
+                isOpen={isInstructionsOpen}
+                onClose={() => setIsInstructionsOpen(false)}
+            />
         </div>
-    )
+    );
 }
