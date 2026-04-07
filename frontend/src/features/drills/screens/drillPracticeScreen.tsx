@@ -4,13 +4,15 @@ import PracticeActionCard from "../components/practicePage/practiceActioncard";
 import { ErrorState } from "@/shared/components/cards/error";
 import { LoadingState } from "@/shared/components/cards/loading";
 import { usePracticeScreenState } from "../hooks/usePracticeScreenState";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import useAwakeScreen from "../hooks/useAwakeScreen";
 
 export default function DrillsPracticeScreen() {
     const [searchParams] = useSearchParams();
     const issueId = searchParams.get("issueId");
     const [isInstructionsOpen, setIsInstructionsOpen] = useState(true);
+    useAwakeScreen();
 
     const {
         activeDrill,
