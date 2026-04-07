@@ -1,5 +1,8 @@
-import { Eye, Star, AlertTriangle, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { Issue } from "@/features/issues/types";
+import InfoPopup from "./popup";
+import { InfoButton } from "./InfoButton";
 
 interface ResultHeroCardProps {
   prioNumber?: number;
@@ -16,166 +19,132 @@ export default function ResultHeroCard({
   issue,
   onClickDrill,
   onNextIssue,
-  onPreviousIssue
+  onPreviousIssue,
 }: ResultHeroCardProps) {
-
-  if (!onClickDrill) {
-    console.warn("onClickDrill function is not provided. Drill button will not be shown.");
-  }
+  const [activePopup, setActivePopup] = useState<"happening" | "feel" | null>(null);
 
   return (
-    <section className="w-full md:px-4 md:py-6 flex justify-center max-sm:px-0" aria-label="Top priority summary">
-      <div className="relative w-full overflow-hidden rounded-3xl h-fit sm:h-auto">
-        {/* Card */}
-        <div className="relative rounded-3xl bg-[#0e1428]/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] p-3 sm:p-8 min-h-[450px]  sm:min-h-[300px] flex flex-col">
-          {/* Top row */}
-          <div className="flex items-center justify-between gap-3 mb-4">
-            {/* Kicker */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
-              <span
-                className="h-2 w-2 rounded-full bg-emerald-500"
-                aria-hidden="true"
-              />
-              <span className="text-xs uppercase tracking-widest text-slate-300">
-                Summary
-              </span>
+    <>
+      <section
+        className="w-full md:px-4 md:py-6 flex justify-center max-sm:px-0"
+        aria-label="Top priority summary"
+      >
+        <div className="relative w-full overflow-hidden rounded-3xl h-fit sm:h-auto">
+          <div className="relative rounded-3xl bg-[#0e1428]/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] p-3 sm:p-8 min-h-[450px] sm:min-h-[300px] flex flex-col">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                <span className="text-xs uppercase tracking-widest text-slate-300">
+                  Summary
+                </span>
+              </div>
+
+              <div className="inline-flex items-baseline gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
+                <span className="text-xs uppercase tracking-widest text-slate-400">
+                  Priority
+                </span>
+                <span className="text-sm font-semibold text-slate-100">
+                  #{prioNumber}
+                </span>
+              </div>
             </div>
 
-            {/* Priority pill */}
-            <div className="inline-flex items-baseline gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5">
-              <span className="text-xs uppercase tracking-widest text-slate-400">
-                Priority
-              </span>
-              <span className="text-sm font-semibold text-slate-100">
-                #{prioNumber}
-              </span>
+            <div className="mb-4 text-center sm:mb-6">
+              <h2 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">
+                {issue.title}
+              </h2>
+
+              {issue.description && (
+                <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-300 sm:mt-3 sm:text-base sm:leading-7">
+                  {issue.description}
+                </p>
+              )}
             </div>
-          </div>
 
-          {/* Title */}
-          <div className="mb-4 text-center sm:mb-6">
-            <h2 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">
-              {issue.title}
-            </h2>
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+              {issue.current_motion && (
+                <InfoButton
+                  title="What’s happening"
+                  subtitle="Tap to see the current swing pattern"
+                  tone="amber"
+                  icon={<AlertTriangle size={18} />}
+                  onClick={() => setActivePopup("happening")}
+                />
+              )}
 
-            {issue.description && (
-              <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-300 sm:mt-3 sm:text-base sm:leading-7">
-                {issue.description}
-              </p>
-            )}
-          </div>
+              {issue.expected_motion && (
+                <InfoButton
+                  title="What to feel instead"
+                  subtitle="Tap to see the motion you want"
+                  tone="emerald"
+                  icon={<Sparkles size={18} />}
+                  onClick={() => setActivePopup("feel")}
+                />
+              )}
+            </div>
 
-          {/* Main content */}
-          <div className="space-y-3 sm:space-y-4">
-            {issue.current_motion && (
-              <section className="rounded-xl border border-amber-400/15 bg-amber-400/5 p-3 sm:rounded-2xl sm:p-5">
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400/15 text-amber-300 sm:h-8 sm:w-8">
-                    <AlertTriangle size={14} className="sm:hidden" />
-                    <AlertTriangle size={16} className="hidden sm:block" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-200/80 sm:text-[11px] sm:tracking-[0.18em]">
-                      What’s happening
-                    </p>
-                  </div>
+            <div className="mt-auto border-t border-white/10 pt-6">
+              <div className="flex flex-col gap-3">
+                {onClickDrill && (
+                  <button
+                    type="button"
+                    className="w-full rounded-2xl bg-emerald-500/90 px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-emerald-900/30 transition-colors hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    onClick={onClickDrill}
+                  >
+                    Start Practice #{prioNumber}
+                  </button>
+                )}
+
+                <div className="flex w-full items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={onPreviousIssue}
+                    disabled={prioNumber <= 1}
+                    className="group flex h-14 flex-1 items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 transition-all duration-200 hover:border-white/15 hover:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-slate-200">
+                        <ChevronLeft size={18} />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-100">Previous</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onNextIssue}
+                    disabled={prioNumber >= totalIssues}
+                    className="group flex h-14 flex-1 items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 transition-all duration-200 hover:border-white/15 hover:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <span className="text-sm font-semibold text-slate-100">Next</span>
+                    <div className="ml-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 text-slate-200">
+                      <ChevronRight size={18} />
+                    </div>
+                  </button>
                 </div>
-
-                <p className="pl-9 text-sm leading-6 text-slate-200 sm:pl-10 sm:text-base sm:leading-7">
-                  {issue.current_motion}
-                </p>
-              </section>
-            )}
-
-            {issue.expected_motion && (
-              <section className="rounded-xl border border-emerald-400/15 bg-emerald-400/5 p-3 sm:rounded-2xl sm:p-5">
-                <div className="mb-2 flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300 sm:h-8 sm:w-8">
-                    <Sparkles size={14} className="sm:hidden" />
-                    <Sparkles size={16} className="hidden sm:block" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-200/80 sm:text-[11px] sm:tracking-[0.18em]">
-                      What to feel instead
-                    </p>
-                  </div>
-                </div>
-
-                <p className="pl-9 text-sm leading-6 text-slate-200 sm:pl-10 sm:text-base sm:leading-7">
-                  {issue.expected_motion}
-                </p>
-              </section>
-            )}
-          </div>
-
-
-          {/* Actions */}
-          <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-6 max-sm:flex-col max-sm:items-stretch">
-            {onClickDrill && (
-              <button
-                type="button"
-                className="whitespace-nowrap rounded-xl bg-emerald-500/90 hover:bg-emerald-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-900/30 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                onClick={onClickDrill}
-              >
-                Start Practice #{prioNumber}
-              </button>
-            )}
-
-            <div className="flex items-center justify-end gap-3 max-sm:justify-center">
-
-              <button
-                type="button"
-                className="text-xs font-medium text-slate-400 hover:text-slate-200 px-3 py-1 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-slate-500"
-                onClick={onPreviousIssue}
-                disabled={prioNumber <= 1}
-              >
-                Previous
-              </button>
-
-              <button
-                type="button"
-                className="text-xs font-medium text-slate-400 hover:text-slate-200 px-3 py-1 rounded-lg hover:bg-white/5 transition-colors focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:text-slate-500"
-                onClick={onNextIssue}
-                disabled={prioNumber >= totalIssues}
-              >
-                Next
-              </button>
-
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <InfoPopup
+        open={activePopup === "happening"}
+        onClose={() => setActivePopup(null)}
+        title="What’s happening"
+        text={issue.current_motion ?? ""}
+        tone="amber"
+        icon={<AlertTriangle size={18} />}
+      />
+
+      <InfoPopup
+        open={activePopup === "feel"}
+        onClose={() => setActivePopup(null)}
+        title="What to feel instead"
+        text={issue.expected_motion ?? ""}
+        tone="emerald"
+        icon={<Sparkles size={18} />}
+      />
+    </>
   );
 }
-
-
-function formatPhase(phase: string | null) {
-  if (!phase) return "Swing Issue";
-
-  return phase
-    .toLowerCase()
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function getConfidenceLabel(confidence?: number) {
-  if (confidence == null) return null;
-  const percent = Math.round(confidence * 100);
-
-  if (percent >= 85) return `High confidence`;
-  if (percent >= 65) return `Medium confidence`;
-  return `Low confidence`;
-}
-
-function splitTags(value: string | null) {
-  if (!value) return [];
-
-  return value
-    .split(/[•,|/]/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 4);
-}
-
