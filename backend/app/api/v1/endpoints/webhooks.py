@@ -1,23 +1,23 @@
-from fastapi import APIRouter, Depends
-from fastapi import APIRouter, Request, Header, HTTPException
-from core.infrastructure.payment.stripe.webhook import StripeWebhookVerifier
+from fastapi import APIRouter, Depends, Header, Request
+from sqlalchemy.orm import Session
+
+from app.dependencies.db import get_db
+from core.services.payment import billing_service
 
 router = APIRouter()
-
-router = APIRouter()
-verifier = StripeWebhookVerifier()
 
 @router.post("/stripe/")
 async def stripe(
     request: Request,
     stripe_signature: str = Header(alias="Stripe-Signature"),
+    db: Session = Depends(get_db),
 ):
     payload = await request.body()
 
-    try:
-        event = verifier.construct_event(payload, stripe_signature)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid Stripe signature")
+    await billing_service.handle_stripe_webhook(
+        payload=payload,
+        signature=stripe_signature,
+        db_session=db,
+    )
 
-    # send event to service layer here
     return {"received": True}

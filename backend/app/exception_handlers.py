@@ -7,8 +7,10 @@ from core.services.exceptions import (
     ValidationException,
     ServiceException,
     InvalidVideoException,
-    ForbiddenException
+    ForbiddenException,
+    ConflictException
 )
+from core.infrastructure.payment.stripe import exceptions
 from core.infrastructure.auth.exceptions import AuthenticationError
 from traceback import format_exc
 
@@ -74,3 +76,21 @@ async def unauthorized_exception_handler(request: Request, exc: UnauthorizedExce
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={"detail": str(exc)},
     )
+    
+    
+async def conflict_exception_handler(request: Request, exc: ConflictException):
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={"detail": str(exc)},
+    )
+
+
+async def stripe_infrastructure_exception_handler(
+    request: Request,
+    exc: exceptions.StripeInfrastructureError,
+):
+    return JSONResponse(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        content={"detail": str(exc)},
+    )
+    

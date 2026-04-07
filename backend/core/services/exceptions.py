@@ -42,3 +42,8 @@ class ForbiddenException(ServiceException):
     """Raised when a user tries to access a resource they are forbidden from accessing."""
     def __init__(self, message: str):
         super().__init__(message)
+        
+        
+class ConflictException(ServiceException):
+    def __init__(self, message: str):
+        super().__init__(message)
