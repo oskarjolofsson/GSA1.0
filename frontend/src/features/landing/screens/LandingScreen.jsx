@@ -43,7 +43,7 @@ export default function LandingScreen() {
                 {/* Border between solution and the rest  */}
                 <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
-            <PricingSection id="pricing" />
+            {/* <PricingSection id="pricing" /> */}
 
             <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
 
