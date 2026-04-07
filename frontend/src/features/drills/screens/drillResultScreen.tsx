@@ -3,13 +3,42 @@ import { DrillRun } from "../types";
 // Components
 import DrillResults from "../components/resultsPage/drillResults";
 import IssueResults from "../components/resultsPage/issueResults";
+import NextIssue from "../components/resultsPage/nextIssue";
 import { useSearchParams } from "react-router-dom";
 import { usePracticeResultsState } from "../hooks/usePracticeResultsState";
+import { useIssue } from "@/features/issues/hooks/useUserIssues";
+import { ErrorState } from "@/shared/components/cards/error";
+import { LoadingState } from "@/shared/components/cards/loading";
 
 export default function DrillResultsScreen() {
     const [searchParams] = useSearchParams();
     const sessionId: string | null = searchParams.get('sessionId');
     const drillRuns: DrillRun[] = usePracticeResultsState({ sessionId }).DrillRuns;
+    const { issues, loading, error } = useIssue();
+    const nextIssue = [...issues].sort((a, b) => {
+        const rateA = a.progress?.recent_session_success_rates ?? 0;
+        const rateB = b.progress?.recent_session_success_rates ?? 0;
+        return rateA - rateB; // Minst först
+    })[0];
+
+    if (loading) {
+        return (
+            <LoadingState
+                title="Loading Practice Results"
+                message="Fetching your practice results..."
+            />
+        );
+    }
+
+    if (error) {
+        return (
+            <ErrorState
+                title="Failed to Load Practice Results"
+                error={new Error(error)}
+                onRetry={() => window.location.reload()}
+            />
+        );
+    }
 
     return (
         <div className="w-full max-w-6xl mx-auto px-4 py-6 md:py-8 animate-fade-in
@@ -21,9 +50,10 @@ export default function DrillResultsScreen() {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-center justify-center">
-                
+
                 <DrillResults drillRuns={drillRuns} />
-                <IssueResults drillRuns={drillRuns} />
+                {/* <IssueResults drillRuns={drillRuns} /> */}
+                <NextIssue issue={nextIssue} />
             </div>
         </div>
     );
