@@ -115,11 +115,9 @@ export function usePracticeScreenState(issueId: string): UsePracticeDrillsReturn
                 const session = await startSession(issue.analysis_issue_id);
                 if (!isMounted) return;
                 setCurrentPracticeSession(session);
-                console.log('Started practice session:', session);  // Debug log to confirm session creation
 
                 const firstDrillRun = await startDrill(session.id, allDrills[0].id);
                 if (!isMounted) return;
-                console.log('Started first drill run:', firstDrillRun);  // Debug log to confirm drill run creation
 
                 setCurrentDrillRun(firstDrillRun);
             } catch (err) {
