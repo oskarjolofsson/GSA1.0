@@ -61,7 +61,7 @@ class StripeGateway:
                 raw=session,
             )
         except Exception as exc:
-            raise StripeInfrastructureError("Failed to create checkout session") from exc
+            raise StripeInfrastructureError("Failed to create checkout session", exc) from exc
 
     def create_billing_portal_session(
         self,
