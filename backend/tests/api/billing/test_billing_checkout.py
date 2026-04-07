@@ -1,6 +1,7 @@
 from core.services.payment import billing_service
 from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
 from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
+from core.infrastructure.db.repositories import profiles as profiles_repo
 from unittest.mock import Mock
 
 
@@ -49,6 +50,32 @@ def test_start_checkout_when_already_subscribed(
 
     assert response.status_code == 409
     assert response.json()["detail"] == "User already has an active subscription"
+    create_checkout_mock.assert_not_called()
+
+
+def test_start_checkout_with_invalid_user_mapping_returns_not_found(
+    client,
+    test_user,
+    auth_headers,
+    db_session,
+    monkeypatch,
+):
+    profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
+    assert profile is not None
+    db_session.delete(profile)
+    db_session.flush()
+
+    create_checkout_mock = Mock()
+    monkeypatch.setattr(
+        billing_service.stripe_gateway,
+        "create_subscription_checkout_session",
+        create_checkout_mock,
+    )
+
+    response = client.post("/api/v1/billing/checkout-session/", headers=auth_headers)
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == f"User with id {test_user['user_id']} not found"
     create_checkout_mock.assert_not_called()
     
     
