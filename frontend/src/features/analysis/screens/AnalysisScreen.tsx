@@ -98,6 +98,19 @@ export default function AnalysisScreen() {
                             activeAnalysis={activeAnalysis}
                             onSelectAnalysis={handleSelectAnalysis}
                         />
+
+                        {totalIssues === 0 && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <TextBox
+                                    header={"No issues detected in your swing"}
+                                    text={"Great job! Your swing looks solid. Do you want to delete this analysis now?"}
+                                    ctaOnClick={() => setShowDeleteConfirm(true)}
+                                    ctaText={"Delete Analysis"}
+                                    redCTA={true}
+                                />
+                            </div>
+                        )}
+
                     </div>
                 ) : (
                     <TextBox 

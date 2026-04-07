@@ -1,6 +1,6 @@
 
 
-export default function TextBox({ header, text, ctaOnClick, ctaText }) {
+export default function TextBox({ header, text, ctaOnClick, ctaText, redCTA = false }) {
   return (
     <section className="relative w-full max-w-4xl mx-auto px-4 mt-[14vh] mb-12 text-center">
       <div
@@ -22,7 +22,8 @@ export default function TextBox({ header, text, ctaOnClick, ctaText }) {
           <div className="mt-6 flex justify-center">
             <button
               onClick={ctaOnClick}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-lg text-sm sm:text-base font-medium transition-colors duration-200"
+              className={`${redCTA ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                } text-white px-5 py-3 rounded-lg text-sm sm:text-base font-medium transition-colors duration-200`}
             >
               {ctaText}
             </button>
