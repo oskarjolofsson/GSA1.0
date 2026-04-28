@@ -19,6 +19,7 @@ CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "a
 
 # To copy the .env.production into prodction, use:
 # scp entire/path/to/.env.production root@188.245.42.39:/root/.env
+# scp /Users/oskarolofsson/ws/personal/GSA1.0/backend/.env.production root@188.245.42.39:/root/.env
 
 
 # To build multi-architecture Docker images, use the following commands:
