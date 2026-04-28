@@ -29,3 +29,10 @@ def get_new_profiles_count(session: Session, days: int) -> int:
         .where(Profile.created_at >= cutoff_date)
     )
     return session.scalar(stmt) or 0
+
+
+# --------------------- Delete ------------------
+
+def delete_profile(profile: Profile, session: Session):
+    session.delete(profile)
+    session.flush()
