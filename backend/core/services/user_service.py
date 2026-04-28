@@ -5,6 +5,7 @@ from core.services import exceptions
 from core.infrastructure.db.repositories.profiles import (
     get_all_profiles,
     get_profile_by_id,
+    delete_profile
 )
 from core.infrastructure.db.repositories import user_roles as user_roles_repo
 from core.infrastructure.db.repositories.analysis import get_analysis_counts_by_user_ids
@@ -12,6 +13,8 @@ from core.infrastructure.db import models
 from sqlalchemy.orm import Session
 from uuid import UUID
 from datetime import datetime, timezone, timedelta
+from supabase import create_client, Client
+from core.config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLL_KEY
 
 
 def get_all_users(session: Session) -> list[GetUserDTO]:
@@ -68,6 +71,20 @@ def set_admin(user_id: str, set_to_admin: bool, session: Session) -> None:
             role_id=admin_role.id, 
             session=session
         )
+        
+        
+def delete_user_by_user_id(user_id: str, user_id_to_delete: str, db_session: Session):
+    if str(user_id) != str(user_id_to_delete):
+        raise exceptions.ForbiddenException(f"User not authorized to delete another user")
+    
+    user_to_delete: models.Profile = get_profile_by_id(str(user_id_to_delete), db_session)
+    if not user_to_delete:
+        raise exceptions.NotFoundException("Profile not found", str(user_id_to_delete))
+    
+    admin_client: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLL_KEY)
+    admin_client.auth.admin.delete_user(str(user_to_delete.id))
+    
+    delete_profile(user_to_delete, db_session)
 
 
 # -------- Helper functions --------
