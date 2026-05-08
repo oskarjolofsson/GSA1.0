@@ -1,57 +1,81 @@
 import LegalContentSection from "../components/legalSection.jsx";
 
 export default function PrivacyScreen() {
-
     return (
         <main className="min-h-screen py-10">
             <LegalContentSection
                 header="Privacy Policy"
-                subheader="Last updated: October 2025"
-                text={`Your privacy matters to us. This Privacy Policy explains how True Swing ("we", "our", "us") collects, uses, and protects your information when you use our website, mobile app, and related services (collectively, the “Service”).`}
+                subheader="Last updated: May 8th 2026"
+                text={`Your privacy matters to us. This Privacy Policy explains how True Swing ("we", "our", "us") collects, uses, stores, and protects your information when you use our website, mobile app, and related services (collectively, the “Service”).`}
             />
 
             <LegalContentSection
                 subheader="Information We Collect"
-                text={`We only collect essential information required to operate your True Swing account and provide our AI-powered golf analysis service.`}
+                text={`We collect the information needed to operate your True Swing account and provide our AI-powered golf analysis service.`}
                 points={[
-                    "Basic profile details such as name, email address, and authentication information.",
-                    "AI-generated data and insights derived from your uploaded golf swing analyses.",
+                    "Basic profile details such as name, email address, user ID, and authentication information.",
+                    "Uploaded golf swing videos and related media that you choose to submit for analysis.",
+                    "AI-generated analysis results, swing feedback, insights, drills, and related practice data.",
+                    "Technical information such as device information, IP address, request metadata, logs, and security-related data needed to operate and protect the Service.",
                 ]}
-            />
-
-            <LegalContentSection
-                subheader="What We Do Not Collect"
-                text={`We do not permanently store any raw user input, video uploads, or manual entries. Once processed for analysis, that data is discarded and not retained in our systems.`}
             />
 
             <LegalContentSection
                 subheader="How We Use Your Information"
-                text={`We use your profile and AI-generated data solely to:`}
+                text={`We use your information solely to operate, secure, and improve the True Swing service.`}
                 points={[
-                    "Provide and improve the True Swing analysis experience.",
-                    "Display personalized insights and analytics within your account.",
-                    "Maintain secure authentication and account access.",
+                    "Create and manage your True Swing account.",
+                    "Authenticate users and maintain secure account access.",
+                    "Upload, store, and display your golf swing videos and related media.",
+                    "Generate AI-powered golf swing analysis and personalized feedback.",
+                    "Display your previous analyses, insights, drills, and practice history within your account.",
+                    "Maintain, debug, secure, and improve the reliability of the Service.",
                 ]}
             />
 
             <LegalContentSection
+                subheader="AI Processing"
+                text={`True Swing uses Google Gemini to provide AI-powered golf swing analysis. When you request an analysis, your uploaded golf swing video and related analysis request may be sent to Gemini for processing. Gemini is used only to generate your swing feedback. We configure Gemini so that your submitted data is not stored by Gemini after processing.`}
+            />
+
+            <LegalContentSection
+                subheader="Media Storage"
+                text={`We use Cloudflare to store and deliver uploaded images, videos, thumbnails, and related media files. This allows us to securely store your swing videos and make them available in your account. Cloudflare may also process technical information such as IP address, request metadata, and security-related information when storing, delivering, or protecting media files.`}
+            />
+
+            <LegalContentSection
+                subheader="Account and Personal Data Storage"
+                text={`We use Supabase to provide authentication, account management, and database storage. Supabase may store information such as your name, email address, user ID, authentication provider information, account data, analysis records, practice data, and other information needed to operate your account.`}
+            />
+
+            <LegalContentSection
+                subheader="What We Do Not Do"
+                text={`We do not sell your personal information. We do not share your personal information, uploaded videos, or AI analysis results with third parties for advertising or marketing purposes. We do not use your uploaded videos or AI analysis results for third-party tracking or targeted advertising.`}
+            />
+
+            <LegalContentSection
                 subheader="Data Retention"
-                text={`We retain your profile and AI-generated analysis data only while your account remains active. When you delete your account, all associated information is permanently removed from our systems within a reasonable timeframe.`}
+                text={`We retain your account information, uploaded media, AI-generated analysis results, and related app data while your account remains active, unless you delete the data or request deletion. When you delete your account, associated personal data, uploaded media, and analysis data are deleted or anonymized within a reasonable timeframe, except where retention is required for legal, security, billing, or fraud-prevention purposes.`}
             />
 
             <LegalContentSection
                 subheader="Data Security"
-                text={`We use encryption and secure storage to protect your information from unauthorized access, alteration, or disclosure. While we take industry-standard measures to protect your data, no system is completely immune to security risks.`}
+                text={`We use technical and organizational measures designed to protect your information from unauthorized access, alteration, disclosure, or destruction. This includes secure storage, access controls, and encrypted transmission where appropriate. However, no system can be guaranteed to be completely secure.`}
             />
 
             <LegalContentSection
                 subheader="Third-Party Services"
-                text={`We do not sell or share your personal information with third parties for marketing or advertising purposes. Third-party providers we use (such as hosting or analytics tools) process data solely on our behalf.`}
+                text={`We use trusted third-party service providers to operate the Service. These providers process data only for the purposes described in this Privacy Policy and on our behalf.`}
+                points={[
+                    "Google Gemini: used to generate AI-powered golf swing analysis.",
+                    "Cloudflare: used for image and video storage, media delivery, infrastructure, and security.",
+                    "Supabase: used for authentication, account management, and database storage.",
+                ]}
             />
 
             <LegalContentSection
                 subheader="Your Rights"
-                text={`You can request deletion of your account at any time. Upon deletion, all profile and AI-generated data will be permanently removed. You may also contact us for access or correction of your information.`}
+                text={`You may request access to, correction of, or deletion of your personal information. You can delete your account in the app or contact us for help with privacy-related requests. When your account is deleted, your personal data, uploaded media, and AI-generated analysis data are deleted or anonymized within a reasonable timeframe, except where we are required to retain certain information for legal, security, billing, or fraud-prevention reasons.`}
             />
 
             <LegalContentSection
@@ -61,8 +85,13 @@ export default function PrivacyScreen() {
 
             <LegalContentSection
                 subheader="Changes to This Policy"
-                text={`We may update this Privacy Policy periodically. Changes will be communicated through the app or website at least 30 days before they take effect.`}
+                text={`We may update this Privacy Policy periodically. If we make material changes, we will communicate them through the app or website before they take effect.`}
+            />
+
+            <LegalContentSection
+                subheader="Contact"
+                text={`If you have questions about this Privacy Policy or how your data is handled, contact us at team@trueswing.se.`}
             />
         </main>
-    )
+    );
 }
