@@ -133,7 +133,7 @@ def analyze_video(
         if not db_session:
             raise ValueError("Database session is required to retrieve issues")
     
-        issues: list[models.Issue] = issue_repo.get_unused_issues_of_user_id(user_id=user_id, session=db_session)
+        issues: list[models.Issue] = issue_repo.get_all_issues(session=db_session)
         print(f"Retrieved {len(issues)} issues from database for user_id: {user_id}")
         print(f"Issue names: {[str(issue.title) for issue in issues]}")
         
