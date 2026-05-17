@@ -5,7 +5,7 @@ export default function PrivacyScreen() {
         <main className="min-h-screen py-10">
             <LegalContentSection
                 header="Privacy Policy"
-                subheader="Last updated: May 8th 2026"
+                subheader="Last updated: May 17th 2026"
                 text={`Your privacy matters to us. This Privacy Policy explains how True Swing ("we", "our", "us") collects, uses, stores, and protects your information when you use our website, mobile app, and related services (collectively, the “Service”).`}
             />
 
@@ -36,6 +36,11 @@ export default function PrivacyScreen() {
             <LegalContentSection
                 subheader="AI Processing"
                 text={`True Swing uses Google Gemini to provide AI-powered golf swing analysis. When you request an analysis, your uploaded golf swing video and related analysis request may be sent to Gemini for processing. Gemini is used only to generate your swing feedback. We configure Gemini so that your submitted data is not stored by Gemini after processing.`}
+            />
+            
+            <LegalContentSection 
+                subheader={"How AI-Generated Content is Labeled"}
+                text={"All swing analysis and feedback provided by True Swing is generated automatically by artificial intelligence (Google Gemini). AI-generated analysis is clearly identified as such within the app. This content is not reviewed or verified by a human coach before delivery and should not be treated as professional instruction. Users are encouraged to use AI feedback as a supplementary tool alongside qualified coaching."}
             />
 
             <LegalContentSection
