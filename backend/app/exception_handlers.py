@@ -40,15 +40,15 @@ async def service_exception_handler(request: Request, exc: ServiceException):
     print(f"Unexpected error: {format_exc()}"   )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": str(exc)},
+        content={"detail": "Internal Error"},
     )
 
 
 async def general_exception_handler(request: Request, exc: Exception):
-    print(f"Unexpected error: {format_exc()}"   )
+    print(f"Unexpected error: {format_exc()}")  
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": f"An unexpected error occurred: {format_exc()}"},
+        content={"detail": "An unexpected internal error occurred"},
     )
 
 async def invalid_video_exception_handler(request: Request, exc: InvalidVideoException):
@@ -89,8 +89,9 @@ async def stripe_infrastructure_exception_handler(
     request: Request,
     exc: exceptions.StripeInfrastructureError,
 ):
+    print(f"Stripe infrastructure error: {format_exc()}")
     return JSONResponse(
         status_code=status.HTTP_502_BAD_GATEWAY,
-        content={"detail": str(exc)},
+        content={"detail": "The payment service is temporarily unavailable. Please try again later."},
     )
     
