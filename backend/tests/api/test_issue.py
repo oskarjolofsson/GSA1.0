@@ -22,6 +22,7 @@ def issue_with_id(client, auth_headers):
         "/api/v1/issues/",
         json={
             "title": "Early Extension",
+            "description": "Golfer's hips move toward the ball during the downswing",
             "phase": "DOWNSWING",
             "current_motion": "Hips thrust forward during downswing",
             "expected_motion": "Hips should rotate while maintaining posture",
@@ -42,6 +43,7 @@ def test_create_issue(client, db_session, auth_headers):
         "/api/v1/issues/",
         json={
             "title": "Chicken Wing",
+            "description": "Lead elbow bends out away from the body through impact",
             "phase": "FOLLOW_THROUGH",
             "current_motion": "Lead elbow bends and pulls away from body",
             "expected_motion": "Lead arm should extend through impact",
@@ -76,6 +78,7 @@ def test_create_issue_minimal_fields(client, db_session, auth_headers):
         "/api/v1/issues/",
         json={
             "title": "Over the Top",
+            "description": "Club moves outside the swing plane on the downswing",
         },
         headers=auth_headers,
     )
@@ -136,6 +139,7 @@ def test_get_all_issues(client, db_session, auth_headers):
         "/api/v1/issues/",
         json={
             "title": "Cast from the Top",
+            "description": "Wrists unhinge too early in the downswing",
             "phase": "TRANSITION",
         },
         headers=auth_headers,
@@ -144,6 +148,7 @@ def test_get_all_issues(client, db_session, auth_headers):
         "/api/v1/issues/",
         json={
             "title": "Sway",
+            "description": "Lower body slides laterally away from target on backswing",
             "phase": "BACKSWING",
         },
         headers=auth_headers,
@@ -242,6 +247,7 @@ def test_delete_issue(client, db_session, auth_headers):
         "/api/v1/issues/",
         json={
             "title": "Issue to Delete",
+            "description": "Placeholder description for delete test",
             "phase": "IMPACT",
         },
         headers=auth_headers,
@@ -285,6 +291,7 @@ def test_bulk_delete_issues(client, db_session, auth_headers):
             "/api/v1/issues/",
             json={
                 "title": f"Issue to Bulk Delete {i}",
+                "description": f"Placeholder description {i}",
                 "phase": "IMPACT",
             },
             headers=auth_headers,
@@ -318,6 +325,7 @@ def test_bulk_delete_issues_partial(client, db_session, auth_headers):
         "/api/v1/issues/",
         json={
             "title": "Issue for Partial Bulk Delete",
+            "description": "Placeholder description for partial bulk delete test",
             "phase": "IMPACT",
         },
         headers=auth_headers,

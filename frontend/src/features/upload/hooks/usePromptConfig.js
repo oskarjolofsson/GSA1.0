@@ -2,11 +2,11 @@ import { useState } from "react";
 
 export function usePromptConfig() {
   const [advancedInput, setAdvancedInput] = useState({});
-  const [AImodel, setAImodel] = useState("gemini-3-pro-preview");
+  const [AImodel, setAImodel] = useState("gemini-3.1-pro-preview");
 
   const resetConfig = () => {
     setAdvancedInput({});
-    setAImodel("gemini-3-pro-preview");
+    setAImodel("gemini-3.1-pro-preview");
   };
 
   return {

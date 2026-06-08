@@ -53,7 +53,7 @@ def _build_content_payload(video_file: types.File, user_prompt: str) -> list:
 def _call_gemini_api(
     client: genai.Client,
     contents: list,
-    model: str = "gemini-3-pro-preview"
+    model: str = "gemini-3.1-pro-preview"
 ) -> types.GenerateContentResponse:
     """Call Gemini API with the prepared content."""
     print(f"Calling Gemini API with model: {model}")
@@ -101,7 +101,7 @@ def analyze_video(
     height: Optional[str] = None,
     misses: Optional[str] = None,
     extra: Optional[str] = None,
-    model: str = "gemini-3-pro-preview",
+    model: str = "gemini-3.1-pro-preview",
     db_session = None
 ) -> dict:
     """
@@ -114,7 +114,7 @@ def analyze_video(
         height: Wanted ball height (optional)
         misses: Actual result/miss pattern (optional)
         extra: Additional user notes (optional)
-        model: Gemini model to use (default: gemini-3-pro-preview)
+        model: Gemini model to use (default: gemini-3.1-pro-preview)
     
     Returns:
         dict: Parsed analysis results

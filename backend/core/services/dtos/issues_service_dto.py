@@ -6,8 +6,8 @@ from datetime import datetime
 @dataclass
 class CreateIssueDTO:
     title: str
+    description: str
     phase: str | None = None
-    description: str | None = None
     current_motion: str | None = None
     expected_motion: str | None = None
     swing_effect: str | None = None

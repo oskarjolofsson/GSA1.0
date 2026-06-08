@@ -118,3 +118,5 @@ pip-delete-this-directory.txt
 uploads
 results/
 *.mp4
+
+backend/graphify-out
