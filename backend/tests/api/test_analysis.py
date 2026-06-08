@@ -21,7 +21,7 @@ def analysis_with_id(client, test_user, db_session, auth_headers):
     response = client.post(
         "/api/v1/analyses/",
         json={
-            "model": "gemini-3-pro-preview",
+            "model": "gemini-3.1-pro-preview",
             "start_time": 0,
             "end_time": 10,
         },
@@ -60,7 +60,7 @@ def test_create_analysis(client, test_user, db_session, auth_headers):
     response = client.post(
         "/api/v1/analyses/",
         json={
-            "model": "gemini-3-pro-preview",
+            "model": "gemini-3.1-pro-preview",
             "start_time": 0,
             "end_time": 10,
         },
@@ -82,7 +82,7 @@ def test_create_analysis(client, test_user, db_session, auth_headers):
     analysis_result: Analysis = get_analysis_by_id(analysis_id=analysis_id, session=db_session)
     assert analysis_result is not None
     assert analysis_result.user_id == test_user["user_id"]
-    assert analysis_result.model_version == "gemini-3-pro-preview"
+    assert analysis_result.model_version == "gemini-3.1-pro-preview"
     assert analysis_result.status == "awaiting_upload"
     assert analysis_result.video_id is not None
     
@@ -124,7 +124,7 @@ def test_get_analysis(client, test_user, analysis_with_id, auth_headers):
     
     assert uuid.UUID(data["analysis_id"]) == analysis_id
     assert uuid.UUID(data["user_id"]) == user_id
-    assert data["model_version"] == "gemini-3-pro-preview"
+    assert data["model_version"] == "gemini-3.1-pro-preview"
     assert data["status"] == "awaiting_upload"
     assert "created_at" in data
     assert "video_id" in data
@@ -170,7 +170,7 @@ def test_delete_analysis(client, test_user, db_session, auth_headers):
     response = client.post(
         "/api/v1/analyses/",
         json={
-            "model": "gemini-3-pro-preview",
+            "model": "gemini-3.1-pro-preview",
             "start_time": 0,
             "end_time": 10,
         },

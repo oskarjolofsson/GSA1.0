@@ -53,7 +53,7 @@ def completed_analysis_shared(test_user, shared_db_session):
     create_result = create_analysis(
         CreateAnalysisDTO(
             user_id=test_user["user_id"],
-            model="gemini-3-pro-preview",
+            model="gemini-3.1-pro-preview",
             start_time=timedelta(seconds=0),
             end_time=timedelta(seconds=10),
         ),

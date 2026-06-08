@@ -31,7 +31,7 @@ class GoogleAnalysisClient(AnalysisAI):
         height: Optional[str] = None,
         misses: Optional[str] = None,
         extra: Optional[str] = None,
-        model: str = "gemini-3-flash-preview",
+        model: str = "gemini-3.1-pro-preview",
         db_session: Optional[object] = None
     ) -> dict:
         """
@@ -43,7 +43,7 @@ class GoogleAnalysisClient(AnalysisAI):
             height: Wanted ball height (optional)
             misses: Actual result/miss pattern (optional)
             extra: Additional user notes (optional)
-            model: Gemini model to use (default: gemini-3-flash-preview)
+            model: Gemini model to use (default: gemini-3.1-pro-preview)
         
         Returns:
             dict: Analysis results

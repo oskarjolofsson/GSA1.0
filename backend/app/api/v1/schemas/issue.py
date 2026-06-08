@@ -5,8 +5,8 @@ from datetime import datetime
 
 class CreateIssueRequest(BaseModel):
     title: str
+    description: str
     phase: str | None = None
-    descrition: str | None = None
     current_motion: str | None = None
     expected_motion: str | None = None
     swing_effect: str | None = None
@@ -86,6 +86,7 @@ class GetIssue(BaseModel):
 class UpdateIssueRequest(BaseModel):
     title: str | None = None
     phase: str | None = None
+    description: str | None = None
     current_motion: str | None = None
     expected_motion: str | None = None
     swing_effect: str | None = None

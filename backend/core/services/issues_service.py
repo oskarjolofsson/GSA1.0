@@ -28,6 +28,7 @@ def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
     """Create a new issue."""
     new_issue = Issue(
         title=dto.title,
+        description=dto.description,
         phase=dto.phase,
         current_motion=dto.current_motion,
         expected_motion=dto.expected_motion,
@@ -96,6 +97,8 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> Is
         issue.title = dto.title
     if dto.phase is not None:
         issue.phase = dto.phase
+    if dto.description is not None:
+        issue.description = dto.description
     if dto.current_motion is not None:
         issue.current_motion = dto.current_motion
     if dto.expected_motion is not None:

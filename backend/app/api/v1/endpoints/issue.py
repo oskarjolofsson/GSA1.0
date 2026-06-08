@@ -47,6 +47,7 @@ def create_issue(
     """
     dto = CreateIssueDTO(
         title=request.title,
+        description=request.description,
         phase=request.phase,
         current_motion=request.current_motion,
         expected_motion=request.expected_motion,
@@ -179,6 +180,7 @@ def update_issue(
     dto = UpdateIssueDTO(
         title=request.title,
         phase=request.phase,
+        description=request.description,
         current_motion=request.current_motion,
         expected_motion=request.expected_motion,
         swing_effect=request.swing_effect,
