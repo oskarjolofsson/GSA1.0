@@ -60,11 +60,13 @@ def upsert_subscription_from_stripe(
     canceled_at: datetime | int | None,
     ended_at: datetime | int | None,
     session: Session,
+    event_created_at: datetime | int | None = None,
 ) -> models.BillingSubscription:
     subscription = get_subscription_by_stripe_subscription_id(
         stripe_subscription_id,
         session,
     )
+    event_ts = _coerce_datetime(event_created_at)
 
     if subscription is None:
         subscription = models.BillingSubscription(
@@ -77,9 +79,18 @@ def upsert_subscription_from_stripe(
             cancel_at_period_end=cancel_at_period_end,
             canceled_at=_coerce_datetime(canceled_at),
             ended_at=_coerce_datetime(ended_at),
+            last_event_at=event_ts,
         )
         session.add(subscription)
         session.flush()
+        return subscription
+
+    # Out-of-order guard: drop updates that are older than what we already have.
+    if (
+        event_ts is not None
+        and subscription.last_event_at is not None
+        and event_ts < subscription.last_event_at
+    ):
         return subscription
 
     subscription.billing_customer_id = billing_customer_id
@@ -90,6 +101,8 @@ def upsert_subscription_from_stripe(
     subscription.cancel_at_period_end = cancel_at_period_end
     subscription.canceled_at = _coerce_datetime(canceled_at)
     subscription.ended_at = _coerce_datetime(ended_at)
+    if event_ts is not None:
+        subscription.last_event_at = event_ts
 
     session.flush()
     return subscription

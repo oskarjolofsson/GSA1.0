@@ -27,3 +27,4 @@ class StripeWebhookEvent:
     event_type: str
     data: dict
     raw: Any
+    event_created_at: int | None = None

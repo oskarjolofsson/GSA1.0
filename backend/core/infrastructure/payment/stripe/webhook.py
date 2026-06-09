@@ -29,6 +29,7 @@ class StripeWebhookVerifier:
                 event_type=event.type,
                 data=event.data.object.to_dict(),
                 raw=event,
+                event_created_at=getattr(event, "created", None),
             )
         except Exception as exc:
             raise StripeWebhookVerificationError(

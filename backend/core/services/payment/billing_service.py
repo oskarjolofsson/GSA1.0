@@ -8,6 +8,7 @@ from core.infrastructure.db import models
 from core.infrastructure.db.repositories import profiles
 from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
 from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
+from core.infrastructure.db.repositories import processed_webhook_events as processed_webhook_repo
 from core.infrastructure.payment.stripe.gateway import StripeGateway
 from core.infrastructure.payment.stripe.webhook import StripeWebhookVerifier
 from core.services import exceptions
@@ -16,7 +17,7 @@ from core.infrastructure.payment.stripe.exceptions import StripeInfrastructureEr
 stripe_gateway = StripeGateway()
 webhook_verifier = StripeWebhookVerifier()
 
-WebhookHandler = Callable[[Any, Session], Awaitable[None]]
+WebhookHandler = Callable[[Any, Session, int | None], Awaitable[None]]
 
 
 async def start_subscription_checkout(user_id: UUID, db_session: Session) -> str:
@@ -85,8 +86,8 @@ async def handle_stripe_webhook(payload: bytes, signature: str, db_session: Sess
         signature=signature,
     )
 
-    event_type = event.event_type
-    data = event.data
+    if processed_webhook_repo.exists(event.event_id, db_session):
+        return
 
     handlers: dict[str, WebhookHandler] = {
         "checkout.session.completed": _handle_checkout_session_completed,
@@ -95,17 +96,16 @@ async def handle_stripe_webhook(payload: bytes, signature: str, db_session: Sess
         "customer.subscription.deleted": _handle_subscription_event,
     }
 
-    handler = handlers.get(event_type)
-    if handler is None:
-        return
+    handler = handlers.get(event.event_type)
+    if handler is not None:
+        await handler(event.data, db_session, event.event_created_at)
 
-    await handler(data, db_session)
+    processed_webhook_repo.mark_processed(event.event_id, event.event_type, db_session)
 
 
-async def _handle_checkout_session_completed(data: dict, db_session: Session) -> None:
+async def _handle_checkout_session_completed(data: dict, db_session: Session, event_created_at: int | None = None) -> None:
     user_id_raw = data.get("metadata", {}).get("user_id")
     customer_id = data.get("customer")
-    subscription_id = data.get("subscription")
 
     if not user_id_raw or not customer_id:
         return
@@ -113,28 +113,14 @@ async def _handle_checkout_session_completed(data: dict, db_session: Session) ->
     user_id = UUID(str(user_id_raw))
     billing_customer = billing_customer_repo.get_customer_by_user_id(user_id, db_session)
     if billing_customer is None:
-        billing_customer = billing_customer_repo.create_billing_customer(
+        billing_customer_repo.create_billing_customer(
             user_id=user_id,
             customer_id=customer_id,
             session=db_session,
         )
 
-    if subscription_id:
-        billing_subscription_repo.upsert_subscription_from_stripe(
-            billing_customer_id=billing_customer.id,
-            stripe_subscription_id=subscription_id,
-            stripe_price_id=_extract_price_id(data),
-            stripe_status="active",
-            current_period_start=None,
-            current_period_end=None,
-            cancel_at_period_end=False,
-            canceled_at=None,
-            ended_at=None,
-            session=db_session,
-        )
 
-
-async def _handle_subscription_event(data: dict, db_session: Session) -> None:
+async def _handle_subscription_event(data: dict, db_session: Session, event_created_at: int | None = None) -> None:
     subscription_id = data.get("id")
     customer_id = data.get("customer")
     if not subscription_id or not customer_id:
@@ -163,6 +149,7 @@ async def _handle_subscription_event(data: dict, db_session: Session) -> None:
         canceled_at=data.get("canceled_at"),
         ended_at=data.get("ended_at"),
         session=db_session,
+        event_created_at=event_created_at,
     )
 
 
