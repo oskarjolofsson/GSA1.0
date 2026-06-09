@@ -17,11 +17,12 @@ def test_is_subscribed_returns_true_when_user_has_active_subscription(db_session
 		customer_id="cus_entitlement_active",
 		session=db_session,
 	)
-	billing_subscription_repo.upsert_subscription_from_stripe(
+	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
-		stripe_subscription_id="sub_entitlement_active",
-		stripe_price_id="price_entitlement_active",
-		stripe_status="active",
+		provider="stripe",
+		external_subscription_id="sub_entitlement_active",
+		external_price_id="price_entitlement_active",
+		status="active",
 		current_period_start=None,
 		current_period_end=None,
 		cancel_at_period_end=False,
@@ -32,6 +33,55 @@ def test_is_subscribed_returns_true_when_user_has_active_subscription(db_session
 
 	result = entitlement_service.is_subscribed(test_user["user_id"], db_session)
 	assert result is True
+
+
+def test_is_subscribed_true_when_active_and_scheduled_to_cancel(db_session, test_user):
+	# cancel_at_period_end is Stripe's scheduling flag, not an access gate:
+	# an active subscription scheduled to cancel must still count as subscribed.
+	billing_customer = billing_customer_repo.create_billing_customer(
+		user_id=test_user["user_id"],
+		customer_id="cus_scheduled_cancel",
+		session=db_session,
+	)
+	billing_subscription_repo.upsert_subscription(
+		billing_customer_id=billing_customer.id,
+		provider="stripe",
+		external_subscription_id="sub_scheduled_cancel",
+		external_price_id="price_scheduled_cancel",
+		status="active",
+		current_period_start=None,
+		current_period_end=None,
+		cancel_at_period_end=True,
+		canceled_at=None,
+		ended_at=None,
+		session=db_session,
+	)
+
+	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is True
+
+
+def test_is_subscribed_false_when_status_canceled(db_session, test_user):
+	# 'canceled' is not in ACTIVE_SUBSCRIPTION_STATUSES, so access is revoked.
+	billing_customer = billing_customer_repo.create_billing_customer(
+		user_id=test_user["user_id"],
+		customer_id="cus_canceled_status",
+		session=db_session,
+	)
+	billing_subscription_repo.upsert_subscription(
+		billing_customer_id=billing_customer.id,
+		provider="stripe",
+		external_subscription_id="sub_canceled_status",
+		external_price_id="price_canceled_status",
+		status="canceled",
+		current_period_start=None,
+		current_period_end=None,
+		cancel_at_period_end=True,
+		canceled_at=1_700_040_000,
+		ended_at=1_700_086_400,
+		session=db_session,
+	)
+
+	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is False
 
 
 def test_has_free_tier_returns_true_for_recent_profile(db_session, test_user):
@@ -74,11 +124,12 @@ def test_can_access_premium_features_returns_true_when_subscribed(db_session, te
 		customer_id="cus_entitlement_combo",
 		session=db_session,
 	)
-	billing_subscription_repo.upsert_subscription_from_stripe(
+	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
-		stripe_subscription_id="sub_entitlement_combo",
-		stripe_price_id="price_entitlement_combo",
-		stripe_status="active",
+		provider="stripe",
+		external_subscription_id="sub_entitlement_combo",
+		external_price_id="price_entitlement_combo",
+		status="active",
 		current_period_start=None,
 		current_period_end=None,
 		cancel_at_period_end=False,

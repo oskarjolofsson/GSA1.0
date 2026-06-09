@@ -26,11 +26,12 @@ def test_start_checkout_when_already_subscribed(
         customer_id="cus_already_subscribed",
         session=db_session,
     )
-    billing_subscription_repo.upsert_subscription_from_stripe(
+    billing_subscription_repo.upsert_subscription(
         billing_customer_id=billing_customer.id,
-        stripe_subscription_id="sub_already_active",
-        stripe_price_id="price_test",
-        stripe_status="active",
+        provider="stripe",
+        external_subscription_id="sub_already_active",
+        external_price_id="price_test",
+        status="active",
         current_period_start=None,
         current_period_end=None,
         cancel_at_period_end=False,

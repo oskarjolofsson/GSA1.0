@@ -1,7 +1,7 @@
 import uuid
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, ForeignKey, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -10,6 +10,13 @@ from ..base import Base
 
 class BillingSubscription(Base):
     __tablename__ = "billing_subscriptions"
+    __table_args__ = (
+        UniqueConstraint(
+            "provider",
+            "external_subscription_id",
+            name="uq_billing_subscriptions_provider_external_id",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -23,18 +30,23 @@ class BillingSubscription(Base):
         nullable=False,
     )
 
-    stripe_subscription_id: Mapped[str] = mapped_column(
+    provider: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-        unique=True,
+        server_default="stripe",
     )
 
-    stripe_price_id: Mapped[str] = mapped_column(
+    external_subscription_id: Mapped[str] = mapped_column(
         Text,
         nullable=False,
     )
 
-    stripe_status: Mapped[str] = mapped_column(
+    external_price_id: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+
+    status: Mapped[str] = mapped_column(
         Text,
         nullable=False,
     )
@@ -59,6 +71,11 @@ class BillingSubscription(Base):
 
     ended_at: Mapped[DateTime | None] = mapped_column(
         DateTime(timezone=True),
+    )
+
+    raw: Mapped[dict | None] = mapped_column(
+        JSONB,
+        nullable=True,
     )
 
     last_event_at: Mapped[DateTime | None] = mapped_column(

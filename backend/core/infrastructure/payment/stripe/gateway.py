@@ -46,10 +46,13 @@ class StripeGateway:
                 },
             }
 
+            # Stripe rejects passing both `customer` and `customer_email`.
+            # Use the existing customer when we have one; otherwise let Stripe
+            # create one and prefill the email.
             if stripe_customer_id:
                 params["customer"] = stripe_customer_id
-                
-            params["customer_email"] = email
+            else:
+                params["customer_email"] = email
 
             session = self.client.v1.checkout.sessions.create(params)
 

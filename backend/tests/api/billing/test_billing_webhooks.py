@@ -1,10 +1,11 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from core.infrastructure.db import models
 from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
 from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
+from core.infrastructure.db.repositories import profiles as profiles_repo
 from core.services.dtos.payment_dto import StripeWebhookEvent
-from core.services.payment import billing_service
+from core.services.payment import billing_service, entitlement_service
 
 
 WEBHOOK_URL = "/api/v1/webhook/stripe/"
@@ -55,7 +56,8 @@ def test_webhook_checkout_session_completed_is_successful_and_idempotent(
 	assert billing_customer.customer_id == "cus_checkout_completed"
 
 	# Subscription rows are written by customer.subscription.* events, not checkout.session.completed.
-	subscription = billing_subscription_repo.get_subscription_by_stripe_subscription_id(
+	subscription = billing_subscription_repo.get_subscription_by_external_id(
+		"stripe",
 		"sub_checkout_completed",
 		db_session,
 	)
@@ -93,14 +95,18 @@ def test_webhook_subscription_created_creates_subscription_with_expected_fields(
 				"id": "sub_created_123",
 				"customer": "cus_subscription_created",
 				"status": "trialing",
-				"current_period_start": period_start,
-				"current_period_end": period_end,
+				# Real Stripe payloads carry the period on the item, not the
+				# subscription object — assert we read it from there.
 				"cancel_at_period_end": False,
 				"canceled_at": None,
 				"ended_at": None,
 				"items": {
 					"data": [
-						{"price": {"id": "price_created_123"}},
+						{
+							"current_period_start": period_start,
+							"current_period_end": period_end,
+							"price": {"id": "price_created_123"},
+						},
 					]
 				},
 			},
@@ -116,14 +122,15 @@ def test_webhook_subscription_created_creates_subscription_with_expected_fields(
 
 	assert response.status_code == 200
 
-	subscription = billing_subscription_repo.get_subscription_by_stripe_subscription_id(
+	subscription = billing_subscription_repo.get_subscription_by_external_id(
+		"stripe",
 		"sub_created_123",
 		db_session,
 	)
 	assert subscription is not None
 	assert subscription.billing_customer_id == billing_customer.id
-	assert subscription.stripe_status == "trialing"
-	assert subscription.stripe_price_id == "price_created_123"
+	assert subscription.status == "trialing"
+	assert subscription.external_price_id == "price_created_123"
 	assert subscription.current_period_start == datetime.fromtimestamp(period_start, tz=timezone.utc)
 	assert subscription.current_period_end == datetime.fromtimestamp(period_end, tz=timezone.utc)
 	assert subscription.cancel_at_period_end is False
@@ -140,11 +147,12 @@ def test_webhook_subscription_updated_updates_existing_local_subscription(
 		customer_id="cus_subscription_updated",
 		session=db_session,
 	)
-	billing_subscription_repo.upsert_subscription_from_stripe(
+	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
-		stripe_subscription_id="sub_updated_123",
-		stripe_price_id="price_old",
-		stripe_status="active",
+		provider="stripe",
+		external_subscription_id="sub_updated_123",
+		external_price_id="price_old",
+		status="active",
 		current_period_start=1_700_000_000,
 		current_period_end=1_700_086_400,
 		cancel_at_period_end=False,
@@ -190,13 +198,14 @@ def test_webhook_subscription_updated_updates_existing_local_subscription(
 
 	assert response.status_code == 200
 
-	subscription = billing_subscription_repo.get_subscription_by_stripe_subscription_id(
+	subscription = billing_subscription_repo.get_subscription_by_external_id(
+		"stripe",
 		"sub_updated_123",
 		db_session,
 	)
 	assert subscription is not None
-	assert subscription.stripe_status == "past_due"
-	assert subscription.stripe_price_id == "price_updated"
+	assert subscription.status == "past_due"
+	assert subscription.external_price_id == "price_updated"
 	assert subscription.current_period_start == datetime.fromtimestamp(new_period_start, tz=timezone.utc)
 	assert subscription.current_period_end == datetime.fromtimestamp(new_period_end, tz=timezone.utc)
 	assert subscription.cancel_at_period_end is True
@@ -214,11 +223,12 @@ def test_webhook_subscription_deleted_marks_subscription_ended_and_not_active(
 		customer_id="cus_subscription_deleted",
 		session=db_session,
 	)
-	billing_subscription_repo.upsert_subscription_from_stripe(
+	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
-		stripe_subscription_id="sub_deleted_123",
-		stripe_price_id="price_before_delete",
-		stripe_status="active",
+		provider="stripe",
+		external_subscription_id="sub_deleted_123",
+		external_price_id="price_before_delete",
+		status="active",
 		current_period_start=1_700_000_000,
 		current_period_end=1_700_086_400,
 		cancel_at_period_end=False,
@@ -263,12 +273,13 @@ def test_webhook_subscription_deleted_marks_subscription_ended_and_not_active(
 
 	assert response.status_code == 200
 
-	subscription = billing_subscription_repo.get_subscription_by_stripe_subscription_id(
+	subscription = billing_subscription_repo.get_subscription_by_external_id(
+		"stripe",
 		"sub_deleted_123",
 		db_session,
 	)
 	assert subscription is not None
-	assert subscription.stripe_status == "canceled"
+	assert subscription.status == "canceled"
 	assert subscription.cancel_at_period_end is True
 	assert subscription.canceled_at == datetime.fromtimestamp(canceled_at, tz=timezone.utc)
 	assert subscription.ended_at == datetime.fromtimestamp(ended_at, tz=timezone.utc)
@@ -278,3 +289,157 @@ def test_webhook_subscription_deleted_marks_subscription_ended_and_not_active(
 		db_session,
 	)
 	assert active_subscription is None
+
+
+def test_webhook_cancel_at_period_end_keeps_subscription_active_and_entitled(
+	client,
+	db_session,
+	test_user,
+	monkeypatch,
+):
+	# This is the default Stripe portal cancellation: the subscription is
+	# scheduled to cancel but stays active until the period ends, so the user
+	# must keep access until then.
+	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
+	profile.created_at = datetime.now(timezone.utc) - timedelta(days=30)  # past free tier
+	db_session.flush()
+
+	billing_customer = billing_customer_repo.create_billing_customer(
+		user_id=test_user["user_id"],
+		customer_id="cus_cancel_at_period_end",
+		session=db_session,
+	)
+	billing_subscription_repo.upsert_subscription(
+		billing_customer_id=billing_customer.id,
+		provider="stripe",
+		external_subscription_id="sub_cancel_at_period_end",
+		external_price_id="price_active",
+		status="active",
+		current_period_start=1_700_000_000,
+		current_period_end=1_700_086_400,
+		cancel_at_period_end=False,
+		canceled_at=None,
+		ended_at=None,
+		session=db_session,
+	)
+
+	canceled_at = 1_720_040_000
+	future_period_end = 1_720_086_400
+
+	monkeypatch.setattr(
+		billing_service.webhook_verifier,
+		"construct_event",
+		lambda payload, signature: StripeWebhookEvent(
+			event_id="evt_cancel_at_period_end",
+			event_type="customer.subscription.updated",
+			data={
+				"id": "sub_cancel_at_period_end",
+				"customer": "cus_cancel_at_period_end",
+				"status": "active",
+				"cancel_at_period_end": True,
+				"canceled_at": canceled_at,
+				"ended_at": None,
+				"items": {
+					"data": [
+						{
+							"current_period_start": 1_720_000_000,
+							"current_period_end": future_period_end,
+							"price": {"id": "price_active"},
+						},
+					]
+				},
+			},
+			raw=None,
+		),
+	)
+
+	response = client.post(
+		WEBHOOK_URL,
+		content=b'{"type":"customer.subscription.updated"}',
+		headers={"Stripe-Signature": "sig_cancel_at_period_end"},
+	)
+
+	assert response.status_code == 200
+
+	subscription = billing_subscription_repo.get_subscription_by_external_id(
+		"stripe",
+		"sub_cancel_at_period_end",
+		db_session,
+	)
+	assert subscription is not None
+	assert subscription.status == "active"
+	assert subscription.cancel_at_period_end is True
+	assert subscription.canceled_at == datetime.fromtimestamp(canceled_at, tz=timezone.utc)
+	assert subscription.ended_at is None
+
+	# The product guarantee: scheduled-to-cancel still means full access.
+	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is True
+	assert entitlement_service.can_access_premium_features(test_user["user_id"], db_session) is True
+
+
+def test_webhook_subscription_deleted_revokes_entitlement(
+	client,
+	db_session,
+	test_user,
+	monkeypatch,
+):
+	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
+	profile.created_at = datetime.now(timezone.utc) - timedelta(days=30)  # past free tier
+	db_session.flush()
+
+	billing_customer = billing_customer_repo.create_billing_customer(
+		user_id=test_user["user_id"],
+		customer_id="cus_deleted_revokes",
+		session=db_session,
+	)
+	billing_subscription_repo.upsert_subscription(
+		billing_customer_id=billing_customer.id,
+		provider="stripe",
+		external_subscription_id="sub_deleted_revokes",
+		external_price_id="price_active",
+		status="active",
+		current_period_start=1_700_000_000,
+		current_period_end=1_700_086_400,
+		cancel_at_period_end=True,
+		canceled_at=1_700_040_000,
+		ended_at=None,
+		session=db_session,
+	)
+
+	# Sanity: entitled before the period actually ends.
+	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is True
+
+	monkeypatch.setattr(
+		billing_service.webhook_verifier,
+		"construct_event",
+		lambda payload, signature: StripeWebhookEvent(
+			event_id="evt_deleted_revokes",
+			event_type="customer.subscription.deleted",
+			data={
+				"id": "sub_deleted_revokes",
+				"customer": "cus_deleted_revokes",
+				"status": "canceled",
+				"cancel_at_period_end": True,
+				"canceled_at": 1_700_040_000,
+				"ended_at": 1_700_086_400,
+				"items": {
+					"data": [
+						{"price": {"id": "price_active"}},
+					]
+				},
+			},
+			raw=None,
+		),
+	)
+
+	response = client.post(
+		WEBHOOK_URL,
+		content=b'{"type":"customer.subscription.deleted"}',
+		headers={"Stripe-Signature": "sig_deleted_revokes"},
+	)
+
+	assert response.status_code == 200
+
+	# Access is revoked once the subscription is actually deleted.
+	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is False
+	assert entitlement_service.can_access_premium_features(test_user["user_id"], db_session) is False
