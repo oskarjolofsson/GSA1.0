@@ -35,3 +35,10 @@ def has_free_tier(user_id: UUID, db_session: Session) -> bool:
 def can_access_premium_features(user_id: UUID, db_session: Session) -> bool:
     # A user can access premium features if they are either subscribed or have free tier access
     return is_subscribed(user_id, db_session) or has_free_tier(user_id, db_session)
+
+
+def free_tier_expires_at(user_id: UUID, db_session: Session) -> datetime:
+    profile: models.Profile = profiles.get_profile_by_id(user_id, db_session)
+    if not profile:
+        raise exceptions.NotFoundException("User", str(user_id))
+    return profile.created_at + timedelta(days=7)

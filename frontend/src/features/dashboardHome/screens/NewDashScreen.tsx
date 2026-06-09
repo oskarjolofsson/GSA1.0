@@ -11,6 +11,7 @@ import { ErrorState } from "@/shared/components/cards/error";
 import { LoadingState } from "@/shared/components/cards/loading";
 import TextBox  from "@/shared/components/cards/textBox";
 import useAnalyses from "@/features/analysis/hooks/useAnalyses";
+import SubscriptionBanner from "@/features/billing/components/SubscriptionBanner";
 
 
 export default function PremiumGolfDashboard() {
@@ -57,6 +58,9 @@ export default function PremiumGolfDashboard() {
             </div>
 
             <main className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+                <div className="pt-6">
+                    <SubscriptionBanner />
+                </div>
                 <div className="min-h-[91vh] flex flex-col justify-center pt-10">
                     <Header />
 

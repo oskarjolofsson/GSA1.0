@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 
 // Import pages
 import Landing from "./public/landing.jsx";
@@ -27,6 +27,19 @@ import RequireAdmin from '@/features/admin/routes/RequireAdmin';
 import DashboardLayout from './dashboard/layout.jsx';
 import AdminLayout from './admin/layout.jsx';
 
+// Billing
+import { BillingProvider } from '@/features/billing/BillingContext';
+import PremiumGate from '@/features/billing/components/PremiumGate';
+import PricingPage from '@/features/billing/screens/PricingPage';
+import BillingSuccess from '@/features/billing/screens/BillingSuccess';
+import SettingsScreen from '@/features/billing/screens/SettingsScreen';
+
+const BillingShell = () => (
+  <BillingProvider>
+    <Outlet />
+  </BillingProvider>
+);
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -41,22 +54,50 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: "/pricing",
+    element: <RequireAuth />,
+    errorElement: <NotFound />,
+    children: [
+      {
+        element: <BillingShell />,
+        children: [{ index: true, element: <PricingPage /> }],
+      },
+    ],
+  },
+  {
+    path: "/billing/success",
+    element: <RequireAuth />,
+    errorElement: <NotFound />,
+    children: [
+      {
+        element: <BillingShell />,
+        children: [{ index: true, element: <BillingSuccess /> }],
+      },
+    ],
+  },
+  {
     path: "/dashboard",
     element: <RequireAuth />,
     errorElement: <NotFound />,
     children: [
       {
-        element: <DashboardLayout />,
+        element: <BillingShell />,
         children: [
-          { index: true, element: <Navigate to="/dashboard/app" replace /> },
-          { path : "app", element: <HomeDashboard /> },
-          { path: "upload", element: <DashboardUpload /> },
-          { path: "analysis", element: <Analysis /> },
-          { path: "profile", element: <Profile /> },
-          { path: "drills", element: <Drills /> },
-          { path: "drills/results", element: <DrillResults /> },
-          { path: "issues", element: <Issues /> },
-          { path: "*", element: <NotFound /> },
+          {
+            element: <DashboardLayout />,
+            children: [
+              { index: true, element: <Navigate to="/dashboard/app" replace /> },
+              { path: "app", element: <HomeDashboard /> },
+              { path: "upload", element: <PremiumGate><DashboardUpload /></PremiumGate> },
+              { path: "analysis", element: <Analysis /> },
+              { path: "profile", element: <Profile /> },
+              { path: "drills", element: <PremiumGate><Drills /></PremiumGate> },
+              { path: "drills/results", element: <PremiumGate><DrillResults /></PremiumGate> },
+              { path: "issues", element: <Issues /> },
+              { path: "settings", element: <SettingsScreen /> },
+              { path: "*", element: <NotFound /> },
+            ],
+          },
         ],
       },
     ],
