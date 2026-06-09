@@ -120,3 +120,4 @@ results/
 *.mp4
 
 backend/graphify-out
+frontend/graphify-out
