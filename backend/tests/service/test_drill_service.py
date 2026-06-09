@@ -90,6 +90,7 @@ class TestGetDrillsByIssueId:
         # Arrange - Create an issue
         issue = Issue(
             title="Over the top",
+            description="Club moves outside the swing plane on the downswing",
             phase="DOWNSWING",
             current_motion="Steep angle",
             expected_motion="Shallow angle",
@@ -135,6 +136,7 @@ class TestGetDrillsByIssueId:
         # Arrange - Create an issue with no drills
         issue = Issue(
             title="Test Issue",
+            description="Test issue description",
             phase="IMPACT",
         )
         issue = repo_create_issue(issue, db_session)

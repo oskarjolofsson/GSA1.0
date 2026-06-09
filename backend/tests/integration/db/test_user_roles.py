@@ -103,7 +103,7 @@ def test_get_user_roles_by_user_id(db_session, test_user, test_role):
     user_role = UserRole(user_id=test_user["user_id"], role_id=test_role.id)
     assign_role_to_user(user_role=user_role, session=db_session)
 
-    user_roles = get_user_roles_by_user_id(test_user["user_id"], session=db_session)
+    user_roles: list[UserRole] = get_user_roles_by_user_id(test_user["user_id"], session=db_session)
 
     assert len(user_roles) - len(roles_before) == 1
     assert user_roles[-1].user_id == test_user["user_id"]

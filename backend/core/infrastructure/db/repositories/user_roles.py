@@ -25,6 +25,7 @@ def get_roles_for_users(user_ids: list[UUID], session: Session) -> dict[UUID, st
         select(UserRole.user_id, Role.name)
         .join(Role, UserRole.role_id == Role.id)
         .where(UserRole.user_id.in_(user_ids))
+        .order_by(UserRole.created_at)
     )
     
     results = session.execute(stmt).all()
@@ -43,16 +44,27 @@ def get_roles_by_user_id(user_id: UUID, session: Session) -> list[Role]:
         session.query(Role)
         .join(UserRole, Role.id == UserRole.role_id)
         .filter(UserRole.user_id == user_id)
+        .order_by(UserRole.created_at)
         .all()
     )
 
 
 def get_user_roles_by_user_id(user_id: UUID, session: Session) -> list[UserRole]:
-    return session.query(UserRole).filter(UserRole.user_id == user_id).all()
+    return (
+        session.query(UserRole)
+        .filter(UserRole.user_id == user_id)
+        .order_by(UserRole.created_at)
+        .all()
+    )
 
 
 def get_users_by_role_id(role_id: int, session: Session) -> list[UUID]:
-    results = session.query(UserRole.user_id).filter(UserRole.role_id == role_id).all()
+    results = (
+        session.query(UserRole.user_id)
+        .filter(UserRole.role_id == role_id)
+        .order_by(UserRole.created_at)
+        .all()
+    )
     return [r[0] for r in results]
 
 

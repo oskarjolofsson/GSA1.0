@@ -264,14 +264,8 @@ def get_analysis_issues(analysis_id: UUID, db_session) -> list[GetAnalaysisIssue
     analysis_issues: list[AnalysisIssue] = get_analysis_issues_by_analysis_id(
         analysis_id=analysis_id, session=db_session
     )
-    
-    if not analysis_issues:
-        raise NotFoundException("No Analysis issues found with analysis ID", str(analysis_id))
-    
-    analysis_issue_dtos = [
-        from_analysis_issue_object_to_dto(issue) for issue in analysis_issues
-    ]
-    return analysis_issue_dtos
+
+    return [from_analysis_issue_object_to_dto(issue) for issue in analysis_issues]
 
 
 def delete_analysis_issue(analysis_issue_id: UUID, db_session, user_id: UUID) -> None:
