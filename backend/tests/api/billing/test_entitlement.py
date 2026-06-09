@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from core.services.payment import entitlement_service
 from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
@@ -37,7 +37,7 @@ def test_is_subscribed_returns_true_when_user_has_active_subscription(db_session
 def test_has_free_tier_returns_true_for_recent_profile(db_session, test_user):
 	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
 	assert profile is not None
-	profile.created_at = datetime.utcnow() - timedelta(days=2)
+	profile.created_at = datetime.now(timezone.utc) - timedelta(days=2)
 	db_session.flush()
 
 	result = entitlement_service.has_free_tier(test_user["user_id"], db_session)
@@ -47,7 +47,7 @@ def test_has_free_tier_returns_true_for_recent_profile(db_session, test_user):
 def test_has_free_tier_returns_false_for_old_profile(db_session, test_user):
 	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
 	assert profile is not None
-	profile.created_at = datetime.utcnow() - timedelta(days=15)
+	profile.created_at = datetime.now(timezone.utc) - timedelta(days=15)
 	db_session.flush()
 
 	result = entitlement_service.has_free_tier(test_user["user_id"], db_session)
@@ -57,7 +57,7 @@ def test_has_free_tier_returns_false_for_old_profile(db_session, test_user):
 def test_can_access_premium_features_returns_true_when_free_tier_is_true(db_session, test_user):
 	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
 	assert profile is not None
-	profile.created_at = datetime.utcnow() - timedelta(days=1)
+	profile.created_at = datetime.now(timezone.utc) - timedelta(days=1)
 	db_session.flush()
 
 	result = entitlement_service.can_access_premium_features(test_user["user_id"], db_session)
@@ -67,7 +67,7 @@ def test_can_access_premium_features_returns_true_when_free_tier_is_true(db_sess
 def test_can_access_premium_features_returns_true_when_subscribed(db_session, test_user):
 	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
 	assert profile is not None
-	profile.created_at = datetime.utcnow() - timedelta(days=30)
+	profile.created_at = datetime.now(timezone.utc) - timedelta(days=30)
 
 	billing_customer = billing_customer_repo.create_billing_customer(
 		user_id=test_user["user_id"],
@@ -98,7 +98,7 @@ def test_can_access_premium_features_returns_false_when_not_subscribed_and_no_fr
 ):
 	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
 	assert profile is not None
-	profile.created_at = datetime.utcnow() - timedelta(days=30)
+	profile.created_at = datetime.now(timezone.utc) - timedelta(days=30)
 	db_session.flush()
 
 	result = entitlement_service.can_access_premium_features(test_user["user_id"], db_session)

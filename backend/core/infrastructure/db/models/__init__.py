@@ -11,6 +11,7 @@ from .Analysis import Analysis
 from .Role import Role
 from .BillingCustomer import BillingCustomer
 from .BillingSubscription import BillingSubscription
+from .ProcessedWebhookEvent import ProcessedWebhookEvent
 #from .Feedback import Feedback
 
 # Import junction/association tables last (models that depend on others)
@@ -33,6 +34,7 @@ __all__ = [
     "Role",
     "BillingCustomer",
     "BillingSubscription",
+    "ProcessedWebhookEvent",
     "Feedback",
     "AnalysisIssue",
     "IssueDrill",

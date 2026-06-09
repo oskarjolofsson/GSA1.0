@@ -21,11 +21,6 @@ def test_webhook_checkout_session_completed_is_successful_and_idempotent(
 		"metadata": {"user_id": str(test_user["user_id"])},
 		"customer": "cus_checkout_completed",
 		"subscription": "sub_checkout_completed",
-		"items": {
-			"data": [
-				{"price": {"id": "price_checkout_completed"}},
-			]
-		},
 	}
 
 	construct_event_mock = lambda payload, signature: StripeWebhookEvent(
@@ -59,21 +54,19 @@ def test_webhook_checkout_session_completed_is_successful_and_idempotent(
 	assert billing_customer is not None
 	assert billing_customer.customer_id == "cus_checkout_completed"
 
+	# Subscription rows are written by customer.subscription.* events, not checkout.session.completed.
 	subscription = billing_subscription_repo.get_subscription_by_stripe_subscription_id(
 		"sub_checkout_completed",
 		db_session,
 	)
-	assert subscription is not None
-	assert subscription.billing_customer_id == billing_customer.id
-	assert subscription.stripe_price_id == "price_checkout_completed"
-	assert subscription.stripe_status == "active"
+	assert subscription is None
 
-	duplicate_count = (
-		db_session.query(models.BillingSubscription)
-		.filter(models.BillingSubscription.stripe_subscription_id == "sub_checkout_completed")
+	customer_count = (
+		db_session.query(models.BillingCustomer)
+		.filter(models.BillingCustomer.customer_id == "cus_checkout_completed")
 		.count()
 	)
-	assert duplicate_count == 1
+	assert customer_count == 1
 
 
 def test_webhook_subscription_created_creates_subscription_with_expected_fields(

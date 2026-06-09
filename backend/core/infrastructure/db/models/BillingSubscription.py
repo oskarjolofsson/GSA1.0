@@ -61,6 +61,10 @@ class BillingSubscription(Base):
         DateTime(timezone=True),
     )
 
+    last_event_at: Mapped[DateTime | None] = mapped_column(
+        DateTime(timezone=True),
+    )
+
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

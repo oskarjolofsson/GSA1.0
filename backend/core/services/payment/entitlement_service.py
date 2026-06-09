@@ -1,6 +1,6 @@
 from uuid import UUID
 from sqlalchemy.orm import Session
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 
 from core.infrastructure.db import models
 from core.infrastructure.db.repositories import profiles
@@ -29,8 +29,7 @@ def has_free_tier(user_id: UUID, db_session: Session) -> bool:
         raise exceptions.NotFoundException("User", str(user_id))
     
     # If the profile has was created withing the last 7 days, they are eligible for the free tier
-    if profile.created_at >= datetime.utcnow() - timedelta(days=7):
-        return True
+    return profile.created_at >= datetime.now(timezone.utc) - timedelta(days=7)
     
     
 def can_access_premium_features(user_id: UUID, db_session: Session) -> bool:

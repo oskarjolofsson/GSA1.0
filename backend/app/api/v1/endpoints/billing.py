@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.dependencies.auth import get_current_user
 from app.dependencies.db import get_db
-from core.services.payment import billing_service
+from core.services.payment import billing_service, entitlement_service
 from uuid import UUID
 
 
@@ -35,5 +35,13 @@ async def portal(
     
     
 @router.get("/status")
-def status():
-    return {"status": "not_implemented"}
+def status(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user_id = UUID(current_user["user_id"])
+    return {
+        "is_subscribed": entitlement_service.is_subscribed(user_id, db),
+        "has_free_tier": entitlement_service.has_free_tier(user_id, db),
+        "can_access_premium": entitlement_service.can_access_premium_features(user_id, db),
+    }
