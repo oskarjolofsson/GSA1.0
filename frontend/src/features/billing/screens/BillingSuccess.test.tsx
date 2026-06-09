@@ -28,11 +28,13 @@ describe('BillingSuccess', () => {
     const refresh = vi.fn();
     ctx.mockReturnValue({
       status: { is_subscribed: false, has_free_tier: false, can_access_premium: false, free_tier_expires_at: '' },
+      error: null,
       refresh,
       invalidate: vi.fn(),
     });
     render(<MemoryRouter><BillingSuccess /></MemoryRouter>);
     expect(screen.getByText(/activating/i)).toBeInTheDocument();
+    expect(screen.getByText(/checking with stripe/i)).toBeInTheDocument();
     await act(async () => { vi.advanceTimersByTime(1000); });
     expect(refresh).toHaveBeenCalled();
   });
@@ -40,6 +42,7 @@ describe('BillingSuccess', () => {
   it('navigates home when subscribed', async () => {
     ctx.mockReturnValue({
       status: { is_subscribed: true, has_free_tier: false, can_access_premium: true, free_tier_expires_at: '' },
+      error: null,
       refresh: vi.fn(),
       invalidate: vi.fn(),
     });
@@ -48,4 +51,18 @@ describe('BillingSuccess', () => {
     await act(async () => { vi.advanceTimersByTime(1600); });
     expect(navigate).toHaveBeenCalledWith('/dashboard/app');
   });
+
+  it('shows error state when context reports an error', () => {
+    ctx.mockReturnValue({
+      status: null,
+      error: new Error('Internal Server Error'),
+      refresh: vi.fn(),
+      invalidate: vi.fn(),
+    });
+    render(<MemoryRouter><BillingSuccess /></MemoryRouter>);
+    expect(screen.getByText(/couldn't verify your subscription/i)).toBeInTheDocument();
+    expect(screen.getByText(/internal server error/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
+  });
+
 });
