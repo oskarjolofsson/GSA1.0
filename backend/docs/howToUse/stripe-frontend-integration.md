@@ -67,13 +67,15 @@ Response `200`:
 {
   "is_subscribed": false,
   "has_free_tier": true,
-  "can_access_premium": true
+  "can_access_premium": true,
+  "free_tier_expires_at": "2026-06-16T12:34:56+00:00"
 }
 ```
 
 - `is_subscribed` — true if the user has an active paid Stripe subscription.
 - `has_free_tier` — true if the user's account is less than 7 days old. See [§3.1 Free tier](#31-free-tier-how-it-actually-works).
 - `can_access_premium` — `is_subscribed || has_free_tier`. **This is the field the UI should gate on.**
+- `free_tier_expires_at` — ISO 8601 timestamp = `profile.created_at + 7 days`. Always returned (even after expiry — frontend decides whether to render a countdown).
 
 ---
 

@@ -5,6 +5,21 @@ const API = import.meta.env.VITE_API_URL || '';
 
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
+type PaymentRequiredHandler = (url: string) => void;
+let paymentRequiredHandler: PaymentRequiredHandler | null = null;
+
+/**
+ * Register a global handler for 402 Payment Required responses.
+ * BillingProvider wires this so a 402 anywhere in the app opens the paywall
+ * without per-call try/catch. Returns an unregister function.
+ */
+export function registerPaymentRequiredHandler(h: PaymentRequiredHandler) {
+    paymentRequiredHandler = h;
+    return () => {
+        if (paymentRequiredHandler === h) paymentRequiredHandler = null;
+    };
+}
+
 /**
  * Shared authenticated fetch utility for all API requests.
  * Automatically handles:
@@ -51,6 +66,10 @@ export async function fetchWithAuth<T>(
         } catch {
             // Response is not JSON, use statusText
             detail = response.statusText;
+        }
+
+        if (response.status === 402 && paymentRequiredHandler) {
+            try { paymentRequiredHandler(url); } catch { /* never let handler break the throw */ }
         }
 
         throw new ApiError(
