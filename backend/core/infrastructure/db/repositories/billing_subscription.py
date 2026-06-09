@@ -10,12 +10,14 @@ from core.infrastructure.db import models
 ACTIVE_SUBSCRIPTION_STATUSES = ("trialing", "active", "past_due", "unpaid")
 
 
-def get_subscription_by_stripe_subscription_id(
-    stripe_subscription_id: str,
+def get_subscription_by_external_id(
+    provider: str,
+    external_subscription_id: str,
     session: Session,
 ) -> models.BillingSubscription | None:
     stmt = select(models.BillingSubscription).where(
-        models.BillingSubscription.stripe_subscription_id == stripe_subscription_id
+        models.BillingSubscription.provider == provider,
+        models.BillingSubscription.external_subscription_id == external_subscription_id,
     )
     return session.scalar(stmt)
 
@@ -27,7 +29,7 @@ def get_active_subscriptions(
     stmt = (
         select(models.BillingSubscription)
         .where(models.BillingSubscription.billing_customer_id == billing_customer_id)
-        .where(models.BillingSubscription.stripe_status.in_(ACTIVE_SUBSCRIPTION_STATUSES))
+        .where(models.BillingSubscription.status.in_(ACTIVE_SUBSCRIPTION_STATUSES))
         .order_by(models.BillingSubscription.created_at.desc())
     )
     return session.scalars(stmt).first()
@@ -41,29 +43,32 @@ def get_active_subscriptions_for_user(
         select(models.BillingSubscription)
         .join(models.BillingCustomer, models.BillingSubscription.billing_customer_id == models.BillingCustomer.id)
         .where(models.BillingCustomer.user_id == user_id)
-        .where(models.BillingSubscription.stripe_status.in_(ACTIVE_SUBSCRIPTION_STATUSES))
+        .where(models.BillingSubscription.status.in_(ACTIVE_SUBSCRIPTION_STATUSES))
         .where(models.BillingSubscription.ended_at == None)  # noqa: E711
         .order_by(models.BillingSubscription.created_at.desc())
     )
     return session.scalars(stmt).first()
 
 
-def upsert_subscription_from_stripe(
+def upsert_subscription(
     *,
     billing_customer_id: UUID,
-    stripe_subscription_id: str,
-    stripe_price_id: str,
-    stripe_status: str,
+    provider: str,
+    external_subscription_id: str,
+    external_price_id: str,
+    status: str,
     current_period_start: datetime | int | None,
     current_period_end: datetime | int | None,
     cancel_at_period_end: bool,
     canceled_at: datetime | int | None,
     ended_at: datetime | int | None,
     session: Session,
+    raw: dict | None = None,
     event_created_at: datetime | int | None = None,
 ) -> models.BillingSubscription:
-    subscription = get_subscription_by_stripe_subscription_id(
-        stripe_subscription_id,
+    subscription = get_subscription_by_external_id(
+        provider,
+        external_subscription_id,
         session,
     )
     event_ts = _coerce_datetime(event_created_at)
@@ -71,14 +76,16 @@ def upsert_subscription_from_stripe(
     if subscription is None:
         subscription = models.BillingSubscription(
             billing_customer_id=billing_customer_id,
-            stripe_subscription_id=stripe_subscription_id,
-            stripe_price_id=stripe_price_id,
-            stripe_status=stripe_status,
+            provider=provider,
+            external_subscription_id=external_subscription_id,
+            external_price_id=external_price_id,
+            status=status,
             current_period_start=_coerce_datetime(current_period_start),
             current_period_end=_coerce_datetime(current_period_end),
             cancel_at_period_end=cancel_at_period_end,
             canceled_at=_coerce_datetime(canceled_at),
             ended_at=_coerce_datetime(ended_at),
+            raw=raw,
             last_event_at=event_ts,
         )
         session.add(subscription)
@@ -94,13 +101,16 @@ def upsert_subscription_from_stripe(
         return subscription
 
     subscription.billing_customer_id = billing_customer_id
-    subscription.stripe_price_id = stripe_price_id
-    subscription.stripe_status = stripe_status
+    subscription.provider = provider
+    subscription.external_price_id = external_price_id
+    subscription.status = status
     subscription.current_period_start = _coerce_datetime(current_period_start)
     subscription.current_period_end = _coerce_datetime(current_period_end)
     subscription.cancel_at_period_end = cancel_at_period_end
     subscription.canceled_at = _coerce_datetime(canceled_at)
     subscription.ended_at = _coerce_datetime(ended_at)
+    if raw is not None:
+        subscription.raw = raw
     if event_ts is not None:
         subscription.last_event_at = event_ts
 

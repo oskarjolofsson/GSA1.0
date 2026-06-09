@@ -1,3 +1,6 @@
+import json
+from decimal import Decimal
+
 from sqlalchemy.orm import Session
 from uuid import UUID
 from collections.abc import Awaitable, Callable
@@ -138,19 +141,51 @@ async def _handle_subscription_event(data: dict, db_session: Session, event_crea
             session=db_session,
         )
 
-    billing_subscription_repo.upsert_subscription_from_stripe(
+    period_start, period_end = _extract_period(data)
+
+    billing_subscription_repo.upsert_subscription(
         billing_customer_id=billing_customer.id,
-        stripe_subscription_id=subscription_id,
-        stripe_price_id=_extract_price_id(data),
-        stripe_status=data.get("status", "incomplete"),
-        current_period_start=data.get("current_period_start"),
-        current_period_end=data.get("current_period_end"),
+        provider="stripe",
+        external_subscription_id=subscription_id,
+        external_price_id=_extract_price_id(data),
+        status=data.get("status", "incomplete"),
+        current_period_start=period_start,
+        current_period_end=period_end,
         cancel_at_period_end=bool(data.get("cancel_at_period_end", False)),
         canceled_at=data.get("canceled_at"),
         ended_at=data.get("ended_at"),
+        raw=_json_safe(data),
         session=db_session,
         event_created_at=event_created_at,
     )
+
+
+def _json_safe(data: dict) -> dict:
+    # Stripe payloads contain Decimal values (e.g. plan.amount_decimal) that the
+    # default JSON encoder can't serialize into a JSONB column. Round-trip with a
+    # Decimal-aware default to coerce everything to plain JSON types.
+    return json.loads(json.dumps(data, default=_json_default))
+
+
+def _json_default(value: Any) -> Any:
+    if isinstance(value, Decimal):
+        return float(value)
+    return str(value)
+
+
+def _extract_period(data: dict) -> tuple[int | None, int | None]:
+    # In current Stripe API versions current_period_start/end live on the
+    # subscription *item*, not the subscription object. Fall back to the
+    # top-level fields for older payloads.
+    items = data.get("items", {}).get("data", [])
+    if items:
+        first_item = items[0]
+        start = first_item.get("current_period_start")
+        end = first_item.get("current_period_end")
+        if start is not None or end is not None:
+            return start, end
+
+    return data.get("current_period_start"), data.get("current_period_end")
 
 
 def _extract_price_id(data: dict) -> str:

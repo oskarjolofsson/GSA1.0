@@ -91,7 +91,7 @@ def test_start_subscription_checkout_raises_conflict_for_active_subscription(
         session=db_session,
     )
 
-    active_subscription = SimpleNamespace(id="sub_active", stripe_status="active")
+    active_subscription = SimpleNamespace(id="sub_active", status="active")
     create_checkout_mock = Mock()
 
     monkeypatch.setattr(
