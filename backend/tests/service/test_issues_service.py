@@ -36,6 +36,7 @@ class TestCreateIssue:
         # Arrange
         dto = CreateIssueDTO(
             title="Over the top swing",
+            description="Club moves outside the swing plane on the downswing",
             phase="DOWNSWING",
             current_motion="Steep angle of attack",
             expected_motion="Shallow angle of attack",
@@ -64,7 +65,7 @@ class TestCreateIssue:
     def test_create_issue_with_minimal_fields(self, db_session):
         """Test that create_issue works with only required fields"""
         # Arrange
-        dto = CreateIssueDTO(title="Minimal Issue")
+        dto = CreateIssueDTO(title="Minimal Issue", description="Minimal issue description")
 
         # Act
         result = create_issue(dto, db_session=db_session)
@@ -84,6 +85,7 @@ class TestGetIssueById:
         # Arrange - Create an issue first
         dto = CreateIssueDTO(
             title="Test Issue",
+            description="Test issue description",
             phase="IMPACT",
         )
         created_issue = create_issue(dto, db_session=db_session)
@@ -114,8 +116,8 @@ class TestGetAllIssues:
     def test_get_all_issues_returns_all_issues(self, db_session, test_user):
         """Test that get_all_issues returns all issues"""
         # Arrange - Create multiple issues
-        dto1 = CreateIssueDTO(title="Issue 1")
-        dto2 = CreateIssueDTO(title="Issue 2")
+        dto1 = CreateIssueDTO(title="Issue 1", description="Description 1")
+        dto2 = CreateIssueDTO(title="Issue 2", description="Description 2")
         create_issue(dto1, db_session=db_session)
         create_issue(dto2, db_session=db_session)
 
@@ -149,8 +151,8 @@ class TestGetIssuesByAnalysisId:
         analysis = repo_create_analysis(analysis, db_session)
 
         # Create issues
-        issue1_dto = CreateIssueDTO(title="Issue 1", phase="BACKSWING")
-        issue2_dto = CreateIssueDTO(title="Issue 2", phase="DOWNSWING")
+        issue1_dto = CreateIssueDTO(title="Issue 1", description="Description 1", phase="BACKSWING")
+        issue2_dto = CreateIssueDTO(title="Issue 2", description="Description 2", phase="DOWNSWING")
         issue1 = create_issue(issue1_dto, db_session=db_session)
         issue2 = create_issue(issue2_dto, db_session=db_session)
 
@@ -196,8 +198,8 @@ class TestGetIssuesByDrillId:
         drill = repo_create_drill(drill, db_session)
 
         # Create issues
-        issue1_dto = CreateIssueDTO(title="Issue 1")
-        issue2_dto = CreateIssueDTO(title="Issue 2")
+        issue1_dto = CreateIssueDTO(title="Issue 1", description="Description 1")
+        issue2_dto = CreateIssueDTO(title="Issue 2", description="Description 2")
         issue1 = create_issue(issue1_dto, db_session=db_session)
         issue2 = create_issue(issue2_dto, db_session=db_session)
 
@@ -226,6 +228,7 @@ class TestUpdateIssue:
         # Arrange - Create an issue
         dto = CreateIssueDTO(
             title="Original Title",
+            description="Original description",
             phase="BACKSWING",
             current_motion="Original motion",
             expected_motion="Original expected",
@@ -251,6 +254,7 @@ class TestUpdateIssue:
         # Arrange - Create an issue
         dto = CreateIssueDTO(
             title="Original",
+            description="Original description",
             phase="SETUP",
             current_motion="Original current",
             expected_motion="Original expected",
@@ -262,6 +266,7 @@ class TestUpdateIssue:
         # Act - Update all fields
         update_dto = UpdateIssueDTO(
             title="New Title",
+            description="New description",
             phase="IMPACT",
             current_motion="New current",
             expected_motion="New expected",
@@ -273,6 +278,7 @@ class TestUpdateIssue:
         # Assert
         assert updated_issue is not None
         assert updated_issue.title == "New Title"
+        assert updated_issue.description == "New description"
         assert updated_issue.phase == "IMPACT"
         assert updated_issue.current_motion == "New current"
         assert updated_issue.expected_motion == "New expected"
@@ -295,7 +301,7 @@ class TestDeleteIssue:
     def test_delete_issue_success(self, db_session):
         """Test that delete_issue successfully deletes an issue"""
         # Arrange - Create an issue
-        dto = CreateIssueDTO(title="To Delete")
+        dto = CreateIssueDTO(title="To Delete", description="Issue to delete")
         created_issue = create_issue(dto, db_session=db_session)
         
         # Verify it's created
