@@ -3,6 +3,7 @@ from uuid import UUID
 from datetime import timedelta
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
+from app.dependencies.entitlement import require_premium
 from sqlalchemy.orm import Session
 
 
@@ -51,7 +52,7 @@ def get_analysis(
 def create_analysis(
     request: CreateAnalysisRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_premium)
     ):
     """
     Create an analysis and return a signed upload URL.
@@ -82,7 +83,7 @@ def create_analysis(
 def run_analysis(
     analysis_id: UUID,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_premium)
 ):
     """
     Confirm that the video upload has completed.
