@@ -50,18 +50,11 @@ export const router = createBrowserRouter([
       { path: "legal/terms-and-conditions", element: <TermsAndCond /> },
       { path: "legal/privacy-policy", element: <Privacy /> },
       { path: "auth/callback", element: <AuthCallback /> },
-      { path: "*", element: <NotFound /> },
-    ],
-  },
-  {
-    path: "/pricing",
-    element: <RequireAuth />,
-    errorElement: <NotFound />,
-    children: [
       {
         element: <BillingShell />,
-        children: [{ index: true, element: <PricingPage /> }],
+        children: [{ path: "pricing", element: <PricingPage /> }],
       },
+      { path: "*", element: <NotFound /> },
     ],
   },
   {

@@ -49,7 +49,11 @@ export function BillingProvider({ children }: { children: ReactNode }) {
         setStatus(next);
         fetchedAt.current = Date.now();
       } catch (e) {
-        setError(e as Error);
+        if (e instanceof Error && e.message === 'Not signed in') {
+          setStatus(null);
+        } else {
+          setError(e as Error);
+        }
       } finally {
         setLoading(false);
         inflight.current = null;

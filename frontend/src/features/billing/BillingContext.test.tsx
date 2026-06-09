@@ -80,6 +80,13 @@ describe('BillingContext', () => {
     expect(getBillingStatus).toHaveBeenCalledTimes(2);
   });
 
+  it('tolerates "Not signed in" without setting error', async () => {
+    getBillingStatus.mockRejectedValueOnce(new Error('Not signed in'));
+    wrap();
+    await waitFor(() => expect(getBillingStatus).toHaveBeenCalled());
+    expect(screen.getByTestId('sub')).toHaveTextContent('null');
+  });
+
   it('ignores 402s from /billing/ URLs to avoid loops', async () => {
     getBillingStatus.mockResolvedValue({
       is_subscribed: false,
