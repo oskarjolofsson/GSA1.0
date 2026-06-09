@@ -14,6 +14,7 @@ class TestIssueCreate:
         """Test creating an issue with required fields"""
         issue = Issue(
             title="Hanging Back",
+            description="Weight stays on trail foot through impact",
         )
 
         created = create_issue(issue=issue, session=db_session)
@@ -27,6 +28,7 @@ class TestIssueCreate:
         """Test creating an issue with all fields"""
         issue = Issue(
             title="Early Extension",
+            description="Golfer's hips move toward the ball during the downswing",
             phase="DOWNSWING",
             current_motion="Hips move toward ball during downswing",
             expected_motion="Hips should rotate without moving forward",
@@ -43,11 +45,13 @@ class TestIssueCreate:
         assert created.expected_motion == "Hips should rotate without moving forward"
         assert created.swing_effect == "Loss of posture and power"
         assert created.shot_outcome == "Inconsistent contact, blocks and hooks"
+        assert created.description == "Golfer's hips move toward the ball during the downswing"
 
     def test_create_issue_persists_to_database(self, db_session):
         """Test that created issue is persisted to database"""
         issue = Issue(
             title="Over the Top",
+            description="Club moves outside the swing plane on the downswing",
             phase="TRANSITION",
         )
 
@@ -67,6 +71,7 @@ class TestIssueRead:
         """Test retrieving an issue by ID"""
         issue = Issue(
             title="Chicken Wing",
+            description="Lead elbow bends out away from the body through impact",
             phase="FOLLOW_THROUGH",
         )
         created = create_issue(issue=issue, session=db_session)
@@ -93,6 +98,7 @@ class TestIssueConstraints:
         """Test that issue ID is a valid UUID"""
         issue = Issue(
             title="Test Issue",
+            description="Placeholder description",
         )
         created = create_issue(issue=issue, session=db_session)
 
@@ -102,6 +108,7 @@ class TestIssueConstraints:
         """Test that created_at is automatically set"""
         issue = Issue(
             title="Test Issue",
+            description="Placeholder description",
         )
         created = create_issue(issue=issue, session=db_session)
 
@@ -114,6 +121,7 @@ class TestIssueConstraints:
         for phase in valid_phases:
             issue = Issue(
                 title=f"Test Issue {phase}",
+                description=f"Placeholder description for {phase}",
                 phase=phase,
             )
             created = create_issue(issue=issue, session=db_session)
@@ -122,6 +130,7 @@ class TestIssueConstraints:
     def test_issue_requires_title(self, db_session):
         """Test that title is required"""
         issue = Issue(
+            description="Placeholder description",
             phase="SETUP",
         )
 
