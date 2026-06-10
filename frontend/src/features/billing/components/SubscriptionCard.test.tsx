@@ -88,16 +88,19 @@ describe('SubscriptionCard', () => {
     expect(screen.getByText(/could not process your last payment/i)).toBeInTheDocument();
   });
 
-  it('shows ended date when subscription has ended and user is not subscribed', () => {
+  it('shows No plan + Subscribe once a subscription has fully ended (summary is null)', () => {
+    // Backend returns subscription: null once a sub ends (not in ACTIVE statuses),
+    // so the churned user sees the generic no-plan state.
     mockStatus.mockReturnValue({
       is_subscribed: false,
       has_free_tier: false,
       can_access_premium: false,
       free_tier_expires_at: '2020-01-01T00:00:00Z',
-      subscription: sub({ status: 'canceled', ended_at: '2026-06-09T00:00:00Z' }),
+      subscription: null,
     });
     render(<SubscriptionCard />);
-    expect(screen.getByText(/your subscription ended on/i)).toBeInTheDocument();
+    expect(screen.getByText('No plan')).toBeInTheDocument();
+    expect(screen.getByText(/don't have an active subscription/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /subscribe/i })).toBeInTheDocument();
   });
 
