@@ -86,7 +86,7 @@ export default function SubscriptionCard() {
     cta = { label: 'Subscribe', busy: 'Redirecting…', onClick: handleSubscribe };
   } else {
     pill = { label: 'No plan', dot: 'bg-white/30', className: 'text-white/50' };
-    detail = sub?.ended_at ? `Your subscription ended on ${formatDate(sub.ended_at)}.` : "You don't have an active subscription.";
+    detail = "You don't have an active subscription.";
     cta = { label: 'Subscribe', busy: 'Redirecting…', onClick: handleSubscribe };
   }
 
