@@ -55,7 +55,7 @@ describe('SubscriptionCard', () => {
       subscription: sub(),
     });
     render(<SubscriptionCard />);
-    expect(screen.getByText('Premium')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
     expect(screen.getByText(/Renews/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /manage subscription/i })).toBeInTheDocument();
   });
@@ -69,7 +69,7 @@ describe('SubscriptionCard', () => {
       subscription: sub({ cancel_at_period_end: false, canceled_at: '2026-06-09T00:00:00Z' }),
     });
     render(<SubscriptionCard />);
-    expect(screen.getByText(/Premium · ending/i)).toBeInTheDocument();
+    expect(screen.getByText(/Ending/i)).toBeInTheDocument();
     expect(screen.getByText(/your plan ends .* you keep access until then/i)).toBeInTheDocument();
     expect(screen.getByText(/Canceled on/i)).toBeInTheDocument();
     expect(screen.queryByText(/Renews/i)).not.toBeInTheDocument();
