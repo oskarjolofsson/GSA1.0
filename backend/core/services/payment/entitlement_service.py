@@ -42,3 +42,30 @@ def free_tier_expires_at(user_id: UUID, db_session: Session) -> datetime:
     if not profile:
         raise exceptions.NotFoundException("User", str(user_id))
     return profile.created_at + timedelta(days=7)
+
+
+def get_subscription_summary(user_id: UUID, db_session: Session) -> dict | None:
+    # Period/cancel info for the UI's subscription card. None when the user has
+    # no active subscription (free tier or never subscribed).
+    subscription = billing_subscription_repo.get_active_subscriptions_for_user(user_id, db_session)
+    if subscription is None:
+        return None
+
+    return {
+        "status": subscription.status,
+        "current_period_end": (
+            subscription.current_period_end.isoformat()
+            if subscription.current_period_end
+            else None
+        ),
+        "cancel_at_period_end": subscription.cancel_at_period_end,
+        # canceled_at is the reliable "will not renew" signal: null only when the
+        # subscription is genuinely renewing; set in both cancel modes (at-period-end
+        # and immediate), and cleared back to null if the user reactivates.
+        "canceled_at": (
+            subscription.canceled_at.isoformat() if subscription.canceled_at else None
+        ),
+        "ended_at": (
+            subscription.ended_at.isoformat() if subscription.ended_at else None
+        ),
+    }

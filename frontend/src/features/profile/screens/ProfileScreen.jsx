@@ -1,6 +1,7 @@
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import InfoRow from '../components/InfoRow.jsx';
 import AnalyticsConsentToggle from '../components/AnalyticsConsentToggle.jsx';
+import SubscriptionCard from '@/features/billing/components/SubscriptionCard';
 
 export default function ProfileScreen() {
     const { user, loading } = useAuth();
@@ -9,6 +10,11 @@ export default function ProfileScreen() {
         <div className="relative w-full max-w-3xl mx-auto px-2 sm:px-4 mb-12">
             <div className="">
                 <section className="relative w-full max-w-4xl mx-auto px-4 mt-[14vh] mb-12">
+                    {/* Header */}
+                    <div className="absolute -top-12 left-1/2 transform -translate-x-1/2">
+                        <h1 className="text-3xl font-bold text-white mb-6">My Profile</h1>
+                    </div>
+
                     <div className="max-w-xl rounded-3xl bg-[#0e1428]/80 backdrop-blur-md border border-white/10 p-6 sm:p-10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] mx-auto">
                         <h2 className="text-lg font-semibold text-white mb-4">General Information</h2>
 
@@ -16,7 +22,7 @@ export default function ProfileScreen() {
                         <InfoRow
                             label="Name"
                             isLoading={loading}
-                            value={user.name || '—'}
+                            value={user?.name || '—'}
                         />
 
                         {/* Email */}
@@ -37,6 +43,10 @@ export default function ProfileScreen() {
                         <hr className="border-white/10 my-6" /> */}
 
                         {/* <AnalyticsConsentToggle /> */}
+                    </div>
+
+                    <div className="max-w-xl mx-auto mt-6">
+                        <SubscriptionCard />
                     </div>
                 </section>
             </div>
