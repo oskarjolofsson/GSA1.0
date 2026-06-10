@@ -75,7 +75,7 @@ class StripeGateway:
             session = self.client.v1.billing_portal.sessions.create(
                 {
                     "customer": stripe_customer_id,
-                    "return_url": f"{FRONTEND_URL}/dashboard/settings",
+                    "return_url": f"{FRONTEND_URL}/dashboard/profile",
                 }
             )
             return StripePortalSessionResult(

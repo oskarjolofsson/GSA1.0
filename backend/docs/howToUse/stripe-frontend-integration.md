@@ -53,7 +53,7 @@ Response `200`:
 { "portal_url": "https://billing.stripe.com/p/session/..." }
 ```
 
-Behavior: redirect the browser to `portal_url`. After the user is done, Stripe redirects back to `${FRONTEND_URL}/dashboard/settings`.
+Behavior: redirect the browser to `portal_url`. After the user is done, Stripe redirects back to `${FRONTEND_URL}/dashboard/profile`.
 
 Errors:
 - `404` — user has no billing customer record yet (i.e. they have never checked out). Show the Checkout button instead.
@@ -115,7 +115,7 @@ Suggested behavior:
 
 Stripe redirects here when the user backs out of Checkout. No backend state changes. Just render the pricing page normally.
 
-### 2.4 Settings / Portal return — `/dashboard/settings`
+### 2.4 Profile / Portal return — `/dashboard/profile`
 
 When the user finishes in the Stripe Portal they land here. Re-fetch `GET /api/v1/billing/status` on mount so the UI reflects any cancellations or plan changes.
 
@@ -159,7 +159,7 @@ return <PremiumFeature />;
 ### Suggested caching
 
 - Cache `/billing/status` for ~30–60 seconds on the client (React Query `staleTime`).
-- Invalidate on: app mount, return from `/billing/success`, return from `/dashboard/settings`, and on any `402` response from a premium endpoint.
+- Invalidate on: app mount, return from `/billing/success`, return from `/dashboard/profile`, and on any `402` response from a premium endpoint.
 
 ---
 
@@ -171,7 +171,7 @@ The backend hardcodes these redirect targets via `FRONTEND_URL` (see `core/confi
 |------------------------|-----------------------------------|
 | `/billing/success`     | Stripe checkout success           |
 | `/pricing`             | Stripe checkout cancel + upsell   |
-| `/dashboard/settings`  | Stripe portal return              |
+| `/dashboard/profile`   | Stripe portal return              |
 
 If you need to change any of these, update the URLs in `core/infrastructure/payment/stripe/gateway.py` to match.
 

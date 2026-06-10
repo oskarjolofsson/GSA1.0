@@ -35,6 +35,40 @@ def test_is_subscribed_returns_true_when_user_has_active_subscription(db_session
 	assert result is True
 
 
+def test_get_subscription_summary_returns_none_without_active_subscription(db_session, test_user):
+	assert entitlement_service.get_subscription_summary(test_user["user_id"], db_session) is None
+
+
+def test_get_subscription_summary_returns_period_and_cancel_fields(db_session, test_user):
+	billing_customer = billing_customer_repo.create_billing_customer(
+		user_id=test_user["user_id"],
+		customer_id="cus_summary",
+		session=db_session,
+	)
+	period_end = 1_720_086_400
+	billing_subscription_repo.upsert_subscription(
+		billing_customer_id=billing_customer.id,
+		provider="stripe",
+		external_subscription_id="sub_summary",
+		external_price_id="price_summary",
+		status="active",
+		current_period_start=1_720_000_000,
+		current_period_end=period_end,
+		cancel_at_period_end=True,
+		canceled_at=1_720_040_000,
+		ended_at=None,
+		session=db_session,
+	)
+
+	summary = entitlement_service.get_subscription_summary(test_user["user_id"], db_session)
+	assert summary is not None
+	assert summary["status"] == "active"
+	assert summary["cancel_at_period_end"] is True
+	assert summary["current_period_end"] == datetime.fromtimestamp(period_end, tz=timezone.utc).isoformat()
+	assert summary["canceled_at"] == datetime.fromtimestamp(1_720_040_000, tz=timezone.utc).isoformat()
+	assert summary["ended_at"] is None
+
+
 def test_is_subscribed_true_when_active_and_scheduled_to_cancel(db_session, test_user):
 	# cancel_at_period_end is Stripe's scheduling flag, not an access gate:
 	# an active subscription scheduled to cancel must still count as subscribed.

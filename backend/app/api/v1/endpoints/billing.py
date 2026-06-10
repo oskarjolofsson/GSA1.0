@@ -45,4 +45,5 @@ def status(
         "has_free_tier": entitlement_service.has_free_tier(user_id, db),
         "can_access_premium": entitlement_service.can_access_premium_features(user_id, db),
         "free_tier_expires_at": entitlement_service.free_tier_expires_at(user_id, db).isoformat(),
+        "subscription": entitlement_service.get_subscription_summary(user_id, db),
     }

@@ -32,7 +32,6 @@ import { BillingProvider } from '@/features/billing/BillingContext';
 import PremiumGate from '@/features/billing/components/PremiumGate';
 import PricingPage from '@/features/billing/screens/PricingPage';
 import BillingSuccess from '@/features/billing/screens/BillingSuccess';
-import SettingsScreen from '@/features/billing/screens/SettingsScreen';
 
 const BillingShell = () => (
   <BillingProvider>
@@ -87,7 +86,6 @@ export const router = createBrowserRouter([
               { path: "drills", element: <PremiumGate><Drills /></PremiumGate> },
               { path: "drills/results", element: <PremiumGate><DrillResults /></PremiumGate> },
               { path: "issues", element: <Issues /> },
-              { path: "settings", element: <SettingsScreen /> },
               { path: "*", element: <NotFound /> },
             ],
           },

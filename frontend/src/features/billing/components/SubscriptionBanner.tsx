@@ -1,11 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Clock, Lock, Sparkles } from 'lucide-react';
 import { useBilling } from '../BillingContext';
-
-function daysLeft(expiresAt: string): number {
-  const ms = new Date(expiresAt).getTime() - Date.now();
-  return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
-}
+import { daysLeft } from '../utils/trial';
 
 export default function SubscriptionBanner() {
   const { status } = useBilling();
