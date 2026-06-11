@@ -1,4 +1,8 @@
 export type SubscriptionSummary = {
+  // Which system manages this subscription. 'stripe' is web-managed via the
+  // customer portal; 'revenuecat' is a mobile (App Store / Play Store) purchase
+  // that the web portal cannot touch and must be managed in the app.
+  provider: 'stripe' | 'revenuecat';
   status: string;
   current_period_end: string | null;
   cancel_at_period_end: boolean;
