@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 function UpperBar() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 grid grid-cols-2 sm:grid-cols-3 gap-8">
+    <div className="mx-auto max-w-6xl px-4 py-12 grid grid-cols-2 sm:grid-cols-4 gap-8">
       {Brand()}
       {Columns()}
     </div>
