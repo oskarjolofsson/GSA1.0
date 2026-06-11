@@ -54,6 +54,49 @@ def test_start_checkout_when_already_subscribed(
     create_checkout_mock.assert_not_called()
 
 
+def test_start_checkout_blocked_by_active_revenuecat_subscription(
+    client,
+    test_user,
+    auth_headers,
+    db_session,
+    monkeypatch,
+):
+    # A mobile (RevenueCat) subscription lives under a separate billing_customer
+    # row. The web checkout guard must still see it and refuse a second sub.
+    rc_customer = billing_customer_repo.create_billing_customer(
+        user_id=test_user["user_id"],
+        customer_id=str(test_user["user_id"]),
+        session=db_session,
+        provider="revenuecat",
+    )
+    billing_subscription_repo.upsert_subscription(
+        billing_customer_id=rc_customer.id,
+        provider="revenuecat",
+        external_subscription_id="rc_txn_active",
+        external_price_id="premium_monthly",
+        status="active",
+        current_period_start=None,
+        current_period_end=None,
+        cancel_at_period_end=False,
+        canceled_at=None,
+        ended_at=None,
+        session=db_session,
+    )
+
+    create_checkout_mock = Mock()
+    monkeypatch.setattr(
+        billing_service.stripe_gateway,
+        "create_subscription_checkout_session",
+        create_checkout_mock,
+    )
+
+    response = client.post("/api/v1/billing/checkout-session/", headers=auth_headers)
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "User already has an active subscription"
+    create_checkout_mock.assert_not_called()
+
+
 def test_start_checkout_with_invalid_user_mapping_returns_not_found(
     client,
     test_user,

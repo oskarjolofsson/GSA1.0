@@ -34,3 +34,13 @@ STRIPE_SECRET_KEY = os.getenv("SANDBOX_STRIPE_SECRET_KEY") if DEV else os.getenv
 STRIPE_PUBLISH_KEY = os.getenv("SANDBOX_STRIPE_PUBLISH_KEY") if DEV else os.getenv("LIVE_STRIPE_PUBLISH_KEY")
 PRICE_ID = os.getenv("SANDBOX_STRIPE_PRICE_ID") if DEV else os.getenv("LIVE_STRIPE_PRICE_ID")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+# RevenueCat (mobile in-app purchases via App Store / Play Store)
+# RevenueCat authenticates webhooks with a static shared secret that we set in
+# the dashboard's webhook "Authorization header" field and compare here — it does
+# not use Stripe-style HMAC signing.
+REVENUECAT_WEBHOOK_AUTH_TOKEN = (
+    os.getenv("SANDBOX_REVENUECAT_WEBHOOK_AUTH_TOKEN")
+    if DEV
+    else os.getenv("LIVE_REVENUECAT_WEBHOOK_AUTH_TOKEN")
+)
