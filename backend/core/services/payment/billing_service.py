@@ -1,6 +1,3 @@
-import json
-from decimal import Decimal
-
 from sqlalchemy.orm import Session
 from uuid import UUID
 from collections.abc import Awaitable, Callable
@@ -15,6 +12,7 @@ from core.infrastructure.db.repositories import processed_webhook_events as proc
 from core.infrastructure.payment.stripe.gateway import StripeGateway
 from core.infrastructure.payment.stripe.webhook import StripeWebhookVerifier
 from core.services import exceptions
+from core.services.payment.serialization import json_safe as _json_safe
 from core.infrastructure.payment.stripe.exceptions import StripeInfrastructureError
 
 stripe_gateway = StripeGateway()
@@ -28,18 +26,24 @@ async def start_subscription_checkout(user_id: UUID, db_session: Session) -> str
     if not profile:
         raise exceptions.NotFoundException("User", str(user_id))
 
-    billing_customer = billing_customer_repo.get_customer_by_user_id(user_id, db_session)
-
-    if billing_customer:
-        subscription = billing_subscription_repo.get_active_subscriptions(
-            billing_customer.id,
-            db_session,
-        )
-    else:
-        subscription = None
-
-    if subscription is not None:
+    # Block a second subscription across ANY provider. A mobile purchase happens on
+    # the store and can't be intercepted here, but it lands in billing_subscriptions
+    # via the RevenueCat webhook, so we can at least refuse to open a web (Stripe)
+    # checkout on top of an already-active Stripe OR RevenueCat subscription.
+    active_subscription = billing_subscription_repo.get_active_subscriptions_for_user(
+        user_id,
+        db_session,
+    )
+    if active_subscription is not None:
         raise exceptions.ConflictException("User already has an active subscription")
+
+    # Reuse the user's *Stripe* customer specifically. A RevenueCat customer row has
+    # a non-Stripe customer_id and must never be passed to Stripe.
+    billing_customer = billing_customer_repo.get_customer_by_user_and_provider(
+        user_id,
+        "stripe",
+        db_session,
+    )
 
     if not PRICE_ID:
         raise exceptions.ValidationException("Stripe price is not configured")
@@ -158,19 +162,6 @@ async def _handle_subscription_event(data: dict, db_session: Session, event_crea
         session=db_session,
         event_created_at=event_created_at,
     )
-
-
-def _json_safe(data: dict) -> dict:
-    # Stripe payloads contain Decimal values (e.g. plan.amount_decimal) that the
-    # default JSON encoder can't serialize into a JSONB column. Round-trip with a
-    # Decimal-aware default to coerce everything to plain JSON types.
-    return json.loads(json.dumps(data, default=_json_default))
-
-
-def _json_default(value: Any) -> Any:
-    if isinstance(value, Decimal):
-        return float(value)
-    return str(value)
 
 
 def _extract_period(data: dict) -> tuple[int | None, int | None]:

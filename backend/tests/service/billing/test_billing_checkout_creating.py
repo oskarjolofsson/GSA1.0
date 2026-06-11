@@ -96,7 +96,7 @@ def test_start_subscription_checkout_raises_conflict_for_active_subscription(
 
     monkeypatch.setattr(
         billing_service.billing_subscription_repo,
-        "get_active_subscriptions",
+        "get_active_subscriptions_for_user",
         Mock(return_value=active_subscription),
     )
     monkeypatch.setattr(
