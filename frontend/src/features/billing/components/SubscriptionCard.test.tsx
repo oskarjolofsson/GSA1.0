@@ -38,6 +38,7 @@ describe('SubscriptionCard', () => {
   });
 
   const sub = (over = {}) => ({
+    provider: 'stripe',
     status: 'active',
     current_period_end: '2026-06-30T00:00:00Z',
     cancel_at_period_end: false,
@@ -58,6 +59,21 @@ describe('SubscriptionCard', () => {
     expect(screen.getByText('Active')).toBeInTheDocument();
     expect(screen.getByText(/Renews/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /manage subscription/i })).toBeInTheDocument();
+  });
+
+  it('hides the Stripe portal button and points to the app for RevenueCat subscriptions', () => {
+    mockStatus.mockReturnValue({
+      is_subscribed: true,
+      has_free_tier: false,
+      can_access_premium: true,
+      free_tier_expires_at: '2030-01-01T00:00:00Z',
+      subscription: sub({ provider: 'revenuecat' }),
+    });
+    render(<SubscriptionCard />);
+    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /manage subscription/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/subscribed through the mobile app/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Stripe portal/i)).not.toBeInTheDocument();
   });
 
   it('shows "plan ends" + "Canceled on" when canceled_at is set (even with cancel_at_period_end false)', () => {
