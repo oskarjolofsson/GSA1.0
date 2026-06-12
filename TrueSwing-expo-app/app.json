@@ -1,0 +1,77 @@
+{
+  "expo": {
+    "scheme": "trueswing",
+    "name": "True Swing",
+    "slug": "trueswing",
+    "version": "1.0.1",
+    "web": {
+      "favicon": "./assets/true_swing_logo2.png"
+    },
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-video",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "This app uses the camera to record your golf swing.",
+          "microphonePermission": "This app uses the microphone when recording swing videos.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "This app needs access to your photos for you to select swing videos from your gallery.",
+          "savePhotosPermission": "This app needs permission to save trimmed swing videos to your gallery."
+        }
+      ],
+      "@react-native-google-signin/google-signin"
+    ],
+    "orientation": "portrait",
+    "icon": "./assets/true_swing_logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/true_swing_logo2.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0a0f1a"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "version": "1.0.1",
+      "supportsTablet": false,
+      "bundleIdentifier": "app.trueswing.se",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to record your golf swing.",
+        "NSMicrophoneUsageDescription": "This app uses the microphone when recording swing videos."
+      }
+    },
+    "android": {
+      "version": "1.0.1",
+      "versionCode": 3,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/true_swing_logo3.png",
+        "backgroundColor": "#0a0f1a"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "se.trueswing.app",
+      "intentFilters": [],
+      "allowBackup": false
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "83665fdd-d5ac-4c47-9ea0-98f510bdb4ee"
+      }
+    }
+  }
+}
