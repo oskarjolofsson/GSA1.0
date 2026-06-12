@@ -60,14 +60,20 @@ export default function SubscriptionCard() {
   const canceledDate = formatDate(sub?.canceled_at ?? null);
   const isCanceling = Boolean(sub?.canceled_at) || Boolean(sub?.cancel_at_period_end);
   const hasPaymentTrouble = sub?.status === 'past_due' || sub?.status === 'unpaid';
+  // RevenueCat subscriptions are bought in the mobile app and live in the App
+  // Store / Play Store — the Stripe portal cannot manage them, so we hide the
+  // "Manage subscription" button and point the user back to the app instead.
+  const isMobileManaged = sub?.provider === 'revenuecat';
 
   let pill: Pill;
   let detail: string;
   let subDetail: string | null = null;
-  let cta: { label: string; busy: string; onClick: () => void };
+  let cta: { label: string; busy: string; onClick: () => void } | null;
 
   if (status?.is_subscribed) {
-    cta = { label: 'Manage subscription', busy: 'Opening…', onClick: handlePortal };
+    cta = isMobileManaged
+      ? null
+      : { label: 'Manage subscription', busy: 'Opening…', onClick: handlePortal };
     if (hasPaymentTrouble) {
       pill = { label: 'Payment issue', dot: 'bg-red-400', className: 'text-red-300' };
       detail = 'We could not process your last payment. Update your card to keep your subscription.';
@@ -110,16 +116,26 @@ export default function SubscriptionCard() {
 
           {subDetail && <p className="mt-1 text-xs text-white/40">{subDetail}</p>}
 
-          <button
-            type="button"
-            onClick={cta.onClick}
-            disabled={submitting}
-            className="mt-6 inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-[#0e1428] transition hover:bg-white/90 disabled:opacity-60"
-          >
-            {submitting ? cta.busy : cta.label}
-          </button>
+          {cta && (
+            <button
+              type="button"
+              onClick={cta.onClick}
+              disabled={submitting}
+              className="mt-6 inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-[#0e1428] transition hover:bg-white/90 disabled:opacity-60"
+            >
+              {submitting ? cta.busy : cta.label}
+            </button>
+          )}
 
-          {status.is_subscribed && (
+          {status.is_subscribed && isMobileManaged && (
+            <p className="mt-6 text-xs text-white/40">
+              You subscribed through the mobile app. Manage or cancel your
+              subscription from your device&apos;s App Store or Play Store
+              account settings.
+            </p>
+          )}
+
+          {status.is_subscribed && !isMobileManaged && (
             <p className="mt-3 text-xs text-white/40">
               Update payment, view invoices, or cancel anytime in the Stripe portal.
             </p>

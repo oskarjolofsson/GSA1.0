@@ -1,0 +1,27 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = 'expo.modules.fastseek'
+version = '1.0.0'
+
+def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
+apply from: expoModulesCorePlugin
+applyKotlinExpoModulesCorePlugin()
+useCoreDependencies()
+useExpoPublishing()
+
+android {
+  namespace "expo.modules.fastseek"
+  compileSdk 36
+  defaultConfig {
+    minSdkVersion safeExtGet("minSdkVersion", 24)
+    targetSdk 36
+  }
+}
+
+// No media3 dependency declared here — we resolve ExoPlayer/SeekParameters/PlayerView via
+// reflection at runtime against the classes already pulled in by expo-video. That avoids
+// having to track media3's version against whatever expo-video ships.
+dependencies {
+  implementation project(':expo-modules-core')
+}

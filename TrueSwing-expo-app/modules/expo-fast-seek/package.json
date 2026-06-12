@@ -1,0 +1,10 @@
+{
+  "name": "expo-fast-seek",
+  "version": "1.0.0",
+  "description": "Keyframe-scrub native helper for expo-video (Android only; iOS is a no-op).",
+  "main": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "private": true
+}

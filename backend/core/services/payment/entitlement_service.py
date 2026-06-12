@@ -52,6 +52,10 @@ def get_subscription_summary(user_id: UUID, db_session: Session) -> dict | None:
         return None
 
     return {
+        # provider tells the web client whether this active subscription is managed
+        # by Stripe (web, manageable via the customer portal) or RevenueCat (mobile,
+        # managed in the App Store / Play Store — the Stripe portal cannot touch it).
+        "provider": subscription.provider,
         "status": subscription.status,
         "current_period_end": (
             subscription.current_period_end.isoformat()

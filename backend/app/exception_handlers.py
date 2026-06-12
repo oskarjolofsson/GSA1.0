@@ -11,6 +11,9 @@ from core.services.exceptions import (
     ConflictException
 )
 from core.infrastructure.payment.stripe import exceptions
+from core.infrastructure.payment.revenuecat.exceptions import (
+    RevenueCatWebhookVerificationError,
+)
 from core.infrastructure.auth.exceptions import AuthenticationError
 from traceback import format_exc
 
@@ -93,5 +96,17 @@ async def stripe_infrastructure_exception_handler(
     return JSONResponse(
         status_code=status.HTTP_502_BAD_GATEWAY,
         content={"detail": "The payment service is temporarily unavailable. Please try again later."},
+    )
+
+
+async def revenuecat_webhook_verification_exception_handler(
+    request: Request,
+    exc: RevenueCatWebhookVerificationError,
+):
+    # A bad/missing Authorization header on the RevenueCat webhook is an auth
+    # failure, not a server error — reject with 401 so RevenueCat surfaces it.
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"detail": "Invalid RevenueCat webhook authorization"},
     )
     
