@@ -1,0 +1,10 @@
+{
+  "name": "expo-video-rekeyframe",
+  "version": "1.0.0",
+  "description": "Dense-keyframe re-encoder for video files (Android only; iOS is a no-op).",
+  "main": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "private": true
+}
