@@ -1,0 +1,39 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+.env*
+
+/android/
+/ios/
+
+/android/app/build/
+/android/build/
+
+# iOS build outputs  
+/ios/build/
+/ios/Pods/
+
+modules/**/android/build/
+modules/**/android/.gradle/
+modules/**/ios/build/
+modules/**/ios/Pods/
+
+# EAS
+.eas/build
+
+# macOS
+.DS_Store
+
+# Temporary files created by Metro to check the health of the file watcher
+.metro-health-check*
+
+# Graphify
+graphify-out/
