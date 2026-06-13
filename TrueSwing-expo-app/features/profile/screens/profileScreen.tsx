@@ -3,6 +3,8 @@ import { Linking, Alert } from "react-native";
 import { useAuth } from "features/auth/AuthProvider";
 import LoadingState from "features/shared/components/LoadingState";
 import ErrorState from "features/shared/components/ErrorState";
+import SubscriptionBanner from "features/billing/components/SubscriptionBanner";
+import SubscriptionCard from "features/billing/components/SubscriptionCard";
 
 import {
     View,
@@ -69,6 +71,8 @@ export default function ProfileScreen() {
                 <View className="mt-4 mb-6 items-center">
                     <Text className="text-xl font-bold text-gray-300">Profile</Text>
                 </View>
+
+                <SubscriptionBanner />
 
                 {/* Persnoal Info */}
                 <View className="">
@@ -137,6 +141,11 @@ export default function ProfileScreen() {
                         Delete Account
                     </Text>
                 </TouchableOpacity>
+
+                {/* Subscription */}
+                <View className="mt-6">
+                    <SubscriptionCard />
+                </View>
 
                 {/* Border */}
                 <View className="my-8 h-px bg-white/10" />

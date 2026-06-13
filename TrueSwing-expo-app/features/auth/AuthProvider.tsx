@@ -9,6 +9,11 @@ import { supabase } from "lib/supabase";
 import type { AppUser, AuthContextType } from "./types";
 import * as AppleAuthentication from "expo-apple-authentication";
 import apiClient from "lib/apiClient";
+import {
+  configurePurchases,
+  identifyUser,
+  forgetUser,
+} from "features/billing/services/purchaseService";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -130,6 +135,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
       sub.remove();
     };
   }, []);
+
+  // Keep the RevenueCat identity in lockstep with the Supabase session so
+  // purchases always map to the right account.
+  useEffect(() => {
+    configurePurchases();
+    const userId = session?.user?.id;
+    if (userId) {
+      identifyUser(userId).catch((e) =>
+        console.error("RevenueCat logIn error:", e)
+      );
+    } else {
+      forgetUser().catch((e) => console.error("RevenueCat logOut error:", e));
+    }
+  }, [session?.user?.id]);
 
   const value = useMemo(
     () => ({

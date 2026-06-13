@@ -6,6 +6,20 @@ const API = process.env.EXPO_PUBLIC_API_URL;
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
 /**
+ * Global 402 Payment Required backstop. The billing layer registers a handler
+ * (typically: invalidate status + open the paywall). Any premium request that
+ * reaches the backend and gets a 402 pops the paywall, even on screens that
+ * aren't proactively gated. 402s from /billing/ URLs are ignored to avoid loops.
+ */
+type PaymentRequiredHandler = (url: string) => void;
+
+let paymentRequiredHandler: PaymentRequiredHandler | null = null;
+
+export function registerPaymentRequiredHandler(handler: PaymentRequiredHandler | null) {
+    paymentRequiredHandler = handler;
+}
+
+/**
  * Shared authenticated fetch utility for all API requests.
  * Automatically handles:
  * - Supabase session retrieval and token injection
@@ -53,6 +67,12 @@ export async function fetchWithAuth<T>(
         } catch {
             // Response is not JSON, use statusText
             detail = response.statusText;
+        }
+
+        // Backstop: notify the billing layer on Payment Required, except for
+        // billing's own calls (avoids a refresh → 402 → refresh loop).
+        if (response.status === 402 && !url.includes('/billing/')) {
+            paymentRequiredHandler?.(url);
         }
 
         throw new ApiError(
