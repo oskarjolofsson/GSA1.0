@@ -6,6 +6,7 @@ import { HomeAnalysisProvider } from "features/home/context/HomeAnalysisContext"
 import type { Issue } from "features/issues/types";
 import { startPracticeSession } from "features/practice/services/sessionService";
 import type { PracticeSession } from "features/practice/types";
+import { useRequirePremium } from "features/billing/hooks/useRequirePremium";
 
 import { useFocusEffect } from '@react-navigation/native';
 import { View } from "react-native";
@@ -14,6 +15,7 @@ import React from "react";
 
 export default function HomeFlow() {
     const { currentScreen, goToAnalysis, goToPractice } = useHomeFlowSequence();
+    const { requirePremium } = useRequirePremium();
     const analysisController = useHomeAnalysisController();
     const [selectedIssue, setSelectedIssue] = React.useState<Issue | null>(null);
     const [selectedSession, setSelectedSession] = React.useState<PracticeSession | null>(null);
@@ -34,6 +36,9 @@ export default function HomeFlow() {
                     <AnalysisResultScreen
                         onNext={async (issue) => {
                             if (!issue.analysis_issue_id) return;
+
+                            // Drills are premium — gate before starting a session.
+                            if (!requirePremium()) return;
 
                             try {
                                 setSelectedIssue(issue);
