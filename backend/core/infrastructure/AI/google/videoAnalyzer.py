@@ -53,7 +53,7 @@ def _build_content_payload(video_file: types.File, user_prompt: str) -> list:
 def _call_gemini_api(
     client: genai.Client,
     contents: list,
-    model: str = "gemini-3.1-pro-preview"
+    model: str
 ) -> types.GenerateContentResponse:
     """Call Gemini API with the prepared content."""
     print(f"Calling Gemini API with model: {model}")
@@ -101,12 +101,12 @@ def analyze_video(
     height: Optional[str] = None,
     misses: Optional[str] = None,
     extra: Optional[str] = None,
-    model: str = "gemini-3.1-pro-preview",
+    model: str = None,
     db_session = None
 ) -> dict:
     """
     Analyze a golf swing video using Google Gemini.
-    
+
     Args:
         client: Initialized Gemini client
         video_path: Local path to the video file
@@ -114,17 +114,21 @@ def analyze_video(
         height: Wanted ball height (optional)
         misses: Actual result/miss pattern (optional)
         extra: Additional user notes (optional)
-        model: Gemini model to use (default: gemini-3.1-pro-preview)
-    
+        model: Model identifier to run with. Required — there is no default;
+            callers resolve it via model_selection.get_active_analysis_model().
+
     Returns:
         dict: Parsed analysis results
-    
+
     Raises:
-        ValueError: If response is invalid or empty
+        ValueError: If model is missing or the response is invalid/empty
         Exception: If video processing fails
     """
+    if not model:
+        raise ValueError("analyze_video requires an explicit model; none was provided")
+
     video_file = None
-    
+
     try:
         # Upload video and wait for processing
         video_file: types.File = _upload_and_wait(client, video_path)

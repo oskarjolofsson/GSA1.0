@@ -21,6 +21,11 @@ THUMBNAIL_FILENAME = "thumbnail.webp"
 # AI CONFIGURATION
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+# Which model runs an analysis. Single source of truth, overridable via env.
+# Read through core.infrastructure.AI.model_selection.get_active_analysis_model(),
+# never directly, so a future admin-board / DB-backed selector is a one-function swap.
+ANALYSIS_MODEL = os.getenv("ANALYSIS_MODEL", "gemini-3.1-pro-preview")
+
 # DATABASE CONFIGURATION
 
 

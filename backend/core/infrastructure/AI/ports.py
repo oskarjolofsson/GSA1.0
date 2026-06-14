@@ -12,7 +12,7 @@ class AnalysisAI(Protocol):
         height: Optional[str] = None,
         misses: Optional[str] = None,
         extra: Optional[str] = None,
-        model: Optional[str] = None
+        model: str = None
     ) -> dict:
         """
         Analyze a golf swing video.
@@ -23,7 +23,8 @@ class AnalysisAI(Protocol):
             height: Wanted ball height (optional)  
             misses: Actual result/miss pattern (optional)
             extra: Additional user notes (optional)
-            model: Model identifier (optional, provider-specific)
+            model: Model identifier (required, provider-specific). Implementations
+                must reject a missing model rather than fall back to a default.
         
         Returns:
             dict: Analysis results containing issues, key findings, and metadata

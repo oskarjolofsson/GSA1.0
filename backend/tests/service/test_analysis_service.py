@@ -11,6 +11,7 @@ from ...core.services.analysis_service import (
     get_analysis_by_id_in_db
 )
 from ...core.services.dtos.analysis_service_dto import CreateAnalysisDTO, RunAnalysisDTO
+from ...core.infrastructure.AI.model_selection import get_active_analysis_model
 from ...core.infrastructure.db.repositories.analysis import get_analysis_by_id
 from ...core.infrastructure.db.repositories.videos import get_video_by_id
 
@@ -53,7 +54,6 @@ def completed_analysis_shared(test_user, shared_db_session):
     create_result = create_analysis(
         CreateAnalysisDTO(
             user_id=test_user["user_id"],
-            model="gemini-3.1-pro-preview",
             start_time=timedelta(seconds=0),
             end_time=timedelta(seconds=10),
         ),
@@ -93,7 +93,6 @@ class TestCreateAnalysis:
         # Arrange
         dto = CreateAnalysisDTO(
             user_id=test_user["user_id"],
-            model="v1.0",
             start_time=timedelta(seconds=5),
             end_time=timedelta(seconds=15),
         )
@@ -118,7 +117,6 @@ class TestCreateAnalysis:
         # Arrange
         dto = CreateAnalysisDTO(
             user_id=test_user["user_id"],
-            model="v2.0",
             start_time=timedelta(seconds=10),
             end_time=timedelta(seconds=20),
         )
@@ -131,7 +129,7 @@ class TestCreateAnalysis:
         analysis = get_analysis_by_id(result["analysis_id"], session=db_session)
         assert analysis is not None
         assert analysis.user_id == test_user["user_id"]
-        assert analysis.model_version == "v2.0"
+        assert analysis.model_version == get_active_analysis_model()
         assert analysis.video_id is not None
 
     def test_create_analysis_returns_correct_values(self, db_session, test_user):
@@ -139,7 +137,6 @@ class TestCreateAnalysis:
         # Arrange
         dto = CreateAnalysisDTO(
             user_id=test_user["user_id"],
-            model="v1.0",
             start_time=timedelta(seconds=0),
             end_time=timedelta(seconds=10),
         )
@@ -160,7 +157,6 @@ class TestCreateAnalysis:
         # Arrange
         dto = CreateAnalysisDTO(
             user_id=test_user["user_id"],
-            model="v1.0",
             start_time=timedelta(seconds=0),
             end_time=timedelta(seconds=5),
         )
@@ -179,7 +175,6 @@ class TestCreateAnalysis:
         # Arrange
         dto = CreateAnalysisDTO(
             user_id=test_user["user_id"],
-            model="v1.0",
             start_time=timedelta(seconds=2),
             end_time=timedelta(seconds=8),
         )
