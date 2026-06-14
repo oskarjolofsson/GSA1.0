@@ -22,12 +22,14 @@ CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "a
 # scp /Users/oskarolofsson/ws/personal/GSA1.0/backend/.env.production root@188.245.42.39:/root/.env
 
 
-# To build multi-architecture Docker images, use the following commands:
-# cd <your-backend-repo>
+# --- First-time setup (run once) ---
 # docker buildx create --use
 # docker buildx inspect --bootstrap
 # docker login
-# docker buildx build --platform linux/amd64,linux/arm64   -t oskarjolofsson/true_swing_backend:latest --push .
+
+# --- Deploy ---
+# cd <your-backend-repo>
+# docker buildx build --platform linux/amd64,linux/arm64 \  -t oskarjolofsson/true_swing_backend:latest  --push . && docker image rm oskarjolofsson/true_swing_backend:latest 2>/dev/null && docker buildx prune -f
 
 # To pull and run the image inside Hetzner Cloud, use:
 # cd /srv/trueswing
