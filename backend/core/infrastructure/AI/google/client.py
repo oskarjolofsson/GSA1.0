@@ -31,20 +31,21 @@ class GoogleAnalysisClient(AnalysisAI):
         height: Optional[str] = None,
         misses: Optional[str] = None,
         extra: Optional[str] = None,
-        model: str = "gemini-3.1-pro-preview",
+        model: str = None,
         db_session: Optional[object] = None
     ) -> dict:
         """
         Analyze a golf swing video.
-        
+
         Args:
             video_path: Local path to the video file
             shape: Wanted ball shape (optional)
             height: Wanted ball height (optional)
             misses: Actual result/miss pattern (optional)
             extra: Additional user notes (optional)
-            model: Gemini model to use (default: gemini-3.1-pro-preview)
-        
+            model: Model identifier to run with. Required — there is no default;
+                callers resolve it via model_selection.get_active_analysis_model().
+
         Returns:
             dict: Analysis results
         """

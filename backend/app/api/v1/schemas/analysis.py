@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 
 class CreateAnalysisRequest(BaseModel):
-    model: str | None = None
     start_time: float
     end_time: float
     prompt_shape: str | None = None

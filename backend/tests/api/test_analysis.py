@@ -12,6 +12,7 @@ from core.infrastructure.db.models.Video import Video
 from core.infrastructure.db.models.Analysis import Analysis
 from pathlib import Path
 from core.infrastructure.storage.r2Adaptor import generate_upload_url
+from core.infrastructure.AI.model_selection import get_active_analysis_model
 import requests
 
 
@@ -21,13 +22,12 @@ def analysis_with_id(client, test_user, db_session, auth_headers):
     response = client.post(
         "/api/v1/analyses/",
         json={
-            "model": "gemini-3.1-pro-preview",
             "start_time": 0,
             "end_time": 10,
         },
         headers=auth_headers,
     )
-    
+
     assert response.status_code == 201
     data = response.json()
     return uuid.UUID(data["analysis_id"]), test_user["user_id"]
@@ -60,15 +60,14 @@ def test_create_analysis(client, test_user, db_session, auth_headers):
     response = client.post(
         "/api/v1/analyses/",
         json={
-            "model": "gemini-3.1-pro-preview",
             "start_time": 0,
             "end_time": 10,
         },
         headers=auth_headers,
     )
-    
+
     data = response.json()
-    
+
     assert response.status_code == 201
     assert data["success"] is True
     assert "analysis_id" in data
@@ -82,7 +81,7 @@ def test_create_analysis(client, test_user, db_session, auth_headers):
     analysis_result: Analysis = get_analysis_by_id(analysis_id=analysis_id, session=db_session)
     assert analysis_result is not None
     assert analysis_result.user_id == test_user["user_id"]
-    assert analysis_result.model_version == "gemini-3.1-pro-preview"
+    assert analysis_result.model_version == get_active_analysis_model()
     assert analysis_result.status == "awaiting_upload"
     assert analysis_result.video_id is not None
     
@@ -124,7 +123,7 @@ def test_get_analysis(client, test_user, analysis_with_id, auth_headers):
     
     assert uuid.UUID(data["analysis_id"]) == analysis_id
     assert uuid.UUID(data["user_id"]) == user_id
-    assert data["model_version"] == "gemini-3.1-pro-preview"
+    assert data["model_version"] == get_active_analysis_model()
     assert data["status"] == "awaiting_upload"
     assert "created_at" in data
     assert "video_id" in data
@@ -170,7 +169,6 @@ def test_delete_analysis(client, test_user, db_session, auth_headers):
     response = client.post(
         "/api/v1/analyses/",
         json={
-            "model": "gemini-3.1-pro-preview",
             "start_time": 0,
             "end_time": 10,
         },

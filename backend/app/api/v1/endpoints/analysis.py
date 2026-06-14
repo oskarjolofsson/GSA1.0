@@ -61,7 +61,6 @@ def create_analysis(
     
     dto = CreateAnalysisDTO(
         user_id=user_id,
-        model=request.model,
         start_time=timedelta(seconds=request.start_time),
         end_time=timedelta(seconds=request.end_time),
         prompt_shape=request.prompt_shape,

@@ -40,6 +40,7 @@ from ..infrastructure.local_files.file_types.Video_file import Video_file
 
 from ..infrastructure.AI.google.client import GoogleAnalysisClient
 from ..infrastructure.AI.google.videoAnalyzer import analyze_video
+from ..infrastructure.AI.model_selection import get_active_analysis_model
 from uuid import UUID
 import os
 import tempfile
@@ -61,7 +62,7 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
 
         analysis = Analysis(
             user_id=dto.user_id,
-            model_version=dto.model,
+            model_version=get_active_analysis_model(),
             video_id=video.id,
             status="awaiting_upload",
         )

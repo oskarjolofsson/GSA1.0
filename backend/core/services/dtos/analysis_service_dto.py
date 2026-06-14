@@ -15,9 +15,7 @@ class CreateAnalysisDTO:
     end_time: float
     
     user_id: UUID
-    
-    model: str
-    
+
     prompt_shape: str | None = None
     prompt_height: str | None = None
     prompt_misses: str | None = None

@@ -6,7 +6,6 @@ export async function create_analysis(prompt: Prompt, startTime: number = 0, end
     const requestBody = {
         start_time: startTime,
         end_time: endTime,
-        model: "gemini-3-pro-preview",
         prompt_shape: prompt.desired_shot,
         prompt_miss: prompt.miss,
         prompt_extra: prompt.extra
