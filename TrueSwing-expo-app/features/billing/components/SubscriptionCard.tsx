@@ -75,7 +75,7 @@ export default function SubscriptionCard() {
           <Text className="text-base font-semibold text-white">Manage subscription</Text>
           <Text className="mt-1 text-sm text-slate-400">
             {managedOnWeb
-              ? 'Purchased on the web — manage it there'
+              ? 'Subscription was purchased on the web — manage it there'
               : `Opens your ${Platform.OS === 'ios' ? 'App Store' : 'Play Store'} settings`}
           </Text>
         </View>

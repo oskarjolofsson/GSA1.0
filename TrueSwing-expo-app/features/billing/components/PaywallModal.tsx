@@ -59,6 +59,15 @@ export default function PaywallModal() {
     }
   };
 
+  const explainRestore = () =>
+    Alert.alert(
+      'Restore purchases',
+      'Already paid but the app shows the paywall? Tap "Restore purchases" to ' +
+        're-activate your subscription. Useful after reinstalling, switching ' +
+        'phones, or signing in with a different account — your purchase lives ' +
+        'with your App Store account, not just this device.',
+    );
+
   const handleRestore = async () => {
     setBusy(true);
     try {
@@ -124,11 +133,21 @@ export default function PaywallModal() {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity activeOpacity={0.7} disabled={busy} onPress={handleRestore} className="mt-3">
-            <Text className="text-center text-sm font-medium text-slate-400">
-              Restore purchases
-            </Text>
-          </TouchableOpacity>
+          <View className="mt-3 flex-row items-center justify-center">
+            <TouchableOpacity activeOpacity={0.7} disabled={busy} onPress={handleRestore}>
+              <Text className="text-center text-sm font-medium text-slate-400">
+                Already subscribed? Restore purchases
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={explainRestore}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              className="ml-1.5 h-5 w-5 items-center justify-center rounded-full border border-slate-500"
+            >
+              <Text className="text-xs font-bold text-slate-400">?</Text>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity activeOpacity={0.7} disabled={busy} onPress={closePaywall} className="mt-4">
             <Text className="text-center text-sm font-medium text-slate-500">
