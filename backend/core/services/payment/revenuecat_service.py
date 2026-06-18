@@ -20,6 +20,7 @@ from core.infrastructure.db.repositories import profiles
 from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
 from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
 from core.infrastructure.db.repositories import processed_webhook_events as processed_webhook_repo
+from core.config import EXPECTED_REVENUECAT_ENV
 from core.infrastructure.payment.revenuecat.webhook import RevenueCatWebhookVerifier
 from core.services.payment.serialization import json_safe
 
@@ -59,6 +60,22 @@ async def handle_revenuecat_webhook(
     # a Stripe event id in the shared processed_webhook_events table.
     idempotency_key = f"{PROVIDER}:{event_dto.event_id}"
     if processed_webhook_repo.exists(idempotency_key, db_session):
+        return
+
+    # Environment gate: RevenueCat delivers SANDBOX and PRODUCTION events to every
+    # configured webhook, so a sandbox test purchase reaches this backend too. Honor
+    # only our own environment; record the rest as processed (so RevenueCat stops
+    # retrying) but never touch entitlement with them.
+    if not _environment_matches(event_dto.data):
+        logger.info(
+            "Ignoring RevenueCat %s event from env %r (this backend honors %s)",
+            event_dto.event_type,
+            event_dto.data.get("environment"),
+            EXPECTED_REVENUECAT_ENV,
+        )
+        processed_webhook_repo.mark_processed(
+            idempotency_key, f"{PROVIDER}.{event_dto.event_type}.ignored_env", db_session
+        )
         return
 
     event = event_dto.data
@@ -199,6 +216,18 @@ def _derive_status_fields(event_type: str, event: dict) -> dict:
         return fields
 
     return fields
+
+
+def _environment_matches(event: dict) -> bool:
+    """True if the event belongs to the environment this backend honors.
+
+    A missing/unknown environment is allowed through (auth already proved origin);
+    only an explicit mismatch — e.g. a SANDBOX event hitting the production
+    backend — is rejected. Reads the module-level EXPECTED_REVENUECAT_ENV so tests
+    can pin it the same way they patch the auth token.
+    """
+    event_env = event.get("environment")
+    return event_env is None or event_env == EXPECTED_REVENUECAT_ENV
 
 
 def _identity_candidates(event: dict) -> list:

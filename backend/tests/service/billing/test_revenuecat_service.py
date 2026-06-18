@@ -111,6 +111,33 @@ def test_terminal_events_end_the_subscription(event_type):
     assert fields["ended_at"] is not None
 
 
+# --- environment gate ------------------------------------------------------
+
+def test_environment_matches_when_equal(monkeypatch):
+    monkeypatch.setattr(svc, "EXPECTED_REVENUECAT_ENV", "PRODUCTION")
+    assert svc._environment_matches(_event(environment="PRODUCTION")) is True
+
+
+def test_environment_rejected_when_different(monkeypatch):
+    # Backend honors PRODUCTION; a SANDBOX event (fanned out by RevenueCat) is rejected.
+    monkeypatch.setattr(svc, "EXPECTED_REVENUECAT_ENV", "PRODUCTION")
+    assert svc._environment_matches(_event(environment="SANDBOX")) is False
+
+
+def test_environment_matches_sandbox_backend(monkeypatch):
+    monkeypatch.setattr(svc, "EXPECTED_REVENUECAT_ENV", "SANDBOX")
+    assert svc._environment_matches(_event(environment="SANDBOX")) is True
+    assert svc._environment_matches(_event(environment="PRODUCTION")) is False
+
+
+def test_environment_missing_is_allowed(monkeypatch):
+    # Absent/unknown environment is let through — auth already proved origin.
+    monkeypatch.setattr(svc, "EXPECTED_REVENUECAT_ENV", "PRODUCTION")
+    event = _event()
+    event.pop("environment", None)
+    assert svc._environment_matches(event) is True
+
+
 # --- id / time helpers -----------------------------------------------------
 
 def test_subscription_key_prefers_original_transaction_id():

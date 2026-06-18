@@ -49,3 +49,10 @@ REVENUECAT_WEBHOOK_AUTH_TOKEN = (
     if DEV
     else os.getenv("LIVE_REVENUECAT_WEBHOOK_AUTH_TOKEN")
 )
+
+# RevenueCat fans every webhook event out to ALL configured endpoints regardless
+# of environment (it does not route sandbox -> dev URL, production -> live URL).
+# So a SANDBOX test purchase also reaches the production backend. Each backend
+# honors only its own environment and ignores the rest, so a free sandbox buy can
+# never grant entitlement in production. See revenuecat_service.handle_revenuecat_webhook.
+EXPECTED_REVENUECAT_ENV = "SANDBOX" if DEV else "PRODUCTION"

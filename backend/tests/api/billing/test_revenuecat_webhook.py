@@ -12,6 +12,7 @@ from core.infrastructure.db.repositories import billing_customer as billing_cust
 from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
 from core.infrastructure.payment.revenuecat import webhook as rc_webhook_module
 from core.services.payment import entitlement_service
+from core.services.payment import revenuecat_service as rc_service
 
 WEBHOOK_URL = "/api/v1/webhook/revenuecat/"
 TEST_TOKEN = "rc_integration_test_token"
@@ -24,6 +25,14 @@ EXPIRATION_AT_MS = 4_102_444_800_000  # year 2100
 @pytest.fixture(autouse=True)
 def _patch_rc_token(monkeypatch):
     monkeypatch.setattr(rc_webhook_module, "REVENUECAT_WEBHOOK_AUTH_TOKEN", TEST_TOKEN)
+
+
+@pytest.fixture(autouse=True)
+def _honor_production_env(monkeypatch):
+    # The events in this suite are PRODUCTION, so pin the backend to honor that
+    # environment regardless of the local DEV flag (which would otherwise expect
+    # SANDBOX and make the gate drop every event).
+    monkeypatch.setattr(rc_service, "EXPECTED_REVENUECAT_ENV", "PRODUCTION")
 
 
 def _event(user_id, **overrides) -> dict:
@@ -141,6 +150,41 @@ def test_cancellation_keeps_entitlement(client, db_session, test_user):
     assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is True
 
 
+def test_uncancellation_clears_cancel_flag(client, db_session, test_user):
+    # purchase -> cancel (auto-renew off) -> uncancel (auto-renew back on).
+    # The cancel flags must clear and entitlement must hold throughout.
+    _post(client, _event(test_user["user_id"], id="rc_evt_u1"))
+    _post(
+        client,
+        _event(
+            test_user["user_id"],
+            id="rc_evt_u_cancel",
+            type="CANCELLATION",
+            event_timestamp_ms=PURCHASED_AT_MS + 1000,
+        ),
+    )
+    # Sanity: the cancel actually set the flags before we undo them.
+    sub = _get_sub(db_session)
+    assert sub.cancel_at_period_end is True
+    assert sub.canceled_at is not None
+
+    resp = _post(
+        client,
+        _event(
+            test_user["user_id"],
+            id="rc_evt_u_uncancel",
+            type="UNCANCELLATION",
+            event_timestamp_ms=PURCHASED_AT_MS + 2000,
+        ),
+    )
+    assert resp.status_code == 200
+    db_session.refresh(sub)
+    assert sub.status == "active"
+    assert sub.cancel_at_period_end is False
+    assert sub.canceled_at is None
+    assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is True
+
+
 def test_billing_issue_is_past_due_but_still_entitled(client, db_session, test_user):
     _post(client, _event(test_user["user_id"], id="rc_evt_b1"))
     _post(
@@ -226,6 +270,54 @@ def test_unknown_app_user_id_is_acknowledged_without_writing(client, db_session,
     )
     assert resp.status_code == 200  # never 500, so RevenueCat stops retrying
     assert _get_sub(db_session, "rc_txn_unknown") is None
+
+
+def test_event_from_other_environment_is_ignored(client, db_session, test_user):
+    # Backend honors PRODUCTION (pinned by the autouse fixture); a SANDBOX event —
+    # e.g. a test purchase that RevenueCat also fanned out to the prod webhook —
+    # must be acknowledged but must NOT write a subscription or grant entitlement.
+    resp = _post(
+        client,
+        _event(
+            test_user["user_id"],
+            id="rc_evt_sandbox",
+            original_transaction_id="rc_txn_sandbox",
+            environment="SANDBOX",
+        ),
+    )
+    assert resp.status_code == 200  # acknowledged so RevenueCat stops retrying
+    assert _get_sub(db_session, "rc_txn_sandbox") is None
+    assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is False
+
+
+def test_ignored_environment_event_is_marked_processed(client, db_session, test_user):
+    # The ignored event is recorded as processed, so a redelivery is a no-op and
+    # cannot slip through even if the event somehow re-arrives.
+    event = _event(
+        test_user["user_id"],
+        id="rc_evt_sandbox_dupe",
+        original_transaction_id="rc_txn_sandbox_dupe",
+        environment="SANDBOX",
+    )
+    first = _post(client, event)
+    second = _post(client, event)
+    assert first.status_code == 200 and second.status_code == 200
+    assert _get_sub(db_session, "rc_txn_sandbox_dupe") is None
+
+
+def test_matching_environment_event_is_processed(client, db_session, test_user):
+    # Sanity: a PRODUCTION event (matching the pinned backend env) still writes.
+    resp = _post(
+        client,
+        _event(
+            test_user["user_id"],
+            id="rc_evt_prod_match",
+            original_transaction_id="rc_txn_prod_match",
+            environment="PRODUCTION",
+        ),
+    )
+    assert resp.status_code == 200
+    assert _get_sub(db_session, "rc_txn_prod_match") is not None
 
 
 def test_transfer_creates_customer_for_receiving_user(client, db_session, test_user):

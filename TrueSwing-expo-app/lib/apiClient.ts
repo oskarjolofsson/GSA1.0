@@ -34,6 +34,9 @@ export async function fetchWithAuth<T>(
     method: HttpMethod = 'GET',
     body?: unknown
 ): Promise<T> {
+
+    console.log(`API Request: ${method} ${`${API}${url}`}`, body ? { body } : {});
+
     const {
         data: { session },
         error: sessionError
