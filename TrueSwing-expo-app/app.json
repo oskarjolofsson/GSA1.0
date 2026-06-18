@@ -3,7 +3,7 @@
     "scheme": "trueswing",
     "name": "True Swing",
     "slug": "trueswing",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "web": {
       "favicon": "./assets/true_swing_logo2.png"
     },
@@ -44,7 +44,7 @@
       "**/*"
     ],
     "ios": {
-      "version": "1.0.1",
+      "version": "1.1.0",
       "supportsTablet": false,
       "bundleIdentifier": "app.trueswing.se",
       "infoPlist": {
@@ -53,8 +53,8 @@
       }
     },
     "android": {
-      "version": "1.0.1",
-      "versionCode": 3,
+      "version": "1.1.0",
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/true_swing_logo3.png",
         "backgroundColor": "#0a0f1a"
