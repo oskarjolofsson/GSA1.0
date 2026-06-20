@@ -12,7 +12,7 @@ React Native Expo app — frontend for a golf coaching product. Users film/selec
 - `npm run format` — auto-fix lint + Prettier.
 - `npm start` — Metro only (use after a native build already exists).
 
-There is no test suite configured.
+Tests run with Jest (`npm test`) via the `jest-expo` preset; `@testing-library/react-native` is available for component/hook tests. Config lives in `jest.config.js`.
 
 ## Architecture
 

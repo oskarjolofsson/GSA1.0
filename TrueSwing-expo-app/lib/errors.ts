@@ -58,8 +58,14 @@ export function getErrorMessage(error: unknown): string {
     }
     
     if (error instanceof Error) {
-        // Check for network errors
-        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        // Check for network errors. React Native's fetch rejects with
+        // `TypeError: Network request failed` (not the browser's "Failed to fetch"
+        // / "NetworkError"), so match all three to detect offline on every platform.
+        if (
+            error.message.includes('Failed to fetch') ||
+            error.message.includes('NetworkError') ||
+            error.message.includes('Network request failed')
+        ) {
             return 'Unable to connect to the server. Please check your internet connection.';
         }
         // Check for "Not signed in" error from session check
