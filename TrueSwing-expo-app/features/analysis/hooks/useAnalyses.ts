@@ -3,6 +3,7 @@ import analysisService from '../services/analysisService';
 import issueService from 'features/issues/services/issueService';
 import type { Analysis, AnalysisWithIssues } from '../types';
 import type { Issue } from 'features/issues/types';
+import { getErrorMessage } from 'lib/errors';
 
 interface UseAnalysesReturn {
     allAnalyses: Analysis[];
@@ -42,7 +43,7 @@ export default function useAnalyses(): UseAnalysesReturn {
 
         } catch (err) {
             console.error('Error fetching analyses:', err);
-            setError(err instanceof Error ? err.message : 'Failed to fetch analyses');
+            setError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -60,7 +61,7 @@ export default function useAnalyses(): UseAnalysesReturn {
             setAllAnalyses(updatedAnalyses);
         } catch (err) {
             console.error('Error deleting analysis:', err);
-            setError(err instanceof Error ? err.message : 'Failed to delete analysis');
+            setError(getErrorMessage(err));
         }
     }, []);
 

@@ -31,6 +31,7 @@ export default function AnalysisResultScreen({ onNext }: AnalysisResultScreenPro
         allAnalyses,
         loading,
         error,
+        refetch,
         activeAnalysis,
         activeAnalysisIndex,
         syncActiveAnalysisIndex,
@@ -94,8 +95,20 @@ export default function AnalysisResultScreen({ onNext }: AnalysisResultScreenPro
 
     if (isInitialLoad) return <LoadingState title="Loading Analysis" subtitle="" />;
 
-    if (!loading && error) {
-         return <ErrorState title="Failed to load analysis" />;
+    // Only block the whole screen when there is nothing cached to show. A failed
+    // background refetch while analyses are already loaded must not nuke good data —
+    // the global offline banner conveys connectivity in that case.
+    if (!loading && error && !allAnalyses.length) {
+        const offline = error.includes('connect');
+        return (
+            <ErrorState
+                title={offline ? "No connection" : "Failed to load analysis"}
+                message={offline
+                    ? "Check your internet connection and try again."
+                    : "Something went wrong loading your swings."}
+                onRetry={refetch}
+            />
+        );
     }
 
     if (!allAnalyses.length) {
