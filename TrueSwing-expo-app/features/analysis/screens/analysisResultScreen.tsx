@@ -22,9 +22,10 @@ const { height } = Dimensions.get("window");
 
 type AnalysisResultScreenProps = {
     onNext: (activeIssue: Issue) => void;
+    onBack?: () => void;
 };
 
-export default function AnalysisResultScreen({ onNext }: AnalysisResultScreenProps) {
+export default function AnalysisResultScreen({ onNext, onBack }: AnalysisResultScreenProps) {
     const router = useRouter();
 
     const {
@@ -176,6 +177,7 @@ export default function AnalysisResultScreen({ onNext }: AnalysisResultScreenPro
                     dateLabel={activeAnalysis.created_at ? new Date(activeAnalysis.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
                     deleting={isDeleting}
                     onDeletePress={() => setShowDeleteConfirm(true)}
+                    onBack={onBack}
                 />
             ) : null}
 
