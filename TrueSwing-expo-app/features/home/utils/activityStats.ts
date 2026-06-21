@@ -5,6 +5,7 @@ export type ActivityCount = { occurred_on: string; count: number };
 
 // One rendered grid cell in the rolling 7-day strip.
 export type DayCell = {
+    date: string; // local YYYY-MM-DD for this cell (used to fetch day detail)
     letter: string; // weekday initial, derived from the real date
     level: ActivityLevel; // 0 none / 1 logged / 2 stronger
     isToday: boolean;
@@ -49,6 +50,7 @@ export function deriveActivityStats(counts: ActivityCount[], now: Date = new Dat
         const key = localDateString(date);
         const count = byDay.get(key) ?? 0;
         week.push({
+            date: key,
             letter: WEEKDAY_INITIALS[date.getDay()],
             level: countToLevel(count),
             isToday: offset === 0,

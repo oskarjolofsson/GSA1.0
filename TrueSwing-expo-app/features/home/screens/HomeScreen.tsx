@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -8,10 +8,12 @@ import StreakPanel from "features/home/components/StreakPanel";
 import PrescriptionCard from "features/home/components/PrescriptionCard";
 import ArchiveEntry from "features/home/components/ArchiveEntry";
 import HomeWelcome from "features/home/components/HomeWelcome";
+import DayDetailModal from "features/home/components/DayDetailModal";
 import Avatar from "features/shared/components/Avatar";
 import LoadingState from "features/shared/components/LoadingState";
 import ErrorState from "features/shared/components/ErrorState";
 import { useAuth } from "features/auth/AuthProvider";
+import { useHomeAnalysis } from "features/home/context/HomeAnalysisContext";
 import useActivity from "features/home/hooks/useActivity";
 import { deriveActivityStats } from "features/home/utils/activityStats";
 
@@ -34,12 +36,32 @@ export default function HomeScreen({
     const router = useRouter();
     const { user } = useAuth();
     const { counts, loading, error, refetch } = useActivity();
+    const { allAnalyses, setActiveAnalysisIndex } = useHomeAnalysis();
+
+    // The day whose detail popup is open, or null when closed. `hasActivity`
+    // lets the modal skip the network call for an empty day.
+    const [selectedDay, setSelectedDay] = useState<{ date: string; hasActivity: boolean } | null>(
+        null
+    );
 
     // Refresh activity whenever the home tab regains focus.
     useFocusEffect(
         useCallback(() => {
             refetch();
         }, [refetch])
+    );
+
+    // Tapping an analysis in the day popup: jump the reel to that analysis,
+    // close the popup, and open the archive. Falls back to the top if the
+    // analysis isn't in the loaded list.
+    const handleOpenAnalysis = useCallback(
+        (analysisId: string) => {
+            const index = allAnalyses.findIndex((a) => a.analysis_id === analysisId);
+            if (index >= 0) setActiveAnalysisIndex(index);
+            setSelectedDay(null);
+            onOpenArchive();
+        },
+        [allAnalyses, setActiveAnalysisIndex, onOpenArchive]
     );
 
     const stats = useMemo(() => deriveActivityStats(counts), [counts]);
@@ -93,7 +115,11 @@ export default function HomeScreen({
 
             {/* Streak + week strip anchored to the top of the field. */}
             <View className="flex-1 justify-center px-6 gap-2">
-                <StreakPanel streakDays={stats.streakDays} week={stats.week} />
+                <StreakPanel
+                    streakDays={stats.streakDays}
+                    week={stats.week}
+                    onDayPress={(date, hasActivity) => setSelectedDay({ date, hasActivity })}
+                />
 
                 <Text className="text-[8px] text-sand/40 text-center">
                     Each square is a day you practiced. Fill the week, keep the streak alive!
@@ -118,6 +144,13 @@ export default function HomeScreen({
 
                 <ArchiveEntry onPress={onOpenArchive} />
             </View>
+
+            <DayDetailModal
+                date={selectedDay?.date ?? null}
+                hasActivity={selectedDay?.hasActivity ?? false}
+                onClose={() => setSelectedDay(null)}
+                onOpenAnalysis={handleOpenAnalysis}
+            />
         </View>
     );
 }
