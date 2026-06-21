@@ -10,12 +10,14 @@ import type { PracticeSession } from "features/practice/types";
 import { useRequirePremium } from "features/billing/hooks/useRequirePremium";
 
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from "expo-router";
 import { View } from "react-native";
 import React from "react";
 
 
 export default function HomeFlow() {
     const { currentScreen, goToHome, goToAnalysis, goToPractice } = useHomeFlowSequence();
+    const router = useRouter();
     const { requirePremium } = useRequirePremium();
     const analysisController = useHomeAnalysisController();
     const [selectedIssue, setSelectedIssue] = React.useState<Issue | null>(null);
@@ -36,6 +38,7 @@ export default function HomeFlow() {
                 {currentScreen === 'Home' && (
                     <HomeScreen
                         onOpenArchive={goToAnalysis}
+                        onOpenProfile={() => router.push("/(tabs)/profile")}
                         onStartPrescription={goToHome}
                     />
                 )}
