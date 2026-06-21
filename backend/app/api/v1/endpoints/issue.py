@@ -21,6 +21,7 @@ from core.services.issues_service import (
     update_issue as service_update_issue,
     delete_issue as service_delete_issue,
     get_issues_by_user_id as service_get_issues_by_user_id,
+    get_todays_issue as service_get_todays_issue,
     delete_issues_bulk as service_delete_issues_bulk,
 )
 from core.services.dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO
@@ -131,6 +132,24 @@ def get_issues_by_user(db: Session = Depends(get_db), current_user: dict = Depen
     """
     issues = service_get_issues_by_user_id(current_user["user_id"], db_session=db)
     return [GetIssue.from_domain(issue) for issue in issues]
+
+
+@router.get("/todays-issue/", response_model=GetIssue | None)
+def get_todays_issue(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get the issue the user should work today.
+
+    Selection is decided server-side (currently the most-practiced issue) so the
+    rule can change without a client release. Returns null when the user has no
+    issues yet.
+
+    NOTE: declared before /{issue_id}/ so "todays-issue" is not parsed as a UUID.
+    """
+    issue = service_get_todays_issue(current_user["user_id"], db_session=db)
+    return GetIssue.from_domain(issue) if issue else None
 
 
 @router.get("/{issue_id}/", response_model=GetIssue)

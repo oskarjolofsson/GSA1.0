@@ -32,6 +32,25 @@ export default function HomeFlow() {
         }, [analysisController.refetch, goToHome])
     )
 
+    // Shared practice-start: used by both the reel (onNext) and the home
+    // prescription card. Gates on premium, creates a session, then navigates.
+    const startPracticeForIssue = React.useCallback(async (issue: Issue) => {
+        if (!issue.analysis_issue_id) return;
+
+        // Drills are premium — gate before starting a session.
+        if (!requirePremium()) return;
+
+        try {
+            setSelectedIssue(issue);
+            const session = await startPracticeSession(issue.analysis_issue_id);
+            setSelectedSession(session);
+            goToPractice();
+        } catch (error) {
+            console.error('Failed to start practice session before navigation:', error);
+            setSelectedSession(null);
+        }
+    }, [requirePremium, goToPractice]);
+
     return (
         <HomeAnalysisProvider value={analysisController}>
             <View style={{ flex: 1 }}>
@@ -39,28 +58,13 @@ export default function HomeFlow() {
                     <HomeScreen
                         onOpenArchive={goToAnalysis}
                         onOpenProfile={() => router.push("/(tabs)/profile")}
-                        onStartPrescription={goToHome}
+                        onStartPractice={startPracticeForIssue}
                     />
                 )}
                 {currentScreen === 'Analysis' && (
                     <AnalysisResultScreen
                         onBack={goToHome}
-                        onNext={async (issue) => {
-                            if (!issue.analysis_issue_id) return;
-
-                            // Drills are premium — gate before starting a session.
-                            if (!requirePremium()) return;
-
-                            try {
-                                setSelectedIssue(issue);
-                                const session = await startPracticeSession(issue.analysis_issue_id);
-                                setSelectedSession(session);
-                                goToPractice();
-                            } catch (error) {
-                                console.error('Failed to start practice session before navigation:', error);
-                                setSelectedSession(null);
-                            }
-                        }}
+                        onNext={startPracticeForIssue}
                     />
                 )}
                 {currentScreen === 'Practice' && (
