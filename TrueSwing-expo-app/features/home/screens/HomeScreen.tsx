@@ -1,13 +1,16 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import StreakPanel from "features/home/components/StreakPanel";
 import PrescriptionCard from "features/home/components/PrescriptionCard";
 import ArchiveEntry from "features/home/components/ArchiveEntry";
+import Avatar from "features/shared/components/Avatar";
+import { useAuth } from "features/auth/AuthProvider";
 
 type HomeScreenProps = {
     onOpenArchive: () => void;
+    onOpenProfile: () => void;
     onStartPrescription?: () => void;
 };
 
@@ -18,12 +21,31 @@ type HomeScreenProps = {
 // MVP layout only; all data is static placeholder.
 export default function HomeScreen({
     onOpenArchive,
+    onOpenProfile,
     onStartPrescription,
 }: HomeScreenProps) {
     const insets = useSafeAreaInsets();
+    const { user } = useAuth();
 
     return (
         <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
+            {/* Profile avatar — top-right, opens the profile tab. */}
+            <View className="flex-row justify-end px-6 pt-4">
+                <Pressable
+                    onPress={onOpenProfile}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open profile"
+                >
+                    <Avatar
+                        photoURL={user?.photoURL}
+                        name={user?.name}
+                        email={user?.email}
+                        size={50}
+                    />
+                </Pressable>
+            </View>
+
             {/* Streak + week strip anchored to the top of the field. */}
             <View className="flex-1 justify-center px-6 gap-2">
                 <StreakPanel />

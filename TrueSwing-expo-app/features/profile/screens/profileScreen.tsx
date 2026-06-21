@@ -5,15 +5,15 @@ import LoadingState from "features/shared/components/LoadingState";
 import ErrorState from "features/shared/components/ErrorState";
 import SubscriptionBanner from "features/billing/components/SubscriptionBanner";
 import SubscriptionCard from "features/billing/components/SubscriptionCard";
+import Avatar from "features/shared/components/Avatar";
 
 import {
     View,
     Text,
     TouchableOpacity,
     ScrollView,
-    Image,
 } from "react-native";
-import { Mail, CircleHelp, ChevronRight, User2 } from "lucide-react-native";
+import { Mail, CircleHelp, ChevronRight } from "lucide-react-native";
 
 export default function ProfileScreen() {
     const profile = {
@@ -78,15 +78,14 @@ export default function ProfileScreen() {
                 <View className="">
                     <View className="px-5 pb-4">
                         <View className="mb-5 flex-row items-center">
-                            <View className="mr-4 h-20 w-20 items-center justify-center rounded-2xl bg-indigo-500/15">
-                                {user.photoURL ? (
-                                    <Image
-                                        source={{ uri: user.photoURL }}
-                                        className="h-20 w-20 rounded-2xl"
-                                    />
-                                ) : (
-                                    <User2 size={48} color="#a5b4fc" />
-                                )}
+                            <View className="mr-4">
+                                <Avatar
+                                    photoURL={user.photoURL}
+                                    name={user.name}
+                                    email={user.email}
+                                    size={80}
+                                    shape="rounded"
+                                />
                             </View>
 
                             <View className="flex-1 text-center">
@@ -111,41 +110,12 @@ export default function ProfileScreen() {
                     </View>
                 </View>
 
-                {/* Sign Out Button */}
-                <TouchableOpacity
-                    onPress={handleSignOut}
-                    activeOpacity={0.7}
-                    className="mt-6 px-5"
-                >
-                    <Text className="text-center text-sm font-medium text-red-500/80 border border-red-500/20 rounded-lg py-3 mx-auto px-10">
-                        Sign Out
-                    </Text>
-                </TouchableOpacity>
-
-                {/* Delete Account */}
-                <TouchableOpacity
-                    onPress={() => Alert.alert("Delete Account", "Are you sure you want to delete your account? This action cannot be undone.", [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                            text: "Delete", style: "destructive", onPress: () => {
-                                removeAccount()
-                                    .then(() => Alert.alert("Account Deleted", "Your account has been deleted."))
-                                    .catch(() => Alert.alert("Error", "Failed to delete account."));
-                            }
-                        },
-                    ])}
-                    activeOpacity={0.7}
-                    className="mt-4 px-5"
-                >
-                    <Text className="text-center text-sm font-medium text-red-500/80 border border-red-500/20 rounded-lg py-3 mx-auto px-10">
-                        Delete Account
-                    </Text>
-                </TouchableOpacity>
-
                 {/* Subscription */}
                 <View className="mt-6">
                     <SubscriptionCard />
                 </View>
+
+                
 
                 {/* Border */}
                 <View className="my-8 h-px bg-white/10" />
@@ -184,6 +154,37 @@ export default function ProfileScreen() {
                         <ChevronRight size={20} color="#94a3b8" />
                     </TouchableOpacity>
                 </View>
+
+                {/* Sign Out Button */}
+                <TouchableOpacity
+                    onPress={handleSignOut}
+                    activeOpacity={0.7}
+                    className="mt-6 px-5"
+                >
+                    <Text className="text-center text-sm font-medium text-red-500/80 border border-red-500/20 rounded-lg py-3 mx-auto px-10">
+                        Sign Out
+                    </Text>
+                </TouchableOpacity>
+
+                {/* Delete Account */}
+                <TouchableOpacity
+                    onPress={() => Alert.alert("Delete Account", "Are you sure you want to delete your account? This action cannot be undone.", [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                            text: "Delete", style: "destructive", onPress: () => {
+                                removeAccount()
+                                    .then(() => Alert.alert("Account Deleted", "Your account has been deleted."))
+                                    .catch(() => Alert.alert("Error", "Failed to delete account."));
+                            }
+                        },
+                    ])}
+                    activeOpacity={0.7}
+                    className="mt-4 px-5"
+                >
+                    <Text className="text-center text-sm font-medium text-red-500/80 border border-red-500/20 rounded-lg py-3 mx-auto px-10">
+                        Delete Account
+                    </Text>
+                </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
     );
