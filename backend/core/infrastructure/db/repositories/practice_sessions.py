@@ -1,7 +1,50 @@
 from ..models.PracticeSession import PracticeSession
 from ..models.PracticeDrillRun import PracticeDrillRun
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from uuid import UUID
+from datetime import datetime, date
+
+
+# ---------------- ACTIVITY (contribution graph) ----------------
+
+def get_completed_session_counts_by_day(
+    user_id: UUID, tz: str, session: Session
+) -> list[tuple[date, int]]:
+    """
+    Count completed practice sessions per calendar day for a user, grouping by
+    the calendar day of `completed_at` interpreted in the given IANA timezone.
+    """
+    local_day = func.date(func.timezone(tz, PracticeSession.completed_at))
+    stmt = (
+        select(local_day.label("occurred_on"), func.count().label("count"))
+        .where(PracticeSession.user_id == user_id)
+        .where(PracticeSession.status == "completed")
+        .where(PracticeSession.completed_at.isnot(None))
+        .group_by(local_day)
+    )
+    return [(row.occurred_on, row.count) for row in session.execute(stmt).all()]
+
+
+def get_completed_sessions_in_range(
+    user_id: UUID, start_utc: datetime, end_utc: datetime, session: Session
+) -> list[PracticeSession]:
+    """
+    Fetch a user's completed practice sessions whose `completed_at` falls in the
+    half-open UTC range [start_utc, end_utc). Sargable against
+    (user_id, completed_at).
+    """
+    return (
+        session.query(PracticeSession)
+        .filter(
+            PracticeSession.user_id == user_id,
+            PracticeSession.status == "completed",
+            PracticeSession.completed_at >= start_utc,
+            PracticeSession.completed_at < end_utc,
+        )
+        .order_by(PracticeSession.completed_at.desc())
+        .all()
+    )
 
 
 # ---------------- PRACTICE SESSIONS ----------------
