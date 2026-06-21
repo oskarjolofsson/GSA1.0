@@ -17,7 +17,13 @@ import {
   HankenGrotesk_400Regular,
   HankenGrotesk_500Medium,
   HankenGrotesk_600SemiBold,
+  HankenGrotesk_700Bold,
 } from '@expo-google-fonts/hanken-grotesk';
+import { applyGlobalFont } from 'lib/applyGlobalFont';
+
+// Make Hanken Grotesk the app-wide default font (weight-aware). Runs once at
+// module load, before any <Text> renders. Explicit fontFamily still wins.
+applyGlobalFont();
 
 export default function RootLayout() {
   // Fraunces (display serif) + Hanken Grotesk (utility) power the home screen
@@ -29,6 +35,7 @@ export default function RootLayout() {
     HankenGrotesk_400Regular,
     HankenGrotesk_500Medium,
     HankenGrotesk_600SemiBold,
+    HankenGrotesk_700Bold,
   });
 
   if (!fontsLoaded) return null;

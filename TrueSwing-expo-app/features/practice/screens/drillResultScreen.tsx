@@ -164,7 +164,7 @@ export default function DrillResultScreen({ session, onNext, onBack }: Props) {
                                 Practice complete
                             </Text>
 
-                            <Text className="mt-3 text-7xl font-extrabold text-white">
+                            <Text className="mt-3 text-7xl font-display-black text-white">
                                 {summary.successPercentage}%
                             </Text>
 
@@ -185,7 +185,7 @@ export default function DrillResultScreen({ session, onNext, onBack }: Props) {
 
                 {/* Mid Drill Breakdown section */}
                 <View className="mt-6 rounded-[28px] border border-white/10 bg-white/5 px-4 py-5">
-                    <Text className="px-1 text-lg font-semibold text-white">
+                    <Text className="px-1 text-lg font-display text-white">
                         Drill breakdown
                     </Text>
 

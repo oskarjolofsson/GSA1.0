@@ -61,7 +61,7 @@ export default function DrillPracticeScreen({ issue, session, onNext }: Props) {
 
               <Text
                 numberOfLines={2}
-                className="mt-2 text-[30px] font-extrabold leading-[36px] text-white"
+                className="mt-2 text-[30px] font-display-bold leading-[36px] text-white"
               >
                 {props.activeDrill?.title}
               </Text>
@@ -90,7 +90,7 @@ export default function DrillPracticeScreen({ issue, session, onNext }: Props) {
             from={{ opacity: 0, translateY: 10, scale: 0.96 }}
             animate={{ opacity: 1, translateY: 0, scale: 1 }}
             transition={{ type: "timing", duration: 220 }}
-            className="mt-3 text-8xl font-extrabold text-white"
+            className="mt-3 text-8xl font-display-black text-white"
           >
             {currentRep}
           </MotiText>
