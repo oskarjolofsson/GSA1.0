@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -96,8 +96,15 @@ export default function HomeScreen({
 
     return (
         <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
-            {/* Profile avatar — top-right, opens the profile tab. */}
-            <View className="flex-row justify-end px-6 pt-4">
+            {/* Header: TrueSwing logo (left) + profile avatar (right). */}
+            <View className="flex-row items-center justify-between px-6 pt-4">
+                <Image
+                    source={require("../../../assets/true_swing_logo2.png")}
+                    style={{ width: 130, height: 45, marginTop: 10 }}
+                    // resizeMode="contain"
+                    accessibilityRole="image"
+                    accessibilityLabel="TrueSwing"
+                />
                 <Pressable
                     onPress={onOpenProfile}
                     hitSlop={8}
