@@ -87,7 +87,7 @@ export default function IssueShowcaseOverlay({
                                         Issue {index + 1} of {issues.length}
                                     </Text>
 
-                                    <Text className="mb-3 text-3xl font-bold text-white">
+                                    <Text className="mb-3 text-3xl font-display-bold text-white">
                                         {item.title}
                                     </Text>
 

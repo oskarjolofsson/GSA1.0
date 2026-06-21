@@ -124,7 +124,7 @@ export default function DrillInstructionsOverlay({ visible, drill, onClose }: Dr
                             
                         >
                             <View className="px-5 pt-4">
-                                <Text className="text-3xl font-extrabold leading-[36px] text-white">
+                                <Text className="text-3xl font-display-bold leading-[36px] text-white">
                                     {drill?.title ?? 'Drill instructions'}
                                 </Text>
                             </View>

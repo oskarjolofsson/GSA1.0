@@ -37,6 +37,8 @@ All calls to the backend go through `apiClient` (`get/post/patch/put/delete`). I
 ### Styling
 **NativeWind v4** + Tailwind. `global.css` is imported once in `app/_layout.tsx`. Babel uses `babel-preset-expo` with `jsxImportSource: 'nativewind'` and the NativeWind preset. Metro config wraps the Expo config with `withNativeWind(..., { input: './global.css' })`. Use `className=` on React Native components.
 
+**Fonts.** The app's default typeface is **Hanken Grotesk** (the display serif is **Fraunces**). Fonts load at runtime in `app/_layout.tsx` via `expo-font` `useFonts`. `lib/applyGlobalFont.ts` patches the host `Text`/`TextInput` render once so every text node defaults to the matching Hanken Grotesk weight (`fontWeight` → family), **so you normally don't set a font family at all** — just use `font-bold`/`font-semibold` as usual. To override with the serif (or any face), set an explicit family via the Tailwind tokens in `tailwind.config.js`: `font-display` / `font-display-bold` / `font-display-black` (Fraunces) and `font-sans*` (Hanken). An explicit `fontFamily` always wins over the global default.
+
 ### Path aliases
 `app.json` enables `experiments.tsconfigPaths: true`, so bare imports like `lib/supabase`, `features/auth/AuthProvider`, `features/shared/...` are resolved from project root. There is **no `@/` prefix** in actual use — match the existing style.
 

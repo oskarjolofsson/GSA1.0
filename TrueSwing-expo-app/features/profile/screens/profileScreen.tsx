@@ -69,7 +69,7 @@ export default function ProfileScreen() {
                 overScrollMode="never"
             >
                 <View className="mt-4 mb-6 items-center">
-                    <Text className="text-xl font-bold text-gray-300">Profile</Text>
+                    <Text className="text-xl font-display-bold text-gray-300">Profile</Text>
                 </View>
 
                 <SubscriptionBanner />
@@ -90,7 +90,7 @@ export default function ProfileScreen() {
                             </View>
 
                             <View className="flex-1 text-center">
-                                <Text className="text-3xl font-semibold text-white">
+                                <Text className="text-3xl font-display text-white">
                                     {user.name || "User"}
                                 </Text>
                                 <Text className="mt-1 text-sm text-slate-400">
@@ -156,7 +156,7 @@ export default function ProfileScreen() {
                         <View className="mr-3 h-10 w-10 items-center justify-center rounded-2xl bg-slate-800">
                             <CircleHelp size={20} color="#cbd5e1" />
                         </View>
-                        <Text className="text-lg font-semibold text-white">Support</Text>
+                        <Text className="text-lg font-display text-white">Support</Text>
                     </View>
 
                     <Text className="text-base leading-7 text-slate-400">

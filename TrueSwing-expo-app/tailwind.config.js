@@ -24,6 +24,7 @@ module.exports = {
         sans: ['HankenGrotesk_400Regular'],
         'sans-medium': ['HankenGrotesk_500Medium'],
         'sans-semibold': ['HankenGrotesk_600SemiBold'],
+        'sans-bold': ['HankenGrotesk_700Bold'],
       },
     },
   },
