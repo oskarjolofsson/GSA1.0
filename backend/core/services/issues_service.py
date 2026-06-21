@@ -77,6 +77,31 @@ def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueRespo
     return _batch_fetch_analysis_issues_and_progress(user_id, issues, db_session)
 
 
+def get_todays_issue(user_id: UUID, db_session: Session) -> IssueResponseDTO | None:
+    """Pick the user's "today's issue".
+
+    Selection rule (intentionally behind this function so it can change without
+    touching the frontend): the MOST-PRACTICED issue — the one with the most
+    completed practice sessions. Ties break by confidence, then recency. When
+    no one has been practiced yet, the tie-break naturally yields the
+    highest-confidence / most-recent issue, so no separate fallback is needed.
+
+    Returns None when the user has no issues.
+    """
+    issues = get_issues_by_user_id(user_id, db_session)
+    if not issues:
+        return None
+
+    return max(issues, key=_todays_issue_sort_key)
+
+
+def _todays_issue_sort_key(issue: IssueResponseDTO) -> tuple[int, float, str]:
+    completed_sessions = issue.progress.completed_sessions if issue.progress else 0
+    confidence = issue.confidence if issue.confidence is not None else 0.0
+    created_at = issue.created_at or ""  # ISO strings sort chronologically
+    return (completed_sessions, confidence, created_at)
+
+
 def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> IssueResponseDTO | None:
     """Update an existing issue.
 

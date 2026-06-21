@@ -46,6 +46,15 @@ export class IssueService {
     }
 
     /**
+     * Get the server-chosen "today's issue" for the current user. The selection
+     * rule lives on the backend; returns null when the user has no issues.
+     */
+    async getTodaysIssue(): Promise<Issue | null> {
+        const data = await apiClient.get<Issue | null>('/api/v1/issues/todays-issue/');
+        return data ?? null;
+    }
+
+    /**
      * Get all issues (admin endpoint)
      */
     async getAllIssuesAdmin(): Promise<Issue[]> {

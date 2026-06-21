@@ -1,9 +1,13 @@
 # tests/api/test_issue.py
 import pytest
 import uuid
+from datetime import datetime, timezone
 
 from core.infrastructure.db.repositories.issues import get_issue_by_id
 from core.infrastructure.db.models.Issue import Issue
+from core.infrastructure.db.models.Analysis import Analysis
+from core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
+from core.infrastructure.db.models.PracticeSession import PracticeSession
 
 from core.services import user_service
 
@@ -35,6 +39,80 @@ def issue_with_id(client, auth_headers):
     assert response.status_code == 201
     data = response.json()
     return uuid.UUID(data["issue_id"])
+
+
+# =========== TODAY'S ISSUE ===========
+
+def _seed_user_issue(db, user_id, title, confidence, completed_sessions):
+    """Create an analysis + issue linked to the user, with N completed sessions."""
+    analysis = Analysis(user_id=user_id, model_version="test-model", status="completed", success=True)
+    db.add(analysis)
+    db.flush()
+
+    issue = Issue(title=title, description="d")
+    db.add(issue)
+    db.flush()
+
+    analysis_issue = AnalysisIssue(
+        analysis_id=analysis.id, issue_id=issue.id, confidence=confidence, active=True
+    )
+    db.add(analysis_issue)
+    db.flush()
+
+    now = datetime.now(tz=timezone.utc)
+    for _ in range(completed_sessions):
+        db.add(
+            PracticeSession(
+                user_id=user_id,
+                analysis_issue_id=analysis_issue.id,
+                status="completed",
+                started_at=now,
+                completed_at=now,
+            )
+        )
+    db.flush()
+    return issue
+
+
+def test_todays_issue_returns_most_practiced(client, test_user, db_session, auth_headers):
+    user_id = test_user["user_id"]
+    _seed_user_issue(db_session, user_id, "Casting", confidence=0.9, completed_sessions=1)
+    winner = _seed_user_issue(db_session, user_id, "Early extension", confidence=0.4, completed_sessions=3)
+
+    resp = client.get("/api/v1/issues/todays-issue/", headers=auth_headers)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data is not None
+    # Most-practiced wins despite lower confidence.
+    assert uuid.UUID(data["id"]) == winner.id
+    assert data["title"] == "Early extension"
+    assert data["analysis_issue_id"] is not None  # needed to start practice
+
+
+def test_todays_issue_tie_breaks_on_confidence(client, test_user, db_session, auth_headers):
+    user_id = test_user["user_id"]
+    _seed_user_issue(db_session, user_id, "Low conf", confidence=0.2, completed_sessions=0)
+    winner = _seed_user_issue(db_session, user_id, "High conf", confidence=0.95, completed_sessions=0)
+
+    resp = client.get("/api/v1/issues/todays-issue/", headers=auth_headers)
+
+    assert resp.status_code == 200
+    assert uuid.UUID(resp.json()["id"]) == winner.id
+
+
+def test_todays_issue_null_when_no_issues(client, test_user, db_session, auth_headers):
+    # Route is matched (200), not parsed as an issue_id UUID (would be 404/422).
+    resp = client.get("/api/v1/issues/todays-issue/", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json() is None
+
+
+def test_todays_issue_requires_auth(client):
+    resp = client.get(
+        "/api/v1/issues/todays-issue/", headers={"Authorization": "Bearer invalid-token"}
+    )
+    assert resp.status_code == 401
 
 
 def test_create_issue(client, db_session, auth_headers):

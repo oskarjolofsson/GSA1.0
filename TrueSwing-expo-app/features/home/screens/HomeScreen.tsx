@@ -15,12 +15,14 @@ import ErrorState from "features/shared/components/ErrorState";
 import { useAuth } from "features/auth/AuthProvider";
 import { useHomeAnalysis } from "features/home/context/HomeAnalysisContext";
 import useActivity from "features/home/hooks/useActivity";
+import useTodaysIssue from "features/home/hooks/useTodaysIssue";
 import { deriveActivityStats } from "features/home/utils/activityStats";
+import type { Issue } from "features/issues/types";
 
 type HomeScreenProps = {
     onOpenArchive: () => void;
     onOpenProfile: () => void;
-    onStartPrescription?: () => void;
+    onStartPractice: (issue: Issue) => void;
 };
 
 // Single-screen, no scroll. Two depth layers:
@@ -30,13 +32,19 @@ type HomeScreenProps = {
 export default function HomeScreen({
     onOpenArchive,
     onOpenProfile,
-    onStartPrescription,
+    onStartPractice,
 }: HomeScreenProps) {
     const insets = useSafeAreaInsets();
     const router = useRouter();
     const { user } = useAuth();
     const { counts, loading, error, refetch } = useActivity();
     const { allAnalyses, setActiveAnalysisIndex } = useHomeAnalysis();
+    const {
+        issues,
+        defaultIssueId,
+        loading: issuesLoading,
+        refetch: refetchIssues,
+    } = useTodaysIssue();
 
     // The day whose detail popup is open, or null when closed. `hasActivity`
     // lets the modal skip the network call for an empty day.
@@ -44,11 +52,36 @@ export default function HomeScreen({
         null
     );
 
-    // Refresh activity whenever the home tab regains focus.
+    // The issue currently shown on the card. null until resolved -> defaults to
+    // the server's choice; the user can then cycle with the switcher.
+    const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+
+    // Refresh activity + issues whenever the home tab regains focus.
     useFocusEffect(
         useCallback(() => {
             refetch();
-        }, [refetch])
+            refetchIssues();
+        }, [refetch, refetchIssues])
+    );
+
+    // Once issues load (or change), default the selection to the server choice.
+    const resolvedSelectedId =
+        selectedIssueId && issues.some((i) => i.id === selectedIssueId)
+            ? selectedIssueId
+            : defaultIssueId;
+    const selectedIndex = Math.max(
+        issues.findIndex((i) => i.id === resolvedSelectedId),
+        0
+    );
+    const selectedIssue = issues[selectedIndex] ?? null;
+
+    const cycleIssue = useCallback(
+        (step: number) => {
+            if (issues.length === 0) return;
+            const next = (selectedIndex + step + issues.length) % issues.length;
+            setSelectedIssueId(issues[next].id);
+        },
+        [issues, selectedIndex]
     );
 
     // Tapping an analysis in the day popup: jump the reel to that analysis,
@@ -145,7 +178,15 @@ export default function HomeScreen({
                     elevation: 16,
                 }}
             >
-                <PrescriptionCard onStart={onStartPrescription} />
+                <PrescriptionCard
+                    issue={selectedIssue}
+                    index={selectedIndex}
+                    total={issues.length}
+                    loading={issuesLoading}
+                    onPrev={() => cycleIssue(-1)}
+                    onNext={() => cycleIssue(1)}
+                    onStart={() => selectedIssue && onStartPractice(selectedIssue)}
+                />
 
                 <View className="my-4 h-px bg-sand/10" />
 
