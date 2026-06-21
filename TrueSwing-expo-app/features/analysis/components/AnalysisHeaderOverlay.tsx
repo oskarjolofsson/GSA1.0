@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
-import { Trash2 } from "lucide-react-native";
+import { Trash2, ChevronLeft } from "lucide-react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,12 +9,14 @@ type AnalysisHeaderOverlayProps = {
   dateLabel?: string;
   onDeletePress: () => void;
   deleting?: boolean;
+  onBack?: () => void;
 };
 
 export default function AnalysisHeaderOverlay({
   dateLabel = "",
   onDeletePress,
   deleting = false,
+  onBack,
 }: AnalysisHeaderOverlayProps) {
   const insets = useSafeAreaInsets();
 
@@ -115,6 +117,13 @@ export default function AnalysisHeaderOverlay({
                   <Text className="text-xs font-medium text-white/45">
                     Deleting...
                   </Text>
+                ) : onBack ? (
+                  <Pressable
+                    onPress={onBack}
+                    className="h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 active:bg-white/10"
+                  >
+                    <ChevronLeft size={20} color="#ffffff" />
+                  </Pressable>
                 ) : (
                   <View className="h-11 w-11" />
                 )}

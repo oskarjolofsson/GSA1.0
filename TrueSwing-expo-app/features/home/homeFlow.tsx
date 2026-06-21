@@ -1,4 +1,5 @@
 import { useHomeFlowSequence } from "features/home/hooks/useHomeFlowSequence";
+import HomeScreen from "features/home/screens/HomeScreen";
 import AnalysisResultScreen from "features/analysis/screens/analysisResultScreen";
 import PracticeFlow from "features/practice/practiceFlow";
 import useHomeAnalysisController from "features/home/hooks/useHomeAnalysisController";
@@ -14,7 +15,7 @@ import React from "react";
 
 
 export default function HomeFlow() {
-    const { currentScreen, goToAnalysis, goToPractice } = useHomeFlowSequence();
+    const { currentScreen, goToHome, goToAnalysis, goToPractice } = useHomeFlowSequence();
     const { requirePremium } = useRequirePremium();
     const analysisController = useHomeAnalysisController();
     const [selectedIssue, setSelectedIssue] = React.useState<Issue | null>(null);
@@ -22,18 +23,25 @@ export default function HomeFlow() {
 
     useFocusEffect(
         React.useCallback(() => {
-            goToAnalysis();
+            goToHome();
             setSelectedIssue(null);
             setSelectedSession(null);
             analysisController.refetch();
-        }, [analysisController.refetch, goToAnalysis])
+        }, [analysisController.refetch, goToHome])
     )
-    
+
     return (
         <HomeAnalysisProvider value={analysisController}>
             <View style={{ flex: 1 }}>
+                {currentScreen === 'Home' && (
+                    <HomeScreen
+                        onOpenArchive={goToAnalysis}
+                        onStartPrescription={goToHome}
+                    />
+                )}
                 {currentScreen === 'Analysis' && (
                     <AnalysisResultScreen
+                        onBack={goToHome}
                         onNext={async (issue) => {
                             if (!issue.analysis_issue_id) return;
 
