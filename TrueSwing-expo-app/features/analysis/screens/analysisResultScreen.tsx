@@ -127,6 +127,12 @@ export default function AnalysisResultScreen({ onNext, onBack }: AnalysisResultS
                 ref={reelRef}
                 data={allAnalyses}
                 keyExtractor={(item) => item.analysis_id}
+                // Open on the active analysis (e.g. linked from a day popup).
+                // Safe with getItemLayout below; clamps to a valid index.
+                initialScrollIndex={Math.min(
+                    Math.max(activeAnalysisIndex, 0),
+                    Math.max(allAnalyses.length - 1, 0)
+                )}
                 scrollEnabled={!isDrawingModeActive}
                 pagingEnabled
                 showsVerticalScrollIndicator={false}

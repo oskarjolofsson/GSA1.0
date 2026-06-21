@@ -34,6 +34,13 @@ describe("deriveActivityStats — rolling window", () => {
         expect(week[5].letter).toBe("T");
     });
 
+    it("stamps each cell with its local YYYY-MM-DD date", () => {
+        const { week } = deriveActivityStats([], NOW);
+        expect(week[6].date).toBe(day(0)); // today
+        expect(week[0].date).toBe(day(-6)); // six days ago
+        expect(week[6].date).toBe("2026-06-19");
+    });
+
     it("fills done/level from counts", () => {
         const counts: ActivityCount[] = [
             { occurred_on: day(0), count: 2 }, // today, stronger

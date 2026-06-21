@@ -1,14 +1,15 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { ACTIVITY_COLORS, TODAY_BORDER } from "features/home/utils/activityLevels";
 import type { DayCell } from "features/home/utils/activityStats";
 
 type StreakPanelProps = {
     streakDays: number;
     week: DayCell[]; // 7 cells, oldest -> today (today rightmost)
+    onDayPress: (date: string, hasActivity: boolean) => void;
 };
 
-export default function StreakPanel({ streakDays, week }: StreakPanelProps) {
+export default function StreakPanel({ streakDays, week, onDayPress }: StreakPanelProps) {
     return (
         <View>
             <Text className="font-sans-medium text-xs uppercase tracking-[2px] text-sand-dim">
@@ -42,9 +43,12 @@ export default function StreakPanel({ streakDays, week }: StreakPanelProps) {
                     // Today renders the dashed outline until it's done.
                     const showDashed = cell.isToday && !cell.done;
                     return (
-                        <View
+                        <Pressable
                             key={i}
-                            className="aspect-square flex-1 rounded-[14px]"
+                            onPress={() => onDayPress(cell.date, cell.done)}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Activity for ${cell.date}`}
+                            className="aspect-square flex-1 rounded-[14px] active:opacity-70"
                             style={
                                 showDashed
                                     ? {
