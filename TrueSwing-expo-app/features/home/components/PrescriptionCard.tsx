@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { Target, ChevronRight } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { ArrowRight } from "lucide-react-native";
 
 // MVP PLACEHOLDER: static prescribed issue. Real data (most recent analysis's
 // primary issue, user-switchable) is wired in a later step.
@@ -12,27 +13,49 @@ type PrescriptionCardProps = {
 
 export default function PrescriptionCard({ onStart }: PrescriptionCardProps) {
     return (
-        <View className="rounded-3xl border border-white/10 bg-white/5 p-5">
-            <View className="mb-1 flex-row items-center gap-2">
-                <Target size={16} color="#34d399" />
-                <Text className="text-xs font-semibold uppercase tracking-wide text-emerald-400">
-                    Today
-                </Text>
-            </View>
+        <View>
+            <Text className="font-sans-medium text-xs uppercase tracking-[2px] text-sand-dim">
+                Today&apos;s drill
+            </Text>
 
-            <Text className="text-2xl font-bold text-white">{PRESCRIBED_ISSUE}</Text>
-            <Text className="mt-1 text-sm text-white/60">
-                Run today&apos;s drill to keep working your stuck issue.
+            <Text className="mt-2 font-display-bold text-[32px] leading-tight text-sand">
+                {PRESCRIBED_ISSUE}
+            </Text>
+
+            <Text className="mt-2 font-sans text-[15px] leading-snug text-sand-dim">
+                Still chasing that early extension — let&apos;s fix it today.
             </Text>
 
             <Pressable
                 onPress={onStart}
-                className="mt-4 flex-row items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 py-3.5 active:bg-emerald-600"
+                className="mt-4 overflow-hidden rounded-2xl"
+                style={{
+                    shadowColor: "#E4C892",
+                    shadowOpacity: 0.35,
+                    shadowRadius: 22,
+                    shadowOffset: { width: 0, height: 8 },
+                    elevation: 8,
+                }}
             >
-                <Text className="text-base font-semibold text-[#06231a]">
-                    Start today&apos;s drill
-                </Text>
-                <ChevronRight size={18} color="#06231a" />
+                <LinearGradient
+                    colors={["#ECD3A0", "#D2B271"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                        width: "100%",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        paddingHorizontal: 20,
+                        paddingVertical: 16,
+                    }}
+                >
+                    <Text numberOfLines={1} className="font-display-bold text-[17px] text-ink">
+                        Start today&apos;s drill
+                    </Text>
+                    <ArrowRight size={18} color="#0A0F1A" strokeWidth={2.5} />
+                </LinearGradient>
             </Pressable>
         </View>
     );

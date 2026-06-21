@@ -30,7 +30,8 @@
           "savePhotosPermission": "This app needs permission to save trimmed swing videos to your gallery."
         }
       ],
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-font"
     ],
     "orientation": "portrait",
     "icon": "./assets/true_swing_logo.png",
