@@ -1,7 +1,46 @@
 from sqlalchemy import select, text, func
 from sqlalchemy.orm import Session
 from uuid import UUID
+from datetime import datetime, date
 from ..models.Analysis import Analysis
+
+
+def get_activity_counts_by_day(
+    user_id: UUID, tz: str, session: Session
+) -> list[tuple[date, int]]:
+    """
+    Count completed successful analyses per calendar day for a user, grouping by
+    the calendar day of `created_at` interpreted in the given IANA timezone.
+    """
+    local_day = func.date(func.timezone(tz, Analysis.created_at))
+    stmt = (
+        select(local_day.label("occurred_on"), func.count().label("count"))
+        .where(Analysis.user_id == user_id)
+        .where(Analysis.status == "completed")
+        .where(Analysis.success == True)
+        .group_by(local_day)
+    )
+    return [(row.occurred_on, row.count) for row in session.execute(stmt).all()]
+
+
+def get_completed_analyses_in_range(
+    user_id: UUID, start_utc: datetime, end_utc: datetime, session: Session
+) -> list[Analysis]:
+    """
+    Fetch a user's completed successful analyses whose `created_at` falls in the
+    half-open UTC range [start_utc, end_utc). Sargable against
+    (user_id, created_at).
+    """
+    stmt = (
+        select(Analysis)
+        .where(Analysis.user_id == user_id)
+        .where(Analysis.status == "completed")
+        .where(Analysis.success == True)
+        .where(Analysis.created_at >= start_utc)
+        .where(Analysis.created_at < end_utc)
+        .order_by(Analysis.created_at.desc())
+    )
+    return session.scalars(stmt).all()
 
 
 def get_analysis_by_id(analysis_id: str, session: Session) -> Analysis:
