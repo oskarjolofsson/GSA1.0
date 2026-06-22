@@ -1,8 +1,11 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, Pressable, Image } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
+import { MotiView, MotiImage } from "moti";
+import { useReducedMotion } from "react-native-reanimated";
+import { HOME_ANIM, CARD_SPRING } from "features/home/animations";
 
 import StreakPanel from "features/home/components/StreakPanel";
 import PrescriptionCard from "features/home/components/PrescriptionCard";
@@ -36,6 +39,7 @@ export default function HomeScreen({
 }: HomeScreenProps) {
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const reduceMotion = useReducedMotion();
     const { user } = useAuth();
     const { counts, loading, error, refetch } = useActivity();
     const { allAnalyses, setActiveAnalysisIndex } = useHomeAnalysis();
@@ -131,12 +135,14 @@ export default function HomeScreen({
         <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
             {/* Header: TrueSwing logo (left) + profile avatar (right). */}
             <View className="flex-row items-center justify-between px-6 pt-4">
-                <Image
+                <MotiImage
                     source={require("../../../assets/true_swing_logo2.png")}
                     style={{ width: 130, height: 45, marginTop: 10 }}
-                    // resizeMode="contain"
                     accessibilityRole="image"
                     accessibilityLabel="TrueSwing"
+                    from={{ opacity: reduceMotion ? 1 : 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ type: "timing", duration: reduceMotion ? 0 : HOME_ANIM.logoFade }}
                 />
                 <Pressable
                     onPress={onOpenProfile}
@@ -166,9 +172,12 @@ export default function HomeScreen({
                 </Text>
             </View>
 
-            {/* Raised action card — full-bleed sheet, flush to the bottom edge. */}
-            <View
+            {/* Raised action card — full-bleed sheet, slides up on open. */}
+            <MotiView
                 className="rounded-t-3xl border border-white/10 border-b-0 bg-ink-raised px-5 pt-5"
+                from={{ opacity: reduceMotion ? 1 : 0, translateY: reduceMotion ? 0 : 28 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ ...CARD_SPRING, delay: reduceMotion ? 0 : HOME_ANIM.cardDelay }}
                 style={{
                     paddingBottom: insets.bottom + 20,
                     shadowColor: "#000",
@@ -191,7 +200,7 @@ export default function HomeScreen({
                 <View className="my-4 h-px bg-sand/10" />
 
                 <ArchiveEntry onPress={onOpenArchive} />
-            </View>
+            </MotiView>
 
             <DayDetailModal
                 date={selectedDay?.date ?? null}

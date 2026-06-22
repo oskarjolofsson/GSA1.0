@@ -69,7 +69,7 @@ export default function HomeFlow() {
                 )}
                 {currentScreen === 'Practice' && (
                     <PracticeFlow
-                        onBack={goToAnalysis}
+                        onBack={goToHome}
                         selectedIssue={selectedIssue as Issue}
                         selectedSession={selectedSession}
                     />
