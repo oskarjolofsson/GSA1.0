@@ -1,5 +1,6 @@
 import React from "react";
-import { Modal, View, Text, Pressable, ScrollView, Image, ActivityIndicator } from "react-native";
+import { Modal, View, Text, Pressable, ScrollView, ActivityIndicator } from "react-native";
+import CachedImage from "features/shared/components/CachedImage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X, Dumbbell, Film, ChevronRight } from "lucide-react-native";
 
@@ -163,10 +164,10 @@ function AnalysisRow({
         >
             <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-sand/15 bg-white/5">
                 {analysis.thumbnail_url ? (
-                    <Image
+                    <CachedImage
                         source={{ uri: analysis.thumbnail_url }}
                         className="h-14 w-14"
-                        resizeMode="cover"
+                        contentFit="cover"
                     />
                 ) : (
                     <Film size={20} color="#EADFC8" />

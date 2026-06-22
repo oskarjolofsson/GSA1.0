@@ -28,6 +28,7 @@
     "expo-dev-client": "~55.0.28",
     "expo-font": "~55.0.8",
     "expo-haptics": "~55.0.14",
+    "expo-image": "~55.0.9",
     "expo-image-picker": "~55.0.19",
     "expo-linear-gradient": "~55.0.13",
     "expo-linking": "~55.0.14",
