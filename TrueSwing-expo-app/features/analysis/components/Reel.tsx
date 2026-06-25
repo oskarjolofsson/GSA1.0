@@ -1,8 +1,7 @@
 import { useMemo } from "react";
-import { Text, View, StatusBar, Dimensions, Pressable } from "react-native";
+import { Text, View, StatusBar, Dimensions, Pressable, Image } from "react-native";
 import { VideoView, type VideoSource } from "expo-video";
 import { LinearGradient } from "expo-linear-gradient";
-import CachedImage from "features/shared/components/CachedImage";
 import TextBox from "features/shared/components/TextBox";
 import { Pause, RotateCcw } from "lucide-react-native";
 import useReelPlayback from "features/analysis/hooks/useReelPlayback";
@@ -51,11 +50,11 @@ export default function Reel({
             <View className="absolute inset-0">
                 {thumbnail_url ? (
                     <>
-                        <CachedImage
+                        <Image
                             source={{ uri: thumbnail_url }}
                             className="absolute h-full w-full"
                             blurRadius={28}
-                            contentFit="cover"
+                            resizeMode="cover"
                         />
                         <View className="absolute h-full w-full bg-black/15" />
                     </>

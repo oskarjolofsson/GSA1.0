@@ -15,7 +15,7 @@ R2_BUCKET = "trueswing-videos"
 
 FFMPEG_DEFAULT_TIMESTAMP = 1.5
 THUMBNAIL_BASE_PREFIX = "golf-thumbnails"
-THUMBNAIL_FILENAME = "thumbnail.webp"
+THUMBNAIL_FILENAME = "thumbnail.jpg"
 
 
 # AI CONFIGURATION

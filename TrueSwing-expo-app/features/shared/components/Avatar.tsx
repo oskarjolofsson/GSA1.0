@@ -1,6 +1,5 @@
-import { View, Text } from "react-native";
+import { View, Text, Image } from "react-native";
 
-import CachedImage from "features/shared/components/CachedImage";
 import { getInitials } from "features/shared/utils/getInitials";
 
 type AvatarProps = {
@@ -26,10 +25,10 @@ export default function Avatar({
 
     if (photoURL) {
         return (
-            <CachedImage
+            <Image
                 source={{ uri: photoURL }}
                 style={dimension}
-                contentFit="cover"
+                resizeMode="cover"
             />
         );
     }
