@@ -1,6 +1,5 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View, Dimensions, type PressableStateCallbackType } from "react-native";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View, Dimensions, type PressableStateCallbackType } from "react-native";
 import { VideoView, type VideoSource } from "expo-video";
-import CachedImage from "features/shared/components/CachedImage";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, Trash2, Play, Pause, Undo, Pencil } from "lucide-react-native";
 import type { Analysis } from "features/analysis/types";
@@ -173,11 +172,11 @@ export default function DetailedVideo({ analysis, videoURL, onExit, isActive }: 
             <View style={StyleSheet.absoluteFill}>
                 {analysis.thumbnail_url ? (
                     <>
-                        <CachedImage
+                        <Image
                             source={{ uri: analysis.thumbnail_url }}
                             style={StyleSheet.absoluteFill}
                             blurRadius={28}
-                            contentFit="cover"
+                            resizeMode="cover"
                         />
                         <View
                             style={{

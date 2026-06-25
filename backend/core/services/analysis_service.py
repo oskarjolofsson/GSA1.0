@@ -81,7 +81,7 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
         create_prompt(prompt=prompt, session=db_session)
 
         video_key = f"videos/{video.id}"
-        thumbnail_key = f"thumbnails/{video.id}.webp"
+        thumbnail_key = f"thumbnails/{video.id}.jpg"
         video.video_key = video_key
         video.thumbnail_key = thumbnail_key
         update_video(video=video, session=db_session)
@@ -154,23 +154,23 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         try:
             # Create temporary file for thumbnail
             tmp_dir = tempfile.mkdtemp()
-            local_thumb = os.path.join(tmp_dir, "thumbnail.webp")
-            
+            local_thumb = os.path.join(tmp_dir, "thumbnail.jpg")
+
             try:
                 # Extract thumbnail from video file
-                _extract_thumbnail_webp(
+                _extract_thumbnail_jpeg(
                     video_file.path(),
                     local_thumb,
                     timestamp=1.5,
                 )
-                
+
                 # Upload thumbnail to R2
                 with open(local_thumb, "rb") as f:
                     put_object(
                         key=video_object.thumbnail_key,
                         data=f.read(),
-                        content_type="image/webp"
-                    )  
+                        content_type="image/jpeg"
+                    )
             finally:
                 # Cleanup thumbnail temp files
                 if os.path.exists(local_thumb):
@@ -178,9 +178,9 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
                 if os.path.exists(tmp_dir):
                     os.rmdir(tmp_dir)
         except Exception as e:
-            # Log thumbnail generation failure but don't fail the analysis
+            # A thumbnail failure must NOT fail an otherwise-successful analysis.
+            # Log and continue; the missing object just shows a placeholder.
             print(f"Warning: Failed to generate thumbnail: {str(e)}")
-            raise InvalidVideoException(f"Failed to generate thumbnail: {str(e)}")
         finally:
             analysis_object.completed_at = datetime.now(timezone.utc)
             update_analysis(analysis=analysis_object, session=db_session)
@@ -319,19 +319,20 @@ def from_analysis_issue_object_to_dto(
 import subprocess
 
 
-def _extract_thumbnail_webp(
+def _extract_thumbnail_jpeg(
     input_path: str,
     output_path: str,
     timestamp: float,
 ) -> None:
+    # JPEG (mjpeg) thumbnail — decoded natively on every client, no WebP coder
+    # needed. -q:v 3 is high-quality but tiny for a single frame.
     cmd = [
         "ffmpeg",
         "-y",
         "-ss", str(timestamp),
         "-i", input_path,
         "-frames:v", "1",
-        "-c:v", "libwebp",
-        "-quality", "15",
+        "-q:v", "3",
         output_path,
     ]
 
