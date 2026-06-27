@@ -11,6 +11,14 @@ class DrillGradeDTO:
 
 
 @dataclass(frozen=True)
+class StepDrillDTO:
+    """A drill referenced by a range step, resolved to its title at read time
+    (computed, not stored in the step's prescription)."""
+    id: UUID
+    title: str
+
+
+@dataclass(frozen=True)
 class ProgramStepDTO:
     id: UUID
     program_id: UUID
@@ -19,6 +27,7 @@ class ProgramStepDTO:
     prescription: dict
     status: str  # 'pending' | 'completed' | 'skipped'
     practice_session_id: UUID | None
+    drills: list[StepDrillDTO] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

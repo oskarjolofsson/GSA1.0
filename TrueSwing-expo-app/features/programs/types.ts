@@ -17,6 +17,11 @@ export interface Prescription {
     instruction?: string;
 }
 
+export interface StepDrill {
+    id: string;
+    title: string;
+}
+
 export interface ProgramStep {
     id: string;
     program_id: string;
@@ -25,6 +30,8 @@ export interface ProgramStep {
     prescription: Prescription;
     status: "pending" | "completed" | "skipped";
     practice_session_id: string | null;
+    // Range steps: drill ids resolved to {id, title} for display.
+    drills: StepDrill[];
 }
 
 export interface Program {

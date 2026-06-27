@@ -18,6 +18,13 @@ class CompleteStepRequest(BaseModel):
     grades: list[DrillGrade] = []
 
 
+class StepDrillResponse(BaseModel):
+    id: UUID
+    title: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ProgramStepResponse(BaseModel):
     id: UUID
     program_id: UUID
@@ -26,6 +33,7 @@ class ProgramStepResponse(BaseModel):
     prescription: dict[str, Any]
     status: str
     practice_session_id: UUID | None
+    drills: list[StepDrillResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -39,6 +47,7 @@ class ProgramStepResponse(BaseModel):
             prescription=dto.prescription,
             status=dto.status,
             practice_session_id=dto.practice_session_id,
+            drills=[StepDrillResponse(id=d.id, title=d.title) for d in dto.drills],
         )
 
 
