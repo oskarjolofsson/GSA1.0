@@ -218,12 +218,18 @@ def _apply_grades(program_id: UUID, grades: list[DrillGradeDTO], session: Sessio
         state = state_by_drill.get(grade.drill_id)
         if state is None or grade.grade not in GRADE_STRENGTH_DELTA:
             continue
-        delta = GRADE_STRENGTH_DELTA[grade.grade]
-        state.strength = max(0, min(STRENGTH_MAX, state.strength + delta))
+        state.strength = _next_strength(state.strength, grade.grade)
         state.last_seen_at = now
         state.times_seen = (state.times_seen or 0) + 1
         state.last_grade = grade.grade
         repo.update_drill_state(state, session)
+
+
+def _next_strength(strength: int, grade: str) -> int:
+    """Apply a grade to a drill's strength, clamped to [0, STRENGTH_MAX]. Unknown
+    grades leave strength unchanged."""
+    delta = GRADE_STRENGTH_DELTA.get(grade, 0)
+    return max(0, min(STRENGTH_MAX, strength + delta))
 
 
 # =========== DTO HELPERS ============
