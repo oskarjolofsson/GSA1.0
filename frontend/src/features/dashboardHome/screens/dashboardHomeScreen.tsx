@@ -19,7 +19,7 @@ export default function DashboardHomeScreen() {
 
     if (loading) {
         return (
-            <LoadingState title="Loading Issues" message="Fetching your issues..." />
+            <LoadingState title="Loading" message="Fetching your issues..." />
         );
     }
 

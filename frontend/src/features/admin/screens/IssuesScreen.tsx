@@ -24,7 +24,7 @@ export default function IssuesScreen() {
     const { state, data, actions } = useIssueTable();
 
     if (data.loading) {
-        return <LoadingState title="Issues Management" message="Loading issues..." />;
+        return <LoadingState title="Issues Management" message="Loading..." />;
     }
 
     if (data.error) {
