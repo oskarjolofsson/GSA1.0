@@ -6,15 +6,17 @@ import DrillPracticeScreen from "./screens/drillPracticeScreen";
 import DrillResultScreen from "./screens/drillResultScreen";
 import { usePracticeFlowSequence } from "./hooks/usePracticeFlowSequence";
 import type { PracticeSession } from "./types";
+import type { ProgramContext } from "features/programs/types";
 
 
 type PracticeFlowProps = {
     onBack: () => void;
     selectedIssue: Issue;
     selectedSession: PracticeSession | null;
+    programContext?: ProgramContext | null;
 };
 
-export default function PracticeFlow({ onBack, selectedIssue, selectedSession }: PracticeFlowProps) {
+export default function PracticeFlow({ onBack, selectedIssue, selectedSession, programContext }: PracticeFlowProps) {
     const { currentScreen, goToResult } = usePracticeFlowSequence();
     useHomeAnalysis();
 
@@ -32,6 +34,7 @@ export default function PracticeFlow({ onBack, selectedIssue, selectedSession }:
                     session={selectedSession}
                     onNext={goToResult}
                     onBack={() => {}}
+                    programContext={programContext}
                 />
             )}
             {currentScreen === 'Result' && (
