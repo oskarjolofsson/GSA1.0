@@ -5,6 +5,8 @@ from datetime import datetime
 
 class StartPracticeSessionRequest(BaseModel):
     analysis_issue_id: UUID | None = None
+    session_type: str | None = None  # 'range' | 'play' | 'retest'
+    notes: str | None = None
 
 
 class PracticeSessionResponse(BaseModel):

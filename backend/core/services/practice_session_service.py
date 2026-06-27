@@ -15,12 +15,20 @@ from datetime import datetime, timezone
 
 # =========== PRACTICE SESSIONS ============ 
 
-def record_practice_session_start(user_id: UUID, analysis_issue_id: UUID | None, session: Session) -> PracticeSessionResponseDTO:
+def record_practice_session_start(
+    user_id: UUID,
+    analysis_issue_id: UUID | None,
+    session: Session,
+    session_type: str | None = None,
+    notes: str | None = None,
+) -> PracticeSessionResponseDTO:
     """Create a new practice session for the user."""
     new_session = models.PracticeSession(
         user_id=user_id,
         analysis_issue_id=analysis_issue_id,
         status="in_progress",
+        session_type=session_type,
+        notes=notes,
     )
     created_session = repo.create_practice_session(new_session, session)
     return _session_to_response_dto(created_session)

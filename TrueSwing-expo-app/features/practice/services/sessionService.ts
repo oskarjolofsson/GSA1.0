@@ -2,9 +2,16 @@ import { apiClient } from 'lib/apiClient';
 import type { PracticeSession } from '../types/Session';
 import type { DrillRun } from 'features/drill/types/DrillRun';
 
-export async function startPracticeSession(analysisIssueId: string) {
+type StartSessionOptions = {
+    session_type?: 'range' | 'play' | 'retest';
+    notes?: string | null;
+};
+
+export async function startPracticeSession(analysisIssueId: string, opts: StartSessionOptions = {}) {
     return apiClient.post<PracticeSession>('/api/v1/practice/sessions/start/', {
         analysis_issue_id: analysisIssueId,
+        session_type: opts.session_type,
+        notes: opts.notes,
     });
 }
 

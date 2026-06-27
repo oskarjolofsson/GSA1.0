@@ -86,10 +86,19 @@ export function useProgramForIssue(analysisIssueId: string | null | undefined): 
         };
     }, [analysisIssueId, nonce]);
 
-    // Treat "loaded data is for a different issue" as still loading.
-    const stale = !!analysisIssueId && loadedId !== analysisIssueId;
+    // While the loaded state still belongs to the previous issue (the effect runs
+    // after render), prefer a synchronous cache hit so a re-viewed issue renders
+    // immediately with no loading flash. Only show loading when nothing is cached
+    // yet for the requested issue.
+    if (analysisIssueId && loadedId !== analysisIssueId) {
+        const cached = peekProgramSession(analysisIssueId);
+        if (cached) {
+            return { program: cached.program, nextStep: cached.nextStep, loading: false, error: null, refetch };
+        }
+        return { program: null, nextStep: null, loading: true, error: null, refetch };
+    }
 
-    return { program, nextStep, loading: loading || stale, error, refetch };
+    return { program, nextStep, loading, error, refetch };
 }
 
 export default useProgramForIssue;

@@ -60,6 +60,9 @@ class PracticeSession(Base):
         ForeignKey("program_steps.id", ondelete="SET NULL"),
     )
 
+    # Free-text notes (e.g. how an on-course round went).
+    notes: Mapped[str | None] = mapped_column(Text)
+
     # Relationships
     drill_runs = relationship(
         "PracticeDrillRun",

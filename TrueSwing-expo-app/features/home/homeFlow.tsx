@@ -5,16 +5,22 @@ import PracticeFlow from "features/practice/practiceFlow";
 import useHomeAnalysisController from "features/home/hooks/useHomeAnalysisController";
 import { HomeAnalysisProvider } from "features/home/context/HomeAnalysisContext";
 import type { Issue } from "features/issues/types";
-import { startPracticeSession } from "features/practice/services/sessionService";
+import { startPracticeSession, endPracticeSession } from "features/practice/services/sessionService";
 import type { PracticeSession } from "features/practice/types";
 import { useRequirePremium } from "features/billing/hooks/useRequirePremium";
-import { getActiveProgram, generateProgram, getNextStep } from "features/programs/services/programService";
+import { getActiveProgram, generateProgram, getNextStep, completeStep } from "features/programs/services/programService";
 import type { ProgramContext } from "features/programs/types";
-
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from "expo-router";
 import { View } from "react-native";
 import React from "react";
+
+export type LogPlayArgs = {
+    analysisIssueId: string;
+    programId: string;
+    stepId: string;
+    notes: string;
+};
 
 
 export default function HomeFlow() {
@@ -85,6 +91,25 @@ export default function HomeFlow() {
         }
     }, [requirePremium, goToPractice]);
 
+    // Log an on-course round: create a completed `play` session (earns the streak
+    // square), then advance the program. Returns success so the caller can close
+    // the modal + refetch.
+    const logPlayRound = React.useCallback(async ({ analysisIssueId, programId, stepId, notes }: LogPlayArgs) => {
+        if (!requirePremium()) return false;
+        try {
+            const session = await startPracticeSession(analysisIssueId, {
+                session_type: "play",
+                notes: notes || null,
+            });
+            await endPracticeSession(session.id);
+            await completeStep(programId, stepId, { practice_session_id: session.id });
+            return true;
+        } catch (error) {
+            console.error("Failed to log play round:", error);
+            return false;
+        }
+    }, [requirePremium]);
+
     return (
         <HomeAnalysisProvider value={analysisController}>
             <View style={{ flex: 1 }}>
@@ -93,6 +118,7 @@ export default function HomeFlow() {
                         onOpenArchive={goToAnalysis}
                         onOpenProfile={() => router.push("/(tabs)/profile")}
                         onStartPractice={startProgramSession}
+                        onLogPlay={logPlayRound}
                     />
                 )}
                 {currentScreen === 'Analysis' && (

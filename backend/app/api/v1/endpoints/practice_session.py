@@ -47,6 +47,8 @@ def start_practice_session(
         user_id=current_user["user_id"],
         analysis_issue_id=request.analysis_issue_id,
         session=db,
+        session_type=request.session_type,
+        notes=request.notes,
     )
     return PracticeSessionResponse.from_domain(result)
 

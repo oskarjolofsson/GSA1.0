@@ -20,6 +20,7 @@ type PrescriptionCardProps = {
     onPrev: () => void;
     onNext: () => void;
     onStart: () => void;
+    onPlay: () => void;
 };
 
 // Derives the card's session line, detail, button label, and whether Start is
@@ -50,7 +51,7 @@ function deriveCardState(
             return { ...base, sessionLine, detail: p?.cue ?? "Hit a focused block on each drill.", buttonLabel: "Start session" };
         }
         case "play":
-            return { ...base, sessionLine: `Play ${p?.holes ?? 9} holes`, detail: p?.focus ?? null, buttonLabel: "Coming soon", startable: false };
+            return { ...base, sessionLine: `Play ${p?.holes ?? 9} holes`, detail: p?.focus ?? null, buttonLabel: "Log round", startable: hasIssue && !loading };
         case "retest":
             return { ...base, sessionLine: "Re-test your swing", detail: p?.instruction ?? null, buttonLabel: "Coming soon", startable: false };
         default:
@@ -76,6 +77,7 @@ export default function PrescriptionCard({
     onPrev,
     onNext,
     onStart,
+    onPlay,
 }: PrescriptionCardProps) {
     const reduceMotion = useReducedMotion();
     const canSwitch = total > 1;
@@ -106,8 +108,9 @@ export default function PrescriptionCard({
 
     const handleStart = useCallback(() => {
         impactHaptic();
-        onStart();
-    }, [onStart]);
+        if (nextStep?.session_type === "play") onPlay();
+        else onStart();
+    }, [nextStep?.session_type, onPlay, onStart]);
 
     // Horizontal swipe over the issue text cycles issues. activeOffsetX keeps
     // small/vertical movement as taps so it never steals the chevrons.
