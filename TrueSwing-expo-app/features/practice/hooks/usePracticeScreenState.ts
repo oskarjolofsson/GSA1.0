@@ -43,6 +43,10 @@ export function usePracticeScreenState(
     const [currentDrillIndex, setCurrentDrillIndex] = useState<number>(0);
     const [currentDrillRun, setCurrentDrillRun] = useState<DrillRun | null>(null);
     const [flowError, setFlowError] = useState<string | null>(null);
+    // True from the moment the final block is logged until navigation away. Keeps
+    // the loading state up across endSession + completeStep so the rating UI can't
+    // flash back in the gap (completeStep isn't tied to the drill-run loading flag).
+    const [finishing, setFinishing] = useState<boolean>(false);
     const hasInitializedRef = useRef(false);
     const lastCompletedRunIdRef = useRef<string | null>(null);
 
@@ -90,6 +94,7 @@ export function usePracticeScreenState(
         setCurrentDrillIndex(0);
         setCurrentDrillRun(null);
         setFlowError(null);
+        setFinishing(false);
         lastCompletedRunIdRef.current = null;
         gradesRef.current = [];
     }, [issue, session]);
@@ -131,9 +136,13 @@ export function usePracticeScreenState(
     const moveToNextDrill = useCallback(async (completedDrillRun: DrillRun) => {
         if (!session) return;
         const nextIndex = currentDrillIndex + 1;
+        const isLastDrill = nextIndex >= allDrills.length;
+        // Set before any await so the screen shows loading immediately and stays
+        // there until onSessionCompleted navigates away.
+        if (isLastDrill) setFinishing(true);
         await endDrill(completedDrillRun);
 
-        if (nextIndex >= allDrills.length) {
+        if (isLastDrill) {
             await endSession(session.id);
             // Report the range step back to the program: grades drive the schedule.
             if (programContext) {
@@ -190,7 +199,7 @@ export function usePracticeScreenState(
         remainingDrillsCount,
         practiceReady,
         completeBlock,
-        loading: screenLoading || drillRunLoading || sessionLoading || isInitializingPractice,
+        loading: screenLoading || drillRunLoading || sessionLoading || isInitializingPractice || finishing,
         error: screenError || flowError || drillRunError || sessionError,
     };
 }
