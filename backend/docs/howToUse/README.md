@@ -15,6 +15,7 @@ All endpoints are mounted under `/api/v1`.
 | [Issues](./issues.md) | `/api/v1/issues` | Swing faults detected in an analysis; the user's issue library |
 | [Drills](./drills.md) | `/api/v1/drills` | Practice drills that fix issues |
 | [Practice sessions](./practice-sessions.md) | `/api/v1/practice` | Track practice sessions and per-drill reps |
+| [Programs](./programs.md) | `/api/v1/programs` | Adaptive practice plans that schedule the next session per issue |
 | [Issue–drill mappings](./issue-drills.md) | `/api/v1/issue-drills` | Admin links between issues and drills |
 | [Feedback](./feedback.md) | `/api/v1/feedback` | User-submitted app feedback |
 | [Users](./users.md) | `/api/v1/users` | Account listing (admin) and account deletion |
