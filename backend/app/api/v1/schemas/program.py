@@ -8,8 +8,14 @@ class GenerateProgramRequest(BaseModel):
     analysis_issue_id: UUID
 
 
+class DrillGrade(BaseModel):
+    drill_id: UUID
+    grade: str  # 'rough' | 'ok' | 'dialed'
+
+
 class CompleteStepRequest(BaseModel):
     practice_session_id: UUID | None = None
+    grades: list[DrillGrade] = []
 
 
 class ProgramStepResponse(BaseModel):
@@ -43,8 +49,8 @@ class ProgramResponse(BaseModel):
     title: str
     status: str
     created_at: datetime
-    completed_steps: int
-    total_steps: int
+    grooved_count: int
+    total_drills: int
     steps: list[ProgramStepResponse]
 
     model_config = ConfigDict(from_attributes=True)
@@ -58,8 +64,8 @@ class ProgramResponse(BaseModel):
             title=dto.title,
             status=dto.status,
             created_at=dto.created_at,
-            completed_steps=dto.completed_steps,
-            total_steps=dto.total_steps,
+            grooved_count=dto.grooved_count,
+            total_drills=dto.total_drills,
             steps=[ProgramStepResponse.from_domain(s) for s in dto.steps],
         )
 
@@ -68,6 +74,8 @@ class StepAdvanceResponse(BaseModel):
     completed_step: ProgramStepResponse
     next_step: ProgramStepResponse | None
     program_status: str
+    grooved_count: int
+    total_drills: int
 
     @classmethod
     def from_domain(cls, dto) -> "StepAdvanceResponse":
@@ -75,4 +83,6 @@ class StepAdvanceResponse(BaseModel):
             completed_step=ProgramStepResponse.from_domain(dto.completed_step),
             next_step=ProgramStepResponse.from_domain(dto.next_step) if dto.next_step else None,
             program_status=dto.program_status,
+            grooved_count=dto.grooved_count,
+            total_drills=dto.total_drills,
         )

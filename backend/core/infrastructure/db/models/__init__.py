@@ -26,6 +26,7 @@ from .PracticeDrillRun import PracticeDrillRun
 # Import program engine models
 from .Program import Program
 from .ProgramStep import ProgramStep
+from .ProgramDrillState import ProgramDrillState
 
 # Export all models
 __all__ = [
@@ -47,4 +48,5 @@ __all__ = [
     "PracticeDrillRun",
     "Program",
     "ProgramStep",
+    "ProgramDrillState",
 ]

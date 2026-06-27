@@ -4,6 +4,13 @@ from datetime import datetime
 
 
 @dataclass(frozen=True)
+class DrillGradeDTO:
+    """How a single drill block felt, fed back into the spaced-repetition state."""
+    drill_id: UUID
+    grade: str  # 'rough' | 'ok' | 'dialed'
+
+
+@dataclass(frozen=True)
 class ProgramStepDTO:
     id: UUID
     program_id: UUID
@@ -22,15 +29,18 @@ class ProgramDTO:
     title: str
     status: str  # 'active' | 'completed' | 'abandoned'
     created_at: datetime
-    completed_steps: int
-    total_steps: int
+    # Open-ended program: progress is grooved-drill count, not an X/N step bar.
+    grooved_count: int
+    total_drills: int
     steps: list[ProgramStepDTO] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
 class StepAdvanceDTO:
-    """Result of completing a step: what was completed, what's next, where the
-    program stands now."""
+    """Result of completing a step: what was completed, what's scheduled next, and
+    where the program stands now (grooved progress lives on the ProgramDTO)."""
     completed_step: ProgramStepDTO
     next_step: ProgramStepDTO | None
     program_status: str
+    grooved_count: int
+    total_drills: int

@@ -1,5 +1,6 @@
 from ..models.Program import Program
 from ..models.ProgramStep import ProgramStep
+from ..models.ProgramDrillState import ProgramDrillState
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -67,7 +68,7 @@ def get_steps_by_program_id(program_id: UUID, session: Session) -> list[ProgramS
     )
 
 
-def get_next_pending_step(program_id: UUID, session: Session) -> ProgramStep | None:
+def get_pending_step(program_id: UUID, session: Session) -> ProgramStep | None:
     return (
         session.query(ProgramStep)
         .filter(ProgramStep.program_id == program_id, ProgramStep.status == "pending")
@@ -76,7 +77,44 @@ def get_next_pending_step(program_id: UUID, session: Session) -> ProgramStep | N
     )
 
 
+def get_completed_steps(program_id: UUID, session: Session) -> list[ProgramStep]:
+    return (
+        session.query(ProgramStep)
+        .filter(ProgramStep.program_id == program_id, ProgramStep.status == "completed")
+        .order_by(ProgramStep.order_index)
+        .all()
+    )
+
+
+def create_step(step: ProgramStep, session: Session) -> ProgramStep:
+    session.add(step)
+    session.flush()
+    return step
+
+
 def update_step(step: ProgramStep, session: Session) -> ProgramStep:
     session.add(step)
     session.flush()
     return step
+
+
+# ---------------- PROGRAM DRILL STATES (spaced repetition) ----------------
+
+def create_drill_states(states: list[ProgramDrillState], session: Session) -> list[ProgramDrillState]:
+    session.add_all(states)
+    session.flush()
+    return states
+
+
+def get_drill_states_by_program_id(program_id: UUID, session: Session) -> list[ProgramDrillState]:
+    return (
+        session.query(ProgramDrillState)
+        .filter(ProgramDrillState.program_id == program_id)
+        .all()
+    )
+
+
+def update_drill_state(state: ProgramDrillState, session: Session) -> ProgramDrillState:
+    session.add(state)
+    session.flush()
+    return state
