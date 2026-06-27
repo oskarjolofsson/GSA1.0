@@ -7,47 +7,48 @@ from core.services.dtos.program_service_dto import (
     ProgramDTO,
     ProgramStepDTO,
     StepAdvanceDTO,
+    DrillGradeDTO,
 )
 
 from sqlalchemy.orm import Session
 from uuid import UUID
+from datetime import datetime, timezone
 
 
-# =========== PROGRAM TEMPLATE ============
+# =========== TUNING CONSTANTS ============
 #
-# A program is a finite, ordered sequence of prescribed sessions. Phases are
-# measured in sessions completed (not weeks) and blend range work with on-course
-# play to drive range->course transfer. A re-test step is interleaved after every
-# RETEST_CADENCE work sessions (and always closes the program) so the player can
-# film the same issue and self-compare over time.
+# Open-ended, self-scheduling program driven by the golfer's own block-feel
+# (Rough/OK/Dialed). AI stays backstage. The schedule concentrates range time on
+# the drills that still feel rough; grooved drills fade out.
 
-RETEST_CADENCE = 4
+STRENGTH_MAX = 5
+GROOVED_THRESHOLD = 3          # strength >= this => the drill is "grooved"
+NUM_DRILLS_PER_RANGE = 2       # how many drills fill a range session
+RETEST_CADENCE = 6             # insert a retest after this many work sessions
 
-# Ordered work sessions: (session_type, drill_count). drill_count is ignored for
-# non-range types.
-WORK_PATTERN: list[tuple[str, int]] = [
-    ("range", 1),
-    ("play", 0),
-    ("range", 2),
-    ("play", 0),
-    ("range", 2),
-    ("play", 0),
-]
+# The repeating work rhythm; a retest is interleaved by RETEST_CADENCE.
+WORK_CYCLE: list[str] = ["range", "range", "play"]
+
+# Lightweight spaced repetition: how a grade moves a drill's strength.
+GRADE_STRENGTH_DELTA: dict[str, int] = {"rough": -1, "ok": 0, "dialed": 1}
 
 PLAY_HOLES_DEFAULT = 9
 PLAY_FOCUS_DEFAULT = "Hold one swing thought on every full shot."
 RETEST_INSTRUCTION = "Film one swing of this issue so you can compare it to where you started."
 
+_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
 
 # =========== PUBLIC API ============
 
 def generate_program_for_issue(user_id: UUID, analysis_issue_id: UUID, session: Session) -> ProgramDTO:
-    """Create an active program for the given analysis issue. Idempotent: if an
-    active program already exists for this issue, return it instead of creating a
-    duplicate."""
+    """Create an active program for the given analysis issue and seed one
+    spaced-repetition state per drill. Idempotent: returns the existing active
+    program for this issue if there is one. Steps are scheduled on demand, not
+    pre-generated."""
     existing = repo.get_active_program_for_issue(user_id, analysis_issue_id, session)
     if existing:
-        return _program_to_dto(existing)
+        return _program_to_dto(existing, session)
 
     analysis_issue = analysis_issue_repo.get_analysis_issue_by_id(analysis_issue_id, session)
     if not analysis_issue:
@@ -67,46 +68,53 @@ def generate_program_for_issue(user_id: UUID, analysis_issue_id: UUID, session: 
     )
     repo.create_program(program, session)
 
-    steps = _build_steps(program.id, drills)
-    repo.create_steps(steps, session)
+    states = [
+        models.ProgramDrillState(program_id=program.id, drill_id=drill.id, strength=0)
+        for drill in drills
+    ]
+    if states:
+        repo.create_drill_states(states, session)
 
-    return _program_to_dto(program, steps)
+    return _program_to_dto(program, session)
 
 
 def get_active_program(user_id: UUID, analysis_issue_id: UUID | None, session: Session) -> ProgramDTO | None:
-    """Return the user's active program for a given issue, or their most recent
-    active program if no issue is specified. None if there is none."""
     if analysis_issue_id is not None:
         program = repo.get_active_program_for_issue(user_id, analysis_issue_id, session)
     else:
         active = repo.get_active_programs_by_user(user_id, session)
         program = active[0] if active else None
 
-    return _program_to_dto(program) if program else None
+    return _program_to_dto(program, session) if program else None
 
 
 def get_program(program_id: UUID, user_id: UUID, session: Session) -> ProgramDTO:
     program = repo.get_program_by_id(program_id, session)
     _verify_owner(program, program_id, user_id)
-    return _program_to_dto(program)
+    return _program_to_dto(program, session)
 
 
 def get_next_step(program_id: UUID, user_id: UUID, session: Session) -> ProgramStepDTO | None:
+    """Return the pending step, scheduling (and persisting) one if none exists."""
     program = repo.get_program_by_id(program_id, session)
     _verify_owner(program, program_id, user_id)
-    step = repo.get_next_pending_step(program_id, session)
-    return _step_to_dto(step) if step else None
+
+    pending = repo.get_pending_step(program_id, session)
+    if pending is None:
+        pending = _schedule_next_step(program_id, session)
+    return _step_to_dto(pending)
 
 
 def complete_step(
     program_id: UUID,
     step_id: UUID,
     user_id: UUID,
+    grades: list[DrillGradeDTO],
     practice_session_id: UUID | None,
     session: Session,
 ) -> StepAdvanceDTO:
-    """Mark a step completed, link the practice session that fulfilled it, advance
-    to the next step, and complete the program when no pending steps remain."""
+    """Apply per-drill grades to the spaced-repetition state, mark the step
+    completed, then schedule the next step."""
     program = repo.get_program_by_id(program_id, session)
     _verify_owner(program, program_id, user_id)
 
@@ -114,84 +122,108 @@ def complete_step(
     if not step or step.program_id != program_id:
         raise exceptions.NotFoundException("ProgramStep", str(step_id))
 
-    if step.status != "completed":
-        step.status = "completed"
+    if step.session_type == "range" and grades:
+        _apply_grades(program_id, grades, session)
+
+    step.status = "completed"
     if practice_session_id is not None:
         step.practice_session_id = practice_session_id
     repo.update_step(step, session)
 
-    next_step = repo.get_next_pending_step(program_id, session)
-    if next_step is None and program.status == "active":
-        program.status = "completed"
-        repo.update_program(program, session)
+    next_step = _schedule_next_step(program_id, session)
 
+    grooved_count, total_drills = _groove_progress(program_id, session)
     return StepAdvanceDTO(
         completed_step=_step_to_dto(step),
-        next_step=_step_to_dto(next_step) if next_step else None,
+        next_step=_step_to_dto(next_step),
         program_status=program.status,
+        grooved_count=grooved_count,
+        total_drills=total_drills,
     )
 
 
-# =========== GENERATION HELPERS ============
+# =========== SCHEDULING ============
 
-def _build_steps(program_id: UUID, drills: list[models.Drill]) -> list[models.ProgramStep]:
-    specs = _build_step_specs()
-    steps: list[models.ProgramStep] = []
-    drill_cursor = 0
+def _schedule_next_step(program_id: UUID, session: Session) -> models.ProgramStep:
+    """Decide the next session type from history, pick drills by strength, persist
+    a pending step."""
+    completed = repo.get_completed_steps(program_id, session)
+    order_index = len(completed)
+    session_type = _decide_next_type(completed)
 
-    for order_index, (session_type, drill_count) in enumerate(specs):
-        if session_type == "range":
-            assigned, drill_cursor = _take_drills(drills, drill_cursor, drill_count)
-            prescription = {
-                "drill_ids": [str(d.id) for d in assigned],
-                "num_blocks": drill_count,
-                "cue": None,
-            }
-        elif session_type == "play":
-            prescription = {"holes": PLAY_HOLES_DEFAULT, "focus": PLAY_FOCUS_DEFAULT}
-        else:  # retest
-            prescription = {"instruction": RETEST_INSTRUCTION}
+    if session_type == "range":
+        states = repo.get_drill_states_by_program_id(program_id, session)
+        drill_ids = _pick_due_drills(states, NUM_DRILLS_PER_RANGE)
+        prescription = {
+            "drill_ids": [str(d) for d in drill_ids],
+            "num_blocks": len(drill_ids),
+            "cue": None,
+        }
+    elif session_type == "play":
+        prescription = {"holes": PLAY_HOLES_DEFAULT, "focus": PLAY_FOCUS_DEFAULT}
+    else:  # retest
+        prescription = {"instruction": RETEST_INSTRUCTION}
 
-        steps.append(
-            models.ProgramStep(
-                program_id=program_id,
-                order_index=order_index,
-                session_type=session_type,
-                prescription=prescription,
-                status="pending",
-            )
-        )
-
-    return steps
-
-
-def _build_step_specs() -> list[tuple[str, int]]:
-    """Materialize WORK_PATTERN into a step spec list, interleaving a retest after
-    every RETEST_CADENCE work sessions and always closing with one."""
-    specs: list[tuple[str, int]] = []
-    work_count = 0
-    for spec in WORK_PATTERN:
-        specs.append(spec)
-        work_count += 1
-        if work_count % RETEST_CADENCE == 0:
-            specs.append(("retest", 0))
-
-    if not specs or specs[-1][0] != "retest":
-        specs.append(("retest", 0))
-
-    return specs
+    step = models.ProgramStep(
+        program_id=program_id,
+        order_index=order_index,
+        session_type=session_type,
+        prescription=prescription,
+        status="pending",
+    )
+    return repo.create_step(step, session)
 
 
-def _take_drills(
-    drills: list[models.Drill], cursor: int, count: int
-) -> tuple[list[models.Drill], int]:
-    """Take `count` drills starting at `cursor`, cycling through the available
-    drills so different range steps emphasize different drills. Returns the picked
-    drills and the advanced cursor."""
-    if not drills or count <= 0:
-        return [], cursor
-    picked = [drills[(cursor + i) % len(drills)] for i in range(count)]
-    return picked, cursor + count
+def _decide_next_type(completed_steps: list[models.ProgramStep]) -> str:
+    """`WORK_CYCLE` repeats forever; a retest is inserted after every
+    `RETEST_CADENCE` work sessions. Work = range or play."""
+    work_steps = [s for s in completed_steps if s.session_type in ("range", "play")]
+
+    work_since_retest = 0
+    for step in reversed(completed_steps):
+        if step.session_type == "retest":
+            break
+        work_since_retest += 1
+
+    if work_since_retest >= RETEST_CADENCE:
+        return "retest"
+
+    return WORK_CYCLE[len(work_steps) % len(WORK_CYCLE)]
+
+
+def _pick_due_drills(states: list[models.ProgramDrillState], count: int) -> list[UUID]:
+    """Lowest-strength drills first; ties broken by oldest last_seen (never-seen
+    drills surface first)."""
+    if not states or count <= 0:
+        return []
+    ordered = sorted(
+        states,
+        key=lambda s: (
+            s.strength,
+            s.last_seen_at is not None,  # False (never seen) sorts first
+            s.last_seen_at or _EPOCH,
+        ),
+    )
+    return [s.drill_id for s in ordered[:count]]
+
+
+# =========== GRADING ============
+
+def _apply_grades(program_id: UUID, grades: list[DrillGradeDTO], session: Session) -> None:
+    states = repo.get_drill_states_by_program_id(program_id, session)
+    state_by_drill = {state.drill_id: state for state in states}
+    now = datetime.now(tz=timezone.utc)
+
+    for grade in grades:
+        state = state_by_drill.get(grade.drill_id)
+        if state is None or grade.grade not in GRADE_STRENGTH_DELTA:
+            continue
+        delta = GRADE_STRENGTH_DELTA[grade.grade]
+        state.strength = max(0, min(STRENGTH_MAX, state.strength + delta))
+        state.last_seen_at = now
+        state.times_seen = (state.times_seen or 0) + 1
+        state.last_grade = grade.grade
+        repo.update_drill_state(state, session)
 
 
 # =========== DTO HELPERS ============
@@ -203,10 +235,14 @@ def _verify_owner(program: models.Program | None, program_id: UUID, user_id: UUI
         raise exceptions.ForbiddenException("You do not have access to this program.")
 
 
-def _program_to_dto(program: models.Program, steps: list[models.ProgramStep] | None = None) -> ProgramDTO:
-    step_models = steps if steps is not None else list(program.steps)
-    step_dtos = [_step_to_dto(s) for s in step_models]
-    completed = sum(1 for s in step_models if s.status == "completed")
+def _groove_progress(program_id: UUID, session: Session) -> tuple[int, int]:
+    states = repo.get_drill_states_by_program_id(program_id, session)
+    grooved = sum(1 for s in states if s.strength >= GROOVED_THRESHOLD)
+    return grooved, len(states)
+
+
+def _program_to_dto(program: models.Program, session: Session) -> ProgramDTO:
+    grooved_count, total_drills = _groove_progress(program.id, session)
     return ProgramDTO(
         id=program.id,
         user_id=program.user_id,
@@ -214,9 +250,9 @@ def _program_to_dto(program: models.Program, steps: list[models.ProgramStep] | N
         title=program.title,
         status=program.status,
         created_at=program.created_at,
-        completed_steps=completed,
-        total_steps=len(step_models),
-        steps=step_dtos,
+        grooved_count=grooved_count,
+        total_drills=total_drills,
+        steps=[_step_to_dto(s) for s in program.steps],
     )
 
 

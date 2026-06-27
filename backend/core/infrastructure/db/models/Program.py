@@ -54,6 +54,12 @@ class Program(Base):
         order_by="ProgramStep.order_index",
     )
 
+    drill_states = relationship(
+        "ProgramDrillState",
+        back_populates="program",
+        cascade="all, delete-orphan",
+    )
+
     __table_args__ = (
         Index("idx_programs_user", "user_id"),
         Index("idx_programs_user_status", "user_id", "status"),

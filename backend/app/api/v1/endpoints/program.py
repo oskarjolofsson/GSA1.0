@@ -15,6 +15,7 @@ from app.api.v1.schemas.program import (
 )
 
 from core.services import program_service
+from core.services.dtos.program_service_dto import DrillGradeDTO
 
 router = APIRouter()
 
@@ -97,13 +98,15 @@ def complete_step(
 ):
     """
     Mark a program step completed, optionally linking the practice session that
-    fulfilled it. Advances to the next step and completes the program when no
-    pending steps remain.
+    fulfilled it and passing per-drill block-feel grades (rough/ok/dialed). Grades
+    update the spaced-repetition state that schedules future range sessions.
     """
+    grades = [DrillGradeDTO(drill_id=g.drill_id, grade=g.grade) for g in request.grades]
     result = program_service.complete_step(
         program_id=program_id,
         step_id=step_id,
         user_id=current_user["user_id"],
+        grades=grades,
         practice_session_id=request.practice_session_id,
         session=db,
     )
