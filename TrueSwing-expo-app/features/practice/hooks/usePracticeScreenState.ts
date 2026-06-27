@@ -7,6 +7,8 @@ import type { Drill } from 'features/drill/types/Drill';
 import type { DrillRun } from 'features/drill/types/DrillRun';
 import type { PracticeSession } from '../types/Session';
 import { feelToOrdinal, type BlockFeel } from '../utils/blockFeel';
+import { completeStep } from 'features/programs/services/programService';
+import type { ProgramContext, DrillGrade } from 'features/programs/types';
 
 interface UsePracticeDrillsReturn {
     activeDrill: Drill | null;
@@ -22,9 +24,15 @@ interface UsePracticeDrillsReturn {
 export function usePracticeScreenState(
         issue: Issue,
         session: PracticeSession | null,
-        onSessionCompleted: () => void
+        onSessionCompleted: () => void,
+        programContext?: ProgramContext | null,
     ): UsePracticeDrillsReturn
 {
+    // When launched from a program, this run fulfils a single range step: drills
+    // are limited to the step's selection and the per-block feel is reported back
+    // as grades that drive the spaced-repetition schedule.
+    const drillIdsKey = programContext?.drillIds.join(',') ?? null;
+    const gradesRef = useRef<DrillGrade[]>([]);
     const { startDrill, endDrill, loading: drillRunLoading, error: drillRunError } = useDrillRunActions();
     const { endSession, loading: sessionLoading, error: sessionError } = useSessionActions();
 
@@ -54,7 +62,16 @@ export function usePracticeScreenState(
                 setScreenLoading(true);
                 setScreenError(null);
                 const fetchedDrills = await drillService.getDrillsByIssue(issue.id);
-                setDrills(fetchedDrills);
+                // Program range step: run only the step's drills, in its order.
+                if (drillIdsKey) {
+                    const ids = drillIdsKey.split(',');
+                    const ordered = ids
+                        .map((id) => fetchedDrills.find((d) => d.id === id))
+                        .filter((d): d is Drill => Boolean(d));
+                    setDrills(ordered);
+                } else {
+                    setDrills(fetchedDrills);
+                }
             } catch (err) {
                 console.error('Error fetching drills or issue:', err);
                 setScreenError(err instanceof Error ? err.message : 'Internal error occurred while loading drills');
@@ -66,7 +83,7 @@ export function usePracticeScreenState(
 
         fetchIssueAndDrills();
 
-    }, [issue]);
+    }, [issue, drillIdsKey]);
 
     useEffect(() => {
         hasInitializedRef.current = false;
@@ -74,6 +91,7 @@ export function usePracticeScreenState(
         setCurrentDrillRun(null);
         setFlowError(null);
         lastCompletedRunIdRef.current = null;
+        gradesRef.current = [];
     }, [issue, session]);
 
     useEffect(() => {
@@ -117,6 +135,17 @@ export function usePracticeScreenState(
 
         if (nextIndex >= allDrills.length) {
             await endSession(session.id);
+            // Report the range step back to the program: grades drive the schedule.
+            if (programContext) {
+                try {
+                    await completeStep(programContext.programId, programContext.stepId, {
+                        grades: gradesRef.current,
+                        practice_session_id: session.id,
+                    });
+                } catch (err) {
+                    console.error('Failed to complete program step:', err);
+                }
+            }
             onSessionCompleted();
             return;
         }
@@ -124,7 +153,7 @@ export function usePracticeScreenState(
         const nextDrillRun = await startDrill(session.id, allDrills[nextIndex].id);
         setCurrentDrillRun(nextDrillRun);
         setCurrentDrillIndex(nextIndex);
-    }, [allDrills, currentDrillIndex, endDrill, endSession, session, startDrill, onSessionCompleted]);
+    }, [allDrills, currentDrillIndex, endDrill, endSession, session, startDrill, onSessionCompleted, programContext]);
 
     // Show-up loop: a drill is one focused block. The user hits a block of balls
     // heads-down, then taps once to log how it felt (or skips the rating). No
@@ -135,13 +164,18 @@ export function usePracticeScreenState(
         if (lastCompletedRunIdRef.current === currentDrillRun.id) return;
 
         lastCompletedRunIdRef.current = currentDrillRun.id;
+        // In a program run, record the feel as a grade for this drill (skip-rating
+        // omits it, leaving the drill's strength unchanged).
+        if (programContext && feel) {
+            gradesRef.current.push({ drill_id: currentDrillRun.drill_id, grade: feel });
+        }
         const completedRun: DrillRun = {
             ...currentDrillRun,
             successful_reps: feelToOrdinal(feel),
             failed_reps: 0,
         };
         void moveToNextDrill(completedRun);
-    }, [currentDrillRun, session, moveToNextDrill]);
+    }, [currentDrillRun, session, moveToNextDrill, programContext]);
 
     const totalDrills = allDrills.length;
     const drillNumber = Math.min(currentDrillIndex + 1, totalDrills);

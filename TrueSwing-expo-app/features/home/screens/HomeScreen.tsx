@@ -19,6 +19,7 @@ import { useAuth } from "features/auth/AuthProvider";
 import { useHomeAnalysis } from "features/home/context/HomeAnalysisContext";
 import useActivity from "features/home/hooks/useActivity";
 import useTodaysIssue from "features/home/hooks/useTodaysIssue";
+import { useProgramForIssue } from "features/programs/hooks/useProgramForIssue";
 import { deriveActivityStats } from "features/home/utils/activityStats";
 import type { Issue } from "features/issues/types";
 
@@ -78,6 +79,21 @@ export default function HomeScreen({
         0
     );
     const selectedIssue = issues[selectedIndex] ?? null;
+
+    // The active program (if any) + next scheduled session for the selected issue.
+    const {
+        program,
+        nextStep,
+        loading: programLoading,
+        refetch: refetchProgram,
+    } = useProgramForIssue(selectedIssue?.analysis_issue_id);
+
+    // Refresh the program when returning to home (e.g. after a session).
+    useFocusEffect(
+        useCallback(() => {
+            refetchProgram();
+        }, [refetchProgram])
+    );
 
     const cycleIssue = useCallback(
         (step: number) => {
@@ -191,7 +207,9 @@ export default function HomeScreen({
                     issue={selectedIssue}
                     index={selectedIndex}
                     total={issues.length}
-                    loading={issuesLoading}
+                    loading={issuesLoading || programLoading}
+                    program={program}
+                    nextStep={nextStep}
                     onPrev={() => cycleIssue(-1)}
                     onNext={() => cycleIssue(1)}
                     onStart={() => selectedIssue && onStartPractice(selectedIssue)}

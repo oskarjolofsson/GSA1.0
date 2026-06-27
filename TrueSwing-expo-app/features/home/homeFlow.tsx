@@ -8,6 +8,8 @@ import type { Issue } from "features/issues/types";
 import { startPracticeSession } from "features/practice/services/sessionService";
 import type { PracticeSession } from "features/practice/types";
 import { useRequirePremium } from "features/billing/hooks/useRequirePremium";
+import { getActiveProgram, generateProgram, getNextStep } from "features/programs/services/programService";
+import type { ProgramContext } from "features/programs/types";
 
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from "expo-router";
@@ -22,12 +24,14 @@ export default function HomeFlow() {
     const analysisController = useHomeAnalysisController();
     const [selectedIssue, setSelectedIssue] = React.useState<Issue | null>(null);
     const [selectedSession, setSelectedSession] = React.useState<PracticeSession | null>(null);
+    const [programContext, setProgramContext] = React.useState<ProgramContext | null>(null);
 
     useFocusEffect(
         React.useCallback(() => {
             goToHome();
             setSelectedIssue(null);
             setSelectedSession(null);
+            setProgramContext(null);
             analysisController.refetch();
         }, [analysisController.refetch, goToHome])
     )
@@ -51,6 +55,36 @@ export default function HomeFlow() {
         }
     }, [requirePremium, goToPractice]);
 
+    // Program-driven start (home card). Lazily creates the program on first use,
+    // then launches the next session. Range only this phase: play/retest aren't
+    // startable yet, so we no-op (the card disables Start for those).
+    const startProgramSession = React.useCallback(async (issue: Issue) => {
+        if (!issue.analysis_issue_id) return;
+        if (!requirePremium()) return;
+
+        try {
+            let program = await getActiveProgram(issue.analysis_issue_id);
+            if (!program) program = await generateProgram(issue.analysis_issue_id);
+
+            const step = await getNextStep(program.id);
+            if (!step || step.session_type !== "range") return;
+
+            setSelectedIssue(issue);
+            const session = await startPracticeSession(issue.analysis_issue_id);
+            setSelectedSession(session);
+            setProgramContext({
+                programId: program.id,
+                stepId: step.id,
+                drillIds: step.prescription.drill_ids ?? [],
+            });
+            goToPractice();
+        } catch (error) {
+            console.error("Failed to start program session:", error);
+            setSelectedSession(null);
+            setProgramContext(null);
+        }
+    }, [requirePremium, goToPractice]);
+
     return (
         <HomeAnalysisProvider value={analysisController}>
             <View style={{ flex: 1 }}>
@@ -58,7 +92,7 @@ export default function HomeFlow() {
                     <HomeScreen
                         onOpenArchive={goToAnalysis}
                         onOpenProfile={() => router.push("/(tabs)/profile")}
-                        onStartPractice={startPracticeForIssue}
+                        onStartPractice={startProgramSession}
                     />
                 )}
                 {currentScreen === 'Analysis' && (
@@ -72,6 +106,7 @@ export default function HomeFlow() {
                         onBack={goToHome}
                         selectedIssue={selectedIssue as Issue}
                         selectedSession={selectedSession}
+                        programContext={programContext}
                     />
                 )}
             </View>

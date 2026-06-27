@@ -12,10 +12,12 @@ import ActiveBlockGlow from "../components/ActiveBlockGlow";
 import { ClipboardList, Play } from "lucide-react-native";
 import { MotiText } from "moti";
 import { FEEL_LABEL, type BlockFeel } from "../utils/blockFeel";
+import type { ProgramContext } from "features/programs/types";
 
 type Props = ScreenProps & {
   issue: Issue;
   session: PracticeSession;
+  programContext?: ProgramContext | null;
 }
 
 type BlockPhase = "ready" | "active" | "rating";
@@ -23,8 +25,8 @@ type BlockPhase = "ready" | "active" | "rating";
 const FEEL_ORDER: BlockFeel[] = ["rough", "ok", "dialed"];
 
 // OnNext in this case is to go to the result screen
-export default function DrillPracticeScreen({ issue, session, onNext }: Props) {
-  const props = usePracticeScreenState(issue, session, onNext);
+export default function DrillPracticeScreen({ issue, session, onNext, programContext }: Props) {
+  const props = usePracticeScreenState(issue, session, onNext, programContext);
   const [isInstructionsVisible, setInstructionsVisible] = useState(false);
   const [phase, setPhase] = useState<BlockPhase>("ready");
   const previousDrillIdRef = useRef<string | null>(null);
