@@ -23,6 +23,10 @@ from .UserRole import UserRole
 from .PracticeSession import PracticeSession
 from .PracticeDrillRun import PracticeDrillRun
 
+# Import program engine models
+from .Program import Program
+from .ProgramStep import ProgramStep
+
 # Export all models
 __all__ = [
     "Base",
@@ -41,4 +45,6 @@ __all__ = [
     "UserRole",
     "PracticeSession",
     "PracticeDrillRun",
+    "Program",
+    "ProgramStep",
 ]

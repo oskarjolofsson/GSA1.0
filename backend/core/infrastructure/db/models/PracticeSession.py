@@ -49,6 +49,17 @@ class PracticeSession(Base):
         server_default="in_progress",
     )
 
+    # Program linkage (nullable: ad-hoc practice outside a program is still allowed).
+    session_type: Mapped[str | None] = mapped_column(
+        Text,
+        CheckConstraint("session_type IN ('range','play','retest')"),
+    )
+
+    program_step_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("program_steps.id", ondelete="SET NULL"),
+    )
+
     # Relationships
     drill_runs = relationship(
         "PracticeDrillRun",
