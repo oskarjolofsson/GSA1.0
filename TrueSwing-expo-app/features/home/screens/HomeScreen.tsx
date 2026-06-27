@@ -9,6 +9,7 @@ import { HOME_ANIM, CARD_SPRING } from "features/home/animations";
 
 import StreakPanel from "features/home/components/StreakPanel";
 import PrescriptionCard from "features/home/components/PrescriptionCard";
+import PlayLogModal from "features/home/components/PlayLogModal";
 import ArchiveEntry from "features/home/components/ArchiveEntry";
 import HomeWelcome from "features/home/components/HomeWelcome";
 import DayDetailModal from "features/home/components/DayDetailModal";
@@ -22,11 +23,13 @@ import useTodaysIssue from "features/home/hooks/useTodaysIssue";
 import { useProgramForIssue } from "features/programs/hooks/useProgramForIssue";
 import { deriveActivityStats } from "features/home/utils/activityStats";
 import type { Issue } from "features/issues/types";
+import type { LogPlayArgs } from "features/home/homeFlow";
 
 type HomeScreenProps = {
     onOpenArchive: () => void;
     onOpenProfile: () => void;
     onStartPractice: (issue: Issue) => void;
+    onLogPlay: (args: LogPlayArgs) => Promise<boolean>;
 };
 
 // Single-screen, no scroll. Two depth layers:
@@ -37,6 +40,7 @@ export default function HomeScreen({
     onOpenArchive,
     onOpenProfile,
     onStartPractice,
+    onLogPlay,
 }: HomeScreenProps) {
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -56,6 +60,10 @@ export default function HomeScreen({
     const [selectedDay, setSelectedDay] = useState<{ date: string; hasActivity: boolean } | null>(
         null
     );
+
+    // On-course round logging modal.
+    const [playOpen, setPlayOpen] = useState(false);
+    const [logging, setLogging] = useState(false);
 
     // The issue currently shown on the card. null until resolved -> defaults to
     // the server's choice; the user can then cycle with the switcher.
@@ -115,6 +123,25 @@ export default function HomeScreen({
             onOpenArchive();
         },
         [allAnalyses, setActiveAnalysisIndex, onOpenArchive]
+    );
+
+    const handleConfirmPlay = useCallback(
+        async (notes: string) => {
+            if (!selectedIssue?.analysis_issue_id || !program || !nextStep) return;
+            setLogging(true);
+            const ok = await onLogPlay({
+                analysisIssueId: selectedIssue.analysis_issue_id,
+                programId: program.id,
+                stepId: nextStep.id,
+                notes,
+            });
+            setLogging(false);
+            if (ok) {
+                setPlayOpen(false);
+                refetchProgram();
+            }
+        },
+        [selectedIssue, program, nextStep, onLogPlay, refetchProgram]
     );
 
     const stats = useMemo(() => deriveActivityStats(counts), [counts]);
@@ -213,6 +240,7 @@ export default function HomeScreen({
                     onPrev={() => cycleIssue(-1)}
                     onNext={() => cycleIssue(1)}
                     onStart={() => selectedIssue && onStartPractice(selectedIssue)}
+                    onPlay={() => setPlayOpen(true)}
                 />
 
                 <View className="my-4 h-px bg-sand/10" />
@@ -225,6 +253,14 @@ export default function HomeScreen({
                 hasActivity={selectedDay?.hasActivity ?? false}
                 onClose={() => setSelectedDay(null)}
                 onOpenAnalysis={handleOpenAnalysis}
+            />
+
+            <PlayLogModal
+                visible={playOpen}
+                focus={nextStep?.prescription.focus ?? null}
+                submitting={logging}
+                onConfirm={handleConfirmPlay}
+                onClose={() => setPlayOpen(false)}
             />
         </View>
     );
