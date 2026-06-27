@@ -6,6 +6,7 @@ from core.services import exceptions
 from core.services.dtos.program_service_dto import (
     ProgramDTO,
     ProgramStepDTO,
+    StepDrillDTO,
     StepAdvanceDTO,
     DrillGradeDTO,
 )
@@ -102,7 +103,7 @@ def get_next_step(program_id: UUID, user_id: UUID, session: Session) -> ProgramS
     pending = repo.get_pending_step(program_id, session)
     if pending is None:
         pending = _schedule_next_step(program_id, session)
-    return _step_to_dto(pending)
+    return _step_to_dto_resolved(pending, session)
 
 
 def complete_step(
@@ -133,9 +134,10 @@ def complete_step(
     next_step = _schedule_next_step(program_id, session)
 
     grooved_count, total_drills = _groove_progress(program_id, session)
+    title_map = _drill_title_map([step, next_step], session)
     return StepAdvanceDTO(
-        completed_step=_step_to_dto(step),
-        next_step=_step_to_dto(next_step),
+        completed_step=_step_to_dto(step, title_map),
+        next_step=_step_to_dto(next_step, title_map),
         program_status=program.status,
         grooved_count=grooved_count,
         total_drills=total_drills,
@@ -247,8 +249,22 @@ def _groove_progress(program_id: UUID, session: Session) -> tuple[int, int]:
     return grooved, len(states)
 
 
+def _drill_title_map(steps: list[models.ProgramStep], session: Session) -> dict[str, str]:
+    """Batch-resolve drill ids → titles across the given steps' range prescriptions
+    (one query). drill_ids are stored as strings in the prescription JSON."""
+    ids: set[str] = set()
+    for step in steps:
+        if step.session_type == "range":
+            ids.update((step.prescription or {}).get("drill_ids", []))
+    if not ids:
+        return {}
+    drills = drill_repo.get_drills_by_ids([UUID(i) for i in ids], session)
+    return {str(d.id): d.title for d in drills}
+
+
 def _program_to_dto(program: models.Program, session: Session) -> ProgramDTO:
     grooved_count, total_drills = _groove_progress(program.id, session)
+    title_map = _drill_title_map(list(program.steps), session)
     return ProgramDTO(
         id=program.id,
         user_id=program.user_id,
@@ -258,11 +274,18 @@ def _program_to_dto(program: models.Program, session: Session) -> ProgramDTO:
         created_at=program.created_at,
         grooved_count=grooved_count,
         total_drills=total_drills,
-        steps=[_step_to_dto(s) for s in program.steps],
+        steps=[_step_to_dto(s, title_map) for s in program.steps],
     )
 
 
-def _step_to_dto(step: models.ProgramStep) -> ProgramStepDTO:
+def _step_to_dto(step: models.ProgramStep, title_map: dict[str, str]) -> ProgramStepDTO:
+    drills: list[StepDrillDTO] = []
+    if step.session_type == "range":
+        for did in (step.prescription or {}).get("drill_ids", []):
+            title = title_map.get(did)
+            if title is not None:
+                drills.append(StepDrillDTO(id=UUID(did), title=title))
+
     return ProgramStepDTO(
         id=step.id,
         program_id=step.program_id,
@@ -271,4 +294,10 @@ def _step_to_dto(step: models.ProgramStep) -> ProgramStepDTO:
         prescription=step.prescription or {},
         status=step.status,
         practice_session_id=step.practice_session_id,
+        drills=drills,
     )
+
+
+def _step_to_dto_resolved(step: models.ProgramStep, session: Session) -> ProgramStepDTO:
+    """Convenience for single-step callers: build the title map for one step."""
+    return _step_to_dto(step, _drill_title_map([step], session))

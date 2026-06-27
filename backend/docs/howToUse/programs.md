@@ -119,13 +119,19 @@ Response `200`:
   "order_index": 0,
   "session_type": "range",
   "prescription": { "drill_ids": ["77aa...", "88bb..."], "num_blocks": 2, "cue": null },
+  "drills": [
+    { "id": "77aa...", "title": "Towel under lead arm" },
+    { "id": "88bb...", "title": "Chair drill" }
+  ],
   "status": "pending",
   "practice_session_id": null
 }
 ```
 
-Returns `null` only if the program has no further steps (not expected for an open-ended
-active program).
+For `range` steps, `drills` resolves `prescription.drill_ids` to `{id, title}` for
+display (computed at read time, not stored — titles stay fresh if a drill is renamed).
+Empty for `play`/`retest`. Returns `null` only if the program has no further steps (not
+expected for an open-ended active program).
 
 ### 3.5 `POST /api/v1/programs/{program_id}/steps/{step_id}/complete/` 🔓
 

@@ -123,6 +123,10 @@ def test_next_step_first_is_range(client, premium, auth_headers, analysis_issue_
     step = resp.json()
     assert step["session_type"] == "range"
     assert step["prescription"]["num_blocks"] == 2
+    # Drill ids are resolved to {id, title} for display.
+    assert len(step["drills"]) == 2
+    assert all(d["title"] for d in step["drills"])
+    assert {d["id"] for d in step["drills"]} == set(step["prescription"]["drill_ids"])
 
 
 def test_complete_step_returns_advance(client, premium, auth_headers, analysis_issue_id):

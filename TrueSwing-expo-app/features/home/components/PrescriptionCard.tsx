@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
@@ -44,8 +44,10 @@ function deriveCardState(
     const p = nextStep?.prescription;
     switch (nextStep?.session_type) {
         case "range": {
-            const n = p?.num_blocks ?? p?.drill_ids?.length ?? 0;
-            return { ...base, sessionLine: `Range · ${n} drill${n === 1 ? "" : "s"}`, detail: p?.cue ?? "Hit a focused block on each drill.", buttonLabel: "Start session" };
+            const names = (nextStep?.drills ?? []).map((d) => d.title);
+            const n = p?.num_blocks ?? p?.drill_ids?.length ?? names.length;
+            const sessionLine = names.length ? names.join(" + ") : `Range · ${n} drill${n === 1 ? "" : "s"}`;
+            return { ...base, sessionLine, detail: p?.cue ?? "Hit a focused block on each drill.", buttonLabel: "Start session" };
         }
         case "play":
             return { ...base, sessionLine: `Play ${p?.holes ?? 9} holes`, detail: p?.focus ?? null, buttonLabel: "Coming soon", startable: false };
@@ -143,6 +145,15 @@ export default function PrescriptionCard({
                 )}
             </View>
 
+            {loading ? (
+                <View className="items-center justify-center py-12">
+                    <ActivityIndicator color="#E4C892" />
+                    <Text className="mt-3 font-sans text-[13px] text-sand-dim">
+                        Loading your plan…
+                    </Text>
+                </View>
+            ) : (
+            <>
             {/* Swipeable issue text. Keyed by issue id so each switch slides in. */}
             <GestureDetector gesture={pan}>
                 <MotiView
@@ -160,7 +171,7 @@ export default function PrescriptionCard({
                             <Text className="font-sans-medium text-[11px] uppercase tracking-[2px] text-sand-dim">
                                 Next session
                             </Text>
-                            <Text className="mt-1 font-display-bold text-[20px] leading-tight text-sand">
+                            <Text numberOfLines={2} className="mt-1 font-display-bold text-[20px] leading-tight text-sand">
                                 {sessionLine}
                             </Text>
                         </View>
@@ -221,6 +232,8 @@ export default function PrescriptionCard({
                     </LinearGradient>
                 </MotiView>
             </Pressable>
+            </>
+            )}
         </View>
     );
 }

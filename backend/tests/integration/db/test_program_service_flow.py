@@ -105,6 +105,10 @@ class TestNextStep:
         picked = {uuid.UUID(d) for d in step.prescription["drill_ids"]}
         assert picked.issubset({d.id for d in drills})
         assert len(picked) == ps.NUM_DRILLS_PER_RANGE
+        # Drill ids are resolved to names for display, matching the picked ids.
+        title_by_id = {d.id: d.title for d in drills}
+        assert {sd.id for sd in step.drills} == picked
+        assert all(sd.title == title_by_id[sd.id] for sd in step.drills)
 
     def test_next_step_is_idempotent_until_completed(self, db_session, test_user, seeded):
         analysis_issue, _ = seeded
