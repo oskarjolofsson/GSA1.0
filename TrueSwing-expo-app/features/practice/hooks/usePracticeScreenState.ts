@@ -6,20 +6,15 @@ import type { Issue } from 'features/issues/types';
 import type { Drill } from 'features/drill/types/Drill';
 import type { DrillRun } from 'features/drill/types/DrillRun';
 import type { PracticeSession } from '../types/Session';
-
-const REPS_PER_DRILL = 12;
+import { feelToOrdinal, type BlockFeel } from '../utils/blockFeel';
 
 interface UsePracticeDrillsReturn {
     activeDrill: Drill | null;
+    drillNumber: number;
+    totalDrills: number;
     remainingDrillsCount: number;
     practiceReady: boolean;
-    progress: {
-        succeeded: number;
-        failed: number;
-        total: number;
-    };
-    handleSuccess: () => void;
-    handleFailure: () => void;
+    completeBlock: (feel: BlockFeel | null) => void;
     loading: boolean;
     error: string | null;
 }
@@ -46,8 +41,6 @@ export function usePracticeScreenState(
     const drillService = new DrillService();
 
     const activeDrill = currentDrillIndex < allDrills.length ? allDrills[currentDrillIndex] : null;
-    const succeeded = currentDrillRun?.successful_reps ?? 0;
-    const failed = currentDrillRun?.failed_reps ?? 0;
 
     useEffect(() => {
         const fetchIssueAndDrills = async () => {
@@ -133,52 +126,36 @@ export function usePracticeScreenState(
         setCurrentDrillIndex(nextIndex);
     }, [allDrills, currentDrillIndex, endDrill, endSession, session, startDrill, onSessionCompleted]);
 
-    const handleRep = useCallback((repType: 'successful_reps' | 'failed_reps') => {
+    // Show-up loop: a drill is one focused block. The user hits a block of balls
+    // heads-down, then taps once to log how it felt (or skips the rating). No
+    // per-shot grading. The optional feel is stored in `successful_reps` as a small
+    // ordinal for now (0 = no rating); Phase 2 moves it to a dedicated `feel` column.
+    const completeBlock = useCallback((feel: BlockFeel | null) => {
         if (!session || !currentDrillRun) return;
-
-        setCurrentDrillRun((previousDrillRun) => {
-            if (!previousDrillRun) return previousDrillRun;
-
-            const currentTotalReps = previousDrillRun.successful_reps + previousDrillRun.failed_reps;
-            if (currentTotalReps >= REPS_PER_DRILL) return previousDrillRun;
-
-            return {
-                ...previousDrillRun,
-                [repType]: previousDrillRun[repType] + 1,
-            };
-        });
-    }, [currentDrillRun, session]);
-
-    useEffect(() => {
-        if (!currentDrillRun || !session) return;
-
-        const updatedTotalReps = currentDrillRun.successful_reps + currentDrillRun.failed_reps;
-        if (updatedTotalReps !== REPS_PER_DRILL) return;
-
         if (lastCompletedRunIdRef.current === currentDrillRun.id) return;
 
         lastCompletedRunIdRef.current = currentDrillRun.id;
-        void moveToNextDrill(currentDrillRun);
+        const completedRun: DrillRun = {
+            ...currentDrillRun,
+            successful_reps: feelToOrdinal(feel),
+            failed_reps: 0,
+        };
+        void moveToNextDrill(completedRun);
     }, [currentDrillRun, session, moveToNextDrill]);
 
-    const handleSuccess = useCallback(() => handleRep('successful_reps'), [handleRep]);
-    const handleFailure = useCallback(() => handleRep('failed_reps'), [handleRep]);
-
+    const totalDrills = allDrills.length;
+    const drillNumber = Math.min(currentDrillIndex + 1, totalDrills);
     const remainingDrillsCount = Math.max(0, allDrills.length - currentDrillIndex - 1);
     const practiceReady = Boolean(session && currentDrillRun);
     const isInitializingPractice = !screenLoading && allDrills.length > 0 && !flowError && !practiceReady;
 
     return {
         activeDrill,
+        drillNumber,
+        totalDrills,
         remainingDrillsCount,
         practiceReady,
-        progress: {
-            succeeded,
-            failed,
-            total: REPS_PER_DRILL,
-        },
-        handleSuccess,
-        handleFailure,
+        completeBlock,
         loading: screenLoading || drillRunLoading || sessionLoading || isInitializingPractice,
         error: screenError || flowError || drillRunError || sessionError,
     };
