@@ -72,9 +72,15 @@ def get_issues_by_analysis_id(analysis_id: UUID, user_id: UUID, db_session: Sess
 
 
 def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
-    """Get all issues created by a specific user with analysis_issue and progress data."""
+    """Get all issues created by a specific user with analysis_issue and progress data.
+
+    Ordered by the same key as `get_todays_issue` (most-practiced → confidence →
+    recency), so the list is stable across loads and "today's issue" is always
+    first — the home card opens on it instead of a mid-list position.
+    """
     issues: list[Issue] = repo_get_issues_by_user_id(user_id, db_session)
-    return _batch_fetch_analysis_issues_and_progress(user_id, issues, db_session)
+    dtos = _batch_fetch_analysis_issues_and_progress(user_id, issues, db_session)
+    return sorted(dtos, key=_todays_issue_sort_key, reverse=True)
 
 
 def get_todays_issue(user_id: UUID, db_session: Session) -> IssueResponseDTO | None:
