@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react-native";
+import { ArrowRight, ChevronLeft, ChevronRight, Info } from "lucide-react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS, useReducedMotion } from "react-native-reanimated";
 import { MotiView } from "moti";
@@ -23,6 +23,7 @@ type PrescriptionCardProps = {
     onPlay: () => void;
     onRetest: () => void;
     onOpenHistory: () => void;
+    onShowInfo: () => void;
 };
 
 // Derives the card's session line, detail, button label, and whether Start is
@@ -82,6 +83,7 @@ export default function PrescriptionCard({
     onPlay,
     onRetest,
     onOpenHistory,
+    onShowInfo,
 }: PrescriptionCardProps) {
     const reduceMotion = useReducedMotion();
     const canSwitch = total > 1;
@@ -170,9 +172,16 @@ export default function PrescriptionCard({
                     animate={{ opacity: 1, translateX: 0 }}
                     transition={{ type: "timing", duration: reduceMotion ? 0 : 220 }}
                 >
-                    <Text className="mt-2 font-display-bold text-[32px] leading-tight text-sand">
-                        {loading ? "…" : issue?.title ?? "No issue yet"}
-                    </Text>
+                    <View className="mt-2 flex-row items-start gap-2">
+                        <Text className="flex-1 font-display-bold text-[32px] leading-tight text-sand">
+                            {issue?.title ?? "No issue yet"}
+                        </Text>
+                        {issue && (
+                            <Pressable onPress={onShowInfo} hitSlop={8} className="mt-2 active:opacity-60">
+                                <Info size={20} color="#8A8676" />
+                            </Pressable>
+                        )}
+                    </View>
 
                     {sessionLine && (
                         <View className="mt-3">
