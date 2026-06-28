@@ -97,7 +97,7 @@ export default function IssueShowcaseOverlay({
                                         </Text>
                                     )}
 
-                                    <TouchableOpacity
+                                    {/* <TouchableOpacity
                                         activeOpacity={0.9}
                                         className="mt-5 self-start rounded-2xl bg-white px-5 py-3 flex-row items-center gap-2"
                                         onPress={() => {
@@ -110,7 +110,7 @@ export default function IssueShowcaseOverlay({
                                         <Text className="font-semibold text-black">
                                             Start practice
                                         </Text>
-                                    </TouchableOpacity>
+                                    </TouchableOpacity> */}
                                 </View>
                             )}
                         />

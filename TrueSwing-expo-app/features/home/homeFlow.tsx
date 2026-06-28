@@ -60,30 +60,14 @@ export default function HomeFlow() {
         goToHistory();
     }, [goToHistory]);
 
-    // Shared practice-start: used by both the reel (onNext) and the home
-    // prescription card. Gates on premium, creates a session, then navigates.
-    const startPracticeForIssue = React.useCallback(async (issue: Issue) => {
-        if (!issue.analysis_issue_id) return;
-
-        // Drills are premium — gate before starting a session.
-        if (!requirePremium()) return;
-
-        try {
-            setSelectedIssue(issue);
-            const session = await startPracticeSession(issue.analysis_issue_id);
-            setSelectedSession(session);
-            goToPractice();
-        } catch (error) {
-            console.error('Failed to start practice session before navigation:', error);
-            setSelectedSession(null);
-        }
-    }, [requirePremium, goToPractice]);
-
-    // Program-driven start (home card). Lazily creates the program on first use,
-    // then launches the next session. Range only this phase: play/retest aren't
-    // startable yet, so we no-op (the card disables Start for those).
+    // Program-driven start, used by the home card AND the analysis reel. Lazily
+    // creates the program, then launches the next range session. Gives feedback
+    // (rather than a silent no-op) for issues that can't be practiced.
     const startProgramSession = React.useCallback(async (issue: Issue) => {
-        if (!issue.analysis_issue_id) return;
+        if (!issue.analysis_issue_id) {
+            Alert.alert("Not in your plan", "This issue isn't active anymore — it was removed from your plan.");
+            return;
+        }
         if (!requirePremium()) return;
 
         try {
@@ -91,7 +75,12 @@ export default function HomeFlow() {
             if (!program) program = await generateProgram(issue.analysis_issue_id);
 
             const step = await getNextStep(program.id);
-            if (!step || step.session_type !== "range") return;
+            if (!step) return;
+            if (step.session_type !== "range") {
+                const what = step.session_type === "play" ? "to play a round" : "a re-test";
+                Alert.alert("Open it from home", `Your next session for this issue is ${what}. Head to your home plan to do it.`);
+                return;
+            }
 
             setSelectedIssue(issue);
             const session = await startPracticeSession(issue.analysis_issue_id);
@@ -162,7 +151,7 @@ export default function HomeFlow() {
                 {currentScreen === 'Analysis' && (
                     <AnalysisResultScreen
                         onBack={goToHome}
-                        onNext={startPracticeForIssue}
+                        onNext={startProgramSession}
                     />
                 )}
                 {currentScreen === 'Practice' && (
