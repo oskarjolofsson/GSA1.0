@@ -8,9 +8,11 @@ import { useVideo } from "./hooks/useVideo";
 import { usePrompt } from "./hooks/usePrompt";
 import { useUpload } from "./hooks/useUpload";
 import { useFocusEffect } from "@react-navigation/native";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AiConsentModal } from "features/privacy/components/AIconsentModel";
 import { hasValidAiConsent, saveAiConsent, resetAiConsentForDebug } from "features/privacy/utils/consentHelper";
+import { consumeRetestIntent } from "features/programs/retestIntent";
+import { logRetestUpload } from "features/programs/services/retest";
 
 export default function UploadFlow() {
     const { currentScreen, next, prev, goToSelectVideo } = useUploadFlowSequence();
@@ -20,6 +22,20 @@ export default function UploadFlow() {
 
     const didInitRef = useRef(false);
     const [isConsentModalVisible, setIsConsentModalVisible] = useState(false);
+
+    // When an upload actually completes, credit a pending re-test (if the user
+    // launched this from a retest step). Fires once per uploaded analysis; a no-op
+    // for normal uploads (no intent pending).
+    const lastCreditedRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (!upload.loading && upload.analysisId && !upload.error && lastCreditedRef.current !== upload.analysisId) {
+            lastCreditedRef.current = upload.analysisId;
+            const intent = consumeRetestIntent();
+            if (intent) {
+                logRetestUpload(intent).catch((e) => console.error("Failed to credit re-test:", e));
+            }
+        }
+    }, [upload.loading, upload.analysisId, upload.error]);
 
     const resetFlow = useCallback(() => {
         removeVideo();

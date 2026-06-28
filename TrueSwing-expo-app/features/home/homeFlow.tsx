@@ -10,6 +10,7 @@ import { startPracticeSession, endPracticeSession } from "features/practice/serv
 import type { PracticeSession } from "features/practice/types";
 import { useRequirePremium } from "features/billing/hooks/useRequirePremium";
 import { getActiveProgram, generateProgram, getNextStep, completeStep } from "features/programs/services/programService";
+import { clearRetestIntent } from "features/programs/retestIntent";
 import type { ProgramContext } from "features/programs/types";
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from "expo-router";
@@ -22,6 +23,11 @@ export type LogSessionArgs = {
     stepId: string;
     sessionType: "play" | "retest";
     notes: string;
+};
+
+export type SkipStepArgs = {
+    programId: string;
+    stepId: string;
 };
 
 
@@ -42,6 +48,8 @@ export default function HomeFlow() {
             setSelectedSession(null);
             setProgramContext(null);
             setHistoryIssue(null);
+            // Bailing back to home discards an unconsumed re-test intent.
+            clearRetestIntent();
             analysisController.refetch();
         }, [analysisController.refetch, goToHome])
     )
@@ -120,6 +128,18 @@ export default function HomeFlow() {
         }
     }, [requirePremium]);
 
+    // Deliberately skip a step (e.g. a re-test) without doing it: advance the
+    // program, no session, no streak square.
+    const skipStep = React.useCallback(async ({ programId, stepId }: SkipStepArgs) => {
+        try {
+            await completeStep(programId, stepId, {});
+            return true;
+        } catch (error) {
+            console.error("Failed to skip step:", error);
+            return false;
+        }
+    }, []);
+
     return (
         <HomeAnalysisProvider value={analysisController}>
             <View style={{ flex: 1 }}>
@@ -129,6 +149,7 @@ export default function HomeFlow() {
                         onOpenProfile={() => router.push("/(tabs)/profile")}
                         onStartPractice={startProgramSession}
                         onLogSession={logProgramSession}
+                        onSkipStep={skipStep}
                         onOpenHistory={openHistory}
                     />
                 )}
