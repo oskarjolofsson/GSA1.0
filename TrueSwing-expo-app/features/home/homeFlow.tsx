@@ -14,7 +14,8 @@ import { clearRetestIntent } from "features/programs/retestIntent";
 import type { ProgramContext } from "features/programs/types";
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from "expo-router";
-import { View } from "react-native";
+import { View, Alert } from "react-native";
+import { ApiError } from "lib/errors";
 import React from "react";
 
 export type LogSessionArgs = {
@@ -102,7 +103,12 @@ export default function HomeFlow() {
             });
             goToPractice();
         } catch (error) {
-            console.error("Failed to start program session:", error);
+            // One active program at a time: the backend blocks a second focus.
+            if (error instanceof ApiError && error.status === 409) {
+                Alert.alert("Finish your current focus first", "You can only work one issue's plan at a time.");
+            } else {
+                console.error("Failed to start program session:", error);
+            }
             setSelectedSession(null);
             setProgramContext(null);
         }

@@ -51,3 +51,4 @@ class IssueResponseDTO:
     analysis_id: str | None = None
     confidence: float | None = None
     progress: SimplifiedIssueProgressDTO | None = None
+    program_status: str | None = None  # 'active' | 'completed' | None

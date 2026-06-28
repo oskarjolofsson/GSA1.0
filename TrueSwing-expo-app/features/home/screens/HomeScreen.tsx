@@ -289,6 +289,8 @@ export default function HomeScreen({
                     onRetest={() => setSessionMode("retest")}
                     onOpenHistory={() => selectedIssue && onOpenHistory(selectedIssue)}
                     onShowInfo={() => setInfoOpen(true)}
+                    isFocus={!!selectedIssue && selectedIssue.id === defaultIssueId}
+                    hasActiveProgram={issues.some((i) => i.program_status === "active")}
                 />
 
                 <View className="my-4 h-px bg-sand/10" />
