@@ -9,7 +9,7 @@ import { HOME_ANIM, CARD_SPRING } from "features/home/animations";
 
 import StreakPanel from "features/home/components/StreakPanel";
 import PrescriptionCard from "features/home/components/PrescriptionCard";
-import PlayLogModal from "features/home/components/PlayLogModal";
+import SessionLogModal from "features/home/components/SessionLogModal";
 import ArchiveEntry from "features/home/components/ArchiveEntry";
 import HomeWelcome from "features/home/components/HomeWelcome";
 import DayDetailModal from "features/home/components/DayDetailModal";
@@ -23,13 +23,14 @@ import useTodaysIssue from "features/home/hooks/useTodaysIssue";
 import { useProgramForIssue } from "features/programs/hooks/useProgramForIssue";
 import { deriveActivityStats } from "features/home/utils/activityStats";
 import type { Issue } from "features/issues/types";
-import type { LogPlayArgs } from "features/home/homeFlow";
+import type { LogSessionArgs } from "features/home/homeFlow";
 
 type HomeScreenProps = {
     onOpenArchive: () => void;
     onOpenProfile: () => void;
     onStartPractice: (issue: Issue) => void;
-    onLogPlay: (args: LogPlayArgs) => Promise<boolean>;
+    onLogSession: (args: LogSessionArgs) => Promise<boolean>;
+    onOpenHistory: (issue: Issue) => void;
 };
 
 // Single-screen, no scroll. Two depth layers:
@@ -40,7 +41,8 @@ export default function HomeScreen({
     onOpenArchive,
     onOpenProfile,
     onStartPractice,
-    onLogPlay,
+    onLogSession,
+    onOpenHistory,
 }: HomeScreenProps) {
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -61,8 +63,8 @@ export default function HomeScreen({
         null
     );
 
-    // On-course round logging modal.
-    const [playOpen, setPlayOpen] = useState(false);
+    // Session-log modal (play round or re-test confirm). null when closed.
+    const [sessionMode, setSessionMode] = useState<"play" | "retest" | null>(null);
     const [logging, setLogging] = useState(false);
 
     // The issue currently shown on the card. null until resolved -> defaults to
@@ -125,23 +127,27 @@ export default function HomeScreen({
         [allAnalyses, setActiveAnalysisIndex, onOpenArchive]
     );
 
-    const handleConfirmPlay = useCallback(
+    const handleConfirmSession = useCallback(
         async (notes: string) => {
-            if (!selectedIssue?.analysis_issue_id || !program || !nextStep) return;
+            if (!selectedIssue?.analysis_issue_id || !program || !nextStep || !sessionMode) return;
             setLogging(true);
-            const ok = await onLogPlay({
+            const ok = await onLogSession({
                 analysisIssueId: selectedIssue.analysis_issue_id,
                 programId: program.id,
                 stepId: nextStep.id,
+                sessionType: sessionMode,
                 notes,
             });
             setLogging(false);
             if (ok) {
-                setPlayOpen(false);
+                const wasRetest = sessionMode === "retest";
+                setSessionMode(null);
                 refetchProgram();
+                // Re-test sends the player to the upload tab to re-film.
+                if (wasRetest) router.push("/(tabs)/upload");
             }
         },
-        [selectedIssue, program, nextStep, onLogPlay, refetchProgram]
+        [selectedIssue, program, nextStep, sessionMode, onLogSession, refetchProgram, router]
     );
 
     const stats = useMemo(() => deriveActivityStats(counts), [counts]);
@@ -240,7 +246,9 @@ export default function HomeScreen({
                     onPrev={() => cycleIssue(-1)}
                     onNext={() => cycleIssue(1)}
                     onStart={() => selectedIssue && onStartPractice(selectedIssue)}
-                    onPlay={() => setPlayOpen(true)}
+                    onPlay={() => setSessionMode("play")}
+                    onRetest={() => setSessionMode("retest")}
+                    onOpenHistory={() => selectedIssue && onOpenHistory(selectedIssue)}
                 />
 
                 <View className="my-4 h-px bg-sand/10" />
@@ -255,12 +263,19 @@ export default function HomeScreen({
                 onOpenAnalysis={handleOpenAnalysis}
             />
 
-            <PlayLogModal
-                visible={playOpen}
-                focus={nextStep?.prescription.focus ?? null}
+            <SessionLogModal
+                visible={sessionMode !== null}
+                title={sessionMode === "retest" ? "Re-test your swing" : "Log your round"}
+                body={
+                    sessionMode === "retest"
+                        ? nextStep?.prescription.instruction ?? "Film a fresh swing so you can compare it to where you started."
+                        : nextStep?.prescription.focus ?? null
+                }
+                showNotes={sessionMode === "play"}
+                confirmLabel={sessionMode === "retest" ? "Film now" : "I played it"}
                 submitting={logging}
-                onConfirm={handleConfirmPlay}
-                onClose={() => setPlayOpen(false)}
+                onConfirm={handleConfirmSession}
+                onClose={() => setSessionMode(null)}
             />
         </View>
     );

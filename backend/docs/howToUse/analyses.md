@@ -20,6 +20,7 @@ All routes are under `/api/v1/analyses` and require a bearer token. See
 | GET | `/api/v1/analyses/{analysis_id}/` | 🔓 User | Get one analysis |
 | GET | `/api/v1/analyses/{analysis_id}/video-url/` | 🔓 User | Signed URL to download the original video |
 | GET | `/api/v1/analyses/{analysis_id}/issues/` | 🔓 User | Issues detected in this analysis |
+| GET | `/api/v1/analyses/by-issue/{issue_id}/` | 🔓 User | Issue-progress timeline: the user's swings since this issue was first detected, each annotated with the AI's confidence for this issue (`confidence`, `detected`) |
 | DELETE | `/api/v1/analyses/{analysis_id}/` | 🔓 User | Delete an analysis and its data |
 | DELETE | `/api/v1/analyses/issues/{analysis_issue_id}/` | 🔓 User | Remove a single detected issue |
 

@@ -44,11 +44,23 @@ class GetAnalaysisDTO:
     completed_at: datetime
     
 @dataclass(frozen=True)
+class IssueSwingTimelineItemDTO:
+    """One swing in an issue's progress timeline: the clip plus the AI's read of
+    THIS issue in it (confidence, or not detected)."""
+    analysis_id: UUID
+    video_id: UUID | None
+    created_at: datetime
+    status: str
+    confidence: float | None
+    detected: bool
+
+
+@dataclass(frozen=True)
 class GetAnalaysisIssueDTO:
     analysis_issue_id: UUID
     analysis_id: UUID
-    
+
     issue_id: UUID
     confidence: float
-    
+
     created_at: datetime

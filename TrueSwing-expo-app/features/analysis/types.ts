@@ -23,6 +23,18 @@ export interface AnalysisIssue {
     created_at: string;
 }
 
+// One swing in an issue's progress timeline: the clip + the AI's read of THIS
+// issue in it (confidence, or detected=false when it wasn't flagged).
+export interface IssueSwingTimelineItem {
+    analysis_id: string;
+    video_id: string | null;
+    created_at: string;
+    status: string;
+    confidence: number | null;
+    detected: boolean;
+    thumbnail_url: string | null;
+}
+
 export interface CreateAnalysisRequest {
     model?: string;
     start_time: number;

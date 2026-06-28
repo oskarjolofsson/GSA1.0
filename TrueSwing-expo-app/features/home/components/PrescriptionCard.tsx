@@ -21,6 +21,8 @@ type PrescriptionCardProps = {
     onNext: () => void;
     onStart: () => void;
     onPlay: () => void;
+    onRetest: () => void;
+    onOpenHistory: () => void;
 };
 
 // Derives the card's session line, detail, button label, and whether Start is
@@ -53,7 +55,7 @@ function deriveCardState(
         case "play":
             return { ...base, sessionLine: `Play ${p?.holes ?? 9} holes`, detail: p?.focus ?? null, buttonLabel: "Log round", startable: hasIssue && !loading };
         case "retest":
-            return { ...base, sessionLine: "Re-test your swing", detail: p?.instruction ?? null, buttonLabel: "Coming soon", startable: false };
+            return { ...base, sessionLine: "Re-test your swing", detail: p?.instruction ?? null, buttonLabel: "Re-test", startable: hasIssue && !loading };
         default:
             return { ...base, detail: "Your plan is up to date.", buttonLabel: "Start session" };
     }
@@ -78,6 +80,8 @@ export default function PrescriptionCard({
     onNext,
     onStart,
     onPlay,
+    onRetest,
+    onOpenHistory,
 }: PrescriptionCardProps) {
     const reduceMotion = useReducedMotion();
     const canSwitch = total > 1;
@@ -109,8 +113,9 @@ export default function PrescriptionCard({
     const handleStart = useCallback(() => {
         impactHaptic();
         if (nextStep?.session_type === "play") onPlay();
+        else if (nextStep?.session_type === "retest") onRetest();
         else onStart();
-    }, [nextStep?.session_type, onPlay, onStart]);
+    }, [nextStep?.session_type, onPlay, onRetest, onStart]);
 
     // Horizontal swipe over the issue text cycles issues. activeOffsetX keeps
     // small/vertical movement as taps so it never steals the chevrons.
@@ -190,6 +195,14 @@ export default function PrescriptionCard({
                         <Text className="mt-2 font-sans-medium text-[12px] text-sand-dim">
                             {progressLine}
                         </Text>
+                    )}
+
+                    {program && (
+                        <Pressable onPress={onOpenHistory} hitSlop={6} className="mt-2 self-start active:opacity-60">
+                            <Text className="font-sans-medium text-[12px] text-[#E4C892]">
+                                See your swings →
+                            </Text>
+                        </Pressable>
                     )}
                 </MotiView>
             </GestureDetector>

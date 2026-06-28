@@ -57,14 +57,14 @@ class GetAnalysis(BaseModel):
 class GetAnalysisIssue(BaseModel):
     analysis_issue_id: UUID
     analysis_id: UUID
-    
+
     issue_id: UUID
     confidence: float
-    
+
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-    
+
     @classmethod
     def from_domain(cls, dto) -> "GetAnalysisIssue":
         """Convert GetAnalaysisIssueDTO to GetAnalysisIssue schema."""
@@ -74,4 +74,28 @@ class GetAnalysisIssue(BaseModel):
             issue_id=dto.issue_id,
             confidence=dto.confidence,
             created_at=dto.created_at,
+        )
+
+
+class IssueSwingTimelineItem(BaseModel):
+    analysis_id: UUID
+    video_id: UUID | None
+    created_at: datetime
+    status: str
+    confidence: float | None  # the AI's read of THIS issue in this swing
+    detected: bool            # false => the issue wasn't flagged (likely improved)
+    thumbnail_url: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def from_domain(cls, dto, thumbnail_url: str | None = None) -> "IssueSwingTimelineItem":
+        return cls(
+            analysis_id=dto.analysis_id,
+            video_id=dto.video_id,
+            created_at=dto.created_at,
+            status=dto.status,
+            confidence=dto.confidence,
+            detected=dto.detected,
+            thumbnail_url=thumbnail_url,
         )

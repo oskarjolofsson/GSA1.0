@@ -4,6 +4,7 @@ from .dtos.analysis_service_dto import (
     RunAnalysisDTO,
     AnalysisResponseDTO,
     GetAnalaysisDTO,
+    IssueSwingTimelineItemDTO,
 )
 from .exceptions import NotFoundException, InvalidStateException, InvalidVideoException
 
@@ -248,6 +249,55 @@ def get_analyses_by_user_id(user_id: UUID, db_session) -> list[GetAnalaysisDTO]:
         return_analysis_objects.append(from_analysis_object_to_dto(analysis_object))
 
     return return_analysis_objects
+
+
+def get_issue_swing_timeline(user_id: UUID, issue_id: UUID, db_session) -> list[IssueSwingTimelineItemDTO]:
+    """The user's swings for an issue over time, as a progress lens: every swing
+    from the issue's first detection onward, annotated with the AI's confidence for
+    THIS issue (or 'not detected'). This is what makes the issue trending away
+    visible — the proof of improvement. Empty until the issue has been detected at
+    least once.
+
+    The AI read is reference only; the player judges the footage.
+    """
+    analysis_issues: list[AnalysisIssue] = get_analysis_issues_by_user_id_and_issue_id(
+        user_id=user_id, issue_id=issue_id, session=db_session
+    )
+    if not analysis_issues:
+        return []
+
+    confidence_by_analysis: dict = {ai.analysis_id: ai.confidence for ai in analysis_issues}
+
+    # All of the user's completed swings (newest first); annotate each with this
+    # issue. Detected swings always appear; non-detected ones only from the first
+    # detection onward (so pre-issue swings aren't shown as "not detected"). "First
+    # detection" is the earliest detecting swing's date, not the AnalysisIssue row
+    # time.
+    analyses: list[Analysis] = get_analyses_by_user_id_in_db(user_id=user_id, session=db_session)
+
+    detected_dates = [a.created_at for a in analyses if a.id in confidence_by_analysis and a.created_at]
+    first_detected_at = min(detected_dates) if detected_dates else None
+
+    items: list[IssueSwingTimelineItemDTO] = []
+    for a in analyses:
+        detected = a.id in confidence_by_analysis
+        if not detected and (
+            first_detected_at is None or a.created_at is None or a.created_at < first_detected_at
+        ):
+            continue
+        items.append(
+            IssueSwingTimelineItemDTO(
+                analysis_id=a.id,
+                video_id=a.video_id,
+                created_at=a.created_at,
+                status=a.status,
+                confidence=confidence_by_analysis.get(a.id),
+                detected=detected,
+            )
+        )
+
+    items.sort(key=lambda i: i.created_at or datetime.min, reverse=True)
+    return items
 
 
 def delete_analysis(analysis_id: UUID, db_session) -> None:

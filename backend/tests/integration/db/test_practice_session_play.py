@@ -28,6 +28,18 @@ def test_start_defaults_when_not_provided(db_session, test_user):
     assert row.notes is None
 
 
+def test_start_persists_retest_type(db_session, test_user):
+    """A re-test session logs with session_type='retest' (earns a square, same path)."""
+    dto = svc.record_practice_session_start(
+        user_id=test_user["user_id"],
+        analysis_issue_id=None,
+        session=db_session,
+        session_type="retest",
+    )
+    row = repo.get_practice_session_by_id(dto.id, db_session)
+    assert row.session_type == "retest"
+
+
 def test_completed_play_session_counts_toward_activity(db_session, test_user):
     """Logging a round (start + complete) earns a streak square, same as range."""
     dto = svc.record_practice_session_start(
