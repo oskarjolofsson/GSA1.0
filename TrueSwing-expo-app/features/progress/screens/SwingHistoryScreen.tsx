@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, FlatList, Image, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, ChevronLeft, Film } from "lucide-react-native";
-import VideoScrubber from "features/scrubber/screens/VideoScrubber";
+import DetailedVideo from "features/analysis/components/DetailedVideo";
 import useVideoURL from "features/analysis/hooks/useVideoURL";
 import analysisService from "features/analysis/services/analysisService";
+import { useHomeAnalysis } from "features/home/context/HomeAnalysisContext";
 import type { Analysis, IssueSwingTimelineItem } from "features/analysis/types";
 import type { Issue } from "features/issues/types";
 
@@ -35,13 +36,41 @@ function readLabel(item: IssueSwingTimelineItem, isLatest: boolean): { text: str
 // yourself.
 export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreenProps) {
     const insets = useSafeAreaInsets();
+    const { allAnalyses } = useHomeAnalysis();
     const [items, setItems] = useState<IssueSwingTimelineItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selected, setSelected] = useState<IssueSwingTimelineItem | null>(null);
+    // Tapping a swing opens the real detail/ruler view, which needs the full
+    // Analysis. It's almost always already loaded in the reel's list; fetch as a
+    // fallback.
+    const [fullAnalysis, setFullAnalysis] = useState<Analysis | null>(null);
 
-    // useVideoURL only reads analysis_id + video_id, both present on the item.
-    const videoURL = useVideoURL(selected as unknown as Analysis | null);
+    const videoURL = useVideoURL(fullAnalysis);
+
+    useEffect(() => {
+        let active = true;
+        if (!selected) {
+            setFullAnalysis(null);
+            return;
+        }
+        const found = allAnalyses.find((a) => a.analysis_id === selected.analysis_id);
+        if (found) {
+            setFullAnalysis(found);
+            return;
+        }
+        (async () => {
+            try {
+                const fetched = await analysisService.getAnalysisById(selected.analysis_id);
+                if (active) setFullAnalysis(fetched);
+            } catch {
+                if (active) setFullAnalysis(null);
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [selected, allAnalyses]);
 
     useEffect(() => {
         let active = true;
@@ -89,8 +118,20 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
         []
     );
 
-    // Player view — a selected clip plays full-screen.
+    // Player view — the selected swing opens the real detail/ruler view
+    // (drawing + frame scrub), same as the reel's ruler button. Back returns to
+    // this issue's timeline.
     if (selected) {
+        if (fullAnalysis && videoURL) {
+            return (
+                <DetailedVideo
+                    analysis={fullAnalysis}
+                    videoURL={videoURL}
+                    isActive
+                    onExit={() => setSelected(null)}
+                />
+            );
+        }
         return (
             <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
                 <Pressable
@@ -101,17 +142,8 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
                     <ChevronLeft size={20} color="#E4C892" />
                     <Text className="font-sans-medium text-[15px] text-sand">All swings</Text>
                 </Pressable>
-                <View className="flex-1 px-4 pb-6">
-                    {videoURL ? (
-                        <VideoScrubber videoUri={videoURL} mode="playback" />
-                    ) : (
-                        <View className="flex-1 items-center justify-center">
-                            <ActivityIndicator color="#E4C892" />
-                        </View>
-                    )}
-                    <Text className="mt-3 text-center font-sans text-[13px] text-sand-dim">
-                        {formatDate(selected.created_at)} · {readLabel(selected, false).text}
-                    </Text>
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator color="#E4C892" />
                 </View>
             </View>
         );
