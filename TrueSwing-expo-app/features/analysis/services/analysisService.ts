@@ -1,5 +1,5 @@
 import { apiClient } from 'lib/apiClient';
-import type { Analysis, AnalysisIssue, VideoUrlResponse } from '../types';
+import type { Analysis, AnalysisIssue, IssueSwingTimelineItem, VideoUrlResponse } from '../types';
 
 class AnalysisService {
     /**
@@ -15,6 +15,16 @@ class AnalysisService {
      */
     async getAnalysisById(analysisId: string): Promise<Analysis> {
         return apiClient.get<Analysis>(`/api/v1/analyses/${analysisId}/`);
+    }
+
+    /**
+     * The issue-progress timeline: the user's swings from this issue's first
+     * detection onward (newest first), each annotated with the AI's confidence for
+     * this issue (or detected=false when it wasn't flagged).
+     */
+    async getIssueSwingTimeline(issueId: string): Promise<IssueSwingTimelineItem[]> {
+        const data = await apiClient.get<IssueSwingTimelineItem[]>(`/api/v1/analyses/by-issue/${issueId}/`);
+        return Array.isArray(data) ? data : [];
     }
 
     /**

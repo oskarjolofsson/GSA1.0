@@ -12,22 +12,33 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
-type PlayLogModalProps = {
+type SessionLogModalProps = {
     visible: boolean;
-    focus: string | null;
+    title: string;
+    body: string | null;
+    showNotes: boolean;
+    confirmLabel: string;
     submitting: boolean;
     onConfirm: (notes: string) => void;
     onClose: () => void;
 };
 
-// Confirm sheet for logging an on-course round. Resurfaces the session focus and
-// lets the golfer jot optional notes before the round is logged (earns a streak
-// square + advances the program). A native Modal renders in its own window — keep
-// any home-screen animations out from behind it.
-export default function PlayLogModal({ visible, focus, submitting, onConfirm, onClose }: PlayLogModalProps) {
+// Confirm sheet for logging a program session that has no in-app activity (an
+// on-course round, or a re-test). Resurfaces the focus/instruction and optionally
+// captures notes. A native Modal renders in its own window — keep home-screen
+// animations out from behind it.
+export default function SessionLogModal({
+    visible,
+    title,
+    body,
+    showNotes,
+    confirmLabel,
+    submitting,
+    onConfirm,
+    onClose,
+}: SessionLogModalProps) {
     const [notes, setNotes] = useState("");
 
-    // Reset the field each time the sheet opens.
     useEffect(() => {
         if (visible) setNotes("");
     }, [visible]);
@@ -46,32 +57,32 @@ export default function PlayLogModal({ visible, focus, submitting, onConfirm, on
                     <SafeAreaView edges={["bottom"]} className="rounded-t-3xl border border-b-0 border-white/10 bg-ink-raised">
                         <View className="px-6 pt-6">
                             <Text className="font-sans-medium text-[11px] uppercase tracking-[2px] text-sand-dim">
-                                Log your round
+                                {title}
                             </Text>
 
-                            {focus ? (
+                            {body ? (
                                 <Text className="mt-2 font-display-bold text-[22px] leading-tight text-sand">
-                                    {focus}
+                                    {body}
                                 </Text>
-                            ) : (
-                                <Text className="mt-2 font-display-bold text-[22px] leading-tight text-sand">
-                                    Did you play your round?
-                                </Text>
+                            ) : null}
+
+                            {showNotes && (
+                                <>
+                                    <Text className="mt-4 font-sans-medium text-[11px] uppercase tracking-[2px] text-sand-dim">
+                                        Notes (optional)
+                                    </Text>
+                                    <TextInput
+                                        value={notes}
+                                        onChangeText={setNotes}
+                                        editable={!submitting}
+                                        multiline
+                                        placeholder="How did it go? Anything you noticed…"
+                                        placeholderTextColor="#8A8676"
+                                        className="mt-2 min-h-[88px] rounded-2xl border border-white/10 bg-ink px-4 py-3 font-sans text-[15px] text-sand"
+                                        textAlignVertical="top"
+                                    />
+                                </>
                             )}
-
-                            <Text className="mt-4 font-sans-medium text-[11px] uppercase tracking-[2px] text-sand-dim">
-                                Notes (optional)
-                            </Text>
-                            <TextInput
-                                value={notes}
-                                onChangeText={setNotes}
-                                editable={!submitting}
-                                multiline
-                                placeholder="How did it go? Anything you noticed…"
-                                placeholderTextColor="#8A8676"
-                                className="mt-2 min-h-[88px] rounded-2xl border border-white/10 bg-ink px-4 py-3 font-sans text-[15px] text-sand"
-                                textAlignVertical="top"
-                            />
 
                             <Pressable
                                 onPress={() => onConfirm(notes.trim())}
@@ -93,7 +104,7 @@ export default function PlayLogModal({ visible, focus, submitting, onConfirm, on
                                 >
                                     {submitting && <ActivityIndicator size="small" color="#0A0F1A" />}
                                     <Text className="font-display-bold text-[17px] text-ink">
-                                        {submitting ? "Logging…" : "I played it"}
+                                        {submitting ? "Saving…" : confirmLabel}
                                     </Text>
                                 </LinearGradient>
                             </Pressable>

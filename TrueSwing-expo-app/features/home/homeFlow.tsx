@@ -2,6 +2,7 @@ import { useHomeFlowSequence } from "features/home/hooks/useHomeFlowSequence";
 import HomeScreen from "features/home/screens/HomeScreen";
 import AnalysisResultScreen from "features/analysis/screens/analysisResultScreen";
 import PracticeFlow from "features/practice/practiceFlow";
+import SwingHistoryScreen from "features/progress/screens/SwingHistoryScreen";
 import useHomeAnalysisController from "features/home/hooks/useHomeAnalysisController";
 import { HomeAnalysisProvider } from "features/home/context/HomeAnalysisContext";
 import type { Issue } from "features/issues/types";
@@ -15,22 +16,24 @@ import { useRouter } from "expo-router";
 import { View } from "react-native";
 import React from "react";
 
-export type LogPlayArgs = {
+export type LogSessionArgs = {
     analysisIssueId: string;
     programId: string;
     stepId: string;
+    sessionType: "play" | "retest";
     notes: string;
 };
 
 
 export default function HomeFlow() {
-    const { currentScreen, goToHome, goToAnalysis, goToPractice } = useHomeFlowSequence();
+    const { currentScreen, goToHome, goToAnalysis, goToPractice, goToHistory } = useHomeFlowSequence();
     const router = useRouter();
     const { requirePremium } = useRequirePremium();
     const analysisController = useHomeAnalysisController();
     const [selectedIssue, setSelectedIssue] = React.useState<Issue | null>(null);
     const [selectedSession, setSelectedSession] = React.useState<PracticeSession | null>(null);
     const [programContext, setProgramContext] = React.useState<ProgramContext | null>(null);
+    const [historyIssue, setHistoryIssue] = React.useState<Issue | null>(null);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -38,9 +41,15 @@ export default function HomeFlow() {
             setSelectedIssue(null);
             setSelectedSession(null);
             setProgramContext(null);
+            setHistoryIssue(null);
             analysisController.refetch();
         }, [analysisController.refetch, goToHome])
     )
+
+    const openHistory = React.useCallback((issue: Issue) => {
+        setHistoryIssue(issue);
+        goToHistory();
+    }, [goToHistory]);
 
     // Shared practice-start: used by both the reel (onNext) and the home
     // prescription card. Gates on premium, creates a session, then navigates.
@@ -91,21 +100,22 @@ export default function HomeFlow() {
         }
     }, [requirePremium, goToPractice]);
 
-    // Log an on-course round: create a completed `play` session (earns the streak
-    // square), then advance the program. Returns success so the caller can close
-    // the modal + refetch.
-    const logPlayRound = React.useCallback(async ({ analysisIssueId, programId, stepId, notes }: LogPlayArgs) => {
+    // Log a no-activity program session (play round or re-test): create a completed
+    // session of the given type (earns the streak square), then advance the program.
+    // Returns success so the caller can close the modal + refetch (and, for retest,
+    // route to the upload tab).
+    const logProgramSession = React.useCallback(async ({ analysisIssueId, programId, stepId, sessionType, notes }: LogSessionArgs) => {
         if (!requirePremium()) return false;
         try {
             const session = await startPracticeSession(analysisIssueId, {
-                session_type: "play",
+                session_type: sessionType,
                 notes: notes || null,
             });
             await endPracticeSession(session.id);
             await completeStep(programId, stepId, { practice_session_id: session.id });
             return true;
         } catch (error) {
-            console.error("Failed to log play round:", error);
+            console.error("Failed to log program session:", error);
             return false;
         }
     }, [requirePremium]);
@@ -118,7 +128,8 @@ export default function HomeFlow() {
                         onOpenArchive={goToAnalysis}
                         onOpenProfile={() => router.push("/(tabs)/profile")}
                         onStartPractice={startProgramSession}
-                        onLogPlay={logPlayRound}
+                        onLogSession={logProgramSession}
+                        onOpenHistory={openHistory}
                     />
                 )}
                 {currentScreen === 'Analysis' && (
@@ -134,6 +145,9 @@ export default function HomeFlow() {
                         selectedSession={selectedSession}
                         programContext={programContext}
                     />
+                )}
+                {currentScreen === 'History' && historyIssue && (
+                    <SwingHistoryScreen issue={historyIssue} onBack={goToHome} />
                 )}
             </View>
         </HomeAnalysisProvider>

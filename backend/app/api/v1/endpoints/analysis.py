@@ -12,12 +12,14 @@ from app.api.v1.schemas.analysis import (
     CreateAnalysisResponse,
     GetAnalysis,
     GetAnalysisIssue,
+    IssueSwingTimelineItem,
 )
 from core.services.analysis_service import (
     create_analysis as service_create_analysis,
     run_analysis as service_run_analysis,
     get_analysis_by_id as service_get_analysis_by_id,
     get_analyses_by_user_id as service_get_analyses_by_user_id,
+    get_issue_swing_timeline as service_get_issue_swing_timeline,
     delete_analysis as service_delete_analysis,
     get_analysis_issues as service_get_analysis_issues,
     delete_analysis_issue as service_delete_analysis_issue,
@@ -126,6 +128,29 @@ def list_analyses(
             thumbnail_url=thumbnail_map.get(analysis.video_id)
         )
         for analysis in analyses
+    ]
+
+
+@router.get("/by-issue/{issue_id}/", response_model=list[IssueSwingTimelineItem])
+def list_issue_swing_timeline(
+    issue_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    The issue-progress timeline: the user's swings from this issue's first
+    detection onward, newest first, each annotated with the AI's confidence for
+    THIS issue (or `detected=false` when it wasn't flagged — likely improved).
+    """
+    user_id = UUID(current_user["user_id"])
+    items = service_get_issue_swing_timeline(user_id, issue_id, db_session=db)
+
+    analysis_ids = [item.analysis_id for item in items]
+    thumbnail_map = get_video_thumbnail_urls_from_analyses(analysis_ids, db_session=db).thumbnail_urls
+
+    return [
+        IssueSwingTimelineItem.from_domain(item, thumbnail_url=thumbnail_map.get(item.video_id))
+        for item in items
     ]
 
 
