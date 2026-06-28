@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { ArrowRight, ChevronLeft, ChevronRight, Info } from "lucide-react-native";
+import { ArrowRight, ChevronLeft, ChevronRight, Info, MoreHorizontal, Trash2 } from "lucide-react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS, useReducedMotion } from "react-native-reanimated";
 import { MotiView } from "moti";
@@ -24,6 +24,7 @@ type PrescriptionCardProps = {
     onRetest: () => void;
     onOpenHistory: () => void;
     onShowInfo: () => void;
+    onRemove: () => void;
     isFocus: boolean;
     hasActiveProgram: boolean;
 };
@@ -97,6 +98,7 @@ export default function PrescriptionCard({
     onRetest,
     onOpenHistory,
     onShowInfo,
+    onRemove,
     isFocus,
     hasActiveProgram,
 }: PrescriptionCardProps) {
@@ -192,9 +194,14 @@ export default function PrescriptionCard({
                             {issue?.title ?? "No issue yet"}
                         </Text>
                         {issue && (
-                            <Pressable onPress={onShowInfo} hitSlop={8} className="mt-2 active:opacity-60">
-                                <Info size={20} color="#8A8676" />
-                            </Pressable>
+                            <View className="mt-2 flex-row items-center gap-3">
+                                <Pressable onPress={onShowInfo} hitSlop={8} className="active:opacity-60">
+                                    <Info size={20} color="#8A8676" />
+                                </Pressable>
+                                <Pressable onPress={onRemove} hitSlop={8} className="active:opacity-60">
+                                    <Trash2 size={20} color="#8A8676" />
+                                </Pressable>
+                            </View>
                         )}
                     </View>
 

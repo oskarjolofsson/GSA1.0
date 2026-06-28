@@ -11,6 +11,7 @@ from .exceptions import NotFoundException, InvalidStateException, InvalidVideoEx
 # Infrastructure imports
 from ..infrastructure.storage.r2Adaptor import generate_upload_url, put_object
 from core.infrastructure.db.repositories import issues as issues_repo
+from core.infrastructure.db.repositories import programs as programs_repo
 from core.infrastructure.db import models
 from ..infrastructure.db.repositories.analysis import (
     create_analysis as create_analysis_in_db,
@@ -332,8 +333,16 @@ def delete_analysis_issue(analysis_issue_id: UUID, db_session, user_id: UUID) ->
     
     for ai in all_analysis_issues:      # Change status
         ai.active = False
-        
+
     modify_analysis_issues_in_db(all_analysis_issues, db_session)   # Update in DB
+
+    # Abandon any active program for the removed issue so the one-at-a-time focus
+    # model isn't left with an orphaned active program blocking the next focus.
+    for ai in all_analysis_issues:
+        program = programs_repo.get_active_program_for_issue(user_id, ai.id, db_session)
+        if program is not None:
+            program.status = "abandoned"
+            programs_repo.update_program(program, db_session)
 
 
 # ------------------------------ Helper functions ------------------------------

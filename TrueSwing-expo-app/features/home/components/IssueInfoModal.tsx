@@ -6,6 +6,7 @@ type IssueInfoModalProps = {
     visible: boolean;
     issue: Issue | null;
     onClose: () => void;
+    onRemove?: () => void;
 };
 
 function Section({ label, value }: { label: string; value: string | null | undefined }) {
@@ -23,7 +24,7 @@ function Section({ label, value }: { label: string; value: string | null | undef
 // Read-only bottom sheet explaining an issue's jargon title (e.g. "Chicken wing"),
 // opened from the info button on the home card. Static content — a native Modal
 // is fine here.
-export default function IssueInfoModal({ visible, issue, onClose }: IssueInfoModalProps) {
+export default function IssueInfoModal({ visible, issue, onClose, onRemove }: IssueInfoModalProps) {
     return (
         <Modal
             visible={visible}
@@ -60,6 +61,14 @@ export default function IssueInfoModal({ visible, issue, onClose }: IssueInfoMod
                         >
                             <Text className="font-sans-medium text-[15px] text-sand">Close</Text>
                         </Pressable>
+
+                        {onRemove && (
+                            <Pressable onPress={onRemove} className="mt-2 items-center py-3 active:opacity-60">
+                                <Text className="font-sans-medium text-[14px] text-rose-400">
+                                    Not your issue? Remove it
+                                </Text>
+                            </Pressable>
+                        )}
                     </ScrollView>
                 </SafeAreaView>
             </View>

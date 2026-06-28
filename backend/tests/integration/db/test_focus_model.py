@@ -15,6 +15,7 @@ from core.infrastructure.db.repositories import programs as programs_repo
 
 from core.services import program_service as ps
 from core.services import issues_service
+from core.services import analysis_service
 from core.services import exceptions
 from core.services.dtos.program_service_dto import DrillGradeDTO
 
@@ -103,3 +104,20 @@ def test_completed_issues_sink_below_not_started(db_session, test_user):
     ordered = issues_service.get_issues_by_user_id(user_id, db_session)
     assert ordered[0].title == "Not started"
     assert ordered[-1].title == "Done" and ordered[-1].program_status == "completed"
+
+
+# ---------------- remove / dismiss an issue ----------------
+
+def test_removing_issue_abandons_program_and_drops_from_list(db_session, test_user):
+    user_id = test_user["user_id"]
+    issue, analysis_issue = _seed_issue(db_session, user_id, "Wrong issue", 0.8, num_drills=1)
+    program = ps.generate_program_for_issue(user_id, analysis_issue.id, db_session)
+
+    analysis_service.delete_analysis_issue(analysis_issue.id, db_session, user_id)
+
+    # Program abandoned (so cap-1 is freed) and the issue is gone from the user's list.
+    refreshed = programs_repo.get_program_by_id(program.id, db_session)
+    assert refreshed.status == "abandoned"
+    assert programs_repo.get_active_programs_by_user(user_id, db_session) == []
+    titles = [i.title for i in issues_service.get_issues_by_user_id(user_id, db_session)]
+    assert "Wrong issue" not in titles

@@ -57,6 +57,13 @@ class AnalysisService {
     }
 
     /**
+     * Dismiss an issue the user disagrees with (soft-deactivates it for the user).
+     */
+    async dismissAnalysisIssue(analysisIssueId: string): Promise<void> {
+        await apiClient.delete<void>(`/api/v1/analyses/issues/${analysisIssueId}/`);
+    }
+
+    /**
      * Delete an analysis issue
      */
     async deleteAnalysisIssue(analysisId: string, analysisIssueId: string): Promise<void> {
