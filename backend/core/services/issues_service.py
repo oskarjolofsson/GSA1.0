@@ -16,6 +16,7 @@ from core.infrastructure.db.repositories.issues import (
 from core.infrastructure.db.repositories import analysis_issues as repo_analysis_issues
 
 from core.infrastructure.db.repositories import practice_sessions as ps
+from core.infrastructure.db.repositories import programs as programs_repo
 from core.infrastructure.db.models.Issue import Issue
 from core.infrastructure.db import models
 from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueResponseDTO, SimplifiedIssueProgressDTO
@@ -72,40 +73,49 @@ def get_issues_by_analysis_id(analysis_id: UUID, user_id: UUID, db_session: Sess
 
 
 def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
-    """Get all issues created by a specific user with analysis_issue and progress data.
+    """Get all issues created by a specific user with analysis_issue, progress, and
+    program-status data.
 
-    Ordered by the same key as `get_todays_issue` (most-practiced → confidence →
-    recency), so the list is stable across loads and "today's issue" is always
-    first — the home card opens on it instead of a mid-list position.
+    Focus model (one program at a time): each issue is annotated with its program
+    status, then ordered active → not-started → completed; within a group by
+    confidence then recency. So the home opens on the current focus (the active
+    program, or the highest-priority not-started issue), and finished issues sink.
     """
     issues: list[Issue] = repo_get_issues_by_user_id(user_id, db_session)
     dtos = _batch_fetch_analysis_issues_and_progress(user_id, issues, db_session)
-    return sorted(dtos, key=_todays_issue_sort_key, reverse=True)
+
+    # Annotate each issue with its program status (active wins over completed).
+    programs = programs_repo.get_programs_by_user(user_id, db_session)
+    status_by_issue: dict[str, str] = {}
+    for program in programs:
+        key = str(program.analysis_issue_id)
+        if key not in status_by_issue or program.status == "active":
+            status_by_issue[key] = program.status
+    for dto in dtos:
+        dto.program_status = status_by_issue.get(dto.analysis_issue_id)
+
+    # Stable multi-key sort: recency first (newest), then group + confidence.
+    dtos.sort(key=lambda d: d.created_at or "", reverse=True)
+    dtos.sort(key=lambda d: (_program_group(d), -(d.confidence if d.confidence is not None else 0.0)))
+    return dtos
 
 
 def get_todays_issue(user_id: UUID, db_session: Session) -> IssueResponseDTO | None:
-    """Pick the user's "today's issue".
-
-    Selection rule (intentionally behind this function so it can change without
-    touching the frontend): the MOST-PRACTICED issue — the one with the most
-    completed practice sessions. Ties break by confidence, then recency. When
-    no one has been practiced yet, the tie-break naturally yields the
-    highest-confidence / most-recent issue, so no separate fallback is needed.
-
-    Returns None when the user has no issues.
+    """The user's current focus issue: the active program's issue, else the
+    highest-priority not-started issue, else the top completed one. This is just
+    the first element of the focus-ordered list. None when the user has no issues.
     """
     issues = get_issues_by_user_id(user_id, db_session)
-    if not issues:
-        return None
-
-    return max(issues, key=_todays_issue_sort_key)
+    return issues[0] if issues else None
 
 
-def _todays_issue_sort_key(issue: IssueResponseDTO) -> tuple[int, float, str]:
-    completed_sessions = issue.progress.completed_sessions if issue.progress else 0
-    confidence = issue.confidence if issue.confidence is not None else 0.0
-    created_at = issue.created_at or ""  # ISO strings sort chronologically
-    return (completed_sessions, confidence, created_at)
+def _program_group(issue: IssueResponseDTO) -> int:
+    """Focus ordering group: active (0) → not-started (1) → completed (2)."""
+    if issue.program_status == "active":
+        return 0
+    if issue.program_status == "completed":
+        return 2
+    return 1
 
 
 def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> IssueResponseDTO | None:

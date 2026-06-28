@@ -10,9 +10,10 @@ export interface Issue {
     shot_outcome: string | null;
     created_at: string;
     confidence?: number;
-    analysis_issue_id: string; 
-    analysis_id?: string; 
+    analysis_issue_id: string;
+    analysis_id?: string;
     progress?: AnalysisIssueProgress;
+    program_status?: "active" | "completed" | null;
 }
 
 export interface CreateIssueRequest {

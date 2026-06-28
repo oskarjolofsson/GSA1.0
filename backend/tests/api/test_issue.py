@@ -74,20 +74,32 @@ def _seed_user_issue(db, user_id, title, confidence, completed_sessions):
     return issue
 
 
-def test_todays_issue_returns_most_practiced(client, test_user, db_session, auth_headers):
+def test_todays_issue_prefers_active_program(client, test_user, db_session, auth_headers):
+    """Focus model: the issue with the active program is today's focus, even if
+    another issue has higher confidence."""
+    from core.infrastructure.db.models.Program import Program
+    from core.infrastructure.db.repositories.analysis_issues import (
+        get_analysis_issues_by_user_id_and_issue_id,
+    )
+
     user_id = test_user["user_id"]
-    _seed_user_issue(db_session, user_id, "Casting", confidence=0.9, completed_sessions=1)
-    winner = _seed_user_issue(db_session, user_id, "Early extension", confidence=0.4, completed_sessions=3)
+    _seed_user_issue(db_session, user_id, "Casting", confidence=0.9, completed_sessions=0)
+    winner = _seed_user_issue(db_session, user_id, "Early extension", confidence=0.4, completed_sessions=0)
+
+    # Give the lower-confidence issue an active program — it becomes the focus.
+    ais = get_analysis_issues_by_user_id_and_issue_id(user_id, winner.id, db_session)
+    db_session.add(
+        Program(user_id=user_id, analysis_issue_id=ais[0].id, title="Fix early extension", status="active")
+    )
+    db_session.flush()
 
     resp = client.get("/api/v1/issues/todays-issue/", headers=auth_headers)
 
     assert resp.status_code == 200
     data = resp.json()
     assert data is not None
-    # Most-practiced wins despite lower confidence.
     assert uuid.UUID(data["id"]) == winner.id
-    assert data["title"] == "Early extension"
-    assert data["analysis_issue_id"] is not None  # needed to start practice
+    assert data["program_status"] == "active"
 
 
 def test_todays_issue_tie_breaks_on_confidence(client, test_user, db_session, auth_headers):

@@ -51,6 +51,10 @@ def generate_program_for_issue(user_id: UUID, analysis_issue_id: UUID, session: 
     if existing:
         return _program_to_dto(existing, session)
 
+    # One active program at a time: block starting a new focus while another is live.
+    if repo.get_active_programs_by_user(user_id, session):
+        raise exceptions.ConflictException("Finish your current focus first.")
+
     analysis_issue = analysis_issue_repo.get_analysis_issue_by_id(analysis_issue_id, session)
     if not analysis_issue:
         raise exceptions.NotFoundException("AnalysisIssue", str(analysis_issue_id))
@@ -134,6 +138,13 @@ def complete_step(
     next_step = _schedule_next_step(program_id, session)
 
     grooved_count, total_drills = _groove_progress(program_id, session)
+
+    # Graduate: once every drill is grooved, the program is done — it sinks and the
+    # next issue becomes the focus (one program at a time).
+    if total_drills > 0 and grooved_count == total_drills and program.status == "active":
+        program.status = "completed"
+        repo.update_program(program, session)
+
     title_map = _drill_title_map([step, next_step], session)
     return StepAdvanceDTO(
         completed_step=_step_to_dto(step, title_map),

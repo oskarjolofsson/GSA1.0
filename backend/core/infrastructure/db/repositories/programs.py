@@ -41,6 +41,17 @@ def get_active_programs_by_user(user_id: UUID, session: Session) -> list[Program
     )
 
 
+def get_programs_by_user(user_id: UUID, session: Session) -> list[Program]:
+    """All of the user's programs (any status), for annotating issues with their
+    program state."""
+    return (
+        session.query(Program)
+        .filter(Program.user_id == user_id)
+        .order_by(Program.created_at.desc())
+        .all()
+    )
+
+
 def update_program(program: Program, session: Session) -> Program:
     session.add(program)
     session.flush()

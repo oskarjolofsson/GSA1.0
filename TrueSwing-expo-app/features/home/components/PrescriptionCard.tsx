@@ -24,6 +24,8 @@ type PrescriptionCardProps = {
     onRetest: () => void;
     onOpenHistory: () => void;
     onShowInfo: () => void;
+    isFocus: boolean;
+    hasActiveProgram: boolean;
 };
 
 // Derives the card's session line, detail, button label, and whether Start is
@@ -33,16 +35,27 @@ function deriveCardState(
     issue: Issue | null,
     program: Program | null,
     nextStep: ProgramStep | null,
-    loading: boolean
+    loading: boolean,
+    isFocus: boolean,
+    hasActiveProgram: boolean
 ) {
     const hasIssue = !!issue?.analysis_issue_id;
-    const base = { sessionLine: null as string | null, detail: null as string | null, buttonLabel: "Start session", startable: hasIssue && !loading };
+    const base = { sessionLine: null as string | null, detail: null as string | null, buttonLabel: "Start session", startable: hasIssue && !loading, hideButton: false };
 
     if (!hasIssue) {
         return { ...base, detail: "Make a swing analysis to get today's plan.", buttonLabel: "Start today's drill", startable: false };
     }
+    // Focus model: one program at a time.
+    if (issue?.program_status === "completed") {
+        return { ...base, detail: "You've grooved this issue. Nice work.", buttonLabel: "Completed", startable: false, hideButton: true };
+    }
     if (!program) {
-        return { ...base, detail: "Start a focused plan for this issue.", buttonLabel: "Start your plan" };
+        // Not started: the focus (queue head) can start; everything else queues
+        // behind the current focus.
+        if (isFocus && !hasActiveProgram) {
+            return { ...base, detail: "Start a focused plan for this issue.", buttonLabel: "Start your plan" };
+        }
+        return { ...base, detail: "Queued — finish your current focus first.", buttonLabel: "Queued", startable: false };
     }
 
     const p = nextStep?.prescription;
@@ -84,11 +97,13 @@ export default function PrescriptionCard({
     onRetest,
     onOpenHistory,
     onShowInfo,
+    isFocus,
+    hasActiveProgram,
 }: PrescriptionCardProps) {
     const reduceMotion = useReducedMotion();
     const canSwitch = total > 1;
 
-    const { sessionLine, detail, buttonLabel, startable } = deriveCardState(issue, program, nextStep, loading);
+    const { sessionLine, detail, buttonLabel, startable, hideButton } = deriveCardState(issue, program, nextStep, loading, isFocus, hasActiveProgram);
     const canStart = startable;
     const progressLine = program
         ? `${program.grooved_count} of ${program.total_drills} drills grooved`
@@ -216,6 +231,7 @@ export default function PrescriptionCard({
                 </MotiView>
             </GestureDetector>
 
+            {!hideButton && (
             <Pressable
                 onPress={handleStart}
                 onPressIn={() => setPressed(true)}
@@ -257,6 +273,7 @@ export default function PrescriptionCard({
                     </LinearGradient>
                 </MotiView>
             </Pressable>
+            )}
             </>
             )}
         </View>
