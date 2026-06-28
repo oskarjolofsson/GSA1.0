@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -24,13 +24,15 @@ import useTodaysIssue from "features/home/hooks/useTodaysIssue";
 import { useProgramForIssue } from "features/programs/hooks/useProgramForIssue";
 import { deriveActivityStats } from "features/home/utils/activityStats";
 import type { Issue } from "features/issues/types";
-import type { LogSessionArgs } from "features/home/homeFlow";
+import type { LogSessionArgs, SkipStepArgs } from "features/home/homeFlow";
+import { setRetestIntent } from "features/programs/retestIntent";
 
 type HomeScreenProps = {
     onOpenArchive: () => void;
     onOpenProfile: () => void;
     onStartPractice: (issue: Issue) => void;
     onLogSession: (args: LogSessionArgs) => Promise<boolean>;
+    onSkipStep: (args: SkipStepArgs) => Promise<boolean>;
     onOpenHistory: (issue: Issue) => void;
 };
 
@@ -43,6 +45,7 @@ export default function HomeScreen({
     onOpenProfile,
     onStartPractice,
     onLogSession,
+    onSkipStep,
     onOpenHistory,
 }: HomeScreenProps) {
     const insets = useSafeAreaInsets();
@@ -132,6 +135,21 @@ export default function HomeScreen({
     const handleConfirmSession = useCallback(
         async (notes: string) => {
             if (!selectedIssue?.analysis_issue_id || !program || !nextStep || !sessionMode) return;
+
+            // Re-test: don't credit on tap. Record the intent and send the player to
+            // the camera; the re-test completes only when an upload actually finishes.
+            if (sessionMode === "retest") {
+                setRetestIntent({
+                    analysisIssueId: selectedIssue.analysis_issue_id,
+                    programId: program.id,
+                    stepId: nextStep.id,
+                });
+                setSessionMode(null);
+                router.push("/(tabs)/upload");
+                return;
+            }
+
+            // Play: log + advance now (there's no upload).
             setLogging(true);
             const ok = await onLogSession({
                 analysisIssueId: selectedIssue.analysis_issue_id,
@@ -142,15 +160,34 @@ export default function HomeScreen({
             });
             setLogging(false);
             if (ok) {
-                const wasRetest = sessionMode === "retest";
                 setSessionMode(null);
                 refetchProgram();
-                // Re-test sends the player to the upload tab to re-film.
-                if (wasRetest) router.push("/(tabs)/upload");
             }
         },
         [selectedIssue, program, nextStep, sessionMode, onLogSession, refetchProgram, router]
     );
+
+    const handleSkipRetest = useCallback(() => {
+        if (!program || !nextStep) return;
+        Alert.alert(
+            "Skip this re-test?",
+            "Your plan moves on, but you won't earn a square for it.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Skip",
+                    style: "destructive",
+                    onPress: async () => {
+                        const ok = await onSkipStep({ programId: program.id, stepId: nextStep.id });
+                        if (ok) {
+                            setSessionMode(null);
+                            refetchProgram();
+                        }
+                    },
+                },
+            ]
+        );
+    }, [program, nextStep, onSkipStep, refetchProgram]);
 
     const stats = useMemo(() => deriveActivityStats(counts), [counts]);
     const hasData = counts.length > 0;
@@ -285,6 +322,8 @@ export default function HomeScreen({
                 submitting={logging}
                 onConfirm={handleConfirmSession}
                 onClose={() => setSessionMode(null)}
+                onSkip={sessionMode === "retest" ? handleSkipRetest : undefined}
+                skipLabel="Skip this re-test"
             />
         </View>
     );

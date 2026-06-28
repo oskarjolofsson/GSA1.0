@@ -21,6 +21,9 @@ type SessionLogModalProps = {
     submitting: boolean;
     onConfirm: (notes: string) => void;
     onClose: () => void;
+    // Optional deliberate "skip" affordance (e.g. skip a re-test without filming).
+    onSkip?: () => void;
+    skipLabel?: string;
 };
 
 // Confirm sheet for logging a program session that has no in-app activity (an
@@ -36,6 +39,8 @@ export default function SessionLogModal({
     submitting,
     onConfirm,
     onClose,
+    onSkip,
+    skipLabel,
 }: SessionLogModalProps) {
     const [notes, setNotes] = useState("");
 
@@ -116,6 +121,18 @@ export default function SessionLogModal({
                             >
                                 <Text className="font-sans-medium text-[15px] text-sand-dim">Not yet</Text>
                             </Pressable>
+
+                            {onSkip && (
+                                <Pressable
+                                    onPress={onSkip}
+                                    disabled={submitting}
+                                    className="items-center py-2 active:opacity-60"
+                                >
+                                    <Text className="font-sans text-[13px] text-sand-dim underline">
+                                        {skipLabel ?? "Skip"}
+                                    </Text>
+                                </Pressable>
+                            )}
                         </View>
                     </SafeAreaView>
                 </KeyboardAvoidingView>
