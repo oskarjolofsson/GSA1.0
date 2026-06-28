@@ -10,6 +10,7 @@ import { HOME_ANIM, CARD_SPRING } from "features/home/animations";
 import StreakPanel from "features/home/components/StreakPanel";
 import PrescriptionCard from "features/home/components/PrescriptionCard";
 import SessionLogModal from "features/home/components/SessionLogModal";
+import IssueInfoModal from "features/home/components/IssueInfoModal";
 import ArchiveEntry from "features/home/components/ArchiveEntry";
 import HomeWelcome from "features/home/components/HomeWelcome";
 import DayDetailModal from "features/home/components/DayDetailModal";
@@ -66,6 +67,7 @@ export default function HomeScreen({
     // Session-log modal (play round or re-test confirm). null when closed.
     const [sessionMode, setSessionMode] = useState<"play" | "retest" | null>(null);
     const [logging, setLogging] = useState(false);
+    const [infoOpen, setInfoOpen] = useState(false);
 
     // The issue currently shown on the card. null until resolved -> defaults to
     // the server's choice; the user can then cycle with the switcher.
@@ -249,6 +251,7 @@ export default function HomeScreen({
                     onPlay={() => setSessionMode("play")}
                     onRetest={() => setSessionMode("retest")}
                     onOpenHistory={() => selectedIssue && onOpenHistory(selectedIssue)}
+                    onShowInfo={() => setInfoOpen(true)}
                 />
 
                 <View className="my-4 h-px bg-sand/10" />
@@ -261,6 +264,12 @@ export default function HomeScreen({
                 hasActivity={selectedDay?.hasActivity ?? false}
                 onClose={() => setSelectedDay(null)}
                 onOpenAnalysis={handleOpenAnalysis}
+            />
+
+            <IssueInfoModal
+                visible={infoOpen}
+                issue={selectedIssue}
+                onClose={() => setInfoOpen(false)}
             />
 
             <SessionLogModal
