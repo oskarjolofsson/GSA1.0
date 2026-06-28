@@ -26,6 +26,7 @@ import { deriveActivityStats } from "features/home/utils/activityStats";
 import type { Issue } from "features/issues/types";
 import type { LogSessionArgs, SkipStepArgs } from "features/home/homeFlow";
 import { setRetestIntent } from "features/programs/retestIntent";
+import analysisService from "features/analysis/services/analysisService";
 
 type HomeScreenProps = {
     onOpenArchive: () => void;
@@ -189,6 +190,32 @@ export default function HomeScreen({
         );
     }, [program, nextStep, onSkipStep, refetchProgram]);
 
+    const handleRemoveIssue = useCallback(() => {
+        const analysisIssueId = selectedIssue?.analysis_issue_id;
+        if (!analysisIssueId) return;
+        Alert.alert(
+            "Remove this issue?",
+            "It'll disappear from your plan.",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Remove",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await analysisService.dismissAnalysisIssue(analysisIssueId);
+                            setInfoOpen(false);
+                            refetchIssues();
+                            refetchProgram();
+                        } catch (err) {
+                            console.error("Failed to remove issue:", err);
+                        }
+                    },
+                },
+            ]
+        );
+    }, [selectedIssue, refetchIssues, refetchProgram]);
+
     const stats = useMemo(() => deriveActivityStats(counts), [counts]);
     const hasData = counts.length > 0;
 
@@ -289,6 +316,7 @@ export default function HomeScreen({
                     onRetest={() => setSessionMode("retest")}
                     onOpenHistory={() => selectedIssue && onOpenHistory(selectedIssue)}
                     onShowInfo={() => setInfoOpen(true)}
+                    onRemove={handleRemoveIssue}
                     isFocus={!!selectedIssue && selectedIssue.id === defaultIssueId}
                     hasActiveProgram={issues.some((i) => i.program_status === "active")}
                 />
@@ -309,6 +337,7 @@ export default function HomeScreen({
                 visible={infoOpen}
                 issue={selectedIssue}
                 onClose={() => setInfoOpen(false)}
+                onRemove={handleRemoveIssue}
             />
 
             <SessionLogModal
