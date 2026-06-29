@@ -3,6 +3,8 @@ import { Redirect } from "expo-router";
 import { useAuth } from "features/auth/AuthProvider";
 import { View } from "react-native";
 
+import { getAuthErrorMessage } from "lib/errors";
+
 import { useSignInFlowSequence } from "./hooks/useSignInFlowSequence";
 
 import LandingScreen from "./screens/landingScreen";
@@ -26,8 +28,8 @@ export default function SignInFlow() {
             setSubmitting(true);
             setError(null);
             await signInWithGoogle();
-        } catch (err: any) {
-            setError(err.message ?? "Failed to sign in");
+        } catch (err) {
+            setError(getAuthErrorMessage(err));
         } finally {
             setSubmitting(false);
         }
@@ -38,8 +40,10 @@ export default function SignInFlow() {
             setSubmitting(true);
             setError(null);
             await signInWithPassword(email, password);
-        } catch (err: any) {
-            setError(err.message ?? "Failed to sign in");
+        } catch (err) {
+            const message = getAuthErrorMessage(err);
+            setError(message);       // keeps LandingScreen feedback consistent
+            throw new Error(message); // lets EmailSignInScreen.catch render it
         } finally {
             setSubmitting(false);
         }
@@ -50,9 +54,10 @@ export default function SignInFlow() {
             setSubmitting(true);
             setError(null);
             await signUpWithPassword(email, password, name);
-        } catch (err: any) {
-            setError(err.message ?? "Failed to sign up");
-            throw err;
+        } catch (err) {
+            const message = getAuthErrorMessage(err);
+            setError(message);
+            throw new Error(message);
         } finally {
             setSubmitting(false);
         }
@@ -63,8 +68,8 @@ export default function SignInFlow() {
             setSubmitting(true);
             setError(null);
             await signInWithApple();
-        } catch (err: any) {
-            setError(err.message ?? "Failed to sign in with Apple");
+        } catch (err) {
+            setError(getAuthErrorMessage(err));
         } finally {
             setSubmitting(false);
         }

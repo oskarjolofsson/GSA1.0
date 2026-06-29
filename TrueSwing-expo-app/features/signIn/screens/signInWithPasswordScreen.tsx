@@ -118,7 +118,15 @@ export default function EmailSignInScreen({
 
       await handleEmailSignIn(normalizedEmail, password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : isSignUpMode ? "Failed to sign up." : "Failed to sign in.");
+      // The flow handlers already map auth errors to a friendly message before
+      // re-throwing, so e.message is safe to show directly.
+      setError(
+        e instanceof Error && e.message
+          ? e.message
+          : isSignUpMode
+            ? "Failed to sign up."
+            : "Failed to sign in."
+      );
     } finally {
       setLoading(false);
     }
