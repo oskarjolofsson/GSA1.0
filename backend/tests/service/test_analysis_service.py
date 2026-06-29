@@ -1,5 +1,6 @@
 import pytest
 from datetime import timedelta
+from unittest.mock import patch
 from ...core.services.analysis_service import (
     create_analysis, 
     get_analysis_by_id as get_analysis_by_id_service,
@@ -48,9 +49,35 @@ def shared_db_session(shared_connection):
 @pytest.fixture(scope="class")
 def completed_analysis_shared(test_user, shared_db_session):
     """
-    Run expensive analysis exactly once per TestRunAnalysis class.
-    """
+    Run analysis exactly once per TestRunAnalysis class.
 
+    The real Gemini call is mocked here: this layer tests service orchestration and
+    persistence, not the AI client itself (the real call is exercised in
+    tests/integration/AI). The canned result uses a real issue id from the DB so the
+    AnalysisIssue rows persist correctly.
+    """
+    from core.infrastructure.db.repositories.issues import get_all_issues
+    issue = get_all_issues(shared_db_session)[0]
+    canned_result = {
+        "metadata": {"camera_view": "face_on", "club_type": "iron"},
+        "club_type": "iron",
+        "camera_view": "face_on",
+        "issues": [{"issue_id": str(issue.id), "confidence": 0.9}],
+        "success": True,
+    }
+
+    # run_analysis is imported via a relative path here, which resolves to a different
+    # module object than "core.services.analysis_service"; patch the module it actually
+    # lives in so the AI call is intercepted.
+    service_module = run_analysis.__module__
+    with patch(
+        f"{service_module}.analyze_video",
+        return_value=canned_result,
+    ), patch(f"{service_module}.GoogleAnalysisClient"):
+        return _run_completed_analysis(test_user, shared_db_session)
+
+
+def _run_completed_analysis(test_user, shared_db_session):
     create_result = create_analysis(
         CreateAnalysisDTO(
             user_id=test_user["user_id"],
