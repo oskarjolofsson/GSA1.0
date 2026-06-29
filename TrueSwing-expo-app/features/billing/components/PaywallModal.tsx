@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, ActivityIndicator, Alert, Linking } from 'react-native';
+import { PACKAGE_TYPE } from 'react-native-purchases';
 import type { PurchasesOffering, PurchasesPackage } from 'react-native-purchases';
 
 import { useBilling } from 'features/billing/BillingContext';
@@ -16,6 +17,38 @@ const HEADLINE: Record<PaywallReason, string> = {
   gate: 'This is a premium feature',
   '402': 'Your access has expired',
 };
+
+// TODO(you): paste your real hosted URLs here. Both must be functional, reachable
+// HTTPS pages — Apple clicks them during review. If you don't have your own EULA,
+// Apple's standard one is accepted:
+// https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+const PRIVACY_POLICY_URL = 'https://trueswing.se/legal/privacy-policy';
+const TERMS_OF_USE_URL = 'https://trueswing.se/legal/terms-and-conditions';
+
+// "1 month, auto-renewing" style label. packageType is a reliable enum;
+// subscriptionPeriod is nullable, so it's only the fallback.
+function periodLabel(pkg: PurchasesPackage): string {
+  switch (pkg.packageType) {
+    case PACKAGE_TYPE.WEEKLY:
+      return '1 week, auto-renewing';
+    case PACKAGE_TYPE.MONTHLY:
+      return '1 month, auto-renewing';
+    case PACKAGE_TYPE.ANNUAL:
+      return '1 year, auto-renewing';
+    default:
+      return pkg.product.subscriptionPeriod
+        ? `${pkg.product.subscriptionPeriod}, auto-renewing`
+        : 'auto-renewing subscription';
+  }
+}
+
+async function openLink(url: string) {
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert('Error', 'Could not open the link.');
+  }
+}
 
 export default function PaywallModal() {
   const { paywall, closePaywall, refreshUntilPremium } = useBilling();
@@ -111,6 +144,7 @@ export default function PaywallModal() {
               <Text className="mt-1 text-3xl font-bold text-indigo-400">
                 {pkg.product.priceString}
               </Text>
+              <Text className="mt-1 text-sm text-slate-400">{periodLabel(pkg)}</Text>
             </View>
           ) : (
             <Text className="my-8 text-center text-slate-400">
@@ -132,6 +166,31 @@ export default function PaywallModal() {
               </Text>
             )}
           </TouchableOpacity>
+
+          {pkg ? (
+            <>
+              <Text className="mt-4 text-center text-xs leading-5 text-slate-500">
+                Payment is charged to your Apple ID account at confirmation. The
+                subscription renews automatically for the same price and period
+                unless cancelled at least 24 hours before the end of the current
+                period. Manage or cancel anytime in your App Store account settings.
+              </Text>
+
+              <View className="mt-3 flex-row items-center justify-center">
+                <TouchableOpacity activeOpacity={0.7} onPress={() => openLink(TERMS_OF_USE_URL)}>
+                  <Text className="text-xs font-medium text-slate-400 underline">
+                    Terms of Use
+                  </Text>
+                </TouchableOpacity>
+                <Text className="mx-2 text-xs text-slate-600">·</Text>
+                <TouchableOpacity activeOpacity={0.7} onPress={() => openLink(PRIVACY_POLICY_URL)}>
+                  <Text className="text-xs font-medium text-slate-400 underline">
+                    Privacy Policy
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : null}
 
           <View className="mt-3 flex-row items-center justify-center">
             <TouchableOpacity activeOpacity={0.7} disabled={busy} onPress={handleRestore}>

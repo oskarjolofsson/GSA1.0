@@ -66,7 +66,7 @@ export default function SubscriptionCard() {
           <View className="flex-1 pr-3">
             <Text className="text-base font-semibold text-white">View subscription plans</Text>
             <Text className="mt-1 text-sm text-indigo-100">
-              TrueSwing Monthly &amp; TrueSwing Pro
+              TrueSwing Monthly
             </Text>
           </View>
           <ChevronRight size={20} color="#e0e7ff" />
