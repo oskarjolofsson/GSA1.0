@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Linking, Platform, Alert } from 'react-na
 import { ChevronRight } from 'lucide-react-native';
 
 import { useBilling } from 'features/billing/BillingContext';
+import { daysLeft } from 'features/billing/utils/Trial';
 
 // Native store subscription-management deep links.
 const STORE_SUBSCRIPTIONS_URL = Platform.select({
@@ -27,9 +28,7 @@ export default function SubscriptionCard() {
     invalidate();
   }, [invalidate]);
 
-  if (!status) return null;
-
-  const sub = status.subscription;
+  const sub = status?.subscription ?? null;
 
   const handleManage = async () => {
     const url = sub?.provider === 'stripe' ? WEB_BILLING_URL : STORE_SUBSCRIPTIONS_URL;
@@ -40,19 +39,39 @@ export default function SubscriptionCard() {
     }
   };
 
-  // No active paid sub — prompt upgrade instead of manage.
+  // No active paid subscription. This covers three cases that all must surface
+  // the in-app purchase, so App Review can always locate it:
+  //   - free trial in progress (status.has_free_tier)
+  //   - trial ended, no purchase yet
+  //   - status failed to load (status === null) — still show an upgrade path
   if (!sub) {
+    const inTrial = status?.has_free_tier ?? false;
+    const remaining = status ? daysLeft(status.free_tier_expires_at) : 0;
+
+    const subtitle = inTrial
+      ? `You're on a free trial — ${remaining} ${remaining === 1 ? 'day' : 'days'} left. ` +
+        'Subscribe now to keep swing uploads, drills and results after it ends.'
+      : 'Subscribe to unlock swing uploads, drills and results.';
+
     return (
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => openPaywall('manual')}
-        className="rounded-3xl border border-white/10 bg-slate-900 p-5"
-      >
-        <Text className="text-lg font-semibold text-white">Upgrade to premium</Text>
-        <Text className="mt-1 text-sm text-slate-400">
-          Unlock swing uploads, drills and results.
-        </Text>
-      </TouchableOpacity>
+      <View className="rounded-3xl border border-white/10 bg-slate-900 p-5">
+        <Text className="text-lg font-semibold text-white">Subscription</Text>
+        <Text className="mt-1 text-sm text-slate-400">{subtitle}</Text>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => openPaywall('manual')}
+          className="mt-4 flex-row items-center justify-between rounded-2xl bg-indigo-500 px-4 py-4"
+        >
+          <View className="flex-1 pr-3">
+            <Text className="text-base font-semibold text-white">View subscription plans</Text>
+            <Text className="mt-1 text-sm text-indigo-100">
+              TrueSwing Monthly &amp; TrueSwing Pro
+            </Text>
+          </View>
+          <ChevronRight size={20} color="#e0e7ff" />
+        </TouchableOpacity>
+      </View>
     );
   }
 
