@@ -79,6 +79,37 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
+ * Friendly text for Supabase auth error codes. Supabase-js exposes a stable
+ * `code` string on AuthApiError (e.g. 'invalid_credentials'); we key off that
+ * rather than the raw English message, which can change between versions.
+ */
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+    invalid_credentials: 'Incorrect email or password.',
+    email_not_confirmed:
+        'Please verify your email before signing in. Check your inbox for the confirmation link.',
+    user_already_exists: 'An account with this email already exists. Try signing in instead.',
+    email_exists: 'An account with this email already exists. Try signing in instead.',
+    weak_password: 'Please choose a stronger password.',
+    over_request_rate_limit: 'Too many attempts. Please wait a moment and try again.',
+    over_email_send_rate_limit: 'Too many attempts. Please wait a moment and try again.',
+    signup_disabled: 'Sign-ups are currently disabled.',
+    email_address_invalid: 'Enter a valid email address.',
+};
+
+/**
+ * Get a user-friendly message for an auth error. Maps the Supabase auth `code`
+ * to clear text; anything unmapped (network failures, generic errors) falls
+ * through to getErrorMessage.
+ */
+export function getAuthErrorMessage(error: unknown): string {
+    const code = (error as { code?: string })?.code;
+    if (code && AUTH_ERROR_MESSAGES[code]) {
+        return AUTH_ERROR_MESSAGES[code];
+    }
+    return getErrorMessage(error);
+}
+
+/**
  * Get the HTTP status code from an error (if available)
  */
 export function getErrorStatus(error: unknown): number | null {
