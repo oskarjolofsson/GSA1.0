@@ -13,6 +13,8 @@ from core.infrastructure.db.models.Analysis import Analysis
 from pathlib import Path
 from core.infrastructure.storage.r2Adaptor import generate_upload_url
 from core.infrastructure.AI.model_selection import get_active_analysis_model
+from core.infrastructure.db.repositories.issues import get_all_issues
+from unittest.mock import patch
 import requests
 
 
@@ -47,11 +49,27 @@ def run_analysis_and_set_completed(client, db_session, analysis_with_id, auth_he
     upload_response = requests.put(upload_url, data=video_blob)
     assert upload_response.status_code in [200, 201], f"Failed to upload video, status code: {upload_response.status_code}, response: {upload_response.text}"
 
-    response = client.patch(
-        f"/api/v1/analyses/{analysis_id}/",
-        headers=auth_headers,
-    )
-    
+    # Mock the real Gemini call: this layer tests the endpoint + orchestration, not the
+    # AI client (the real call is exercised in tests/integration/AI). Use a real issue
+    # id from the DB so the AnalysisIssue rows persist correctly.
+    issue = get_all_issues(db_session)[0]
+    canned_result = {
+        "metadata": {"camera_view": "face_on", "club_type": "iron"},
+        "club_type": "iron",
+        "camera_view": "face_on",
+        "issues": [{"issue_id": str(issue.id), "confidence": 0.9}],
+        "success": True,
+    }
+
+    with patch(
+        "core.services.analysis_service.analyze_video",
+        return_value=canned_result,
+    ), patch("core.services.analysis_service.GoogleAnalysisClient"):
+        response = client.patch(
+            f"/api/v1/analyses/{analysis_id}/",
+            headers=auth_headers,
+        )
+
     data = response.json()
     return data, analysis_id, user_id
     
