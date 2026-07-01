@@ -3,12 +3,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.infrastructure.payment.stripe.exceptions import StripeInfrastructureError
 from core.infrastructure.payment.revenuecat.exceptions import RevenueCatWebhookVerificationError
+from app.core.version import __version__, GIT_COMMIT
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="True Swing API",
-        version="1.0.0"
+        version=__version__
     )
+
+    # --- Root route: report API version so deploys are easy to verify ---
+    @app.get("/")
+    def root():
+        return {
+            "name": "True Swing API",
+            "version": __version__,
+            "commit": GIT_COMMIT,
+        }
 
     # --- Environment config ---
     FRONTENDS = [
