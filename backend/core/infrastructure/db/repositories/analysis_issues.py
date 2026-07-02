@@ -1,4 +1,4 @@
-from sqlalchemy import UUID
+from sqlalchemy import UUID, delete
 
 from core.infrastructure.db import models
 from sqlalchemy.orm import Session
@@ -49,4 +49,14 @@ def get_analysis_issues_by_analysis_id(analysis_id, session: Session) -> list[mo
 
 def delete_analysis_issue(analysis_issue: models.AnalysisIssue, session: Session) -> None:
     session.delete(analysis_issue)
+    session.flush()
+
+
+def delete_analysis_issues_by_analysis_id(analysis_id, session: Session) -> None:
+    """Remove every AnalysisIssue row for an analysis. Used to discard orphan
+    issues flushed before an analysis failed, so a failed analysis never
+    persists issues."""
+    session.execute(
+        delete(models.AnalysisIssue).where(models.AnalysisIssue.analysis_id == analysis_id)
+    )
     session.flush()

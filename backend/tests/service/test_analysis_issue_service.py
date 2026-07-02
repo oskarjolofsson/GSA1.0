@@ -79,19 +79,76 @@ def test_get_unused_issues_of_user_id_with_no_issues(test_user, db_session):
     all_issues : list[models.Issue] = issues_repo.get_all_issues(session=db_session)
     
     assert len(remain_issues) == len(all_issues)
-    
-    
-    
+
+
+# =========== Failed-analysis filtering (home edge case) ===========
+# A user whose analyses all failed must look like a brand-new user: no issues,
+# no "today's issue". Failed analyses are filtered out of the issues read path,
+# matching the analyses list / activity endpoints.
+
+
+@pytest.mark.parametrize("status,success", [
+    ("failed", False),
+    ("completed", False),
+    ("processing", None),
+    ("awaiting_upload", None),
+])
+def test_get_issues_by_user_id_excludes_non_successful_analyses(status, success, test_user, db_session):
+    create_analysis_and_analysis_issues(db_session, test_user["user_id"], status=status, success=success)
+
+    issues = issues_repo.get_issues_by_user_id(test_user["user_id"], session=db_session)
+    assert issues == []
+
+
+def test_get_issues_by_user_id_includes_only_completed_successful(test_user, db_session):
+    create_analysis_and_analysis_issues(db_session, test_user["user_id"], status="failed", success=False)
+    good = create_analysis_and_analysis_issues(db_session, test_user["user_id"], status="completed", success=True)
+
+    issues = issues_repo.get_issues_by_user_id(test_user["user_id"], session=db_session)
+    good_issue_ids = {ai.issue_id for ai in good.analysis_issues}
+    assert {i.id for i in issues} == good_issue_ids
+
+
+def test_todays_issue_is_none_for_failed_only_user(test_user, db_session):
+    from core.services import issues_service
+    create_analysis_and_analysis_issues(db_session, test_user["user_id"], status="failed", success=False)
+
+    result = issues_service.get_todays_issue(test_user["user_id"], db_session)
+    assert result is None
+
+
+def test_unused_issues_treats_failed_analysis_issues_as_unused(test_user, db_session):
+    # Issues attached only to a failed analysis are NOT "active" for the user.
+    to = create_analysis_and_analysis_issues(db_session, test_user["user_id"], status="failed", success=False)
+
+    remain_issues = issues_repo.get_unused_issues_of_user_id(test_user["user_id"], db_session)
+    remain_ids = {i.id for i in remain_issues}
+    for ai in to.analysis_issues:
+        assert ai.issue_id in remain_ids
+
+
+def test_delete_analysis_issues_by_analysis_id_removes_orphans(test_user, db_session):
+    to = create_analysis_and_analysis_issues(db_session, test_user["user_id"])
+
+    analysis_issues_repo.delete_analysis_issues_by_analysis_id(to.analysis.id, session=db_session)
+
+    assert analysis_issues_repo.get_analysis_issues_by_analysis_id(to.analysis.id, session=db_session) == []
+
 
 # =================== Helper Methods ====================
 
 
-def create_analysis_and_analysis_issues(session: Session, user_id: UUID) -> AnalysisTestObject:
+def create_analysis_and_analysis_issues(
+    session: Session,
+    user_id: UUID,
+    status: str = "completed",
+    success: bool = True,
+) -> AnalysisTestObject:
     analysis: models.Analysis = models.Analysis(
         user_id=user_id,
         model_version="test_model",
-        status="completed",
-        success=True,
+        status=status,
+        success=success,
     )
 
     # persist first so analysis.id is available

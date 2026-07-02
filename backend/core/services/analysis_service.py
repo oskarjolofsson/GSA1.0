@@ -32,8 +32,9 @@ from ..infrastructure.db.repositories.analysis_issues import (
     get_analysis_issue_by_id,
     get_analysis_issues_by_analysis_id,
     modify_analysis_issues as modify_analysis_issues_in_db,
-    get_analysis_issues_by_user_id_and_issue_id
-    
+    get_analysis_issues_by_user_id_and_issue_id,
+    delete_analysis_issues_by_analysis_id,
+
 )
 from ..infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from ..infrastructure.storage.r2Adaptor import get_object
@@ -219,6 +220,10 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         return from_analysis_object_to_dto(analysis_object)
     except Exception as e:
         try:
+            # Discard any AnalysisIssue rows flushed before the failure so a
+            # failed analysis never persists issues (they'd otherwise leak onto
+            # the home screen while the analysis itself is filtered out).
+            delete_analysis_issues_by_analysis_id(analysis_object.id, session=db_session)
             analysis_object.error_message = str(e)
             analysis_object.success = False
             analysis_object.status = "failed"
