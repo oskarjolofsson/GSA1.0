@@ -45,7 +45,12 @@ def get_issues_by_user_id(user_id: UUID, session: Session) -> list[models.Issue]
     return (session.query(models.Issue)
         .join(AnalysisIssue, models.Issue.id == AnalysisIssue.issue_id)
         .join(Analysis, AnalysisIssue.analysis_id == Analysis.id)
-        .filter((Analysis.user_id == user_id) & (AnalysisIssue.active == True))
+        .filter(
+            (Analysis.user_id == user_id)
+            & (AnalysisIssue.active == True)
+            & (Analysis.status == "completed")
+            & (Analysis.success == True)
+        )
         .distinct()
         .all())
     
@@ -55,7 +60,12 @@ def get_unused_issues_of_user_id(user_id: UUID, session: Session) -> list[models
     active_issues = (
         session.query(AnalysisIssue.issue_id)
         .join(Analysis, AnalysisIssue.analysis_id == Analysis.id)
-        .filter((Analysis.user_id == user_id) & (AnalysisIssue.active == True))
+        .filter(
+            (Analysis.user_id == user_id)
+            & (AnalysisIssue.active == True)
+            & (Analysis.status == "completed")
+            & (Analysis.success == True)
+        )
     )
     
     # Return all issues NOT in the active set
