@@ -31,8 +31,23 @@
         }
       ],
       "@react-native-google-signin/google-signin",
-      "expo-font"
+      "expo-font",
+      "expo-updates",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "dynamic"
+          }
+        }
+      ]
     ],
+    "updates": {
+      "url": "https://u.expo.dev/83665fdd-d5ac-4c47-9ea0-98f510bdb4ee"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/true_swing_logo.png",
     "userInterfaceStyle": "light",
@@ -45,16 +60,17 @@
       "**/*"
     ],
     "ios": {
-      "version": "1.2.2",
+      "version": "1.2.3",
       "supportsTablet": false,
       "bundleIdentifier": "app.trueswing.se",
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to record your golf swing.",
-        "NSMicrophoneUsageDescription": "This app uses the microphone when recording swing videos."
+        "NSMicrophoneUsageDescription": "This app uses the microphone when recording swing videos.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "version": "1.2.2",
+      "version": "1.2.3",
       "adaptiveIcon": {
         "foregroundImage": "./assets/true_swing_logo3.png",
         "backgroundColor": "#0a0f1a"
