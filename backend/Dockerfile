@@ -27,9 +27,13 @@ CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "a
 # docker buildx inspect --bootstrap
 # docker login
 
-# --- Deploy ---
+# --- Deploy to Prod---
 # cd <your-backend-repo>
 # docker buildx build --platform linux/amd64,linux/arm64 -t oskarjolofsson/true_swing_backend:latest --push . && docker image rm oskarjolofsson/true_swing_backend:latest 2>/dev/null && docker buildx prune -f
+
+# --- Deploy to Preview---
+# cd <your-backend-repo>
+# docker buildx build --platform linux/amd64,linux/arm64 -t oskarjolofsson/true_swing_backend:preview --push . && docker image rm oskarjolofsson/true_swing_backend:preview 2>/dev/null && docker buildx prune -f
 
 # To pull and run the image inside Hetzner Cloud, use:
 # cd /srv/trueswing
