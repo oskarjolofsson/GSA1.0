@@ -7,6 +7,11 @@ RUN apt-get update \
 
 WORKDIR /app
 
+# Deploy-time git commit SHA, passed in at build time (see build commands below)
+# and baked into the image so the "/" route can report exactly what's live.
+ARG GIT_COMMIT=unknown
+ENV GIT_COMMIT=${GIT_COMMIT}
+
 # Copy and install dependencies first (better caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -29,11 +34,11 @@ CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "a
 
 # --- Deploy to Prod---
 # cd <your-backend-repo>
-# docker buildx build --platform linux/amd64,linux/arm64 -t oskarjolofsson/true_swing_backend:latest --push . && docker image rm oskarjolofsson/true_swing_backend:latest 2>/dev/null && docker buildx prune -f
+# docker buildx build --platform linux/amd64,linux/arm64 --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) -t oskarjolofsson/true_swing_backend:latest --push . && docker image rm oskarjolofsson/true_swing_backend:latest 2>/dev/null && docker buildx prune -f
 
 # --- Deploy to Preview---
 # cd <your-backend-repo>
-# docker buildx build --platform linux/amd64,linux/arm64 -t oskarjolofsson/true_swing_backend:preview --push . && docker image rm oskarjolofsson/true_swing_backend:preview 2>/dev/null && docker buildx prune -f
+# docker buildx build --platform linux/amd64,linux/arm64 --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) -t oskarjolofsson/true_swing_backend:preview --push . && docker image rm oskarjolofsson/true_swing_backend:preview 2>/dev/null && docker buildx prune -f
 
 # To pull and run the image inside Hetzner Cloud, use:
 # cd /srv/trueswing
@@ -42,7 +47,7 @@ CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "a
 
 
 # To test the image locally, use:
-# docker build --no-cache -t trueswing-backend-test .
+# docker build --no-cache --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) -t trueswing-backend-test .
 # docker run --rm -p 8000:8000 --env-file .env trueswing-backend-test
 
 
