@@ -3,7 +3,7 @@
     "scheme": "trueswing",
     "name": "True Swing",
     "slug": "trueswing",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "web": {
       "favicon": "./assets/true_swing_logo2.png"
     },
