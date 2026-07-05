@@ -40,7 +40,7 @@ scp /Users/oskarolofsson/ws/personal/GSA1.0/backend/.env.production root@188.245
 Build + push (from backend repo root):
 
 ```bash
-docker buildx build --platform linux/amd64,linux/arm64 -t oskarjolofsson/true_swing_backend:preview --push . && docker image rm oskarjolofsson/true_swing_backend:preview 2>/dev/null && docker buildx prune -f
+docker buildx build --platform linux/amd64,linux/arm64 --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) -t oskarjolofsson/true_swing_backend:preview --push . && docker image rm oskarjolofsson/true_swing_backend:preview 2>/dev/null && docker buildx prune -f
 ```
 
 SSH into the server:
@@ -61,6 +61,12 @@ Verify:
 curl -I https://api.preview.trueswing.se
 ```
 
+Confirm the live commit matches what you built (the `commit` field comes from the `GIT_COMMIT` build arg):
+
+```bash
+curl -s https://api.preview.trueswing.se/ | grep -o '"commit":"[^"]*"'
+```
+
 ---
 
 ## 3. Deploy to **Production**
@@ -68,7 +74,7 @@ curl -I https://api.preview.trueswing.se
 Build + push (from backend repo root):
 
 ```bash
-docker buildx build --platform linux/amd64,linux/arm64 -t oskarjolofsson/true_swing_backend:latest --push . && docker image rm oskarjolofsson/true_swing_backend:latest 2>/dev/null && docker buildx prune -f
+docker buildx build --platform linux/amd64,linux/arm64 --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) -t oskarjolofsson/true_swing_backend:latest --push . && docker image rm oskarjolofsson/true_swing_backend:latest 2>/dev/null && docker buildx prune -f
 ```
 
 SSH into the server:
@@ -89,6 +95,12 @@ Verify:
 curl -I https://api.trueswing.se
 ```
 
+Confirm the live commit matches what you built (the `commit` field comes from the `GIT_COMMIT` build arg):
+
+```bash
+curl -s https://api.trueswing.se/ | grep -o '"commit":"[^"]*"'
+```
+
 ---
 
 ## Test locally before deploying (optional)
@@ -96,7 +108,7 @@ curl -I https://api.trueswing.se
 Build the image:
 
 ```bash
-docker build --no-cache -t trueswing-backend-test .
+docker build --no-cache --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) -t trueswing-backend-test .
 ```
 
 Run it:
