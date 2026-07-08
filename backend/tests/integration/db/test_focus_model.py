@@ -29,7 +29,10 @@ def _seed_issue(db_session, user_id, title, confidence, num_drills=0):
         )
         db_session.add(IssueDrill(issue_id=issue.id, drill_id=drill.id))
     db_session.flush()
-    analysis = create_analysis(Analysis(user_id=user_id, model_version="v1"), db_session)
+    analysis = create_analysis(
+        Analysis(user_id=user_id, model_version="v1", status="completed", success=True),
+        db_session,
+    )
     analysis_issue = create_analysis_issue(
         AnalysisIssue(analysis_id=analysis.id, issue_id=issue.id, confidence=confidence), db_session
     )
