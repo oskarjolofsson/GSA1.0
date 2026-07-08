@@ -5,7 +5,7 @@ import {
     transcodeDenseKeyframes,
 } from "../../../modules/expo-video-rekeyframe";
 import {
-    cancelDownload,
+    type DownloadHandle,
     ensureCacheDirs,
     evictOldest,
     fileExists,
@@ -36,11 +36,11 @@ export default function useScrubFriendlyVideo(
 ): Result {
     const [result, setResult] = useState<Result>({ uri: null, status: "idle" });
     const cancelledRef = useRef(false);
-    const activeJobIdRef = useRef<number | null>(null);
+    const activeDownloadRef = useRef<DownloadHandle | null>(null);
 
     useEffect(() => {
         cancelledRef.current = false;
-        activeJobIdRef.current = null;
+        activeDownloadRef.current = null;
 
         if (!analysisId || !remoteUrl) {
             setResult({ uri: null, status: "idle" });
@@ -73,9 +73,9 @@ export default function useScrubFriendlyVideo(
                 const origPath = originalCachePath(analysisId);
                 await safeUnlink(origPath);
                 const dl = startDownload(remoteUrl, origPath);
-                activeJobIdRef.current = dl.jobId;
+                activeDownloadRef.current = dl;
                 await dl.promise;
-                activeJobIdRef.current = null;
+                activeDownloadRef.current = null;
                 if (cancelledRef.current) {
                     await safeUnlink(origPath);
                     return;
@@ -105,9 +105,9 @@ export default function useScrubFriendlyVideo(
 
         return () => {
             cancelledRef.current = true;
-            if (activeJobIdRef.current != null) {
-                cancelDownload(activeJobIdRef.current);
-                activeJobIdRef.current = null;
+            if (activeDownloadRef.current != null) {
+                activeDownloadRef.current.cancel();
+                activeDownloadRef.current = null;
             }
             if (didStart) {
                 // Clean up an orphan original if we were mid-flight.
