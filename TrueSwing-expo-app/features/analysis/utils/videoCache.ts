@@ -1,57 +1,55 @@
-import RNFS from "react-native-fs";
+import { Directory, File, Paths } from "expo-file-system";
 
-export const CACHE_ROOT = `${RNFS.CachesDirectoryPath}/analysis-videos`;
-const ORIG_DIR = `${CACHE_ROOT}/orig`;
-const SCRUB_DIR = `${CACHE_ROOT}/scrub`;
+const CACHE_DIR = new Directory(Paths.cache, "analysis-videos");
+const ORIG_DIR = new Directory(CACHE_DIR, "orig");
+const SCRUB_DIR = new Directory(CACHE_DIR, "scrub");
+
+export const CACHE_ROOT = CACHE_DIR.uri;
 
 export function scrubCachePath(analysisId: string): string {
-    return `${SCRUB_DIR}/${analysisId}.mp4`;
+    return new File(SCRUB_DIR, `${analysisId}.mp4`).uri;
 }
 
 export function originalCachePath(analysisId: string): string {
-    return `${ORIG_DIR}/${analysisId}.mp4`;
+    return new File(ORIG_DIR, `${analysisId}.mp4`).uri;
 }
 
 export async function ensureCacheDirs(): Promise<void> {
-    await RNFS.mkdir(ORIG_DIR);
-    await RNFS.mkdir(SCRUB_DIR);
+    ORIG_DIR.create({ intermediates: true, idempotent: true });
+    SCRUB_DIR.create({ intermediates: true, idempotent: true });
 }
 
 export async function fileExists(path: string): Promise<boolean> {
     try {
-        return await RNFS.exists(path);
+        return new File(path).exists;
     } catch {
         return false;
     }
 }
 
 export type DownloadHandle = {
-    jobId: number;
+    cancel: () => void;
     promise: Promise<void>;
 };
 
 export function startDownload(url: string, dest: string): DownloadHandle {
-    const job = RNFS.downloadFile({ fromUrl: url, toFile: dest });
-    const promise = job.promise.then((res) => {
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-            throw new Error(`Download failed: HTTP ${res.statusCode}`);
-        }
-    });
-    return { jobId: job.jobId, promise };
-}
-
-export function cancelDownload(jobId: number): void {
-    try {
-        RNFS.stopDownload(jobId);
-    } catch {
-        // best-effort
-    }
+    // expo-file-system (SDK 55) has no cancellable download task; the transfer
+    // runs to completion. Callers signal intent to cancel via their own flag and
+    // clean up the orphaned file (see safeUnlink in the consumer's cleanup).
+    const promise = File.downloadFileAsync(url, new File(dest)).then(() => {});
+    return {
+        cancel: () => {
+            // best-effort: no native abort available in this API
+        },
+        promise,
+    };
 }
 
 export async function safeUnlink(path: string): Promise<void> {
     try {
-        if (await RNFS.exists(path)) {
-            await RNFS.unlink(path);
+        const file = new File(path);
+        if (file.exists) {
+            file.delete();
         }
     } catch {
         // best-effort
@@ -60,20 +58,21 @@ export async function safeUnlink(path: string): Promise<void> {
 
 export async function evictOldest(maxBytes: number): Promise<void> {
     try {
-        const items = await RNFS.readDir(SCRUB_DIR);
-        let total = items.reduce((acc, it) => acc + (it.size ?? 0), 0);
+        const files = SCRUB_DIR.list().filter(
+            (it): it is File => it instanceof File,
+        );
+        let total = files.reduce((acc, f) => acc + (f.size ?? 0), 0);
         if (total <= maxBytes) return;
-        const byOldest = items
-            .filter((it) => it.isFile())
-            .sort((a, b) => {
-                const am = a.mtime ? a.mtime.getTime() : 0;
-                const bm = b.mtime ? b.mtime.getTime() : 0;
-                return am - bm;
-            });
-        for (const it of byOldest) {
+        const byOldest = files.sort((a, b) => {
+            const am = a.modificationTime ?? 0;
+            const bm = b.modificationTime ?? 0;
+            return am - bm;
+        });
+        for (const f of byOldest) {
             if (total <= maxBytes) break;
-            await safeUnlink(it.path);
-            total -= it.size ?? 0;
+            const size = f.size ?? 0;
+            await safeUnlink(f.uri);
+            total -= size;
         }
     } catch {
         // best-effort cache GC
