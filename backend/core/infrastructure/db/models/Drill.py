@@ -19,6 +19,9 @@ class Drill(Base):
         default=uuid.uuid4,
     )
 
+    # Owner of a user-authored (custom) drill. NULL = admin-curated global catalog.
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+
     title: Mapped[str] = mapped_column(Text, nullable=False)
     task: Mapped[str] = mapped_column(Text, nullable=False)
     success_signal: Mapped[str] = mapped_column(Text, nullable=False)

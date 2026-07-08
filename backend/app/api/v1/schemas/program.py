@@ -5,7 +5,10 @@ from typing import Any
 
 
 class GenerateProgramRequest(BaseModel):
-    analysis_issue_id: UUID
+    # Exactly one of these identifies what to groove: analysis_issue_id (AI path)
+    # or issue_id (coach/browse path).
+    analysis_issue_id: UUID | None = None
+    issue_id: UUID | None = None
 
 
 class DrillGrade(BaseModel):
@@ -55,6 +58,7 @@ class ProgramResponse(BaseModel):
     id: UUID
     user_id: UUID
     analysis_issue_id: UUID | None
+    issue_id: UUID | None
     title: str
     status: str
     created_at: datetime
@@ -70,6 +74,7 @@ class ProgramResponse(BaseModel):
             id=dto.id,
             user_id=dto.user_id,
             analysis_issue_id=dto.analysis_issue_id,
+            issue_id=dto.issue_id,
             title=dto.title,
             status=dto.status,
             created_at=dto.created_at,

@@ -22,6 +22,16 @@ class Issue(Base):
 
     title: Mapped[str] = mapped_column(Text, nullable=False)
 
+    # Owner of a user-authored (custom) issue. NULL = admin-curated global catalog.
+    user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+
+    source: Mapped[str] = mapped_column(
+        Text,
+        CheckConstraint("source IN ('catalog','custom')"),
+        nullable=False,
+        server_default="catalog",
+    )
+
     phase: Mapped[str | None] = mapped_column(
         Text,
         CheckConstraint(

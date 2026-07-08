@@ -60,6 +60,23 @@ export async function generateProgram(analysisIssueId: string): Promise<Program>
     return program;
 }
 
+/**
+ * Create (or fetch the existing) active program directly from an issue id — the
+ * coach-feedback and browse paths, which have no source analysis. Premium-gated.
+ */
+export async function generateProgramFromIssue(issueId: string): Promise<Program> {
+    const program = await apiClient.post<Program>(`${BASE}/generate/`, {
+        issue_id: issueId,
+    });
+    clearProgramCache();
+    return program;
+}
+
+/** The user's active program for a raw issue id (coach/browse path), or null. */
+export async function getActiveProgramByIssue(issueId: string): Promise<Program | null> {
+    return apiClient.get<Program | null>(`${BASE}/active/?issue_id=${issueId}`);
+}
+
 /** The next session to do, scheduled on demand. */
 export async function getNextStep(programId: string): Promise<ProgramStep | null> {
     const cached = nextStepCache.get(programId);

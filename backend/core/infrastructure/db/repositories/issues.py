@@ -4,7 +4,7 @@ from ..models.IssueDrill import IssueDrill
 from ..models.Analysis import Analysis
 from sqlalchemy.orm import Session
 from uuid import UUID
-from sqlalchemy import delete, select, func
+from sqlalchemy import delete, select, func, or_
 
 # ------------ GET ------------
 
@@ -72,6 +72,40 @@ def get_unused_issues_of_user_id(user_id: UUID, session: Session) -> list[models
     return (
         session.query(models.Issue)
         .filter(models.Issue.id.notin_(active_issues))
+        .all()
+    )
+
+
+def get_catalog_and_user_issues(user_id: UUID, session: Session) -> list[models.Issue]:
+    """Browseable issues: the global admin catalog (user_id IS NULL) plus this
+    user's own custom issues. A user never sees another user's custom issues."""
+    return (
+        session.query(models.Issue)
+        .filter(or_(models.Issue.user_id.is_(None), models.Issue.user_id == user_id))
+        .order_by(models.Issue.title)
+        .all()
+    )
+
+
+def search_catalog_issues_by_text(
+    tokens: list[str], session: Session, limit: int = 5
+) -> list[models.Issue]:
+    """Lightweight dedup: global catalog issues whose title or description matches
+    any of the given tokens (case-insensitive). A pgvector semantic pass is a later
+    upgrade; keyword ILIKE is enough to surface an obvious existing match."""
+    tokens = [t for t in tokens if t]
+    if not tokens:
+        return []
+    conds = []
+    for token in tokens:
+        like = f"%{token}%"
+        conds.append(models.Issue.title.ilike(like))
+        conds.append(models.Issue.description.ilike(like))
+    return (
+        session.query(models.Issue)
+        .filter(models.Issue.user_id.is_(None))
+        .filter(or_(*conds))
+        .limit(limit)
         .all()
     )
 

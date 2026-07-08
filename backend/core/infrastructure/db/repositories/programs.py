@@ -32,6 +32,21 @@ def get_active_program_for_issue(
     )
 
 
+def get_active_program_for_issue_id(
+    user_id: UUID, issue_id: UUID, session: Session
+) -> Program | None:
+    return (
+        session.query(Program)
+        .filter(
+            Program.user_id == user_id,
+            Program.issue_id == issue_id,
+            Program.status == "active",
+        )
+        .order_by(Program.created_at.desc())
+        .first()
+    )
+
+
 def get_active_programs_by_user(user_id: UUID, session: Session) -> list[Program]:
     return (
         session.query(Program)

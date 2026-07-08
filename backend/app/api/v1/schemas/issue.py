@@ -97,3 +97,95 @@ class UpdateIssueRequest(BaseModel):
 
 class BulkDeleteIssuesRequest(BaseModel):
     issue_ids: list[UUID]
+
+
+# ---------- User-authored issues (coach feedback + browse) ----------
+
+class DraftDrillSchema(BaseModel):
+    title: str
+    task: str
+    success_signal: str
+    fault_indicator: str
+    ai_filled: list[str] = []
+
+
+class DraftIssueSchema(BaseModel):
+    title: str
+    description: str = ""
+    phase: str | None = None
+
+
+class CatalogDrillSchema(BaseModel):
+    id: UUID
+    title: str
+    task: str
+    success_signal: str
+    fault_indicator: str
+
+    @classmethod
+    def from_domain(cls, dto) -> "CatalogDrillSchema":
+        return cls(
+            id=dto.id,
+            title=dto.title,
+            task=dto.task,
+            success_signal=dto.success_signal,
+            fault_indicator=dto.fault_indicator,
+        )
+
+
+class CatalogIssueSchema(BaseModel):
+    id: UUID
+    title: str
+    description: str | None
+    phase: str | None
+    source: str
+    drills: list[CatalogDrillSchema] = []
+
+    @classmethod
+    def from_domain(cls, dto) -> "CatalogIssueSchema":
+        return cls(
+            id=dto.id,
+            title=dto.title,
+            description=dto.description,
+            phase=dto.phase,
+            source=dto.source,
+            drills=[CatalogDrillSchema.from_domain(d) for d in dto.drills],
+        )
+
+
+class StructureFeedbackRequest(BaseModel):
+    text: str
+    image_base64: str | None = None
+    image_mime: str | None = None
+
+
+class FeedbackDraftResponse(BaseModel):
+    issue: DraftIssueSchema
+    drills: list[DraftDrillSchema] = []
+    similar_issues: list[CatalogIssueSchema] = []
+
+    @classmethod
+    def from_domain(cls, dto) -> "FeedbackDraftResponse":
+        return cls(
+            issue=DraftIssueSchema(
+                title=dto.issue.title,
+                description=dto.issue.description,
+                phase=dto.issue.phase,
+            ),
+            drills=[
+                DraftDrillSchema(
+                    title=d.title,
+                    task=d.task,
+                    success_signal=d.success_signal,
+                    fault_indicator=d.fault_indicator,
+                    ai_filled=d.ai_filled,
+                )
+                for d in dto.drills
+            ],
+            similar_issues=[CatalogIssueSchema.from_domain(i) for i in dto.similar_issues],
+        )
+
+
+class CreateCustomIssueRequest(BaseModel):
+    issue: DraftIssueSchema
+    drills: list[DraftDrillSchema] = []
