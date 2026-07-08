@@ -52,3 +52,4 @@ class IssueResponseDTO:
     confidence: float | None = None
     progress: SimplifiedIssueProgressDTO | None = None
     program_status: str | None = None  # 'active' | 'completed' | None
+    source: str = "catalog"  # 'catalog' (admin) | 'custom' (user-authored)

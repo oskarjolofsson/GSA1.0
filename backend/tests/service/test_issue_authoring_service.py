@@ -218,3 +218,64 @@ class TestBrowseCatalog:
         titles = {i.title for i in listed}
         assert "Global reverse pivot" in titles
         assert "Other user secret" not in titles
+
+
+class TestCustomIssueVisibility:
+    """The full-integration guarantee: a custom issue must be first-class in the
+    home/practice surface, not just creatable. Without this a custom program is
+    invisible on home and (via one-active-program) strands the user."""
+
+    def test_custom_issue_appears_in_user_issue_list(self, db_session, test_user):
+        """A custom issue has no AnalysisIssue, so the old analysis-join list would
+        drop it. get_issues_by_user_id must now also return custom issues, tagged
+        source='custom' with a null analysis_issue_id, and — once a program is
+        started — annotated program_status='active' (keyed by program.issue_id)."""
+        from core.services import issues_service
+
+        created = ias.create_custom_issue(
+            user_id=test_user["user_id"],
+            issue=DraftIssueDTO(title="Cast from the top", description="early release"),
+            drills=[DraftDrillDTO(title="Pump", task="t", success_signal="s", fault_indicator="f")],
+            db_session=db_session,
+        )
+        ps.generate_program_from_issue(test_user["user_id"], created.id, db_session)
+
+        dtos = issues_service.get_issues_by_user_id(test_user["user_id"], db_session)
+        match = [d for d in dtos if str(d.id) == str(created.id)]
+        assert match, "custom issue should appear in the user's issue list"
+        assert match[0].source == "custom"
+        assert match[0].analysis_issue_id is None
+        assert match[0].program_status == "active"
+
+    def test_todays_issue_is_the_active_custom_focus(self, db_session, test_user):
+        """get_todays_issue is the head of the focus-ordered list, so an active
+        custom program should surface as today's focus on home."""
+        from core.services import issues_service
+
+        created = ias.create_custom_issue(
+            user_id=test_user["user_id"],
+            issue=DraftIssueDTO(title="Reverse pivot", description="weight hangs back"),
+            drills=[DraftDrillDTO(title="Step", task="t", success_signal="s", fault_indicator="f")],
+            db_session=db_session,
+        )
+        ps.generate_program_from_issue(test_user["user_id"], created.id, db_session)
+
+        todays = issues_service.get_todays_issue(test_user["user_id"], db_session)
+        assert todays is not None and str(todays.id) == str(created.id)
+
+
+class TestPracticeStartWithoutAnalysis:
+    def test_range_session_starts_with_null_analysis_issue(self, db_session, test_user):
+        """A custom issue's range session must start with analysis_issue_id=None
+        (there is no source analysis). The program step carries the linkage, so the
+        session itself needs no analysis issue."""
+        from core.services import practice_session_service as pss
+
+        session = pss.record_practice_session_start(
+            user_id=test_user["user_id"],
+            analysis_issue_id=None,
+            session=db_session,
+            session_type="range",
+        )
+        assert session.id is not None
+        assert session.analysis_issue_id is None

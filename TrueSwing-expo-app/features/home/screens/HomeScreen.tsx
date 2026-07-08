@@ -102,7 +102,7 @@ export default function HomeScreen({
         nextStep,
         loading: programLoading,
         refetch: refetchProgram,
-    } = useProgramForIssue(selectedIssue?.analysis_issue_id);
+    } = useProgramForIssue(selectedIssue?.id);
 
     // Refresh the program when returning to home (e.g. after a session).
     useFocusEffect(
@@ -135,11 +135,13 @@ export default function HomeScreen({
 
     const handleConfirmSession = useCallback(
         async (notes: string) => {
-            if (!selectedIssue?.analysis_issue_id || !program || !nextStep || !sessionMode) return;
+            if (!selectedIssue?.id || !program || !nextStep || !sessionMode) return;
 
-            // Re-test: don't credit on tap. Record the intent and send the player to
-            // the camera; the re-test completes only when an upload actually finishes.
-            if (sessionMode === "retest") {
+            // Re-test for an AI issue: don't credit on tap. Record the intent and
+            // send the player to the camera; it completes only when an upload
+            // finishes. A CUSTOM issue has no analysis to re-run, so its retest is a
+            // self-compare — logged like a play session below (no upload).
+            if (sessionMode === "retest" && selectedIssue.analysis_issue_id) {
                 setRetestIntent({
                     analysisIssueId: selectedIssue.analysis_issue_id,
                     programId: program.id,
@@ -150,10 +152,10 @@ export default function HomeScreen({
                 return;
             }
 
-            // Play: log + advance now (there's no upload).
+            // Play (or custom self-compare retest): log + advance now (no upload).
             setLogging(true);
             const ok = await onLogSession({
-                analysisIssueId: selectedIssue.analysis_issue_id,
+                analysisIssueId: selectedIssue.analysis_issue_id ?? null,
                 programId: program.id,
                 stepId: nextStep.id,
                 sessionType: sessionMode,

@@ -43,6 +43,7 @@ class GetIssue(BaseModel):
     confidence: float | None = None
     progress: IssueProgress | None = None
     program_status: str | None = None  # 'active' | 'completed' | None
+    source: str = "catalog"  # 'catalog' (admin) | 'custom' (user-authored)
 
     model_config = ConfigDict(from_attributes=True)
     
@@ -82,6 +83,7 @@ class GetIssue(BaseModel):
             confidence=dto.confidence,
             progress=progress,
             program_status=getattr(dto, "program_status", None),
+            source=getattr(dto, "source", "catalog"),
         )
 
 

@@ -10,6 +10,7 @@ from core.infrastructure.db.repositories.issues import (
     get_issues_by_drill_id as repo_get_issues_by_drill_id,
     get_all_issues as repo_get_all_issues,
     get_issues_by_user_id as repo_get_issues_by_user_id,
+    get_custom_issues_by_user_id as repo_get_custom_issues_by_user_id,
     get_issues_by_ids as repo_get_issues_by_ids,
     delete_issues as repo_delete_issues,
 )
@@ -84,15 +85,23 @@ def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueRespo
     issues: list[Issue] = repo_get_issues_by_user_id(user_id, db_session)
     dtos = _batch_fetch_analysis_issues_and_progress(user_id, issues, db_session)
 
-    # Annotate each issue with its program status (active wins over completed).
+    # Custom (coach/browse) issues have no AnalysisIssue, so they don't come back
+    # above — append them. They carry no analysis-derived progress.
+    custom_issues: list[Issue] = repo_get_custom_issues_by_user_id(user_id, db_session)
+    dtos.extend(from_issue_to_response_dto(issue) for issue in custom_issues)
+
+    # Annotate each issue with its program status (active wins over completed). Key
+    # by the issue's own id via program.issue_id — works for AI and custom alike.
     programs = programs_repo.get_programs_by_user(user_id, db_session)
     status_by_issue: dict[str, str] = {}
     for program in programs:
-        key = str(program.analysis_issue_id)
+        if program.issue_id is None:
+            continue
+        key = str(program.issue_id)
         if key not in status_by_issue or program.status == "active":
             status_by_issue[key] = program.status
     for dto in dtos:
-        dto.program_status = status_by_issue.get(dto.analysis_issue_id)
+        dto.program_status = status_by_issue.get(str(dto.id))
 
     # Stable multi-key sort: recency first (newest), then group + confidence.
     dtos.sort(key=lambda d: d.created_at or "", reverse=True)
@@ -188,6 +197,7 @@ def from_issue_to_response_dto(issue: Issue, analysis_issue: models.AnalysisIssu
         analysis_id=str(analysis_issue.analysis_id) if analysis_issue else None,
         confidence=analysis_issue.confidence if analysis_issue else None,
         progress=progress,
+        source=issue.source,
     )
 
 

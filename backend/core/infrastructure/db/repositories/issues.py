@@ -76,6 +76,16 @@ def get_unused_issues_of_user_id(user_id: UUID, session: Session) -> list[models
     )
 
 
+def get_custom_issues_by_user_id(user_id: UUID, session: Session) -> list[models.Issue]:
+    """The user's own authored (custom) issues — the coach/browse-created ones that
+    have no AnalysisIssue, so they don't come back from get_issues_by_user_id."""
+    return (
+        session.query(models.Issue)
+        .filter(models.Issue.user_id == user_id, models.Issue.source == "custom")
+        .all()
+    )
+
+
 def get_catalog_and_user_issues(user_id: UUID, session: Session) -> list[models.Issue]:
     """Browseable issues: the global admin catalog (user_id IS NULL) plus this
     user's own custom issues. A user never sees another user's custom issues."""

@@ -10,10 +10,12 @@ export interface Issue {
     shot_outcome: string | null;
     created_at: string;
     confidence?: number;
-    analysis_issue_id: string;
+    // Null for user-authored (coach/browse) issues, which have no source analysis.
+    analysis_issue_id: string | null;
     analysis_id?: string;
     progress?: AnalysisIssueProgress;
     program_status?: "active" | "completed" | null;
+    source?: "catalog" | "custom";
 }
 
 export interface CreateIssueRequest {
