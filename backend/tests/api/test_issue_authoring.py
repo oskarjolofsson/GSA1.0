@@ -36,6 +36,13 @@ def fake_ai(monkeypatch):
 
 
 def test_structure_feedback_persists_nothing(client, premium, auth_headers, fake_ai, db_session):
+    """Intent: POST /issues/structure-feedback/ is a preview step — it turns coach
+    text into a draft the user can edit, but must NOT write anything to the DB yet
+    (nothing is real until the user confirms via /issues/custom/).
+
+    We count issues before and after the call and assert the count is unchanged,
+    while the response still returns the drafted issue + drill (from the fake AI).
+    `fake_ai` patches the module-level formatter; `premium` overrides the paywall."""
     from core.infrastructure.db.repositories.issues import get_issue_count
 
     before = get_issue_count(db_session)
@@ -52,6 +59,13 @@ def test_structure_feedback_persists_nothing(client, premium, auth_headers, fake
 
 
 def test_create_custom_issue_then_generate_by_issue_id(client, premium, auth_headers):
+    """Intent: end-to-end HTTP happy path for the coach flow. First POST the
+    confirmed draft to /issues/custom/ (201, returns a custom issue), then POST its
+    id to /programs/generate/ using the NEW issue_id field (not analysis_issue_id).
+
+    Assert the generated program is active, its issue_id matches, analysis_issue_id
+    is None (no video), and one drill was seeded. This proves the browse/coach path
+    reuses the same /programs/generate/ endpoint as the AI path."""
     create = client.post(
         "/api/v1/issues/custom/",
         json={
@@ -78,11 +92,18 @@ def test_create_custom_issue_then_generate_by_issue_id(client, premium, auth_hea
 
 
 def test_generate_requires_an_id(client, premium, auth_headers):
+    """Intent: /programs/generate/ now accepts EITHER analysis_issue_id OR issue_id,
+    but you must supply one. An empty body is ambiguous, so the endpoint should
+    reject it with 422 rather than silently create nothing."""
     resp = client.post("/api/v1/programs/generate/", json={}, headers=auth_headers)
     assert resp.status_code == 422
 
 
 def test_catalog_lists_global_issue(client, auth_headers, db_session):
+    """Intent: GET /issues/catalog/ returns the browseable library with drills.
+    We seed a global issue with one linked drill and assert it shows up in the
+    catalog response. (Privacy scoping — not seeing other users' customs — is
+    covered at the service level in test_issue_authoring_service.py.)"""
     issue = Issue(title="Global sway", description="d")
     db_session.add(issue)
     db_session.flush()
