@@ -1,64 +1,47 @@
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Upload, FileText, List, ChevronRight } from "lucide-react-native";
+import { Upload, FileText, List, Video } from "lucide-react-native";
+
+import FocusPanel from "./components/FocusPanel";
 
 export type AddFocusChoice = "upload" | "coach" | "browse";
 
-type CardProps = {
-    icon: React.ReactNode;
-    title: string;
-    subtitle: string;
-    onPress: () => void;
-};
+const GOLD = "#E4C892";
 
-function Card({ icon, title, subtitle, onPress }: CardProps) {
-    return (
-        <Pressable
-            onPress={onPress}
-            className="mb-4 flex-row items-center rounded-3xl border border-white/10 bg-white/5 px-5 py-5 active:opacity-80"
-        >
-            <View className="h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-400/20">
-                {icon}
-            </View>
-            <View className="ml-4 flex-1">
-                <Text className="text-lg font-bold text-white">{title}</Text>
-                <Text className="mt-1 leading-5 text-slate-400">{subtitle}</Text>
-            </View>
-            <ChevronRight size={20} color="#64748b" />
-        </Pressable>
-    );
-}
-
-/** The Upload tab's landing surface: three ways to add a focus to your plan. */
+// The Upload tab's landing surface: three full-height doors, one per source. Fills
+// the screen top (safe area) to bottom (the tab bar sits below this view), no header
+// band and no dead space. Design language matches HomeWelcome / PrescriptionCard.
 export default function AddFocusChooser({ onChoose }: { onChoose: (c: AddFocusChoice) => void }) {
     const insets = useSafeAreaInsets();
     return (
-        <View className="flex-1 bg-[#050816]" style={{ paddingTop: insets.top }}>
-            <ScrollView contentContainerStyle={{ padding: 20 }}>
-                <Text className="mt-2 text-3xl font-bold text-white">Add a focus</Text>
-                <Text className="mt-2 mb-8 leading-6 text-slate-400">
-                    Pick where today's plan comes from. You work one focus at a time.
-                </Text>
-
-                <Card
-                    icon={<Upload size={22} color="#34d399" />}
-                    title="Upload a swing"
-                    subtitle="Film a swing and let the analysis find your issue."
-                    onPress={() => onChoose("upload")}
-                />
-                <Card
-                    icon={<FileText size={22} color="#34d399" />}
-                    title="Add coach feedback"
-                    subtitle="Turn notes from a real lesson into a practice plan."
-                    onPress={() => onChoose("coach")}
-                />
-                <Card
-                    icon={<List size={22} color="#34d399" />}
-                    title="Browse drills"
-                    subtitle="Pick an existing issue and its drills to work on."
-                    onPress={() => onChoose("browse")}
-                />
-            </ScrollView>
+        <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
+            <FocusPanel
+                index="01"
+                eyebrow="Add a focus"
+                icon={<Video size={25} color={GOLD} strokeWidth={2.25} />}
+                title="Upload a swing"
+                subtitle="Film it. We find the fault."
+                onPress={() => onChoose("upload")}
+                glowCorner="top-right"
+            />
+            <View className="border-t border-white/5" />
+            <FocusPanel
+                index="02"
+                icon={<FileText size={25} color={GOLD} strokeWidth={2.25} />}
+                title="Coach feedback"
+                subtitle="Turn a lesson into a plan."
+                onPress={() => onChoose("coach")}
+                glowCorner="bottom-left"
+            />
+            <View className="border-t border-white/5" />
+            <FocusPanel
+                index="03"
+                icon={<List size={25} color={GOLD} strokeWidth={2.25} />}
+                title="Browse drills"
+                subtitle="Start from a known issue."
+                onPress={() => onChoose("browse")}
+                glowCorner="top-right"
+            />
         </View>
     );
 }
