@@ -35,7 +35,7 @@ export default function AddFocusFlow() {
     return (
         <View style={{ flex: 1 }}>
             {mode === "chooser" && <AddFocusChooser onChoose={setMode} />}
-            {mode === "upload" && <UploadFlow />}
+            {mode === "upload" && <UploadFlow onCancel={backToChooser} />}
             {mode === "coach" && <CoachFeedbackFlow onCancel={backToChooser} onDone={goHome} />}
             {mode === "browse" && <BrowseScreen onCancel={backToChooser} onDone={goHome} />}
         </View>
