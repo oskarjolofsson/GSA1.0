@@ -24,6 +24,7 @@ from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueRespon
 from core.services.exceptions import NotFoundException
 
 from core.services.progress.analysis_issue_progress import Analysis_progress_service
+from core.services.taxonomy import normalize_miss, normalize_goals
 
 
 def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
@@ -31,12 +32,22 @@ def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
     new_issue = Issue(
         title=dto.title,
         description=dto.description,
-        phase=dto.phase,
+        area=dto.area,
+        kind=dto.kind,
         current_motion=dto.current_motion,
         expected_motion=dto.expected_motion,
         swing_effect=dto.swing_effect,
         shot_outcome=dto.shot_outcome,
+        layman_title=dto.layman_title,
+        layman_desc=dto.layman_desc,
     )
+    # Goal/miss tags (WHAT/WHY) — validated against the canonical vocabularies so a
+    # bad value is dropped rather than persisted or raised.
+    miss = normalize_miss(dto.miss)
+    if miss:
+        new_issue.misses.append(models.IssueMiss(miss=miss))
+    for goal in normalize_goals(dto.goals):
+        new_issue.goals.append(models.IssueGoal(goal=goal))
 
     created_issue = repo_create_issue(new_issue, db_session)
     return from_issue_to_response_dto(created_issue)
@@ -145,8 +156,10 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> Is
     # Only update fields that are provided
     if dto.title is not None:
         issue.title = dto.title
-    if dto.phase is not None:
-        issue.phase = dto.phase
+    if dto.area is not None:
+        issue.area = dto.area
+    if dto.kind is not None:
+        issue.kind = dto.kind
     if dto.description is not None:
         issue.description = dto.description
     if dto.current_motion is not None:
@@ -157,6 +170,10 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> Is
         issue.swing_effect = dto.swing_effect
     if dto.shot_outcome is not None:
         issue.shot_outcome = dto.shot_outcome
+    if dto.layman_title is not None:
+        issue.layman_title = dto.layman_title
+    if dto.layman_desc is not None:
+        issue.layman_desc = dto.layman_desc
     updated_issue = repo_update_issue(issue, db_session)
     
     # Note: update_issue doesn't have user_id context, so progress won't be included
@@ -186,13 +203,16 @@ def from_issue_to_response_dto(issue: Issue, analysis_issue: models.AnalysisIssu
     return IssueResponseDTO(
         id=issue.id,
         title=issue.title,
-        phase=issue.phase,
         description=issue.description,
         current_motion=issue.current_motion,
         expected_motion=issue.expected_motion,
         swing_effect=issue.swing_effect,
         shot_outcome=issue.shot_outcome,
         created_at=issue.created_at.isoformat() if issue.created_at else None,
+        area=issue.area,
+        kind=issue.kind,
+        layman_title=issue.layman_title,
+        layman_desc=issue.layman_desc,
         analysis_issue_id=str(analysis_issue.id) if analysis_issue else None,
         analysis_id=str(analysis_issue.analysis_id) if analysis_issue else None,
         confidence=analysis_issue.confidence if analysis_issue else None,

@@ -26,7 +26,7 @@ def premium(test_user):
 def fake_ai(monkeypatch):
     def _s(text, image_bytes=None, image_mime=None):
         return {
-            "issue": {"title": "Cast at the top", "description": "early release", "phase": "TRANSITION"},
+            "issue": {"title": "Cast at the top", "description": "early release"},
             "drills": [{
                 "title": "Pump drill", "task": "two pumps", "success_signal": "shallows",
                 "fault_indicator": "casts", "ai_filled": [],
@@ -69,7 +69,7 @@ def test_create_custom_issue_then_generate_by_issue_id(client, premium, auth_hea
     create = client.post(
         "/api/v1/issues/custom/",
         json={
-            "issue": {"title": "Chicken wing", "description": "lead arm bends", "phase": "IMPACT"},
+            "issue": {"title": "Chicken wing", "description": "lead arm bends"},
             "drills": [{"title": "Towel", "task": "t", "success_signal": "s", "fault_indicator": "f"}],
         },
         headers=auth_headers,

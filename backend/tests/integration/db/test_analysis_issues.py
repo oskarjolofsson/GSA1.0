@@ -27,7 +27,6 @@ def test_issue(db_session):
     issue = Issue(
         title="Hanging Back",
         description="Weight stays on trail foot through impact instead of shifting to lead foot",
-        phase="IMPACT",
         current_motion="Weight stays on trail foot through impact",
         expected_motion="Weight should shift to lead foot by impact",
         swing_effect="Reduces power and consistency",

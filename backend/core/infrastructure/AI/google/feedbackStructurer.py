@@ -15,7 +15,8 @@ from google.genai import types
 from pydantic import BaseModel, Field
 
 
-_ALLOWED_PHASES = ["SETUP", "BACKSWING", "TRANSITION", "DOWNSWING", "IMPACT", "FOLLOW_THROUGH"]
+_ALLOWED_MISSES = ["SLICE", "HOOK", "PULL", "PUSH", "TOP", "THIN", "FAT", "LOW_WEAK"]
+_ALLOWED_GOALS = ["STRAIGHTER", "DISTANCE", "CONTACT", "BIG_MISS", "SHORT_GAME", "PUTTING"]
 
 STRUCTURE_SYSTEM_INSTRUCTIONS = f"""
 You convert a golfer's notes from a real coaching lesson into a structured practice
@@ -31,8 +32,10 @@ focus. You are a FORMATTER, not a coach. Follow these rules exactly:
 - If the coach stated a field, use their words. If they did NOT state a field and you
   must infer it to make the drill runnable, write a minimal version AND add that
   field name to the drill's `ai_filled` list so the user knows to confirm it.
-- `phase` must be one of {_ALLOWED_PHASES} or null. Only set it if the feedback
-  clearly points to one swing phase; otherwise null.
+- Tag the issue so a golfer can find it by symptom:
+  * `miss` = the ball-flight the golfer sees, one of {_ALLOWED_MISSES} or null. Only
+    set it if the feedback clearly implies one miss; otherwise null.
+  * `goals` = why they'd practice this, a subset of {_ALLOWED_GOALS} (can be empty).
 - Never invent drills the coach did not imply. Fewer, faithful drills beat more.
 Return only JSON matching the provided schema.
 """.strip()
@@ -52,7 +55,8 @@ class DraftDrill(BaseModel):
 class DraftIssue(BaseModel):
     title: str
     description: str
-    phase: Optional[str] = None
+    miss: Optional[str] = None
+    goals: list[str] = Field(default_factory=list)
 
 
 class FeedbackDraft(BaseModel):
@@ -104,6 +108,11 @@ def structure_coach_feedback(
 
     # Validate/normalize through the schema (drops unknown keys, enforces shape).
     draft = FeedbackDraft.model_validate(data)
-    if draft.issue.phase is not None and draft.issue.phase not in _ALLOWED_PHASES:
-        draft.issue.phase = None
+    # Drop tags outside the canonical vocabularies so a bad AI value never reaches
+    # the DB CHECK constraints (the service layer also re-normalizes defensively).
+    if draft.issue.miss is not None and draft.issue.miss.upper() not in _ALLOWED_MISSES:
+        draft.issue.miss = None
+    else:
+        draft.issue.miss = draft.issue.miss.upper() if draft.issue.miss else None
+    draft.issue.goals = [g.upper() for g in draft.issue.goals if g and g.upper() in _ALLOWED_GOALS]
     return draft.model_dump()

@@ -50,20 +50,29 @@ def create_issue(
 
     Arguments (JSON body):
         title (str): Issue title
-        phase (str, optional): Swing phase (SETUP, BACKSWING, TRANSITION, DOWNSWING, IMPACT, FOLLOW_THROUGH)
+        area (str, optional): Area of the game (FULL_SWING, CHIPPING, PUTTING, BUNKER, PITCHING)
+        kind (str, optional): 'fault' (default) or 'skill'
         current_motion (str, optional): Current motion description
         expected_motion (str, optional): Expected motion description
         swing_effect (str, optional): Effect on swing
         shot_outcome (str, optional): Expected shot outcome
+        layman_title/layman_desc (str, optional): Plain-language browse copy
+        miss (str, optional): Ball-flight miss tag
+        goals (list[str], optional): Goal tags
     """
     dto = CreateIssueDTO(
         title=request.title,
         description=request.description,
-        phase=request.phase,
+        area=request.area,
+        kind=request.kind,
         current_motion=request.current_motion,
         expected_motion=request.expected_motion,
         swing_effect=request.swing_effect,
         shot_outcome=request.shot_outcome,
+        layman_title=request.layman_title,
+        layman_desc=request.layman_desc,
+        miss=request.miss,
+        goals=request.goals,
     )
 
     result = service_create_issue(dto=dto, db_session=db)
@@ -185,8 +194,12 @@ def create_custom_issue(
     issue = DraftIssueDTO(
         title=request.issue.title,
         description=request.issue.description,
-        phase=request.issue.phase,
         area=request.issue.area,
+        kind=request.issue.kind,
+        miss=request.issue.miss,
+        goals=request.issue.goals,
+        layman_title=request.issue.layman_title,
+        layman_desc=request.issue.layman_desc,
     )
     drills = [
         DraftDrillDTO(
@@ -273,23 +286,28 @@ def update_issue(
     
     Arguments (JSON body):
         title (str, optional): Issue title
-        phase (str, optional): Swing phase
+        area (str, optional): Area of the game
+        kind (str, optional): 'fault' or 'skill'
         current_motion (str, optional): Current motion description
         expected_motion (str, optional): Expected motion description
         swing_effect (str, optional): Effect on swing
         shot_outcome (str, optional): Expected shot outcome
+        layman_title/layman_desc (str, optional): Plain-language browse copy
 
     Returns:
         JSON response with updated issue details
     """
     dto = UpdateIssueDTO(
         title=request.title,
-        phase=request.phase,
+        area=request.area,
+        kind=request.kind,
         description=request.description,
         current_motion=request.current_motion,
         expected_motion=request.expected_motion,
         swing_effect=request.swing_effect,
         shot_outcome=request.shot_outcome,
+        layman_title=request.layman_title,
+        layman_desc=request.layman_desc,
     )
 
     result = service_update_issue(issue_id, dto=dto, db_session=db)

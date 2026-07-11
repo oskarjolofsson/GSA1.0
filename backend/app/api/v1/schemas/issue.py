@@ -6,11 +6,16 @@ from datetime import datetime
 class CreateIssueRequest(BaseModel):
     title: str
     description: str
-    phase: str | None = None
+    area: str = "FULL_SWING"
+    kind: str = "fault"
     current_motion: str | None = None
     expected_motion: str | None = None
     swing_effect: str | None = None
     shot_outcome: str | None = None
+    layman_title: str | None = None
+    layman_desc: str | None = None
+    miss: str | None = None
+    goals: list[str] = []
 
 
 class CreateIssueResponse(BaseModel):
@@ -31,13 +36,16 @@ class IssueProgress(BaseModel):
 class GetIssue(BaseModel):
     id: UUID
     title: str
-    phase: str | None
     description: str | None
     current_motion: str | None
     expected_motion: str | None
     swing_effect: str | None
     shot_outcome: str | None
     created_at: str
+    area: str = "FULL_SWING"
+    kind: str = "fault"
+    layman_title: str | None = None
+    layman_desc: str | None = None
     analysis_issue_id: str | None = None
     analysis_id: str | None = None
     confidence: float | None = None
@@ -71,13 +79,16 @@ class GetIssue(BaseModel):
         return cls(
             id=dto.id,
             title=dto.title,
-            phase=dto.phase,
             description=dto.description,
             current_motion=dto.current_motion,
             expected_motion=dto.expected_motion,
             swing_effect=dto.swing_effect,
             shot_outcome=dto.shot_outcome,
             created_at=dto.created_at,
+            area=getattr(dto, "area", "FULL_SWING"),
+            kind=getattr(dto, "kind", "fault"),
+            layman_title=getattr(dto, "layman_title", None),
+            layman_desc=getattr(dto, "layman_desc", None),
             analysis_issue_id=dto.analysis_issue_id,
             analysis_id=dto.analysis_id,
             confidence=dto.confidence,
@@ -89,12 +100,15 @@ class GetIssue(BaseModel):
 
 class UpdateIssueRequest(BaseModel):
     title: str | None = None
-    phase: str | None = None
     description: str | None = None
+    area: str | None = None
+    kind: str | None = None
     current_motion: str | None = None
     expected_motion: str | None = None
     swing_effect: str | None = None
     shot_outcome: str | None = None
+    layman_title: str | None = None
+    layman_desc: str | None = None
 
 
 class BulkDeleteIssuesRequest(BaseModel):
@@ -114,8 +128,12 @@ class DraftDrillSchema(BaseModel):
 class DraftIssueSchema(BaseModel):
     title: str
     description: str = ""
-    phase: str | None = None
     area: str = "FULL_SWING"
+    kind: str = "fault"
+    miss: str | None = None
+    goals: list[str] = []
+    layman_title: str | None = None
+    layman_desc: str | None = None
 
 
 class CatalogDrillSchema(BaseModel):
@@ -140,9 +158,13 @@ class CatalogIssueSchema(BaseModel):
     id: UUID
     title: str
     description: str | None
-    phase: str | None
     area: str
+    kind: str = "fault"
     source: str
+    layman_title: str | None = None
+    layman_desc: str | None = None
+    goals: list[str] = []
+    misses: list[str] = []
     drills: list[CatalogDrillSchema] = []
 
     @classmethod
@@ -151,9 +173,13 @@ class CatalogIssueSchema(BaseModel):
             id=dto.id,
             title=dto.title,
             description=dto.description,
-            phase=dto.phase,
             area=getattr(dto, "area", "FULL_SWING"),
+            kind=getattr(dto, "kind", "fault"),
             source=dto.source,
+            layman_title=getattr(dto, "layman_title", None),
+            layman_desc=getattr(dto, "layman_desc", None),
+            goals=getattr(dto, "goals", []),
+            misses=getattr(dto, "misses", []),
             drills=[CatalogDrillSchema.from_domain(d) for d in dto.drills],
         )
 
@@ -175,8 +201,12 @@ class FeedbackDraftResponse(BaseModel):
             issue=DraftIssueSchema(
                 title=dto.issue.title,
                 description=dto.issue.description,
-                phase=dto.issue.phase,
                 area=getattr(dto.issue, "area", "FULL_SWING"),
+                kind=getattr(dto.issue, "kind", "fault"),
+                miss=getattr(dto.issue, "miss", None),
+                goals=getattr(dto.issue, "goals", []),
+                layman_title=getattr(dto.issue, "layman_title", None),
+                layman_desc=getattr(dto.issue, "layman_desc", None),
             ),
             drills=[
                 DraftDrillSchema(

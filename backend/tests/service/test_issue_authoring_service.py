@@ -40,7 +40,8 @@ def _fake_structurer(issue_title="Steep shaft in transition", drills=1):
             "issue": {
                 "title": issue_title,
                 "description": "Shaft steepens coming down; coach's words kept.",
-                "phase": "TRANSITION",
+                "miss": "SLICE",
+                "goals": ["STRAIGHTER"],
             },
             "drills": [
                 {
@@ -62,7 +63,7 @@ class TestStructureFeedback:
         into a clean FeedbackDraftDTO the frontend can render and edit.
 
         We feed a fake that returns 2 drills, then assert the draft carries the
-        issue title/phase through unchanged, has both drills, and preserves the
+        issue title/tags through unchanged, has both drills, and preserves the
         `ai_filled` flag on the first drill (so the UI can mark that field as
         "AI-guessed, please confirm"). Nothing about the model is under test here —
         only that our mapping keeps every field intact."""
@@ -73,22 +74,27 @@ class TestStructureFeedback:
             structurer=_fake_structurer(drills=2),
         )
         assert draft.issue.title == "Steep shaft in transition"
-        assert draft.issue.phase == "TRANSITION"
+        # AI-emitted tags carry through so the issue is browseable from birth.
+        assert draft.issue.miss == "SLICE"
+        assert draft.issue.goals == ["STRAIGHTER"]
         assert draft.issue.area == "FULL_SWING"
         assert len(draft.drills) == 2
         assert draft.drills[0].ai_filled == ["fault_indicator"]
 
-    def test_explicit_area_round_trips(self, db_session, test_user):
-        """A custom issue created with an explicit area keeps it end-to-end."""
+    def test_explicit_area_and_tags_round_trip(self, db_session, test_user):
+        """A custom issue created with explicit area + miss/goal tags keeps them end-to-end."""
         created = ias.create_custom_issue(
             user_id=test_user["user_id"],
             issue=DraftIssueDTO(
-                title="Chunked chips", description="hitting the ground first", area="SHORT_GAME"
+                title="Chunked chips", description="hitting the ground first",
+                area="CHIPPING", miss="FAT", goals=["CONTACT", "SHORT_GAME"],
             ),
             drills=[DraftDrillDTO(title="Ladder drill", task="t", success_signal="s", fault_indicator="f")],
             db_session=db_session,
         )
-        assert created.area == "SHORT_GAME"
+        assert created.area == "CHIPPING"
+        assert created.misses == ["FAT"]
+        assert set(created.goals) == {"CONTACT", "SHORT_GAME"}
 
     def test_dedup_surfaces_matching_catalog_issue(self, db_session, test_user):
         """Intent: before a golfer creates a brand-new custom issue, we check the
@@ -103,7 +109,7 @@ class TestStructureFeedback:
         the returned similar list."""
         # A catalog (user_id NULL) issue sharing a distinctive token should surface.
         create_issue(
-            Issue(title="Steep transition move", description="shaft steepens", phase="TRANSITION"),
+            Issue(title="Steep transition move", description="shaft steepens"),
             db_session,
         )
         db_session.flush()
@@ -130,7 +136,7 @@ class TestCreateCustomIssue:
         flows into the same engine" guarantee."""
         created = ias.create_custom_issue(
             user_id=test_user["user_id"],
-            issue=DraftIssueDTO(title="My chicken wing", description="lead arm bends", phase="IMPACT"),
+            issue=DraftIssueDTO(title="My chicken wing", description="lead arm bends"),
             drills=[
                 DraftDrillDTO(title="Towel drill", task="t", success_signal="s", fault_indicator="f"),
             ],

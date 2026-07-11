@@ -32,20 +32,28 @@ class Issue(Base):
         server_default="catalog",
     )
 
-    phase: Mapped[str | None] = mapped_column(
-        Text,
-        CheckConstraint(
-            "phase IN ('SETUP','BACKSWING','TRANSITION','DOWNSWING','IMPACT','FOLLOW_THROUGH')"
-        ),
-    )
-
-    # Area of the game this issue belongs to. Drives the Library's section grouping.
+    # Area of the game this issue belongs to (WHERE). Drives the Library's grouping.
     area: Mapped[str] = mapped_column(
         Text,
-        CheckConstraint("area IN ('FULL_SWING','SHORT_GAME','PUTTING','MENTAL')"),
+        CheckConstraint("area IN ('FULL_SWING','CHIPPING','PUTTING','BUNKER','PITCHING')"),
         nullable=False,
         server_default="FULL_SWING",
     )
+
+    # fault = a swing flaw to fix; skill = a non-fault focus (e.g. clubhead speed).
+    # Drives program semantics (skill focuses have no retest).
+    kind: Mapped[str] = mapped_column(
+        Text,
+        CheckConstraint("kind IN ('fault','skill')"),
+        nullable=False,
+        server_default="fault",
+    )
+
+    # Golfer-facing plain-language layer for the goal-first library. The coach
+    # vocabulary lives in title/current_motion/expected_motion; these are what a
+    # 12-handicap reads on the browse card.
+    layman_title: Mapped[str | None] = mapped_column(Text)
+    layman_desc: Mapped[str | None] = mapped_column(Text)
 
     description: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -70,6 +78,18 @@ class Issue(Base):
     # Relationship to issue_drill
     issue_drills = relationship(
         "IssueDrill",
+        back_populates="issue",
+        cascade="all, delete-orphan",
+    )
+
+    # Goal-first library tags (WHY / WHAT). Cascade so deleting an issue clears them.
+    goals = relationship(
+        "IssueGoal",
+        back_populates="issue",
+        cascade="all, delete-orphan",
+    )
+    misses = relationship(
+        "IssueMiss",
         back_populates="issue",
         cascade="all, delete-orphan",
     )

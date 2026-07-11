@@ -25,6 +25,7 @@ from core.services.dtos.issue_authoring_service_dto import (
     CatalogIssueDTO,
     FeedbackDraftDTO,
 )
+from core.services.taxonomy import normalize_miss, normalize_goals
 
 # Tokens too generic to be useful for dedup matching.
 _STOPWORDS = {
@@ -61,9 +62,13 @@ def _issue_to_catalog_dto(issue: models.Issue, session: Session) -> CatalogIssue
         id=issue.id,
         title=issue.title,
         description=issue.description,
-        phase=issue.phase,
         area=getattr(issue, "area", "FULL_SWING"),
+        kind=getattr(issue, "kind", "fault"),
         source=issue.source,
+        layman_title=issue.layman_title,
+        layman_desc=issue.layman_desc,
+        goals=[g.goal for g in issue.goals],
+        misses=[m.miss for m in issue.misses],
         drills=[
             CatalogDrillDTO(
                 id=d.id,
@@ -94,8 +99,11 @@ def structure_feedback(
     draft_issue = DraftIssueDTO(
         title=issue.get("title", "").strip() or "Custom focus",
         description=issue.get("description", "").strip(),
-        phase=issue.get("phase"),
         area=issue.get("area") or "FULL_SWING",
+        kind=issue.get("kind") or "fault",
+        # AI-emitted tags so a coach-created issue is browseable from birth.
+        miss=normalize_miss(issue.get("miss")),
+        goals=normalize_goals(issue.get("goals")),
     )
     draft_drills = [
         DraftDrillDTO(
@@ -137,9 +145,17 @@ def create_custom_issue(
         source="custom",
         title=issue.title.strip(),
         description=issue.description.strip(),
-        phase=issue.phase,
         area=issue.area or "FULL_SWING",
+        kind=issue.kind or "fault",
+        layman_title=issue.layman_title,
+        layman_desc=issue.layman_desc,
     )
+    # Goal/miss tags, validated so a bad value is dropped, not persisted or raised.
+    miss = normalize_miss(issue.miss)
+    if miss:
+        new_issue.misses.append(models.IssueMiss(miss=miss))
+    for goal in normalize_goals(issue.goals):
+        new_issue.goals.append(models.IssueGoal(goal=goal))
     issue_repo.create_issue(new_issue, db_session)
 
     for d in drills:

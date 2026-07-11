@@ -29,7 +29,7 @@ def premium(test_user):
 @pytest.fixture
 def analysis_issue_id(db_session, test_user):
     """Seed an owned analysis issue with 3 linked drills; return its id."""
-    issue = Issue(title="Early extension", description="d", phase="IMPACT")
+    issue = Issue(title="Early extension", description="d")
     db_session.add(issue)
     db_session.flush()
     for i in range(3):

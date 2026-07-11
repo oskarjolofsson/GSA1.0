@@ -17,8 +17,12 @@ class DraftDrillDTO:
 class DraftIssueDTO:
     title: str
     description: str
-    phase: str | None = None
     area: str = "FULL_SWING"
+    kind: str = "fault"
+    miss: str | None = None
+    goals: list[str] = field(default_factory=list)
+    layman_title: str | None = None
+    layman_desc: str | None = None
 
 
 @dataclass
@@ -37,9 +41,13 @@ class CatalogIssueDTO:
     id: UUID
     title: str
     description: str | None
-    phase: str | None
     area: str
+    kind: str
     source: str
+    layman_title: str | None = None
+    layman_desc: str | None = None
+    goals: list[str] = field(default_factory=list)
+    misses: list[str] = field(default_factory=list)
     drills: list[CatalogDrillDTO] = field(default_factory=list)
 
 

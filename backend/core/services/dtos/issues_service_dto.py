@@ -1,5 +1,5 @@
 from uuid import UUID
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 
@@ -7,22 +7,30 @@ from datetime import datetime
 class CreateIssueDTO:
     title: str
     description: str
-    phase: str | None = None
+    area: str = "FULL_SWING"
+    kind: str = "fault"
     current_motion: str | None = None
     expected_motion: str | None = None
     swing_effect: str | None = None
     shot_outcome: str | None = None
+    layman_title: str | None = None
+    layman_desc: str | None = None
+    miss: str | None = None
+    goals: list[str] = field(default_factory=list)
 
 
 @dataclass
 class UpdateIssueDTO:
     title: str | None = None
-    phase: str | None = None
     description: str | None = None
+    area: str | None = None
+    kind: str | None = None
     current_motion: str | None = None
     expected_motion: str | None = None
     swing_effect: str | None = None
     shot_outcome: str | None = None
+    layman_title: str | None = None
+    layman_desc: str | None = None
 
 
 @dataclass
@@ -40,13 +48,16 @@ class SimplifiedIssueProgressDTO:
 class IssueResponseDTO:
     id: UUID
     title: str
-    phase: str | None
     description: str | None
     current_motion: str | None
     expected_motion: str | None
     swing_effect: str | None
     shot_outcome: str | None
     created_at: str
+    area: str = "FULL_SWING"
+    kind: str = "fault"
+    layman_title: str | None = None
+    layman_desc: str | None = None
     analysis_issue_id: str | None = None
     analysis_id: str | None = None
     confidence: float | None = None
