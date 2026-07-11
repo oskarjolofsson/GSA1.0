@@ -14,8 +14,12 @@ export interface DraftDrill {
 export interface DraftIssue {
     title: string;
     description: string;
-    phase: string | null;
     area?: string;
+    kind?: "fault" | "skill";
+    miss?: string | null;
+    goals?: string[];
+    layman_title?: string | null;
+    layman_desc?: string | null;
 }
 
 export interface CatalogDrill {
@@ -30,9 +34,15 @@ export interface CatalogIssue {
     id: string;
     title: string;
     description: string | null;
-    phase: string | null;
     area: string;
+    kind: "fault" | "skill";
     source: "catalog" | "custom";
+    // Plain-language browse layer (what a 12-handicap reads).
+    layman_title: string | null;
+    layman_desc: string | null;
+    // Navigation tags: goal (WHY) and miss (WHAT the golfer sees).
+    goals: string[];
+    misses: string[];
     drills: CatalogDrill[];
 }
 

@@ -2,8 +2,11 @@
 export interface Issue {
     id: string;
     title: string;
-    phase: string | null;
     description: string | null;
+    area: string;
+    kind: "fault" | "skill";
+    layman_title: string | null;
+    layman_desc: string | null;
     current_motion: string | null;
     expected_motion: string | null;
     swing_effect: string | null;
@@ -20,11 +23,16 @@ export interface Issue {
 
 export interface CreateIssueRequest {
     title: string;
-    phase?: string;
+    area?: string;
+    kind?: "fault" | "skill";
     current_motion?: string;
     expected_motion?: string;
     swing_effect?: string;
     shot_outcome?: string;
+    layman_title?: string;
+    layman_desc?: string;
+    miss?: string;
+    goals?: string[];
 }
 
 export interface CreateIssueResponse {
@@ -34,11 +42,14 @@ export interface CreateIssueResponse {
 
 export interface UpdateIssueRequest {
     title?: string;
-    phase?: string;
+    area?: string;
+    kind?: "fault" | "skill";
     current_motion?: string;
     expected_motion?: string;
     swing_effect?: string;
     shot_outcome?: string;
+    layman_title?: string;
+    layman_desc?: string;
 }
 
 

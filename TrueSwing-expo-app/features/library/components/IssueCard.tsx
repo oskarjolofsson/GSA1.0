@@ -19,7 +19,8 @@ export default function IssueCard({ issue, expanded, starting, onToggle, onStart
             <Pressable onPress={onToggle} className="flex-row items-center px-5 py-4 active:opacity-80">
                 {expanded ? <ChevronDown size={18} color="#94a3b8" /> : <ChevronRight size={18} color="#94a3b8" />}
                 <View className="ml-3 flex-1">
-                    <Text className="text-base font-bold text-white">{issue.title}</Text>
+                    {/* Lead with plain language; fall back to the coach title. */}
+                    <Text className="text-base font-bold text-white">{issue.layman_title || issue.title}</Text>
                     {issue.source === "custom" ? (
                         <Text className="mt-0.5 text-xs font-semibold text-emerald-300">Your custom focus</Text>
                     ) : null}
@@ -29,8 +30,8 @@ export default function IssueCard({ issue, expanded, starting, onToggle, onStart
 
             {expanded ? (
                 <View className="px-5 pb-5">
-                    {issue.description ? (
-                        <Text className="mb-3 leading-6 text-slate-400">{issue.description}</Text>
+                    {issue.layman_desc || issue.description ? (
+                        <Text className="mb-3 leading-6 text-slate-400">{issue.layman_desc || issue.description}</Text>
                     ) : null}
                     {issue.drills.map((d) => (
                         <View key={d.id} className="mb-2 rounded-2xl border border-white/5 bg-white/5 px-4 py-3">

@@ -11,7 +11,16 @@
   - Deferred during the CEO review of the library reformat (2026-07-10) to avoid
     overlap with the coach-feedback flow until search is shown to be the bottleneck.
 
-- **Seed content for the new areas.** The `area` taxonomy (`FULL_SWING`, `SHORT_GAME`,
-  `PUTTING`, `MENTAL`) ships with only full-swing content; the other three sections
-  render "Coming soon". Assign real `area` values to seeded catalog issues so those
-  sections light up automatically (grouping is driven by `issues.area`).
+- **Author the goal-first content.** The library now navigates GOAL -> MISS -> focus in
+  plain language. This only works if the ~15 catalog issues are tagged: set
+  `layman_title`, `layman_desc`, `goals[]` (STRAIGHTER/DISTANCE/CONTACT/BIG_MISS/
+  SHORT_GAME/PUTTING) and `misses[]` (SLICE/HOOK/PULL/PUSH/TOP/THIN/FAT/LOW_WEAK) per
+  issue. Goals with no tagged issues render "Coming soon". Add a couple of `kind='skill'`
+  focuses (e.g. a clubhead-speed protocol under DISTANCE) so the non-fault path is real.
+
+- **Seed the other areas of the game.** `area` is now the course-location set
+  (`FULL_SWING`, `CHIPPING`, `PUTTING`, `BUNKER`, `PITCHING`); only full-swing content
+  exists. Author chipping/putting/bunker/pitching issues and tag them to goals/misses.
+
+- **Skill-focus program semantics.** A `kind='skill'` focus has no fault to retest;
+  confirm `program_service` runs it as a fixed-length protocol before wiring the first one.

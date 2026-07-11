@@ -37,7 +37,7 @@ export default function AddFocusFlow() {
             {mode === "chooser" && <AddFocusChooser onChoose={setMode} />}
             {mode === "upload" && <UploadFlow onCancel={backToChooser} />}
             {mode === "coach" && <CoachFeedbackFlow onCancel={backToChooser} onDone={goHome} />}
-            {mode === "browse" && <LibraryScreen onCancel={backToChooser} onDone={goHome} />}
+            {mode === "browse" && <LibraryScreen onCancel={backToChooser} onDone={goHome} onFilmSwing={() => setMode("upload")}/>}
         </View>
     );
 }
