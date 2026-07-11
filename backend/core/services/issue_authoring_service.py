@@ -62,6 +62,7 @@ def _issue_to_catalog_dto(issue: models.Issue, session: Session) -> CatalogIssue
         title=issue.title,
         description=issue.description,
         phase=issue.phase,
+        area=getattr(issue, "area", "FULL_SWING"),
         source=issue.source,
         drills=[
             CatalogDrillDTO(
@@ -94,6 +95,7 @@ def structure_feedback(
         title=issue.get("title", "").strip() or "Custom focus",
         description=issue.get("description", "").strip(),
         phase=issue.get("phase"),
+        area=issue.get("area") or "FULL_SWING",
     )
     draft_drills = [
         DraftDrillDTO(
@@ -136,6 +138,7 @@ def create_custom_issue(
         title=issue.title.strip(),
         description=issue.description.strip(),
         phase=issue.phase,
+        area=issue.area or "FULL_SWING",
     )
     issue_repo.create_issue(new_issue, db_session)
 

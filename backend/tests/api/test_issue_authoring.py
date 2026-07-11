@@ -115,5 +115,9 @@ def test_catalog_lists_global_issue(client, auth_headers, db_session):
 
     resp = client.get("/api/v1/issues/catalog/", headers=auth_headers)
     assert resp.status_code == 200
-    titles = {i["title"] for i in resp.json()}
+    catalog = resp.json()
+    titles = {i["title"] for i in catalog}
     assert "Global sway" in titles
+    # Every catalog issue exposes an area; the seeded one defaults to full swing.
+    seeded = next(i for i in catalog if i["title"] == "Global sway")
+    assert seeded["area"] == "FULL_SWING"

@@ -18,6 +18,7 @@ class DraftIssueDTO:
     title: str
     description: str
     phase: str | None = None
+    area: str = "FULL_SWING"
 
 
 @dataclass
@@ -37,6 +38,7 @@ class CatalogIssueDTO:
     title: str
     description: str | None
     phase: str | None
+    area: str
     source: str
     drills: list[CatalogDrillDTO] = field(default_factory=list)
 

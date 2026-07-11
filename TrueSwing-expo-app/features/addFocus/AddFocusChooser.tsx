@@ -38,7 +38,7 @@ export default function AddFocusChooser({ onChoose }: { onChoose: (c: AddFocusCh
                 <FocusPanel
                     variant="secondary"
                     icon={<List size={22} color={GOLD} strokeWidth={2.25} />}
-                    title="Browse drills"
+                    title="Browse the library"
                     subtitle="Start from a known issue."
                     onPress={() => onChoose("browse")}
                 />

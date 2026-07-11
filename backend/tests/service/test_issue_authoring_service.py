@@ -74,8 +74,21 @@ class TestStructureFeedback:
         )
         assert draft.issue.title == "Steep shaft in transition"
         assert draft.issue.phase == "TRANSITION"
+        assert draft.issue.area == "FULL_SWING"
         assert len(draft.drills) == 2
         assert draft.drills[0].ai_filled == ["fault_indicator"]
+
+    def test_explicit_area_round_trips(self, db_session, test_user):
+        """A custom issue created with an explicit area keeps it end-to-end."""
+        created = ias.create_custom_issue(
+            user_id=test_user["user_id"],
+            issue=DraftIssueDTO(
+                title="Chunked chips", description="hitting the ground first", area="SHORT_GAME"
+            ),
+            drills=[DraftDrillDTO(title="Ladder drill", task="t", success_signal="s", fault_indicator="f")],
+            db_session=db_session,
+        )
+        assert created.area == "SHORT_GAME"
 
     def test_dedup_surfaces_matching_catalog_issue(self, db_session, test_user):
         """Intent: before a golfer creates a brand-new custom issue, we check the
@@ -125,6 +138,8 @@ class TestCreateCustomIssue:
         )
         assert created.source == "custom"
         assert len(created.drills) == 1
+        # No area supplied by the coach path -> defaults to full swing, never null.
+        assert created.area == "FULL_SWING"
 
         # It's a real issue row owned by the user and can seed a program directly.
         program = ps.generate_program_from_issue(test_user["user_id"], created.id, db_session)

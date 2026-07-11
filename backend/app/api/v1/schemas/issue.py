@@ -115,6 +115,7 @@ class DraftIssueSchema(BaseModel):
     title: str
     description: str = ""
     phase: str | None = None
+    area: str = "FULL_SWING"
 
 
 class CatalogDrillSchema(BaseModel):
@@ -140,6 +141,7 @@ class CatalogIssueSchema(BaseModel):
     title: str
     description: str | None
     phase: str | None
+    area: str
     source: str
     drills: list[CatalogDrillSchema] = []
 
@@ -150,6 +152,7 @@ class CatalogIssueSchema(BaseModel):
             title=dto.title,
             description=dto.description,
             phase=dto.phase,
+            area=getattr(dto, "area", "FULL_SWING"),
             source=dto.source,
             drills=[CatalogDrillSchema.from_domain(d) for d in dto.drills],
         )
@@ -173,6 +176,7 @@ class FeedbackDraftResponse(BaseModel):
                 title=dto.issue.title,
                 description=dto.issue.description,
                 phase=dto.issue.phase,
+                area=getattr(dto.issue, "area", "FULL_SWING"),
             ),
             drills=[
                 DraftDrillSchema(

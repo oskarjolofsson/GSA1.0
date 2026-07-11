@@ -38,7 +38,15 @@ class Issue(Base):
             "phase IN ('SETUP','BACKSWING','TRANSITION','DOWNSWING','IMPACT','FOLLOW_THROUGH')"
         ),
     )
-    
+
+    # Area of the game this issue belongs to. Drives the Library's section grouping.
+    area: Mapped[str] = mapped_column(
+        Text,
+        CheckConstraint("area IN ('FULL_SWING','SHORT_GAME','PUTTING','MENTAL')"),
+        nullable=False,
+        server_default="FULL_SWING",
+    )
+
     description: Mapped[str] = mapped_column(Text, nullable=False)
 
     current_motion: Mapped[str | None] = mapped_column(Text)

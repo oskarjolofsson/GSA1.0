@@ -186,6 +186,7 @@ def create_custom_issue(
         title=request.issue.title,
         description=request.issue.description,
         phase=request.issue.phase,
+        area=request.issue.area,
     )
     drills = [
         DraftDrillDTO(

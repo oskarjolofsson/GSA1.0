@@ -15,6 +15,7 @@ export interface DraftIssue {
     title: string;
     description: string;
     phase: string | null;
+    area?: string;
 }
 
 export interface CatalogDrill {
@@ -30,6 +31,7 @@ export interface CatalogIssue {
     title: string;
     description: string | null;
     phase: string | null;
+    area: string;
     source: "catalog" | "custom";
     drills: CatalogDrill[];
 }

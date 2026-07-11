@@ -4,7 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 
 import UploadFlow from "features/upload/uploadFlow";
 import CoachFeedbackFlow from "features/coachFeedback/CoachFeedbackFlow";
-import BrowseScreen from "features/browse/BrowseScreen";
+import LibraryScreen from "features/library/LibraryScreen";
 import AddFocusChooser, { type AddFocusChoice } from "./AddFocusChooser";
 
 type Mode = "chooser" | AddFocusChoice;
@@ -37,7 +37,7 @@ export default function AddFocusFlow() {
             {mode === "chooser" && <AddFocusChooser onChoose={setMode} />}
             {mode === "upload" && <UploadFlow onCancel={backToChooser} />}
             {mode === "coach" && <CoachFeedbackFlow onCancel={backToChooser} onDone={goHome} />}
-            {mode === "browse" && <BrowseScreen onCancel={backToChooser} onDone={goHome} />}
+            {mode === "browse" && <LibraryScreen onCancel={backToChooser} onDone={goHome} />}
         </View>
     );
 }
