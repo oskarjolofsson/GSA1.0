@@ -68,26 +68,41 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing }: Props) 
         }
     }, [onDone]);
 
+    // A fault issue sits under a goal if any of its misses is in that goal's fixed
+    // miss set. A skill focus (no miss) sits under a goal via its issue_goals tag.
+    const goalMissSet = useMemo(() => {
+        const map: Record<string, Set<string>> = {};
+        for (const g of GOALS) map[g.key] = new Set(g.misses);
+        return map;
+    }, []);
+    const issueUnderGoal = useCallback(
+        (issue: CatalogIssue, g: GoalKey) =>
+            issue.kind === "skill"
+                ? !!issue.goals?.includes(g)
+                : (issue.misses ?? []).some((m) => goalMissSet[g].has(m)),
+        [goalMissSet]
+    );
+
     // How many startable focuses sit under each goal (drives the grid's empty state).
     const countByGoal = useMemo(() => {
         const counts: Record<string, number> = {};
-        for (const g of GOALS) {
-            counts[g.key] = issues.filter((i) => i.goals?.includes(g.key)).length;
-        }
+        for (const g of GOALS) counts[g.key] = issues.filter((i) => issueUnderGoal(i, g.key)).length;
         return counts;
-    }, [issues]);
+    }, [issues, issueUnderGoal]);
 
     const forGoal = useMemo(
-        () => (goal ? issues.filter((i) => i.goals?.includes(goal)) : []),
-        [issues, goal]
+        () => (goal ? issues.filter((i) => issueUnderGoal(i, goal)) : []),
+        [issues, goal, issueUnderGoal]
     );
     const faultIssues = useMemo(() => forGoal.filter((i) => i.kind !== "skill"), [forGoal]);
     const skillFocuses = useMemo(() => forGoal.filter((i) => i.kind === "skill"), [forGoal]);
+    // Only show a goal's misses that actually have at least one issue.
     const missesForGoal = useMemo(() => {
-        const set = new Set<string>();
-        for (const i of faultIssues) for (const m of i.misses ?? []) set.add(m);
-        return Array.from(set);
-    }, [faultIssues]);
+        if (!goal) return [];
+        const present = new Set<string>();
+        for (const i of faultIssues) for (const m of i.misses ?? []) present.add(m);
+        return (GOALS.find((g) => g.key === goal)?.misses ?? []).filter((m) => present.has(m));
+    }, [goal, faultIssues]);
 
     // Candidate cards shown at the leaf, or a flat search result set when searching.
     const candidates = useMemo(() => {
