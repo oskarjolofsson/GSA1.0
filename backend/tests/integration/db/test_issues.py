@@ -21,7 +21,8 @@ class TestIssueCreate:
 
         assert created.id is not None
         assert created.title == "Hanging Back"
-        assert created.phase is None
+        assert created.area == "FULL_SWING"
+        assert created.kind == "fault"
         assert created.created_at is not None
 
     def test_create_issue_with_all_fields(self, db_session):
@@ -29,7 +30,8 @@ class TestIssueCreate:
         issue = Issue(
             title="Early Extension",
             description="Golfer's hips move toward the ball during the downswing",
-            phase="DOWNSWING",
+            area="FULL_SWING",
+            kind="fault",
             current_motion="Hips move toward ball during downswing",
             expected_motion="Hips should rotate without moving forward",
             swing_effect="Loss of posture and power",
@@ -40,7 +42,8 @@ class TestIssueCreate:
 
         assert created.id is not None
         assert created.title == "Early Extension"
-        assert created.phase == "DOWNSWING"
+        assert created.area == "FULL_SWING"
+        assert created.kind == "fault"
         assert created.current_motion == "Hips move toward ball during downswing"
         assert created.expected_motion == "Hips should rotate without moving forward"
         assert created.swing_effect == "Loss of posture and power"
@@ -52,7 +55,6 @@ class TestIssueCreate:
         issue = Issue(
             title="Over the Top",
             description="Club moves outside the swing plane on the downswing",
-            phase="TRANSITION",
         )
 
         create_issue(issue=issue, session=db_session)
@@ -72,7 +74,6 @@ class TestIssueRead:
         issue = Issue(
             title="Chicken Wing",
             description="Lead elbow bends out away from the body through impact",
-            phase="FOLLOW_THROUGH",
         )
         created = create_issue(issue=issue, session=db_session)
 
@@ -114,24 +115,23 @@ class TestIssueConstraints:
 
         assert created.created_at is not None
 
-    def test_valid_phase_values(self, db_session):
-        """Test all valid phase values"""
-        valid_phases = ["SETUP", "BACKSWING", "TRANSITION", "DOWNSWING", "IMPACT", "FOLLOW_THROUGH"]
+    def test_valid_area_values(self, db_session):
+        """Test all valid area values"""
+        valid_areas = ["FULL_SWING", "CHIPPING", "PUTTING", "BUNKER", "PITCHING"]
 
-        for phase in valid_phases:
+        for area in valid_areas:
             issue = Issue(
-                title=f"Test Issue {phase}",
-                description=f"Placeholder description for {phase}",
-                phase=phase,
+                title=f"Test Issue {area}",
+                description=f"Placeholder description for {area}",
+                area=area,
             )
             created = create_issue(issue=issue, session=db_session)
-            assert created.phase == phase
+            assert created.area == area
 
     def test_issue_requires_title(self, db_session):
         """Test that title is required"""
         issue = Issue(
             description="Placeholder description",
-            phase="SETUP",
         )
 
         with pytest.raises(Exception):

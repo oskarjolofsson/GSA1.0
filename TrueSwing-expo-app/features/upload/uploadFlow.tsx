@@ -14,7 +14,7 @@ import { hasValidAiConsent, saveAiConsent, resetAiConsentForDebug } from "featur
 import { consumeRetestIntent } from "features/programs/retestIntent";
 import { logRetestUpload } from "features/programs/services/retest";
 
-export default function UploadFlow() {
+export default function UploadFlow({ onCancel }: { onCancel: () => void }) {
     const { currentScreen, next, prev, goToSelectVideo } = useUploadFlowSequence();
     const { videoUri, setVideoUri, removeVideo, trimmedVideoUri, trimVideo, endTime, startTime } = useVideo();
     const promptActions = usePrompt();
@@ -84,7 +84,7 @@ export default function UploadFlow() {
 
     return (
         <View style={{ flex: 1 }}>
-            {currentScreen === 'SelectVideo' && <SelectVideoScreen onNext={next} onBack={() => {}} setVideoUri={setVideoUri} videoUri={videoUri} isActive={currentScreen === 'SelectVideo'} />}
+            {currentScreen === 'SelectVideo' && <SelectVideoScreen onNext={next} onBack={onCancel} setVideoUri={setVideoUri} videoUri={videoUri} isActive={currentScreen === 'SelectVideo'} />}
             {currentScreen === 'TrimVideo' && <TrimVideoScreen onNext={next} onBack={prev} videoUri={videoUri}  removeVideo={removeVideo} setVideoUri={setVideoUri} trimVideo={trimVideo} />}
             {currentScreen === 'Prompts' && <PromptsScreen onNext={() => void handleStartUpload()} onBack={prev} prompt={promptActions} onDeleteCache={resetAiConsentForDebug}/>}
             {currentScreen === 'UploadProgress' && <UploadProgressScreen onBack={() => {resetFlow(); goToSelectVideo()}} onNext={() => {}} upload={upload} />}

@@ -11,7 +11,9 @@ const TTL_MS = 5 * 60 * 1000;
 
 type Entry<T> = { value: T; ts: number };
 
-const activeCache = new Map<string, Entry<Program | null>>(); // key: analysisIssueId
+// Keyed by issue_id (NOT analysis_issue_id) so it works for every source — AI,
+// coach, and browse. Every program carries an issue_id.
+const activeCache = new Map<string, Entry<Program | null>>(); // key: issueId
 const nextStepCache = new Map<string, Entry<ProgramStep | null>>(); // key: programId
 
 function fresh<T>(entry: Entry<T> | undefined): entry is Entry<T> {
@@ -30,9 +32,9 @@ export function clearProgramCache(): void {
  * both the active program and (when present) its next step are fresh.
  */
 export function peekProgramSession(
-    analysisIssueId: string
+    issueId: string
 ): { program: Program | null; nextStep: ProgramStep | null } | null {
-    const a = activeCache.get(analysisIssueId);
+    const a = activeCache.get(issueId);
     if (!fresh(a)) return null;
     if (!a.value) return { program: null, nextStep: null };
     const n = nextStepCache.get(a.value.id);
@@ -40,24 +42,48 @@ export function peekProgramSession(
     return { program: a.value, nextStep: n.value };
 }
 
-/** The user's active program for an issue, or null if none exists yet. */
-export async function getActiveProgram(analysisIssueId: string): Promise<Program | null> {
-    const cached = activeCache.get(analysisIssueId);
+/** The user's active program for an issue (any source), or null if none yet. */
+export async function getActiveProgramByIssue(issueId: string): Promise<Program | null> {
+    const cached = activeCache.get(issueId);
     if (fresh(cached)) return cached.value;
-    const value = await apiClient.get<Program | null>(
-        `${BASE}/active/?analysis_issue_id=${analysisIssueId}`
-    );
-    activeCache.set(analysisIssueId, { value, ts: Date.now() });
+    const value = await apiClient.get<Program | null>(`${BASE}/active/?issue_id=${issueId}`);
+    activeCache.set(issueId, { value, ts: Date.now() });
     return value;
 }
 
-/** Create (or fetch the existing) active program for an issue. Premium-gated. */
+/**
+ * Create (or fetch the existing) active program for an AI-analysed issue. Keeps
+ * the analysis_issue_id provenance (history + AI-retest linkage). Premium-gated.
+ */
 export async function generateProgram(analysisIssueId: string): Promise<Program> {
     const program = await apiClient.post<Program>(`${BASE}/generate/`, {
         analysis_issue_id: analysisIssueId,
     });
-    activeCache.set(analysisIssueId, { value: program, ts: Date.now() });
+    if (program.issue_id) activeCache.set(program.issue_id, { value: program, ts: Date.now() });
     return program;
+}
+
+/**
+ * Create (or fetch the existing) active program directly from an issue id — the
+ * coach-feedback and browse paths, which have no source analysis. Premium-gated.
+ */
+export async function generateProgramFromIssue(issueId: string): Promise<Program> {
+    const program = await apiClient.post<Program>(`${BASE}/generate/`, {
+        issue_id: issueId,
+    });
+    activeCache.set(issueId, { value: program, ts: Date.now() });
+    return program;
+}
+
+/**
+ * Remove a browse/coach focus. For a coach-authored (custom) issue this deletes the
+ * issue outright; for a global catalog (browse) issue it deletes the user's program(s)
+ * and leaves the shared issue. Clears the program cache so the deleted focus can't be
+ * resurfaced from the 5-minute cache.
+ */
+export async function removeFocus(issueId: string): Promise<void> {
+    await apiClient.delete<void>(`${BASE}/by-issue/${issueId}/`);
+    clearProgramCache();
 }
 
 /** The next session to do, scheduled on demand. */

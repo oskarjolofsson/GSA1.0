@@ -37,7 +37,8 @@ class TestCreateIssue:
         dto = CreateIssueDTO(
             title="Over the top swing",
             description="Club moves outside the swing plane on the downswing",
-            phase="DOWNSWING",
+            area="CHIPPING",
+            kind="skill",
             current_motion="Steep angle of attack",
             expected_motion="Shallow angle of attack",
             swing_effect="Loss of distance",
@@ -50,7 +51,8 @@ class TestCreateIssue:
         # Assert
         assert result is not None
         assert result.title == "Over the top swing"
-        assert result.phase == "DOWNSWING"
+        assert result.area == "CHIPPING"
+        assert result.kind == "skill"
         assert result.current_motion == "Steep angle of attack"
         assert result.expected_motion == "Shallow angle of attack"
         assert result.swing_effect == "Loss of distance"
@@ -73,7 +75,8 @@ class TestCreateIssue:
         # Assert
         assert result is not None
         assert result.title == "Minimal Issue"
-        assert result.phase is None
+        assert result.area == "FULL_SWING"
+        assert result.kind == "fault"
         assert result.current_motion is None
 
 
@@ -86,7 +89,7 @@ class TestGetIssueById:
         dto = CreateIssueDTO(
             title="Test Issue",
             description="Test issue description",
-            phase="IMPACT",
+            area="PUTTING",
         )
         created_issue = create_issue(dto, db_session=db_session)
 
@@ -97,7 +100,7 @@ class TestGetIssueById:
         assert result is not None
         assert result.id == created_issue.id
         assert result.title == "Test Issue"
-        assert result.phase == "IMPACT"
+        assert result.area == "PUTTING"
 
     def test_get_issue_by_id_not_exists(self, db_session, test_user):
         """Test getting a non-existent issue returns None"""
@@ -151,8 +154,8 @@ class TestGetIssuesByAnalysisId:
         analysis = repo_create_analysis(analysis, db_session)
 
         # Create issues
-        issue1_dto = CreateIssueDTO(title="Issue 1", description="Description 1", phase="BACKSWING")
-        issue2_dto = CreateIssueDTO(title="Issue 2", description="Description 2", phase="DOWNSWING")
+        issue1_dto = CreateIssueDTO(title="Issue 1", description="Description 1")
+        issue2_dto = CreateIssueDTO(title="Issue 2", description="Description 2")
         issue1 = create_issue(issue1_dto, db_session=db_session)
         issue2 = create_issue(issue2_dto, db_session=db_session)
 
@@ -229,23 +232,23 @@ class TestUpdateIssue:
         dto = CreateIssueDTO(
             title="Original Title",
             description="Original description",
-            phase="BACKSWING",
+            area="FULL_SWING",
             current_motion="Original motion",
             expected_motion="Original expected",
         )
         created_issue = create_issue(dto, db_session=db_session)
 
-        # Act - Update only title and phase
+        # Act - Update only title and area
         update_dto = UpdateIssueDTO(
             title="Updated Title",
-            phase="DOWNSWING",
+            area="BUNKER",
         )
         updated_issue = update_issue(created_issue.id, update_dto, db_session=db_session)
 
         # Assert
         assert updated_issue is not None
         assert updated_issue.title == "Updated Title"
-        assert updated_issue.phase == "DOWNSWING"
+        assert updated_issue.area == "BUNKER"
         assert updated_issue.current_motion == "Original motion"
         assert updated_issue.expected_motion == "Original expected"
 
@@ -255,7 +258,7 @@ class TestUpdateIssue:
         dto = CreateIssueDTO(
             title="Original",
             description="Original description",
-            phase="SETUP",
+            area="FULL_SWING",
             current_motion="Original current",
             expected_motion="Original expected",
             swing_effect="Original effect",
@@ -267,7 +270,7 @@ class TestUpdateIssue:
         update_dto = UpdateIssueDTO(
             title="New Title",
             description="New description",
-            phase="IMPACT",
+            area="PITCHING",
             current_motion="New current",
             expected_motion="New expected",
             swing_effect="New effect",
@@ -279,7 +282,7 @@ class TestUpdateIssue:
         assert updated_issue is not None
         assert updated_issue.title == "New Title"
         assert updated_issue.description == "New description"
-        assert updated_issue.phase == "IMPACT"
+        assert updated_issue.area == "PITCHING"
         assert updated_issue.current_motion == "New current"
         assert updated_issue.expected_motion == "New expected"
         assert updated_issue.swing_effect == "New effect"

@@ -17,6 +17,8 @@ from .ProcessedWebhookEvent import ProcessedWebhookEvent
 # Import junction/association tables last (models that depend on others)
 from .AnalysisIssue import AnalysisIssue
 from .IssueDrill import IssueDrill
+from .IssueGoal import IssueGoal
+from .IssueMiss import IssueMiss
 from .UserRole import UserRole
 
 # Import practice tracking models
@@ -43,6 +45,8 @@ __all__ = [
     "Feedback",
     "AnalysisIssue",
     "IssueDrill",
+    "IssueGoal",
+    "IssueMiss",
     "UserRole",
     "PracticeSession",
     "PracticeDrillRun",

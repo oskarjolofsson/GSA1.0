@@ -22,8 +22,9 @@ export default function PracticeFlow({ onBack, selectedIssue, selectedSession, p
 
     console.log(selectedIssue)
 
+    // Any issue with an id is practiceable now (AI, coach, or browse). A custom
+    // issue has no analysis_issue_id and that's fine — the program drives practice.
     if (!selectedIssue.id) return <ErrorState title="No issue selected for practice" buttonText={"Go back"} onRetry={onBack} />;
-    if(!selectedIssue.analysis_issue_id) return <ErrorState title="You have not recieved this Issue to Practice on!" buttonText={"Go back"} onRetry={onBack} />;
     if(!selectedSession) return <ErrorState title="No active session found for this practice run" buttonText={"Go back"} onRetry={onBack} />;
 
     return (

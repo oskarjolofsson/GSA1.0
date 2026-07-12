@@ -5,6 +5,7 @@ from google import genai
 
 from ..ports import AnalysisAI
 from . import videoAnalyzer
+from . import feedbackStructurer
 from uuid import UUID
 
 
@@ -59,4 +60,21 @@ class GoogleAnalysisClient(AnalysisAI):
             extra=extra,
             model=model,
             db_session=db_session
+        )
+
+    def structure_coach_feedback(
+        self,
+        text: str,
+        model: str,
+        image_bytes: Optional[bytes] = None,
+        image_mime: Optional[str] = None,
+    ) -> dict:
+        """Format coach lesson feedback into a draft Issue + Drills. See
+        feedbackStructurer for the formatting-only contract."""
+        return feedbackStructurer.structure_coach_feedback(
+            client=self.client,
+            text=text,
+            model=model,
+            image_bytes=image_bytes,
+            image_mime=image_mime,
         )

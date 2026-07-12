@@ -31,6 +31,13 @@ class Program(Base):
         ForeignKey("analysis_issues.id", ondelete="CASCADE"),
     )
 
+    # The issue this program grooves. Set for every program (AI, coach, or browse
+    # seeded). analysis_issue_id above is kept only as AI provenance.
+    issue_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("issues.id", ondelete="CASCADE"),
+    )
+
     title: Mapped[str] = mapped_column(Text, nullable=False)
 
     status: Mapped[str] = mapped_column(
@@ -64,4 +71,5 @@ class Program(Base):
         Index("idx_programs_user", "user_id"),
         Index("idx_programs_user_status", "user_id", "status"),
         Index("idx_programs_analysis_issue", "analysis_issue_id"),
+        Index("idx_programs_issue_id", "issue_id"),
     )

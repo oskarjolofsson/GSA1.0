@@ -2,6 +2,7 @@ from core.infrastructure.db import models
 from core.infrastructure.db.repositories import programs as repo
 from core.infrastructure.db.repositories import drills as drill_repo
 from core.infrastructure.db.repositories import analysis_issues as analysis_issue_repo
+from core.infrastructure.db.repositories import issues as issue_repo
 from core.services import exceptions
 from core.services.dtos.program_service_dto import (
     ProgramDTO,
@@ -36,6 +37,9 @@ GRADE_STRENGTH_DELTA: dict[str, int] = {"rough": -1, "ok": 0, "dialed": 1}
 PLAY_HOLES_DEFAULT = 9
 PLAY_FOCUS_DEFAULT = "Hold one swing thought on every full shot."
 RETEST_INSTRUCTION = "Film one swing of this issue so you can compare it to where you started."
+# Custom (coach/browse) issues have no source analysis to re-run, so the retest is
+# a pure self-comparison of the golfer's own footage with no AI reference read.
+RETEST_INSTRUCTION_SELF = "Film one swing of this issue and compare it side by side with your first clip."
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -43,17 +47,13 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 # =========== PUBLIC API ============
 
 def generate_program_for_issue(user_id: UUID, analysis_issue_id: UUID, session: Session) -> ProgramDTO:
-    """Create an active program for the given analysis issue and seed one
-    spaced-repetition state per drill. Idempotent: returns the existing active
-    program for this issue if there is one. Steps are scheduled on demand, not
-    pre-generated."""
+    """AI path: create an active program from an analysis issue. Idempotent:
+    returns the existing active program for this analysis issue if there is one.
+    Keeps analysis_issue_id as provenance and seeds the program from the
+    underlying issue's drills. Steps are scheduled on demand, not pre-generated."""
     existing = repo.get_active_program_for_issue(user_id, analysis_issue_id, session)
     if existing:
         return _program_to_dto(existing, session)
-
-    # One active program at a time: block starting a new focus while another is live.
-    if repo.get_active_programs_by_user(user_id, session):
-        raise exceptions.ConflictException("Finish your current focus first.")
 
     analysis_issue = analysis_issue_repo.get_analysis_issue_by_id(analysis_issue_id, session)
     if not analysis_issue:
@@ -62,13 +62,89 @@ def generate_program_for_issue(user_id: UUID, analysis_issue_id: UUID, session: 
     if analysis_issue.analysis is None or str(analysis_issue.analysis.user_id) != str(user_id):
         raise exceptions.ForbiddenException("You do not have access to this analysis issue.")
 
-    drills = drill_repo.get_drills_by_issue_id(analysis_issue.issue_id, session)
     issue_title = analysis_issue.issue.title if analysis_issue.issue else "your swing issue"
+    return _seed_program(
+        user_id=user_id,
+        issue_id=analysis_issue.issue_id,
+        title=f"Fix {issue_title}",
+        session=session,
+        source_analysis_issue_id=analysis_issue_id,
+    )
+
+
+def generate_program_from_issue(user_id: UUID, issue_id: UUID, session: Session) -> ProgramDTO:
+    """Coach/browse path: create an active program directly from an issue with no
+    source analysis. The issue must be a global catalog issue (user_id NULL) or one
+    the user authored. Idempotent on the issue for this user."""
+    existing = repo.get_active_program_for_issue_id(user_id, issue_id, session)
+    if existing:
+        raise exceptions.ConflictException("You already have an active program for this issue.")
+
+    issue = issue_repo.get_issue_by_id(issue_id, session)
+    if not issue:
+        raise exceptions.NotFoundException("Issue", str(issue_id))
+
+    # Catalog issues (user_id NULL) are usable by anyone; a custom issue is private
+    # to its author.
+    if issue.user_id is not None and str(issue.user_id) != str(user_id):
+        raise exceptions.ForbiddenException("You do not have access to this issue.")
+
+    return _seed_program(
+        user_id=user_id,
+        issue_id=issue_id,
+        title=f"Fix {issue.title}",
+        session=session,
+        source_analysis_issue_id=None,
+    )
+
+
+def remove_focus_for_issue(user_id: UUID, issue_id: UUID, session: Session) -> None:
+    """Remove a browse/coach focus from the user's home.
+
+    - custom (coach-authored) issue the user owns -> delete the issue; its program,
+      steps, drill states cascade. Gone for good.
+    - catalog (browse) issue -> delete the user's program(s) for it; the shared issue
+      is never touched. Home shows catalog issues only via a program, so it disappears.
+
+    Analysis-diagnosed issues are removed via the analysis-issue dismissal path, not
+    here. Ownership is enforced: a user can only remove their own program / own custom
+    issue.
+    """
+    issue = issue_repo.get_issue_by_id(issue_id, session)
+    if not issue:
+        raise exceptions.NotFoundException("Issue", str(issue_id))
+
+    if issue.source == "custom":
+        if str(issue.user_id) != str(user_id):
+            raise exceptions.ForbiddenException("You do not have access to this issue.")
+        issue_repo.delete_issue(issue, session)
+        return
+
+    for program in repo.get_programs_for_issue(user_id, issue_id, session):
+        repo.delete_program(program, session)
+
+
+def _seed_program(
+    user_id: UUID,
+    issue_id: UUID,
+    title: str,
+    session: Session,
+    source_analysis_issue_id: UUID | None,
+) -> ProgramDTO:
+    """Shared seeding for every entry point (AI, coach, browse): enforce one active
+    program, create the program over `issue_id`, and seed one spaced-repetition
+    state per linked drill."""
+    # One active program at a time: block starting a new focus while another is live.
+    if repo.get_active_programs_by_user(user_id, session):
+        raise exceptions.ConflictException("Finish your current focus first.")
+
+    drills = drill_repo.get_drills_by_issue_id(issue_id, session)
 
     program = models.Program(
         user_id=user_id,
-        analysis_issue_id=analysis_issue_id,
-        title=f"Fix {issue_title}",
+        analysis_issue_id=source_analysis_issue_id,
+        issue_id=issue_id,
+        title=title,
         status="active",
     )
     repo.create_program(program, session)
@@ -83,9 +159,16 @@ def generate_program_for_issue(user_id: UUID, analysis_issue_id: UUID, session: 
     return _program_to_dto(program, session)
 
 
-def get_active_program(user_id: UUID, analysis_issue_id: UUID | None, session: Session) -> ProgramDTO | None:
+def get_active_program(
+    user_id: UUID,
+    analysis_issue_id: UUID | None,
+    session: Session,
+    issue_id: UUID | None = None,
+) -> ProgramDTO | None:
     if analysis_issue_id is not None:
         program = repo.get_active_program_for_issue(user_id, analysis_issue_id, session)
+    elif issue_id is not None:
+        program = repo.get_active_program_for_issue_id(user_id, issue_id, session)
     else:
         active = repo.get_active_programs_by_user(user_id, session)
         program = active[0] if active else None
@@ -175,7 +258,16 @@ def _schedule_next_step(program_id: UUID, session: Session) -> models.ProgramSte
     elif session_type == "play":
         prescription = {"holes": PLAY_HOLES_DEFAULT, "focus": PLAY_FOCUS_DEFAULT}
     else:  # retest
-        prescription = {"instruction": RETEST_INSTRUCTION}
+        # A program with no source analysis (coach/browse seeded) can't be
+        # AI-re-analyzed, so its retest is a pure self-comparison of the golfer's
+        # own footage.
+        program = repo.get_program_by_id(program_id, session)
+        instruction = (
+            RETEST_INSTRUCTION
+            if program is not None and program.analysis_issue_id is not None
+            else RETEST_INSTRUCTION_SELF
+        )
+        prescription = {"instruction": instruction}
 
     step = models.ProgramStep(
         program_id=program_id,
@@ -280,6 +372,7 @@ def _program_to_dto(program: models.Program, session: Session) -> ProgramDTO:
         id=program.id,
         user_id=program.user_id,
         analysis_issue_id=program.analysis_issue_id,
+        issue_id=program.issue_id,
         title=program.title,
         status=program.status,
         created_at=program.created_at,

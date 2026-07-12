@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from uuid import UUID
 from sqlalchemy.orm import Session
 
@@ -27,33 +27,51 @@ def generate_program(
     current_user: dict = Depends(require_premium),
 ):
     """
-    Generate (or return the existing) active program for an analysis issue.
+    Generate (or return the existing) active program.
 
+    Accepts either analysis_issue_id (AI path) or issue_id (coach/browse path).
     Idempotent: re-calling with the same issue returns the active program rather
     than creating a duplicate.
     """
-    result = program_service.generate_program_for_issue(
-        user_id=current_user["user_id"],
-        analysis_issue_id=request.analysis_issue_id,
-        session=db,
-    )
+    if request.analysis_issue_id is not None:
+        result = program_service.generate_program_for_issue(
+            user_id=current_user["user_id"],
+            analysis_issue_id=request.analysis_issue_id,
+            session=db,
+        )
+    elif request.issue_id is not None:
+        result = program_service.generate_program_from_issue(
+            user_id=current_user["user_id"],
+            issue_id=request.issue_id,
+            session=db,
+        )
+        print("Should have generated program for issue_id:", request.issue_id)
+        
+    else:
+        raise HTTPException(
+            status_code=422,
+            detail="Provide either analysis_issue_id or issue_id.",
+        )
     return ProgramResponse.from_domain(result)
 
 
 @router.get("/active/", response_model=ProgramResponse | None)
 def get_active_program(
     analysis_issue_id: UUID | None = None,
+    issue_id: UUID | None = None,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Get the current user's active program for the given issue, or their most
-    recent active program if no issue is specified. Returns null if none.
+    Get the current user's active program for the given analysis_issue_id or
+    issue_id, or their most recent active program if neither is specified.
+    Returns null if none.
     """
     result = program_service.get_active_program(
         user_id=current_user["user_id"],
         analysis_issue_id=analysis_issue_id,
         session=db,
+        issue_id=issue_id,
     )
     return ProgramResponse.from_domain(result) if result else None
 
@@ -86,6 +104,21 @@ def get_next_step(
         session=db,
     )
     return ProgramStepResponse.from_domain(result) if result else None
+
+
+@router.delete("/by-issue/{issue_id}/", status_code=204)
+def remove_focus(
+    issue_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Remove a browse/coach focus from home. For a coach-authored (custom) issue the user
+    owns, deletes the issue outright (program/drills/steps cascade). For a global catalog
+    (browse) issue, deletes the user's program(s) for it and leaves the shared issue.
+    Analysis-diagnosed issues use the analysis-issue dismissal path instead.
+    """
+    program_service.remove_focus_for_issue(current_user["user_id"], issue_id, db)
 
 
 @router.post("/{program_id}/steps/{step_id}/complete/", response_model=StepAdvanceResponse)

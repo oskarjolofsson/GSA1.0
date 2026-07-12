@@ -27,7 +27,7 @@ def issue_with_id(client, auth_headers):
         json={
             "title": "Early Extension",
             "description": "Golfer's hips move toward the ball during the downswing",
-            "phase": "DOWNSWING",
+            "area": "CHIPPING",
             "current_motion": "Hips thrust forward during downswing",
             "expected_motion": "Hips should rotate while maintaining posture",
             "swing_effect": "Loss of power and inconsistent contact",
@@ -134,7 +134,6 @@ def test_create_issue(client, db_session, auth_headers):
         json={
             "title": "Chicken Wing",
             "description": "Lead elbow bends out away from the body through impact",
-            "phase": "FOLLOW_THROUGH",
             "current_motion": "Lead elbow bends and pulls away from body",
             "expected_motion": "Lead arm should extend through impact",
             "swing_effect": "Reduced power and accuracy",
@@ -155,7 +154,7 @@ def test_create_issue(client, db_session, auth_headers):
     issue_result: Issue = get_issue_by_id(issue_id=issue_id, session=db_session)
     assert issue_result is not None
     assert issue_result.title == "Chicken Wing"
-    assert issue_result.phase == "FOLLOW_THROUGH"
+    assert issue_result.area == "FULL_SWING"
     assert issue_result.current_motion == "Lead elbow bends and pulls away from body"
     assert issue_result.expected_motion == "Lead arm should extend through impact"
     assert issue_result.swing_effect == "Reduced power and accuracy"
@@ -183,7 +182,7 @@ def test_create_issue_minimal_fields(client, db_session, auth_headers):
     issue_result: Issue = get_issue_by_id(issue_id=issue_id, session=db_session)
     assert issue_result is not None
     assert issue_result.title == "Over the Top"
-    assert issue_result.phase is None
+    assert issue_result.area == "FULL_SWING"
     assert issue_result.current_motion is None
 
 
@@ -201,7 +200,7 @@ def test_get_issue(client, issue_with_id, auth_headers):
     
     assert uuid.UUID(data["id"]) == issue_id
     assert data["title"] == "Early Extension"
-    assert data["phase"] == "DOWNSWING"
+    assert data["area"] == "CHIPPING"
     assert data["current_motion"] == "Hips thrust forward during downswing"
     assert data["expected_motion"] == "Hips should rotate while maintaining posture"
     assert data["swing_effect"] == "Loss of power and inconsistent contact"
@@ -230,7 +229,6 @@ def test_get_all_issues(client, db_session, auth_headers):
         json={
             "title": "Cast from the Top",
             "description": "Wrists unhinge too early in the downswing",
-            "phase": "TRANSITION",
         },
         headers=auth_headers,
     )
@@ -239,7 +237,6 @@ def test_get_all_issues(client, db_session, auth_headers):
         json={
             "title": "Sway",
             "description": "Lower body slides laterally away from target on backswing",
-            "phase": "BACKSWING",
         },
         headers=auth_headers,
     )
@@ -305,7 +302,7 @@ def test_update_issue(client, issue_with_id, db_session, auth_headers):
     assert data["title"] == "Updated Early Extension"
     assert data["swing_effect"] == "Updated swing effect description"
     # Original values should remain unchanged
-    assert data["phase"] == "DOWNSWING"
+    assert data["area"] == "CHIPPING"
     assert data["current_motion"] == "Hips thrust forward during downswing"
     
     # Verify in database
@@ -338,7 +335,6 @@ def test_delete_issue(client, db_session, auth_headers):
         json={
             "title": "Issue to Delete",
             "description": "Placeholder description for delete test",
-            "phase": "IMPACT",
         },
         headers=auth_headers,
     )
@@ -382,7 +378,6 @@ def test_bulk_delete_issues(client, db_session, auth_headers):
             json={
                 "title": f"Issue to Bulk Delete {i}",
                 "description": f"Placeholder description {i}",
-                "phase": "IMPACT",
             },
             headers=auth_headers,
         )
@@ -416,7 +411,6 @@ def test_bulk_delete_issues_partial(client, db_session, auth_headers):
         json={
             "title": "Issue for Partial Bulk Delete",
             "description": "Placeholder description for partial bulk delete test",
-            "phase": "IMPACT",
         },
         headers=auth_headers,
     )
