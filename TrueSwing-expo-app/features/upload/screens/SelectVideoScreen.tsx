@@ -7,7 +7,7 @@ import {
     useCameraPermissions,
     useMicrophonePermissions,
 } from "expo-camera";
-import { RefreshCw, LibraryBig } from "lucide-react-native";
+import { RefreshCw, LibraryBig, ChevronLeft } from "lucide-react-native";
 import { useSafeAreaInsets, SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from 'expo-image-picker';
 
@@ -247,6 +247,23 @@ export default function SelectVideoScreen({ onBack, onNext, setVideoUri, videoUr
                     console.error("camera mount error", e);
                 }}
             />
+
+            {/* Back to the Add-a-focus chooser. Hidden while recording. */}
+            <View
+                className="absolute left-4 z-10"
+                style={{ top: insets.top > 0 ? insets.top + 12 : 36, opacity: isRecording ? 0 : 1 }}
+                pointerEvents={isRecording ? "none" : "auto"}
+            >
+                <Pressable
+                    onPress={onBack}
+                    disabled={isRecording}
+                    accessibilityRole="button"
+                    accessibilityLabel="Go back"
+                    className="h-11 w-11 items-center justify-center rounded-full bg-black/40 active:bg-white/20"
+                >
+                    <ChevronLeft size={24} color="white" />
+                </Pressable>
+            </View>
 
             <View
                 className="absolute bottom-0 left-0 right-0 w-full"

@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import UploadFlow from "features/upload/uploadFlow";
+import AddFocusFlow from "features/addFocus/AddFocusFlow";
 import { useRequirePremium } from "features/billing/hooks/useRequirePremium";
 
 export default function Upload() {
@@ -17,7 +17,7 @@ export default function Upload() {
 
   return (
     <View style={{ flex: 1 }}>
-      <UploadFlow />
+      <AddFocusFlow />
     </View>
   );
 }

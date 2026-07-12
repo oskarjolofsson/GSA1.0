@@ -38,6 +38,9 @@ export interface Program {
     id: string;
     user_id: string;
     analysis_issue_id: string | null;
+    // The issue this program grooves. Set for AI, coach, and browse seeded
+    // programs; analysis_issue_id is only present for the AI path.
+    issue_id: string | null;
     title: string;
     status: "active" | "completed" | "abandoned";
     created_at: string;

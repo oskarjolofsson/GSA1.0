@@ -22,7 +22,7 @@ def _seed_analysis_issue(db_session, user_id, num_drills):
     """Create an issue with `num_drills` linked drills, owned by `user_id` via a
     user-owned analysis. Returns (analysis_issue, [drills])."""
     issue = create_issue(
-        Issue(title="Early extension", description="desc", phase="IMPACT"), db_session
+        Issue(title="Early extension", description="desc"), db_session
     )
     drills = []
     for i in range(num_drills):

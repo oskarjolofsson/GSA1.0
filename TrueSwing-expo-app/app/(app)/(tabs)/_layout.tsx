@@ -1,7 +1,7 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
 import { Pressable, View } from "react-native";
-import { Home, Upload, User } from "lucide-react-native";
+import { Home, User, PlusCircle } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function SimpleTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -78,7 +78,7 @@ export default function TabsLayout() {
                 options={{
                     title: "Upload",
                     tabBarIcon: ({ color, size }) => (
-                        <Upload color={color} size={size} />
+                        <PlusCircle color={color} size={size} />
                     ),
                 }}
             />

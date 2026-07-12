@@ -27,8 +27,8 @@ export default function HomeWelcome({ onStart }: HomeWelcomeProps) {
             </Text>
 
             <Text className="mt-4 font-sans text-base leading-relaxed text-sand-dim">
-                Your streak starts with one swing. Upload your first analysis today and
-                begin building the daily habit.
+                Your streak starts with one focus. Film a swing, turn coach feedback into
+                a plan, or browse the library — then build the daily habit.
             </Text>
 
             <Pressable
@@ -57,7 +57,7 @@ export default function HomeWelcome({ onStart }: HomeWelcomeProps) {
                     }}
                 >
                     <Text numberOfLines={1} className="font-display-bold text-[17px] text-ink">
-                        Make your first analysis
+                        Choose your focus
                     </Text>
                     <ArrowRight size={18} color="#0A0F1A" strokeWidth={2.5} />
                 </LinearGradient>

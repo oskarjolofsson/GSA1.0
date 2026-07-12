@@ -35,6 +35,7 @@ class ProgramDTO:
     id: UUID
     user_id: UUID
     analysis_issue_id: UUID | None
+    issue_id: UUID | None
     title: str
     status: str  # 'active' | 'completed' | 'abandoned'
     created_at: datetime

@@ -32,6 +32,21 @@ def get_active_program_for_issue(
     )
 
 
+def get_active_program_for_issue_id(
+    user_id: UUID, issue_id: UUID, session: Session
+) -> Program | None:
+    return (
+        session.query(Program)
+        .filter(
+            Program.user_id == user_id,
+            Program.issue_id == issue_id,
+            Program.status == "active",
+        )
+        .order_by(Program.created_at.desc())
+        .first()
+    )
+
+
 def get_active_programs_by_user(user_id: UUID, session: Session) -> list[Program]:
     return (
         session.query(Program)
@@ -50,6 +65,22 @@ def get_programs_by_user(user_id: UUID, session: Session) -> list[Program]:
         .order_by(Program.created_at.desc())
         .all()
     )
+
+
+def get_programs_for_issue(user_id: UUID, issue_id: UUID, session: Session) -> list[Program]:
+    """All of the user's programs (any status) for one issue — used to remove a focus."""
+    return (
+        session.query(Program)
+        .filter(Program.user_id == user_id, Program.issue_id == issue_id)
+        .all()
+    )
+
+
+def delete_program(program: Program, session: Session) -> None:
+    """Delete a program; its steps and drill states cascade, and any linked practice
+    sessions have their program_step_id set NULL (history survives)."""
+    session.delete(program)
+    session.flush()
 
 
 def update_program(program: Program, session: Session) -> Program:

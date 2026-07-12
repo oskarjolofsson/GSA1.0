@@ -9,7 +9,7 @@ import type { Issue } from "features/issues/types";
 import { startPracticeSession, endPracticeSession } from "features/practice/services/sessionService";
 import type { PracticeSession } from "features/practice/types";
 import { useRequirePremium } from "features/billing/hooks/useRequirePremium";
-import { getActiveProgram, generateProgram, getNextStep, completeStep } from "features/programs/services/programService";
+import { getActiveProgramByIssue, generateProgram, generateProgramFromIssue, getNextStep, completeStep } from "features/programs/services/programService";
 import { clearRetestIntent } from "features/programs/retestIntent";
 import type { ProgramContext } from "features/programs/types";
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,7 +19,7 @@ import { ApiError } from "lib/errors";
 import React from "react";
 
 export type LogSessionArgs = {
-    analysisIssueId: string;
+    analysisIssueId: string | null;  // null for custom (coach/browse) issues
     programId: string;
     stepId: string;
     sessionType: "play" | "retest";
@@ -64,15 +64,22 @@ export default function HomeFlow() {
     // creates the program, then launches the next range session. Gives feedback
     // (rather than a silent no-op) for issues that can't be practiced.
     const startProgramSession = React.useCallback(async (issue: Issue) => {
-        if (!issue.analysis_issue_id) {
+        if (!issue.id) {
             Alert.alert("Not in your plan", "This issue isn't active anymore — it was removed from your plan.");
             return;
         }
         if (!requirePremium()) return;
 
         try {
-            let program = await getActiveProgram(issue.analysis_issue_id);
-            if (!program) program = await generateProgram(issue.analysis_issue_id);
+            // Look up by issue_id (works for every source). Generate along the path
+            // that matches the source: AI issues keep analysis_issue_id provenance;
+            // custom (coach/browse) issues seed straight from issue_id.
+            let program = await getActiveProgramByIssue(issue.id);
+            if (!program) {
+                program = issue.analysis_issue_id
+                    ? await generateProgram(issue.analysis_issue_id)
+                    : await generateProgramFromIssue(issue.id);
+            }
 
             const step = await getNextStep(program.id);
             if (!step) return;
@@ -83,7 +90,7 @@ export default function HomeFlow() {
             }
 
             setSelectedIssue(issue);
-            const session = await startPracticeSession(issue.analysis_issue_id);
+            const session = await startPracticeSession(issue.analysis_issue_id ?? null);
             setSelectedSession(session);
             setProgramContext({
                 programId: program.id,

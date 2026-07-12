@@ -7,7 +7,7 @@ type StartSessionOptions = {
     notes?: string | null;
 };
 
-export async function startPracticeSession(analysisIssueId: string, opts: StartSessionOptions = {}) {
+export async function startPracticeSession(analysisIssueId: string | null, opts: StartSessionOptions = {}) {
     return apiClient.post<PracticeSession>('/api/v1/practice/sessions/start/', {
         analysis_issue_id: analysisIssueId,
         session_type: opts.session_type,

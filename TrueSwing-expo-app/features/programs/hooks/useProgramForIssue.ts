@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getActiveProgram, getNextStep, peekProgramSession } from "../services/programService";
+import { getActiveProgramByIssue, getNextStep, peekProgramSession } from "../services/programService";
 import type { Program, ProgramStep } from "../types";
 
 interface UseProgramForIssueReturn {
@@ -20,7 +20,7 @@ interface UseProgramForIssueReturn {
  * is loading: until the loaded data matches the requested issue, `loading` is
  * true and the card shows its loading state instead of stale content.
  */
-export function useProgramForIssue(analysisIssueId: string | null | undefined): UseProgramForIssueReturn {
+export function useProgramForIssue(issueId: string | null | undefined): UseProgramForIssueReturn {
     const [program, setProgram] = useState<Program | null>(null);
     const [nextStep, setNextStep] = useState<ProgramStep | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
@@ -33,7 +33,7 @@ export function useProgramForIssue(analysisIssueId: string | null | undefined): 
     useEffect(() => {
         let active = true;
 
-        if (!analysisIssueId) {
+        if (!issueId) {
             setProgram(null);
             setNextStep(null);
             setError(null);
@@ -43,13 +43,13 @@ export function useProgramForIssue(analysisIssueId: string | null | undefined): 
         }
 
         // Fresh cache hit: render instantly, no loading flash, no stale content.
-        const cached = peekProgramSession(analysisIssueId);
+        const cached = peekProgramSession(issueId);
         if (cached) {
             setProgram(cached.program);
             setNextStep(cached.nextStep);
             setError(null);
             setLoading(false);
-            setLoadedId(analysisIssueId);
+            setLoadedId(issueId);
             return;
         }
 
@@ -62,14 +62,14 @@ export function useProgramForIssue(analysisIssueId: string | null | undefined): 
 
         const load = async () => {
             try {
-                const prog = await getActiveProgram(analysisIssueId);
+                const prog = await getActiveProgramByIssue(issueId);
                 if (!active) return;
                 setProgram(prog);
 
                 const step = prog ? await getNextStep(prog.id) : null;
                 if (!active) return;
                 setNextStep(step);
-                setLoadedId(analysisIssueId);
+                setLoadedId(issueId);
             } catch (err) {
                 if (!active) return;
                 setError(err instanceof Error ? err.message : "Failed to load program");
@@ -84,14 +84,14 @@ export function useProgramForIssue(analysisIssueId: string | null | undefined): 
         return () => {
             active = false;
         };
-    }, [analysisIssueId, nonce]);
+    }, [issueId, nonce]);
 
     // While the loaded state still belongs to the previous issue (the effect runs
     // after render), prefer a synchronous cache hit so a re-viewed issue renders
     // immediately with no loading flash. Only show loading when nothing is cached
     // yet for the requested issue.
-    if (analysisIssueId && loadedId !== analysisIssueId) {
-        const cached = peekProgramSession(analysisIssueId);
+    if (issueId && loadedId !== issueId) {
+        const cached = peekProgramSession(issueId);
         if (cached) {
             return { program: cached.program, nextStep: cached.nextStep, loading: false, error: null, refetch };
         }

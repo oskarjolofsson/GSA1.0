@@ -26,6 +26,7 @@ import { deriveActivityStats } from "features/home/utils/activityStats";
 import type { Issue } from "features/issues/types";
 import type { LogSessionArgs, SkipStepArgs } from "features/home/homeFlow";
 import { setRetestIntent } from "features/programs/retestIntent";
+import { removeFocus } from "features/programs/services/programService";
 import analysisService from "features/analysis/services/analysisService";
 
 type HomeScreenProps = {
@@ -102,7 +103,7 @@ export default function HomeScreen({
         nextStep,
         loading: programLoading,
         refetch: refetchProgram,
-    } = useProgramForIssue(selectedIssue?.analysis_issue_id);
+    } = useProgramForIssue(selectedIssue?.id);
 
     // Refresh the program when returning to home (e.g. after a session).
     useFocusEffect(
@@ -135,11 +136,13 @@ export default function HomeScreen({
 
     const handleConfirmSession = useCallback(
         async (notes: string) => {
-            if (!selectedIssue?.analysis_issue_id || !program || !nextStep || !sessionMode) return;
+            if (!selectedIssue?.id || !program || !nextStep || !sessionMode) return;
 
-            // Re-test: don't credit on tap. Record the intent and send the player to
-            // the camera; the re-test completes only when an upload actually finishes.
-            if (sessionMode === "retest") {
+            // Re-test for an AI issue: don't credit on tap. Record the intent and
+            // send the player to the camera; it completes only when an upload
+            // finishes. A CUSTOM issue has no analysis to re-run, so its retest is a
+            // self-compare — logged like a play session below (no upload).
+            if (sessionMode === "retest" && selectedIssue.analysis_issue_id) {
                 setRetestIntent({
                     analysisIssueId: selectedIssue.analysis_issue_id,
                     programId: program.id,
@@ -150,10 +153,10 @@ export default function HomeScreen({
                 return;
             }
 
-            // Play: log + advance now (there's no upload).
+            // Play (or custom self-compare retest): log + advance now (no upload).
             setLogging(true);
             const ok = await onLogSession({
-                analysisIssueId: selectedIssue.analysis_issue_id,
+                analysisIssueId: selectedIssue.analysis_issue_id ?? null,
                 programId: program.id,
                 stepId: nextStep.id,
                 sessionType: sessionMode,
@@ -191,8 +194,7 @@ export default function HomeScreen({
     }, [program, nextStep, onSkipStep, refetchProgram]);
 
     const handleRemoveIssue = useCallback(() => {
-        const analysisIssueId = selectedIssue?.analysis_issue_id;
-        if (!analysisIssueId) return;
+        if (!selectedIssue) return;
         Alert.alert(
             "Remove this issue?",
             "It'll disappear from your plan.",
@@ -203,8 +205,16 @@ export default function HomeScreen({
                     style: "destructive",
                     onPress: async () => {
                         try {
-                            await analysisService.dismissAnalysisIssue(analysisIssueId);
+                            // Analysis-diagnosed issue: dismiss the analysis link.
+                            // Browse/coach focus (no analysis): remove program (browse)
+                            // or delete the custom issue (coach) via removeFocus.
+                            if (selectedIssue.analysis_issue_id) {
+                                await analysisService.dismissAnalysisIssue(selectedIssue.analysis_issue_id);
+                            } else {
+                                await removeFocus(selectedIssue.id);
+                            }
                             setInfoOpen(false);
+                            setSelectedIssueId(null);
                             refetchIssues();
                             refetchProgram();
                         } catch (err) {
@@ -218,9 +228,13 @@ export default function HomeScreen({
 
     const stats = useMemo(() => deriveActivityStats(counts), [counts]);
     const hasData = counts.length > 0;
+    // Any active analysis OR program — issues comes from get_issues_by_user_id, which
+    // includes analysis-linked, custom, and program-linked (browse) catalog issues.
+    const hasFocus = !!defaultIssueId || issues.length > 0;
 
-    // First load with nothing cached yet.
-    if (loading && !hasData && !error) {
+    // First load: wait for BOTH activity and issues before deciding welcome-vs-home,
+    // so we don't flash the welcome for a user who actually has a focus.
+    if (((loading && !hasData) || (issuesLoading && issues.length === 0)) && !error) {
         return <LoadingState title="Loading your week" subtitle="" />;
     }
 
@@ -241,8 +255,9 @@ export default function HomeScreen({
         );
     }
 
-    // Genuinely no activity ever -> first-run welcome.
-    if (!stats.hasActivity) {
+    // Genuinely nothing yet: no logged activity AND no active focus -> first-run
+    // welcome. A user with a focus (analysis, coach, or browse) skips this.
+    if (!stats.hasActivity && !hasFocus) {
         return <HomeWelcome onStart={() => router.push("/(tabs)/upload")} />;
     }
 

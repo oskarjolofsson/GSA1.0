@@ -40,7 +40,9 @@ function deriveCardState(
     isFocus: boolean,
     hasActiveProgram: boolean
 ) {
-    const hasIssue = !!issue?.analysis_issue_id;
+    // Any issue (AI, coach, or browse) is practiceable now — key on its id, not on
+    // whether it came from an analysis.
+    const hasIssue = !!issue?.id;
     const base = { sessionLine: null as string | null, detail: null as string | null, buttonLabel: "Start session", startable: hasIssue && !loading, hideButton: false };
 
     if (!hasIssue) {
