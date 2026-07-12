@@ -78,7 +78,7 @@ def generate_program_from_issue(user_id: UUID, issue_id: UUID, session: Session)
     the user authored. Idempotent on the issue for this user."""
     existing = repo.get_active_program_for_issue_id(user_id, issue_id, session)
     if existing:
-        return _program_to_dto(existing, session)
+        raise exceptions.ConflictException("You already have an active program for this issue.")
 
     issue = issue_repo.get_issue_by_id(issue_id, session)
     if not issue:
@@ -96,6 +96,32 @@ def generate_program_from_issue(user_id: UUID, issue_id: UUID, session: Session)
         session=session,
         source_analysis_issue_id=None,
     )
+
+
+def remove_focus_for_issue(user_id: UUID, issue_id: UUID, session: Session) -> None:
+    """Remove a browse/coach focus from the user's home.
+
+    - custom (coach-authored) issue the user owns -> delete the issue; its program,
+      steps, drill states cascade. Gone for good.
+    - catalog (browse) issue -> delete the user's program(s) for it; the shared issue
+      is never touched. Home shows catalog issues only via a program, so it disappears.
+
+    Analysis-diagnosed issues are removed via the analysis-issue dismissal path, not
+    here. Ownership is enforced: a user can only remove their own program / own custom
+    issue.
+    """
+    issue = issue_repo.get_issue_by_id(issue_id, session)
+    if not issue:
+        raise exceptions.NotFoundException("Issue", str(issue_id))
+
+    if issue.source == "custom":
+        if str(issue.user_id) != str(user_id):
+            raise exceptions.ForbiddenException("You do not have access to this issue.")
+        issue_repo.delete_issue(issue, session)
+        return
+
+    for program in repo.get_programs_for_issue(user_id, issue_id, session):
+        repo.delete_program(program, session)
 
 
 def _seed_program(

@@ -75,6 +75,17 @@ export async function generateProgramFromIssue(issueId: string): Promise<Program
     return program;
 }
 
+/**
+ * Remove a browse/coach focus. For a coach-authored (custom) issue this deletes the
+ * issue outright; for a global catalog (browse) issue it deletes the user's program(s)
+ * and leaves the shared issue. Clears the program cache so the deleted focus can't be
+ * resurfaced from the 5-minute cache.
+ */
+export async function removeFocus(issueId: string): Promise<void> {
+    await apiClient.delete<void>(`${BASE}/by-issue/${issueId}/`);
+    clearProgramCache();
+}
+
 /** The next session to do, scheduled on demand. */
 export async function getNextStep(programId: string): Promise<ProgramStep | null> {
     const cached = nextStepCache.get(programId);

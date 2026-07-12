@@ -45,6 +45,8 @@ def generate_program(
             issue_id=request.issue_id,
             session=db,
         )
+        print("Should have generated program for issue_id:", request.issue_id)
+        
     else:
         raise HTTPException(
             status_code=422,
@@ -102,6 +104,21 @@ def get_next_step(
         session=db,
     )
     return ProgramStepResponse.from_domain(result) if result else None
+
+
+@router.delete("/by-issue/{issue_id}/", status_code=204)
+def remove_focus(
+    issue_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Remove a browse/coach focus from home. For a coach-authored (custom) issue the user
+    owns, deletes the issue outright (program/drills/steps cascade). For a global catalog
+    (browse) issue, deletes the user's program(s) for it and leaves the shared issue.
+    Analysis-diagnosed issues use the analysis-issue dismissal path instead.
+    """
+    program_service.remove_focus_for_issue(current_user["user_id"], issue_id, db)
 
 
 @router.post("/{program_id}/steps/{step_id}/complete/", response_model=StepAdvanceResponse)

@@ -23,24 +23,24 @@ export default function AddFocusChooser({ onChoose }: { onChoose: (c: AddFocusCh
             <View className="flex-1" style={{ gap: 16 }}>
                 <FocusPanel
                     variant="hero"
-                    icon={<Video size={26} color={INK} strokeWidth={2.25} />}
+                    icon={<List size={22} color={INK} strokeWidth={2.25} />}
+                    title="Browse the library"
+                    subtitle="I already know what I want to fix, I want to browse the library the find the correct drills."
+                    onPress={() => onChoose("browse")}
+                />
+                <FocusPanel
+                    variant="secondary"
+                    icon={<Video size={26} color={GOLD} strokeWidth={2.25} />}
                     title="Upload a swing"
-                    subtitle="Film it. We find the fault."
+                    subtitle="Film your golf swing and let AI analyze it for you and find the best drills to fix your issues."
                     onPress={() => onChoose("upload")}
                 />
                 <FocusPanel
                     variant="secondary"
                     icon={<FileText size={22} color={GOLD} strokeWidth={2.25} />}
                     title="Coach feedback"
-                    subtitle="Turn a lesson into a plan."
+                    subtitle="I already had a lesson, save all details here in order to not forget and to master the drills!"
                     onPress={() => onChoose("coach")}
-                />
-                <FocusPanel
-                    variant="secondary"
-                    icon={<List size={22} color={GOLD} strokeWidth={2.25} />}
-                    title="Browse the library"
-                    subtitle="Start from a known issue."
-                    onPress={() => onChoose("browse")}
                 />
             </View>
         </View>

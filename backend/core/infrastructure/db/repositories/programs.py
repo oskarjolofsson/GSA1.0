@@ -67,6 +67,22 @@ def get_programs_by_user(user_id: UUID, session: Session) -> list[Program]:
     )
 
 
+def get_programs_for_issue(user_id: UUID, issue_id: UUID, session: Session) -> list[Program]:
+    """All of the user's programs (any status) for one issue — used to remove a focus."""
+    return (
+        session.query(Program)
+        .filter(Program.user_id == user_id, Program.issue_id == issue_id)
+        .all()
+    )
+
+
+def delete_program(program: Program, session: Session) -> None:
+    """Delete a program; its steps and drill states cascade, and any linked practice
+    sessions have their program_step_id set NULL (history survives)."""
+    session.delete(program)
+    session.flush()
+
+
 def update_program(program: Program, session: Session) -> Program:
     session.add(program)
     session.flush()

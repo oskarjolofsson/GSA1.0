@@ -20,10 +20,12 @@ import uuid
 import pytest
 
 from core.infrastructure.db.models.Issue import Issue
+from core.infrastructure.db import models
 from core.infrastructure.db.repositories.issues import create_issue
 from core.infrastructure.db.repositories import programs as programs_repo
 
 from core.services import issue_authoring_service as ias
+from core.services import issues_service as issvc
 from core.services import program_service as ps
 from core.services.dtos.issue_authoring_service_dto import DraftIssueDTO, DraftDrillDTO
 
@@ -300,3 +302,101 @@ class TestPracticeStartWithoutAnalysis:
         )
         assert session.id is not None
         assert session.analysis_issue_id is None
+
+
+class TestBrowseStartShowsOnHome:
+    def test_browse_started_catalog_issue_appears_on_home(self, db_session, test_user):
+        """Regression: starting a plan from the library uses a GLOBAL catalog issue
+        (user_id NULL, source='catalog') — not analysis-linked, not custom. Home's
+        issue list must still surface it via its program, or the user starts a focus
+        and lands on the empty welcome screen (the bug this guards)."""
+        uid = test_user["user_id"]
+        # Clean slate: the "one active program at a time" guard would otherwise trip
+        # on any active program left committed in the shared dev DB by earlier tests.
+        db_session.query(models.Program).filter_by(user_id=uid, status="active").delete()
+        db_session.flush()
+
+        # A global catalog issue with one linked drill — exactly the browse case.
+        issue = models.Issue(title="Browse home focus", description="d")
+        db_session.add(issue)
+        db_session.flush()
+        drill = models.Drill(title="D", task="t", success_signal="s", fault_indicator="f")
+        db_session.add(drill)
+        db_session.flush()
+        db_session.add(models.IssueDrill(issue_id=issue.id, drill_id=drill.id))
+        db_session.flush()
+
+        # Start a plan the way LibraryScreen does.
+        program = ps.generate_program_from_issue(uid, issue.id, db_session)
+        assert program.status == "active"
+
+        # It must appear on home as the active focus.
+        dtos = issvc.get_issues_by_user_id(uid, db_session)
+        match = [d for d in dtos if d.id == issue.id]
+        assert match, "browse-started catalog issue missing from home issue list"
+        assert match[0].program_status == "active"
+
+        today = issvc.get_todays_issue(uid, db_session)
+        assert today is not None and today.id == issue.id
+
+
+class TestRemoveFocus:
+    def test_remove_browse_focus_deletes_program_keeps_shared_issue(self, db_session, test_user):
+        """Browse: removing a focus on a GLOBAL catalog issue deletes the user's program
+        (issue vanishes from home) but leaves the shared catalog issue intact."""
+        uid = test_user["user_id"]
+        db_session.query(models.Program).filter_by(user_id=uid, status="active").delete()
+        db_session.flush()
+
+        issue = models.Issue(title="Shared browse focus", description="d")
+        db_session.add(issue)
+        db_session.flush()
+        drill = models.Drill(title="D", task="t", success_signal="s", fault_indicator="f")
+        db_session.add(drill)
+        db_session.flush()
+        db_session.add(models.IssueDrill(issue_id=issue.id, drill_id=drill.id))
+        db_session.flush()
+        ps.generate_program_from_issue(uid, issue.id, db_session)
+
+        ps.remove_focus_for_issue(uid, issue.id, db_session)
+
+        # Program gone -> not on home.
+        assert not programs_repo.get_programs_for_issue(uid, issue.id, db_session)
+        assert all(d.id != issue.id for d in issvc.get_issues_by_user_id(uid, db_session))
+        # Shared catalog issue still exists for everyone else.
+        from core.infrastructure.db.repositories.issues import get_issue_by_id
+        assert get_issue_by_id(issue.id, db_session) is not None
+
+    def test_remove_custom_focus_deletes_issue_and_program(self, db_session, test_user):
+        """Coach/custom: removing the focus deletes the user's own issue outright; its
+        program cascades away."""
+        uid = test_user["user_id"]
+        db_session.query(models.Program).filter_by(user_id=uid, status="active").delete()
+        db_session.flush()
+
+        created = ias.create_custom_issue(
+            user_id=uid,
+            issue=DraftIssueDTO(title="My custom focus", description="mine"),
+            drills=[DraftDrillDTO(title="D", task="t", success_signal="s", fault_indicator="f")],
+            db_session=db_session,
+        )
+        ps.generate_program_from_issue(uid, created.id, db_session)
+
+        ps.remove_focus_for_issue(uid, created.id, db_session)
+
+        from core.infrastructure.db.repositories.issues import get_issue_by_id
+        assert get_issue_by_id(created.id, db_session) is None
+        assert not programs_repo.get_programs_for_issue(uid, created.id, db_session)
+
+    def test_remove_others_custom_issue_forbidden(self, db_session, test_user):
+        """Ownership: you cannot remove another user's custom issue."""
+        import uuid as _uuid
+        from core.services import exceptions
+        other_issue = models.Issue(
+            title="Someone else's focus", description="d", source="custom", user_id=_uuid.uuid4()
+        )
+        db_session.add(other_issue)
+        db_session.flush()
+
+        with pytest.raises(exceptions.ForbiddenException):
+            ps.remove_focus_for_issue(test_user["user_id"], other_issue.id, db_session)

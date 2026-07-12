@@ -111,6 +111,17 @@ def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueRespo
         key = str(program.issue_id)
         if key not in status_by_issue or program.status == "active":
             status_by_issue[key] = program.status
+
+    # Browse path: a program can point at a GLOBAL catalog issue (user_id NULL, not
+    # custom, no analysis link). Those issues aren't returned above, so pull them in
+    # by their program's issue_id — otherwise a browse-started focus is invisible on
+    # home and the user just sees the welcome screen.
+    present_ids = {str(dto.id) for dto in dtos}
+    missing_ids = [UUID(k) for k in status_by_issue if k not in present_ids]
+    if missing_ids:
+        extra_issues = repo_get_issues_by_ids(missing_ids, db_session)
+        dtos.extend(from_issue_to_response_dto(issue) for issue in extra_issues)
+
     for dto in dtos:
         dto.program_status = status_by_issue.get(str(dto.id))
 
