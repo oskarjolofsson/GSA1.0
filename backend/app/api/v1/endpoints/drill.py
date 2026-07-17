@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from uuid import UUID
 
-from flask import request
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
 from app.dependencies.require_admin import require_admin
