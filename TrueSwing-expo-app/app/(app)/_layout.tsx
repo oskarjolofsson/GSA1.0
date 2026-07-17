@@ -2,6 +2,7 @@ import { Redirect, Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "features/auth/AuthProvider";
 import { BillingProvider } from "features/billing/BillingContext";
+import HealthGate from "features/shared/components/HealthGate";
 
 export default function AppLayout() {
   const { session, loading } = useAuth();
@@ -20,7 +21,9 @@ export default function AppLayout() {
 
   return (
     <BillingProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <HealthGate>
+        <Stack screenOptions={{ headerShown: false }} />
+      </HealthGate>
     </BillingProvider>
   );
 }
