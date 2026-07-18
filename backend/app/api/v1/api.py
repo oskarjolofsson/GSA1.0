@@ -2,11 +2,17 @@ from fastapi import APIRouter
 api_router = APIRouter()
 
 # Include endpoint routers
-from .endpoints import drill, feedback, user, analysis, issue, issue_drill, admin, practice_session, webhooks, billing, activity, program
+from .endpoints import drill, feedback, user, analysis, issue, issue_drill, admin, admin_subscriptions, practice_session, webhooks, billing, activity, program
 
 api_router.include_router(
     router=admin.router,
     prefix="/admin",
+    tags=["admin"],
+)
+
+api_router.include_router(
+    router=admin_subscriptions.router,
+    prefix="/admin/subscriptions",
     tags=["admin"],
 )
 
