@@ -7,8 +7,7 @@
 # flags. That keeps the values out of your shell history.
 #
 # Usage:
-#   ./deploy.sh            # tag :latest  (prod)
-#   ./deploy.sh preview    # tag :preview
+#   ./deploy.sh            # build + push :latest (production)
 #
 # First-time setup:
 #   cp .env.example .env.production   # then fill in the prod values
@@ -18,7 +17,7 @@
 set -euo pipefail
 
 IMAGE="oskarjolofsson/true_swing_admin"
-TAG="${1:-latest}"
+TAG="latest"
 ENV_FILE=".env.production"
 
 if [[ ! -f "$ENV_FILE" ]]; then

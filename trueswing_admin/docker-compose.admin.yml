@@ -1,9 +1,8 @@
 # Reference snippet — NOT run from this repo.
 #
-# Paste these services into the server's /srv/trueswing/docker-compose.yml (the same
+# Paste this service into the server's /srv/trueswing/docker-compose.yml (the same
 # file that already runs the backend + Caddy). Then add the admin under Caddy's
-# `depends_on` and add a route in the Caddyfile that reverse-proxies to
-# admin:3000 (and admin-preview:3000 for the preview host).
+# `depends_on` and add a route in the Caddyfile that reverse-proxies to admin:3000.
 #
 # No env_file here: all config is baked into the image at build time (see Dockerfile
 # / deploy.sh). Ports are only `expose`d — Caddy is the single ingress on 80/443,
@@ -17,19 +16,11 @@ services:
     expose:
       - "3000"
 
-  admin-preview:
-    image: oskarjolofsson/true_swing_admin:preview
-    container_name: trueswing-admin-preview
-    restart: unless-stopped
-    expose:
-      - "3000"
-
 # In the existing `caddy` service, extend depends_on:
 #   depends_on:
 #     - app
 #     - app-preview
 #     - admin
-#     - admin-preview
 #
 # Example Caddyfile route:
 #   admin.trueswing.example {

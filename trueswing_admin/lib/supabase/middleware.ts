@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { authRedirect } from "@/lib/auth/route-guard";
+import { publicOrigin } from "@/lib/http/public-origin";
 
 /**
  * Refresh the Supabase session on every request and enforce the auth redirect.
@@ -44,9 +45,7 @@ export async function updateSession(request: NextRequest) {
   });
 
   if (redirectTo) {
-    const url = request.nextUrl.clone();
-    url.pathname = redirectTo;
-    url.search = "";
+    const url = new URL(redirectTo, publicOrigin(request));
     return NextResponse.redirect(url);
   }
 
