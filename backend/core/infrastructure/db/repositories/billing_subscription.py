@@ -64,35 +64,51 @@ def get_subscription_by_id(
 
 
 # Statuses that still grant entitlement but where the paid period may have
-# lapsed (payment retry / grace). Kept out of the admin grant-guard so an admin
-# can comp a lapsed account.
+# lapsed (payment retry / grace). Kept out of the "currently valid" predicate so
+# an admin can comp a lapsed account and the dashboard hides failing accounts.
 CURRENT_SUBSCRIPTION_STATUSES = ("trialing", "active")
+
+
+def _valid_subscription_conditions(now: datetime) -> list:
+    """The single "is this subscription valid right now?" predicate.
+
+    Shared by every "genuinely subscribed" read — the admin grant-guard, the
+    admin search `subscribed` flag, and the admin dashboard list — so they can
+    never drift apart. A row is valid iff:
+
+        status ∈ (active, trialing)
+        AND ended_at IS NULL
+        AND (current_period_start IS NULL OR current_period_start <= now)
+        AND (current_period_end   IS NULL OR current_period_end   >  now)
+
+    A NULL bound is open-ended: NULL start = "already started", NULL end =
+    "never expires" (manual comps). Only an explicit future start or a past end
+    disqualifies the row.
+
+    Distinct from ``ACTIVE_SUBSCRIPTION_STATUSES`` / ``get_active_subscriptions_for_user``,
+    which drive entitlement and intentionally treat past_due/unpaid and
+    period-passed rows as active.
+
+    Callers must supply the ``BillingSubscription`` (and, for user-scoped reads,
+    join ``BillingCustomer``) themselves; these conditions reference
+    ``BillingSubscription`` columns only.
+    """
+    return [
+        models.BillingSubscription.status.in_(CURRENT_SUBSCRIPTION_STATUSES),
+        models.BillingSubscription.ended_at == None,  # noqa: E711
+        (models.BillingSubscription.current_period_start == None)  # noqa: E711
+        | (models.BillingSubscription.current_period_start <= now),
+        (models.BillingSubscription.current_period_end == None)  # noqa: E711
+        | (models.BillingSubscription.current_period_end > now),
+    ]
 
 
 def get_valid_subscription_for_user(
     user_id: UUID,
     session: Session,
 ) -> models.BillingSubscription | None:
-    """A subscription that is currently valid — active/trialing, not ended, whose
-    paid period has started and has not yet passed.
-
-    Distinct from ``get_active_subscriptions_for_user`` (which drives entitlement
-    and treats past_due/unpaid and period-passed rows as active). This is the
-    single "is the user genuinely subscribed right now?" predicate, shared by the
-    admin grant-guard (block only a genuinely-current sub) and the admin search
-    `subscribed` flag (so the dashboard's Grant button state matches what the
-    grant endpoint will actually do). A lapsed / past_due / not-yet-started /
-    webhook-stuck row is NOT valid.
-
-        valid ⇔ status ∈ (active, trialing)
-                AND ended_at IS NULL
-                AND (current_period_start IS NULL OR current_period_start <= now())
-                AND (current_period_end   IS NULL OR current_period_end   >  now())
-
-    A NULL bound is treated as open-ended: NULL start = "already started",
-    NULL end = "never expires" (manual comps). Only an explicit future start or
-    a past end disqualifies the row.
-    """
+    """The user's currently-valid subscription, or None. See
+    ``_valid_subscription_conditions`` for the shared definition of valid."""
     now = datetime.now(timezone.utc)
     stmt = (
         select(models.BillingSubscription)
@@ -101,24 +117,18 @@ def get_valid_subscription_for_user(
             models.BillingSubscription.billing_customer_id == models.BillingCustomer.id,
         )
         .where(models.BillingCustomer.user_id == user_id)
-        .where(models.BillingSubscription.status.in_(CURRENT_SUBSCRIPTION_STATUSES))
-        .where(models.BillingSubscription.ended_at == None)  # noqa: E711
-        .where(
-            (models.BillingSubscription.current_period_start == None)  # noqa: E711
-            | (models.BillingSubscription.current_period_start <= now)
-        )
-        .where(
-            (models.BillingSubscription.current_period_end == None)  # noqa: E711
-            | (models.BillingSubscription.current_period_end > now)
-        )
+        .where(*_valid_subscription_conditions(now))
         .order_by(models.BillingSubscription.created_at.desc())
     )
     return session.scalars(stmt).first()
 
 
-def _active_subscriptions_stmt():
-    # Active subscriptions joined to their customer + profile. Shared by the
-    # list and count queries so the page total always matches the page rows.
+def _valid_subscriptions_stmt():
+    # Currently-valid subscriptions joined to their customer + profile. Uses the
+    # same predicate as the grant-guard/search (see _valid_subscription_conditions)
+    # so a period-expired-but-active or past_due row never shows in the dashboard.
+    # Shared by the list and count queries so the page total always matches rows.
+    now = datetime.now(timezone.utc)
     return (
         select(models.BillingSubscription, models.Profile)
         .join(
@@ -129,19 +139,18 @@ def _active_subscriptions_stmt():
             models.Profile,
             models.BillingCustomer.user_id == models.Profile.id,
         )
-        .where(models.BillingSubscription.status.in_(ACTIVE_SUBSCRIPTION_STATUSES))
-        .where(models.BillingSubscription.ended_at == None)  # noqa: E711
+        .where(*_valid_subscription_conditions(now))
     )
 
 
-def list_active_subscriptions_with_profiles(
+def list_valid_subscriptions_with_profiles(
     session: Session,
     *,
     limit: int,
     offset: int,
 ) -> list[tuple[models.BillingSubscription, models.Profile]]:
     stmt = (
-        _active_subscriptions_stmt()
+        _valid_subscriptions_stmt()
         .order_by(models.BillingSubscription.current_period_start.desc().nullslast())
         .order_by(models.BillingSubscription.created_at.desc())
         .limit(limit)
@@ -150,8 +159,8 @@ def list_active_subscriptions_with_profiles(
     return list(session.execute(stmt).all())
 
 
-def count_active_subscriptions(session: Session) -> int:
-    stmt = select(func.count()).select_from(_active_subscriptions_stmt().subquery())
+def count_valid_subscriptions(session: Session) -> int:
+    stmt = select(func.count()).select_from(_valid_subscriptions_stmt().subquery())
     return session.scalar(stmt) or 0
 
 

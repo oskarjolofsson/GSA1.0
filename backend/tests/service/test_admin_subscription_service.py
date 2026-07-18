@@ -5,12 +5,14 @@ db_session, without going through HTTP. `test_user` gives a real profile row.
 """
 
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from core.services import admin_subscription_service
 from core.services import exceptions
 from core.services.payment import entitlement_service
+from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
 from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
 
 
@@ -68,10 +70,37 @@ def test_list_pagination_mechanics(test_user, db_session):
     assert past_end.total == total
 
 
+def test_list_excludes_expired_sub(test_user, db_session):
+    # Seed a period-expired (webhook-stuck) active sub — it must not appear in
+    # the subscriber list nor inflate the count.
+    customer = billing_customer_repo.create_billing_customer(
+        user_id=test_user["user_id"],
+        customer_id=f"cus_test_{uuid.uuid4().hex[:12]}",
+        provider="stripe",
+        session=db_session,
+    )
+    billing_subscription_repo.upsert_subscription(
+        billing_customer_id=customer.id,
+        provider="stripe",
+        external_subscription_id=f"sub_test_{uuid.uuid4().hex[:12]}",
+        external_price_id="price_test",
+        status="active",
+        current_period_start=None,
+        current_period_end=datetime.now(timezone.utc) - timedelta(days=3),
+        cancel_at_period_end=False,
+        canceled_at=None,
+        ended_at=None,
+        session=db_session,
+    )
+
+    page = admin_subscription_service.list_subscribers(db_session, limit=1000, offset=0)
+    assert all(item.user_id != test_user["user_id"] for item in page.items)
+
+
 def test_count_matches_list(test_user, db_session):
     admin_subscription_service.grant_manual_subscription(test_user["user_id"], db_session)
-    count = billing_subscription_repo.count_active_subscriptions(db_session)
-    rows = billing_subscription_repo.list_active_subscriptions_with_profiles(
+    count = billing_subscription_repo.count_valid_subscriptions(db_session)
+    rows = billing_subscription_repo.list_valid_subscriptions_with_profiles(
         db_session, limit=1000, offset=0
     )
     assert count == len(rows)

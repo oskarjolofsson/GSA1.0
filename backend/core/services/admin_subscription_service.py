@@ -34,10 +34,10 @@ def list_subscribers(
     limit: int,
     offset: int,
 ) -> PageDTO[SubscriberDTO]:
-    rows = billing_subscription_repo.list_active_subscriptions_with_profiles(
+    rows = billing_subscription_repo.list_valid_subscriptions_with_profiles(
         db_session, limit=limit, offset=offset
     )
-    total = billing_subscription_repo.count_active_subscriptions(db_session)
+    total = billing_subscription_repo.count_valid_subscriptions(db_session)
     items = [
         SubscriberDTO(
             user_id=profile.id,
