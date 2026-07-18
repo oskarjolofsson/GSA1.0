@@ -6,8 +6,7 @@
 # every NEXT_PUBLIC_* value into the client JS bundle at BUILD time. Those three
 # values are public/safe to expose (the Supabase anon key is client-side by design),
 # so we bake them in via --build-arg here — the same pattern the backend uses for
-# GIT_COMMIT. Consequence: prod and preview are separate builds differing only by
-# their baked URLs. See deploy.sh for the build-arg expansion.
+# GIT_COMMIT. See deploy.sh for the build-arg expansion.
 
 # ---- deps: install node_modules from the lockfile (cached unless deps change) ----
 FROM node:22-alpine AS deps
@@ -65,23 +64,15 @@ CMD ["node", "server.js"]
 
 # --- Deploy (multi-arch, pushes to Docker Hub) ---
 # Prefer ./deploy.sh which expands .env.production into --build-arg flags:
-#   ./deploy.sh            # -> :latest  (prod)
-#   ./deploy.sh preview    # -> :preview
+#   ./deploy.sh            # -> :latest  (production)
 #
 # Equivalent raw command:
-# docker buildx build --platform linux/amd64,linux/arm64 \
-#   --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) \
-#   --build-arg NEXT_PUBLIC_SUPABASE_URL=... \
-#   --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=... \
-#   --build-arg NEXT_PUBLIC_API_URL=... \
-#   -t oskarjolofsson/true_swing_admin:latest --push . \
-#   && docker image rm oskarjolofsson/true_swing_admin:latest 2>/dev/null \
-#   && docker buildx prune -f
+# docker buildx build --platform linux/amd64,linux/arm64    --build-arg GIT_COMMIT=$(git rev-parse --short HEAD)    --build-arg NEXT_PUBLIC_SUPABASE_URL=https://ravbetnydtdxiuisypct.supabase.co    --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhdmJldG55ZHRkeGl1aXN5cGN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzNjc1NzIsImV4cCI6MjA4NDk0MzU3Mn0.klq57RDoWCvkwjOf75zVBpsVL1gQOQ1d0qdudi6aT1Q    --build-arg NEXT_PUBLIC_API_URL=https://api.trueswing.se     -t oskarjolofsson/true_swing_admin:latest --push .    && docker image rm oskarjolofsson/true_swing_admin:latest 2>/dev/null && docker buildx prune -f
 
 # --- Pull and run on the server ---
 # cd /srv/trueswing
-# docker compose pull
-# docker compose up -d
+# docker compose pull admin
+# docker compose up -d admin
 
 # --- Test the image locally ---
 # docker build --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) --build-arg NEXT_PUBLIC_SUPABASE_URL=https://ravbetnydtdxiuisypct.supabase.co   --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhdmJldG55ZHRkeGl1aXN5cGN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzNjc1NzIsImV4cCI6MjA4NDk0MzU3Mn0.klq57RDoWCvkwjOf75zVBpsVL1gQOQ1d0qdudi6aT1Q   --build-arg NEXT_PUBLIC_API_URL=https://api.trueswing.se   -t trueswing-admin-test .
