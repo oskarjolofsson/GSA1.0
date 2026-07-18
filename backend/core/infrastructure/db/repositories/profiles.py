@@ -11,6 +11,18 @@ def get_profile_by_id(profile_id, session: Session) -> Profile:
 def get_all_profiles(session: Session) -> list[Profile]:
     return session.query(Profile).all()
 
+
+def search_profiles(session: Session, query: str, *, limit: int) -> list[Profile]:
+    """Case-insensitive substring match on name/email, capped at `limit`."""
+    pattern = f"%{query}%"
+    stmt = (
+        select(Profile)
+        .where(Profile.name.ilike(pattern) | Profile.email.ilike(pattern))
+        .order_by(Profile.name.asc())
+        .limit(limit)
+    )
+    return list(session.scalars(stmt).all())
+
 # ------------ COUNT ------------
 
 

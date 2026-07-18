@@ -1,13 +1,19 @@
 
+import uuid
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from core.infrastructure.db import models
 
 ACTIVE_SUBSCRIPTION_STATUSES = ("trialing", "active", "past_due", "unpaid")
+
+# Manual comp grants created by an admin. Not backed by Stripe/RevenueCat, so
+# there is nothing to charge and no external system to keep in sync.
+MANUAL_PROVIDER = "manual"
+MANUAL_PRICE_ID = "manual_comp"
 
 
 def get_subscription_by_external_id(
@@ -48,6 +54,84 @@ def get_active_subscriptions_for_user(
         .order_by(models.BillingSubscription.created_at.desc())
     )
     return session.scalars(stmt).first()
+
+
+def get_subscription_by_id(
+    subscription_id: UUID,
+    session: Session,
+) -> models.BillingSubscription | None:
+    return session.get(models.BillingSubscription, subscription_id)
+
+
+def _active_subscriptions_stmt():
+    # Active subscriptions joined to their customer + profile. Shared by the
+    # list and count queries so the page total always matches the page rows.
+    return (
+        select(models.BillingSubscription, models.Profile)
+        .join(
+            models.BillingCustomer,
+            models.BillingSubscription.billing_customer_id == models.BillingCustomer.id,
+        )
+        .join(
+            models.Profile,
+            models.BillingCustomer.user_id == models.Profile.id,
+        )
+        .where(models.BillingSubscription.status.in_(ACTIVE_SUBSCRIPTION_STATUSES))
+        .where(models.BillingSubscription.ended_at == None)  # noqa: E711
+    )
+
+
+def list_active_subscriptions_with_profiles(
+    session: Session,
+    *,
+    limit: int,
+    offset: int,
+) -> list[tuple[models.BillingSubscription, models.Profile]]:
+    stmt = (
+        _active_subscriptions_stmt()
+        .order_by(models.BillingSubscription.current_period_start.desc().nullslast())
+        .order_by(models.BillingSubscription.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return list(session.execute(stmt).all())
+
+
+def count_active_subscriptions(session: Session) -> int:
+    stmt = select(func.count()).select_from(_active_subscriptions_stmt().subquery())
+    return session.scalar(stmt) or 0
+
+
+def create_manual_subscription(
+    *,
+    billing_customer_id: UUID,
+    session: Session,
+) -> models.BillingSubscription:
+    subscription = models.BillingSubscription(
+        billing_customer_id=billing_customer_id,
+        provider=MANUAL_PROVIDER,
+        external_subscription_id=f"manual_{uuid.uuid4()}",
+        external_price_id=MANUAL_PRICE_ID,
+        status="active",
+        current_period_start=datetime.now(timezone.utc),
+        current_period_end=None,  # manual grants never auto-expire
+        cancel_at_period_end=False,
+    )
+    session.add(subscription)
+    session.flush()
+    return subscription
+
+
+def end_subscription(
+    subscription: models.BillingSubscription,
+    session: Session,
+) -> models.BillingSubscription:
+    now = datetime.now(timezone.utc)
+    subscription.status = "canceled"
+    subscription.ended_at = now
+    subscription.canceled_at = now
+    session.flush()
+    return subscription
 
 
 def upsert_subscription(
