@@ -7,6 +7,7 @@ written inside the rolled-back db_session transaction, so tests stay isolated.
 """
 
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -80,6 +81,68 @@ def test_grant_twice_returns_409(client, admin_headers, test_user):
 
     second = client.post("/api/v1/admin/subscriptions/", headers=admin_headers, json=body)
     assert second.status_code == 409
+
+
+def _seed_stripe_sub(db_session, user_id, *, status, current_period_end, ended_at=None):
+    """Seed a provider='stripe' subscription row in the given state."""
+    customer = billing_customer_repo.create_billing_customer(
+        user_id=user_id,
+        customer_id=f"cus_test_{uuid.uuid4().hex[:12]}",
+        provider="stripe",
+        session=db_session,
+    )
+    return billing_subscription_repo.upsert_subscription(
+        billing_customer_id=customer.id,
+        provider="stripe",
+        external_subscription_id=f"sub_test_{uuid.uuid4().hex[:12]}",
+        external_price_id="price_test",
+        status=status,
+        current_period_start=None,
+        current_period_end=current_period_end,
+        cancel_at_period_end=False,
+        canceled_at=None,
+        ended_at=ended_at,
+        session=db_session,
+    )
+
+
+def test_grant_allowed_when_existing_sub_period_expired(client, admin_headers, test_user, db_session):
+    # status still "active" and ended_at null (webhook never ended it), but the
+    # paid period has passed — admin must be able to comp them.
+    past = datetime.now(timezone.utc) - timedelta(days=3)
+    _seed_stripe_sub(db_session, test_user["user_id"], status="active", current_period_end=past)
+
+    response = client.post(
+        "/api/v1/admin/subscriptions/",
+        headers=admin_headers,
+        json={"user_id": str(test_user["user_id"])},
+    )
+    assert response.status_code == 201
+
+
+def test_grant_allowed_when_existing_sub_past_due(client, admin_headers, test_user, db_session):
+    future = datetime.now(timezone.utc) + timedelta(days=3)
+    _seed_stripe_sub(db_session, test_user["user_id"], status="past_due", current_period_end=future)
+
+    response = client.post(
+        "/api/v1/admin/subscriptions/",
+        headers=admin_headers,
+        json={"user_id": str(test_user["user_id"])},
+    )
+    assert response.status_code == 201
+
+
+def test_grant_blocked_when_existing_sub_still_valid(client, admin_headers, test_user, db_session):
+    # active + period in the future = genuinely current → still blocks.
+    future = datetime.now(timezone.utc) + timedelta(days=10)
+    _seed_stripe_sub(db_session, test_user["user_id"], status="active", current_period_end=future)
+
+    response = client.post(
+        "/api/v1/admin/subscriptions/",
+        headers=admin_headers,
+        json={"user_id": str(test_user["user_id"])},
+    )
+    assert response.status_code == 409
 
 
 def test_grant_unknown_user_returns_404(client, admin_headers):
@@ -157,6 +220,21 @@ def test_search_unsubscribed_profile(client, admin_headers, test_user):
     assert response.status_code == 200
     results = response.json()
     match = next(r for r in results if r["user_id"] == str(test_user["user_id"]))
+    assert match["subscribed"] is False
+    assert match["provider"] is None
+
+
+def test_search_expired_sub_shows_not_subscribed(client, admin_headers, test_user, db_session):
+    # A period-passed (webhook-stuck) row must show subscribed=false so the
+    # dashboard offers Grant — matching the grant-guard.
+    past = datetime.now(timezone.utc) - timedelta(days=3)
+    _seed_stripe_sub(db_session, test_user["user_id"], status="active", current_period_end=past)
+
+    response = client.get(
+        f"/api/v1/admin/subscriptions/search/?q={test_user['email']}", headers=admin_headers
+    )
+    assert response.status_code == 200
+    match = next(r for r in response.json() if r["user_id"] == str(test_user["user_id"]))
     assert match["subscribed"] is False
     assert match["provider"] is None
 

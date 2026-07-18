@@ -15,7 +15,7 @@ const off =
 // active. Technical has no page of its own, so it lands on its first sub-page
 // while still highlighting for any /technical/* route.
 const TABS = [
-  { href: "/business", match: "/business", label: "Business" },
+  { href: "/business/subscriptions", match: "/business", label: "Business" },
   { href: "/technical/users", match: "/technical", label: "Technical" },
 ];
 
