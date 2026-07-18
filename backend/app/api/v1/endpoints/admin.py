@@ -29,7 +29,7 @@ def get_stats(
 
 @router.get("/verify/", response_model=AdminVerifyResponse)
 def verify_admin(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     """
