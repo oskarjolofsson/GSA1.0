@@ -176,6 +176,28 @@ def test_list_includes_granted_subscriber(client, admin_headers, test_user):
     assert match["status"] == "active"
 
 
+def test_list_excludes_period_expired_sub(client, admin_headers, test_user, db_session):
+    # status still "active" but the period has passed → must not show in the list
+    # or the count (it's not a currently-valid subscription).
+    past = datetime.now(timezone.utc) - timedelta(days=3)
+    _seed_stripe_sub(db_session, test_user["user_id"], status="active", current_period_end=past)
+
+    response = client.get("/api/v1/admin/subscriptions/", headers=admin_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert all(item["user_id"] != str(test_user["user_id"]) for item in data["items"])
+
+
+def test_list_excludes_past_due_sub(client, admin_headers, test_user, db_session):
+    future = datetime.now(timezone.utc) + timedelta(days=3)
+    _seed_stripe_sub(db_session, test_user["user_id"], status="past_due", current_period_end=future)
+
+    response = client.get("/api/v1/admin/subscriptions/", headers=admin_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert all(item["user_id"] != str(test_user["user_id"]) for item in data["items"])
+
+
 def test_list_respects_limit(client, admin_headers, test_user):
     client.post(
         "/api/v1/admin/subscriptions/",
