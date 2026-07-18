@@ -63,6 +63,59 @@ def get_subscription_by_id(
     return session.get(models.BillingSubscription, subscription_id)
 
 
+# Statuses that still grant entitlement but where the paid period may have
+# lapsed (payment retry / grace). Kept out of the admin grant-guard so an admin
+# can comp a lapsed account.
+CURRENT_SUBSCRIPTION_STATUSES = ("trialing", "active")
+
+
+def get_valid_subscription_for_user(
+    user_id: UUID,
+    session: Session,
+) -> models.BillingSubscription | None:
+    """A subscription that is currently valid — active/trialing, not ended, whose
+    paid period has started and has not yet passed.
+
+    Distinct from ``get_active_subscriptions_for_user`` (which drives entitlement
+    and treats past_due/unpaid and period-passed rows as active). This is the
+    single "is the user genuinely subscribed right now?" predicate, shared by the
+    admin grant-guard (block only a genuinely-current sub) and the admin search
+    `subscribed` flag (so the dashboard's Grant button state matches what the
+    grant endpoint will actually do). A lapsed / past_due / not-yet-started /
+    webhook-stuck row is NOT valid.
+
+        valid ⇔ status ∈ (active, trialing)
+                AND ended_at IS NULL
+                AND (current_period_start IS NULL OR current_period_start <= now())
+                AND (current_period_end   IS NULL OR current_period_end   >  now())
+
+    A NULL bound is treated as open-ended: NULL start = "already started",
+    NULL end = "never expires" (manual comps). Only an explicit future start or
+    a past end disqualifies the row.
+    """
+    now = datetime.now(timezone.utc)
+    stmt = (
+        select(models.BillingSubscription)
+        .join(
+            models.BillingCustomer,
+            models.BillingSubscription.billing_customer_id == models.BillingCustomer.id,
+        )
+        .where(models.BillingCustomer.user_id == user_id)
+        .where(models.BillingSubscription.status.in_(CURRENT_SUBSCRIPTION_STATUSES))
+        .where(models.BillingSubscription.ended_at == None)  # noqa: E711
+        .where(
+            (models.BillingSubscription.current_period_start == None)  # noqa: E711
+            | (models.BillingSubscription.current_period_start <= now)
+        )
+        .where(
+            (models.BillingSubscription.current_period_end == None)  # noqa: E711
+            | (models.BillingSubscription.current_period_end > now)
+        )
+        .order_by(models.BillingSubscription.created_at.desc())
+    )
+    return session.scalars(stmt).first()
+
+
 def _active_subscriptions_stmt():
     # Active subscriptions joined to their customer + profile. Shared by the
     # list and count queries so the page total always matches the page rows.

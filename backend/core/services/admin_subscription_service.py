@@ -66,7 +66,11 @@ def search_profiles(
     matches = profiles_repo.search_profiles(db_session, query, limit=limit)
     results: list[ProfileMatchDTO] = []
     for profile in matches:
-        active = billing_subscription_repo.get_active_subscriptions_for_user(
+        # Use the SAME "currently valid" predicate as the grant-guard so the
+        # dashboard's `subscribed` flag (which disables the Grant button) matches
+        # exactly what the grant endpoint will do. A lapsed / past_due / period-
+        # passed / not-yet-started row shows as NOT subscribed → grantable.
+        valid = billing_subscription_repo.get_valid_subscription_for_user(
             profile.id, db_session
         )
         results.append(
@@ -74,9 +78,9 @@ def search_profiles(
                 user_id=profile.id,
                 name=profile.name,
                 email=profile.email,
-                subscribed=active is not None,
-                provider=active.provider if active else None,
-                subscription_id=active.id if active else None,
+                subscribed=valid is not None,
+                provider=valid.provider if valid else None,
+                subscription_id=valid.id if valid else None,
             )
         )
     return results
@@ -87,7 +91,10 @@ def grant_manual_subscription(user_id: UUID, db_session: Session) -> SubscriberD
     if not profile:
         raise exceptions.NotFoundException("User", str(user_id))
 
-    if billing_subscription_repo.get_active_subscriptions_for_user(user_id, db_session):
+    # Block only a genuinely-current subscription. A lapsed / past_due / webhook-
+    # stuck row (period passed) must NOT block a comp — that's exactly when an
+    # admin wants to grant one. See get_valid_subscription_for_user.
+    if billing_subscription_repo.get_valid_subscription_for_user(user_id, db_session):
         raise exceptions.ConflictException(
             "User already has an active subscription"
         )

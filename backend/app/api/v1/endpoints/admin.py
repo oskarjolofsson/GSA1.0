@@ -29,11 +29,16 @@ def get_stats(
 
 @router.get("/verify/", response_model=AdminVerifyResponse)
 def verify_admin(
-    current_user: dict = Depends(require_admin),
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Verify if the current user has admin privilages
+    Report whether the current user has admin privileges.
+
+    Gated by `get_current_user` (authenticated), NOT `require_admin`: this
+    endpoint's job is to *report* admin state, so a non-admin must get a
+    200 `{is_admin: false}` rather than a 403. The admin dashboard's
+    verifyAdmin() relies on this to tell "not admin" apart from "API down".
     """
     user_id = current_user["user_id"]
     return AdminVerifyResponse(
