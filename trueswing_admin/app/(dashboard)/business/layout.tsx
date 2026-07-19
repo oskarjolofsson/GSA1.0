@@ -1,4 +1,8 @@
-import BusinessSidebar from "./_components/business-sidebar";
+import Sidebar from "@/components/ui/sidebar";
+
+const BUSINESS_ITEMS = [
+  { href: "/business/subscriptions", label: "Subscriptions" },
+];
 
 export default function BusinessLayout({
   children,
@@ -7,8 +11,8 @@ export default function BusinessLayout({
 }) {
   return (
     <main className="mx-auto w-full flex-1 px-6 py-8">
-      <div className="flex gap-6">
-        <BusinessSidebar />
+      <div className="flex flex-col gap-4 md:flex-row md:gap-6">
+        <Sidebar title="Business" items={BUSINESS_ITEMS} />
         <div className="min-w-0 flex-1">{children}</div>
       </div>
     </main>

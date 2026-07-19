@@ -21,6 +21,9 @@ export const routes = {
   /** DELETE → 204. Single user by id. */
   user: (userId: string) => `/api/v1/users/${userId}/`,
 
+  /** PATCH → GetUser. Change a user's role (require_admin). */
+  userRole: (userId: string) => `/api/v1/users/${userId}/role/`,
+
   /** POST (grant) → 201. Manual comp subscription collection. */
   adminSubscriptions: () => "/api/v1/admin/subscriptions/",
 

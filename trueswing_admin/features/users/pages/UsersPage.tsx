@@ -1,6 +1,11 @@
 import { requireSessionToken } from "@/lib/auth/require-session";
+import { createClient } from "@/lib/supabase/server";
 import { getUsersPage } from "@/lib/users/get-users-page";
-import { deleteUserAction, searchUsersAction } from "@/features/users/actions";
+import {
+  deleteUserAction,
+  searchUsersAction,
+  setUserRoleAction,
+} from "@/features/users/actions";
 import { FetchResultView } from "@/components/fetch-result";
 import UsersExplorer from "@/features/users/components/users-explorer";
 import { paginate, parsePage } from "@/features/shared/paginate";
@@ -34,6 +39,14 @@ export default async function UsersPage({
 
   const token = await requireSessionToken();
 
+  // The current admin's own id, so the detail view can disable the role toggle
+  // on their own row (the backend 403 guard is the authoritative check).
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const currentUserId = user?.id ?? null;
+
   const offset = (requestedPage - 1) * PAGE_SIZE;
   const result = await getUsersPage(token, { limit: PAGE_SIZE, offset });
 
@@ -53,8 +66,10 @@ export default async function UsersPage({
             limit: PAGE_SIZE,
             itemsOnPage: page.items.length,
           })}
+          currentUserId={currentUserId}
           deleteAction={deleteUserAction}
           searchAction={searchUsersAction}
+          roleAction={setUserRoleAction}
         />
       )}
     </FetchResultView>
