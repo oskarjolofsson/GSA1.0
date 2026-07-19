@@ -11,6 +11,27 @@ Server: `root@188.245.42.39` · Config: `/srv/trueswing/` · Image: `oskarjolofs
 
 ---
 
+## Quick path: `./deploy.sh` (recommended)
+
+`backend/deploy.sh` does the whole flow below — build + push, remote pull/restart,
+and verify — in one command. Run it from the backend repo root:
+
+```bash
+./deploy.sh preview                 # build :preview, restart app-preview, verify
+./deploy.sh production              # build :latest,  restart app,         verify
+./deploy.sh production --sync-env   # scp .env.production to /root/.env first, then deploy
+```
+
+It only bakes `GIT_COMMIT` into the image — never secrets. Env stays in
+`/root/.env` on the server (compose injects it at runtime via `env_file`); use
+`--sync-env` when those values change. Do the one-time [Prep](#1-prep-shared--do-once-per-machine)
+below first (`docker buildx` builder + `docker login`).
+
+The manual steps below are the same flow, spelled out, for when you want to run a
+single stage by hand or the script isn't available.
+
+---
+
 ## 1. Prep (shared — do once per machine)
 
 Create a multi-platform builder (only if `docker buildx ls` shows none):
