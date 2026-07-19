@@ -1,4 +1,5 @@
 import apiClient from 'lib/apiClient';
+import { routes } from 'lib/api/routes';
 import type { BillingStatus } from 'features/billing/types';
 
 /**
@@ -6,5 +7,5 @@ import type { BillingStatus } from 'features/billing/types';
  * cross-platform. Gate UI on `can_access_premium`.
  */
 export function getBillingStatus(): Promise<BillingStatus> {
-  return apiClient.get<BillingStatus>('/api/v1/billing/status');
+  return apiClient.get<BillingStatus>(routes.billing.status);
 }

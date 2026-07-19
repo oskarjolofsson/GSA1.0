@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import { View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 
-import UploadFlow from "features/upload/uploadFlow";
+import UploadFlow from "features/upload/UploadFlow";
 import CoachFeedbackFlow from "features/coachFeedback/CoachFeedbackFlow";
 import LibraryScreen from "features/library/LibraryScreen";
 import AddFocusChooser, { type AddFocusChoice } from "./AddFocusChooser";

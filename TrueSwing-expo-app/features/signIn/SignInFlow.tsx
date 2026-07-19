@@ -7,8 +7,8 @@ import { getAuthErrorMessage } from "lib/errors";
 
 import { useSignInFlowSequence } from "./hooks/useSignInFlowSequence";
 
-import LandingScreen from "./screens/landingScreen";
-import EmailSignInScreen from "./screens/signInWithPasswordScreen";
+import LandingScreen from "./screens/LandingScreen";
+import EmailSignInScreen from "./screens/SignInWithPasswordScreen";
 
 
 export default function SignInFlow() {

@@ -1,19 +1,9 @@
-import { useCallback } from "react";
 import { View } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
 import AddFocusFlow from "features/addFocus/AddFocusFlow";
-import { useRequirePremium } from "features/billing/hooks/useRequirePremium";
+import { useRequirePremiumEntry } from "features/billing/hooks/useRequirePremiumEntry";
 
 export default function Upload() {
-  const router = useRouter();
-  const { requirePremium } = useRequirePremium();
-
-  // Premium entry-point gate: if blocked, pop the paywall and bounce to home.
-  useFocusEffect(
-    useCallback(() => {
-      requirePremium(() => router.replace("/(app)/(tabs)"));
-    }, [requirePremium, router])
-  );
+  useRequirePremiumEntry();
 
   return (
     <View style={{ flex: 1 }}>
