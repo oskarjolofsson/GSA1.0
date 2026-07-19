@@ -53,6 +53,38 @@ def test_search_users_finds_by_email(test_user, db_session):
 def test_search_users_respects_limit(test_user, db_session):
     results = user_service.search_users(db_session, "@", limit=3)
     assert len(results) <= 3
+
+
+def test_set_user_role_flips_and_returns_enriched(test_user, db_session):
+    import uuid
+
+    caller = uuid.uuid4()  # a different id, so the self-guard doesn't trip
+    target = test_user["user_id"]
+
+    dto = user_service.set_user_role(caller, target, "admin", db_session)
+    assert dto.id == target
+    assert dto.role == "admin"
+    assert user_service.is_admin(str(target), db_session) is True
+    # analyses_count proves the response went through the enrichment path.
+    assert dto.analyses_count is not None
+
+    dto = user_service.set_user_role(caller, target, "user", db_session)
+    assert user_service.is_admin(str(target), db_session) is False
+
+
+def test_set_user_role_self_change_forbidden(test_user, db_session):
+    uid = test_user["user_id"]
+    with pytest.raises(exceptions.ForbiddenException):
+        user_service.set_user_role(uid, uid, "user", db_session)
+
+
+def test_set_user_role_invalid_role_raises(test_user, db_session):
+    import uuid
+
+    with pytest.raises(exceptions.ValidationException):
+        user_service.set_user_role(
+            uuid.uuid4(), test_user["user_id"], "superuser", db_session
+        )
     
 
 def test_is_admin_and_set_admin(test_user, db_session):

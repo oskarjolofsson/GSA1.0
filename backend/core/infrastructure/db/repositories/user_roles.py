@@ -16,26 +16,29 @@ def get_roles_for_users(user_ids: list[UUID], session: Session) -> dict[UUID, st
     """
     Get the primary role for multiple users in a single query.
     Returns a dict mapping user_id to role name.
-    If a user has multiple roles, returns the first one found.
+
+    A user keeps the default "user" role even after being granted "admin", so a
+    user can hold both. The elevated role is what matters for display and access,
+    so "admin" always wins over "user"; otherwise the earliest role is kept.
     """
     if not user_ids:
         return {}
-    
+
     stmt = (
         select(UserRole.user_id, Role.name)
         .join(Role, UserRole.role_id == Role.id)
         .where(UserRole.user_id.in_(user_ids))
         .order_by(UserRole.created_at)
     )
-    
+
     results = session.execute(stmt).all()
-    
-    # Build dict - first role found for each user
+
+    # Earliest role wins by default, but "admin" always takes precedence.
     user_roles: dict[UUID, str] = {}
     for user_id, role_name in results:
-        if user_id not in user_roles:
+        if user_id not in user_roles or role_name == "admin":
             user_roles[user_id] = role_name
-    
+
     return user_roles
 
 
