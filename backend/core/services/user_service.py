@@ -30,6 +30,31 @@ def get_all_users(session: Session, *, limit: int, offset: int) -> PageDTO[GetUs
     return PageDTO(items=items, total=total, limit=limit, offset=offset)
 
 
+VALID_ROLES = {"user", "admin"}
+
+
+def set_user_role(
+    caller_id: str, target_id: str, role: str, session: Session
+) -> GetUserDTO:
+    """Set a user's role (admin only). Returns the updated, enriched user.
+
+    An admin cannot change their OWN role: the admin gate is checked at sign-in,
+    so self-demotion would lock the caller out of the dashboard. Guarded here as
+    the authoritative check (the frontend also disables the control).
+    """
+    if str(caller_id) == str(target_id):
+        raise exceptions.ForbiddenException("You can't change your own role")
+    if role not in VALID_ROLES:
+        raise exceptions.ValidationException(f"Unknown role: {role}")
+
+    set_admin(str(target_id), role == "admin", session)
+
+    profile = get_profile_by_id(str(target_id), session)
+    if not profile:
+        raise exceptions.NotFoundException("Profile not found", str(target_id))
+    return _enrich_profiles([profile], session)[0]
+
+
 def search_users(session: Session, query: str, *, limit: int) -> list[GetUserDTO]:
     """Admin search over users by name/email, returning the full user shape."""
     if not query.strip():

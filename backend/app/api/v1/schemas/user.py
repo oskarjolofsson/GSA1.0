@@ -1,8 +1,13 @@
 from pydantic import BaseModel, ConfigDict
+from typing import Literal
 from uuid import UUID
 from datetime import datetime
 from core.services.dtos.user_service_dto import GetUserDTO
 from core.services.dtos.subscription import PageDTO
+
+
+class SetUserRoleRequest(BaseModel):
+    role: Literal["user", "admin"]
 
 class GetUser(BaseModel):
     id: UUID

@@ -58,6 +58,40 @@ def test_list_users_limit_upper_bound(test_user, db_session, auth_headers, clien
     assert response.status_code == 422
 
 
+# Role endpoint is require_admin: a non-admin caller gets 403.
+def test_set_role_requires_admin(test_user, db_session, auth_headers, client):
+    response = client.patch(
+        f"/api/v1/users/{uuid.uuid4()}/role/",
+        headers=auth_headers,
+        json={"role": "admin"},
+    )
+    assert response.status_code == 403
+
+
+# An admin changing their OWN role is blocked (403) — prevents self-lockout.
+def test_set_role_self_change_forbidden(test_user, db_session, auth_headers, client):
+    user_service.set_admin(str(test_user["user_id"]), True, db_session)
+
+    response = client.patch(
+        f"/api/v1/users/{test_user['user_id']}/role/",
+        headers=auth_headers,
+        json={"role": "user"},
+    )
+    assert response.status_code == 403
+
+
+# An unknown role value is rejected by request validation (422).
+def test_set_role_invalid_role(test_user, db_session, auth_headers, client):
+    user_service.set_admin(str(test_user["user_id"]), True, db_session)
+
+    response = client.patch(
+        f"/api/v1/users/{test_user['user_id']}/role/",
+        headers=auth_headers,
+        json={"role": "superuser"},
+    )
+    assert response.status_code == 422
+
+
 # Keep last — really deletes the shared test_user in Supabase (see note above).
 def test_delete_user(test_user, db_session, auth_headers, client):
     # Verify that user exists
