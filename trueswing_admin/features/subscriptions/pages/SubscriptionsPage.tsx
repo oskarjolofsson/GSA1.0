@@ -7,7 +7,7 @@ import {
 } from "@/features/subscriptions/actions";
 import { FetchResultView } from "@/components/fetch-result";
 import SubscriptionsExplorer from "@/features/subscriptions/components/subscriptions-explorer";
-import { paginate, parsePage } from "@/features/subscriptions/paginate";
+import { paginate, parsePage } from "@/features/shared/paginate";
 
 const PAGE_SIZE = 10;
 

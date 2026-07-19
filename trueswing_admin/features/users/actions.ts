@@ -2,16 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { withAdmin } from "@/lib/auth/with-admin";
+import { getSessionToken } from "@/lib/auth/require-session";
 import { deleteUserRequest } from "@/lib/users/delete-user";
+import { searchUsers } from "@/lib/users/search-users";
+import type { User } from "@/lib/users/types";
 
 /**
  * Delete a user. Invoked from the client via an event handler.
  *
- * Unlike the other admin mutations, the backend DELETE /users/{id}/ endpoint is
- * NOT `require_admin` — it uses get_current_user and only lets you delete your
- * own account. So the `withAdmin` gate here is the ONLY admin check; do not
- * remove it. (See the flagged bug: this endpoint can't actually delete another
- * user, so the admin "delete" button is effectively broken server-side.)
+ * The backend DELETE /users/{id}/ endpoint uses get_current_user (not
+ * `require_admin`) and its service checks `is_admin` for the actor, so an admin
+ * can delete any user while a non-admin can only delete themselves. The
+ * `withAdmin` gate here is still the client-side admin check; do not remove it.
  * On success, revalidate the users route so a fresh list is fetched next render.
  */
 export async function deleteUserAction(
@@ -22,4 +24,25 @@ export async function deleteUserAction(
     if (result.status === "ok") revalidatePath("/technical/users");
     return { ok: result.status === "ok" };
   }, { ok: false });
+}
+
+/**
+ * Search users by name/email. Invoked from the client search box (debounced).
+ *
+ * Leans on the endpoint's own `require_admin` gate, so it only needs a session
+ * token (mirrors `searchProfilesAction`). Returns `ok:false` on any failure so
+ * the UI can show an error state instead of a silent empty list.
+ */
+export async function searchUsersAction(
+  query: string,
+): Promise<{ ok: boolean; matches: User[] }> {
+  const trimmed = query.trim();
+  if (!trimmed) return { ok: true, matches: [] };
+
+  const token = await getSessionToken();
+  if (!token) return { ok: false, matches: [] };
+
+  const matches = await searchUsers(token, trimmed);
+  if (matches === null) return { ok: false, matches: [] };
+  return { ok: true, matches };
 }

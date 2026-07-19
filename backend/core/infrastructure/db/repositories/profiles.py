@@ -12,6 +12,21 @@ def get_all_profiles(session: Session) -> list[Profile]:
     return session.query(Profile).all()
 
 
+def get_profiles_page(session: Session, *, limit: int, offset: int) -> list[Profile]:
+    """One page of profiles for the admin list.
+
+    A deterministic ORDER BY is mandatory: offset pagination without a stable
+    sort skips or duplicates rows across pages. Newest-first (created_at desc).
+    """
+    stmt = (
+        select(Profile)
+        .order_by(Profile.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    return list(session.scalars(stmt).all())
+
+
 def search_profiles(session: Session, query: str, *, limit: int) -> list[Profile]:
     """Case-insensitive substring match on name/email, capped at `limit`."""
     pattern = f"%{query}%"

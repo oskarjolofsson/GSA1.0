@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
 from core.services.dtos.user_service_dto import GetUserDTO
+from core.services.dtos.subscription import PageDTO
 
 class GetUser(BaseModel):
     id: UUID
@@ -33,4 +34,20 @@ class GetUser(BaseModel):
             drillsCompleted=dto.drills_completed,
             created_at=dto.created_at,
             updated_at=dto.updated_at,
+        )
+
+
+class GetUserPageResponse(BaseModel):
+    items: list[GetUser]
+    total: int
+    limit: int
+    offset: int
+
+    @classmethod
+    def from_domain(cls, page: PageDTO[GetUserDTO]) -> "GetUserPageResponse":
+        return cls(
+            items=[GetUser.from_domain(item) for item in page.items],
+            total=page.total,
+            limit=page.limit,
+            offset=page.offset,
         )
