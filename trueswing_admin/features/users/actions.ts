@@ -5,6 +5,7 @@ import { withAdmin } from "@/lib/auth/with-admin";
 import { getSessionToken } from "@/lib/auth/require-session";
 import { deleteUserRequest } from "@/lib/users/delete-user";
 import { searchUsers } from "@/lib/users/search-users";
+import { setUserRole } from "@/lib/users/set-user-role";
 import type { User } from "@/lib/users/types";
 
 /**
@@ -45,4 +46,36 @@ export async function searchUsersAction(
   const matches = await searchUsers(token, trimmed);
   if (matches === null) return { ok: false, matches: [] };
   return { ok: true, matches };
+}
+
+/**
+ * Change a user's role (admin only). Invoked from the user detail view.
+ *
+ * Gated by `withAdmin` (the endpoint is `require_admin`), so a 403 from the API
+ * here means the admin tried to change their OWN role, not "not an admin". That
+ * case surfaces a specific message; everything else is a generic failure.
+ */
+export async function setUserRoleAction(
+  userId: string,
+  role: "user" | "admin",
+): Promise<{ ok: boolean; reason?: string }> {
+  return withAdmin(
+    async (token) => {
+      const result = await setUserRole(userId, role, token);
+      if (result.status === "ok") {
+        revalidatePath("/technical/users");
+        return { ok: true };
+      }
+      if (result.status === "denied") {
+        return { ok: false, reason: "You can't change your own role." };
+      }
+      return {
+        ok: false,
+        reason:
+          result.detail ??
+          "Couldn't change the role. The API may be unreachable — try again.",
+      };
+    },
+    { ok: false, reason: "You aren't authorized to change roles." },
+  );
 }

@@ -9,10 +9,15 @@ import UserDetail from "./user-detail";
 type Props = {
   page: UserPage;
   pageInfo: PageInfo;
+  currentUserId: string | null;
   deleteAction: (id: string) => Promise<{ ok: boolean }>;
   searchAction: (
     query: string,
   ) => Promise<{ ok: boolean; matches: User[] }>;
+  roleAction: (
+    id: string,
+    role: "user" | "admin",
+  ) => Promise<{ ok: boolean; reason?: string }>;
 };
 
 /**
@@ -28,8 +33,10 @@ type Props = {
 export default function UsersExplorer({
   page,
   pageInfo,
+  currentUserId,
   deleteAction,
   searchAction,
+  roleAction,
 }: Props) {
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<User[]>([]);
@@ -60,12 +67,14 @@ export default function UsersExplorer({
     return (
       <UserDetail
         user={selected}
+        currentUserId={currentUserId}
         onBack={() => setSelected(null)}
         onDeleted={(id) => {
           setRemoved((prev) => new Set(prev).add(id));
           setSelected(null);
         }}
         deleteAction={deleteAction}
+        roleAction={roleAction}
       />
     );
   }

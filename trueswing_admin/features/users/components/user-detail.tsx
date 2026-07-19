@@ -2,15 +2,23 @@
 
 import { useState, useTransition } from "react";
 import type { User } from "@/lib/users/types";
+import { formatDateTime } from "@/features/shared/format-date";
 
 type Props = {
   user: User;
+  currentUserId: string | null;
   onBack: () => void;
   onDeleted: (id: string) => void;
   deleteAction: (id: string) => Promise<{ ok: boolean }>;
+  roleAction: (
+    id: string,
+    role: "user" | "admin",
+  ) => Promise<{ ok: boolean; reason?: string }>;
 };
 
-/** Format a field value for the key-value card. */
+const DATE_KEYS = new Set<keyof User>(["created_at", "updated_at"]);
+
+/** Format a non-date field value for the key-value card. */
 function display(value: User[keyof User]): string {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "Yes" : "No";
@@ -30,15 +38,42 @@ const ROWS: { label: string; key: keyof User }[] = [
   { label: "ID", key: "id" },
 ];
 
+/** Colored badge for the boolean `active` field. */
+function ActiveBadge({ active }: { active: boolean | null | undefined }) {
+  if (active === null || active === undefined) {
+    return <span className="text-zinc-400">—</span>;
+  }
+  const dot = active ? "bg-green-500" : "bg-zinc-400";
+  const text = active
+    ? "text-green-700 dark:text-green-400"
+    : "text-zinc-500 dark:text-zinc-400";
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${text}`}>
+      <span className={`h-2 w-2 rounded-full ${dot}`} aria-hidden="true" />
+      {active ? "Yes" : "No"}
+    </span>
+  );
+}
+
 export default function UserDetail({
   user,
+  currentUserId,
   onBack,
   onDeleted,
   deleteAction,
+  roleAction,
 }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // Role is editable, so track it locally and reflect changes immediately.
+  const [role, setRole] = useState<string | null>(user.role ?? null);
+  const [roleError, setRoleError] = useState<string | null>(null);
+  const [isRolePending, startRole] = useTransition();
+
+  const isSelf = currentUserId !== null && user.id === currentUserId;
+  const isAdmin = role === "admin";
 
   function handleDelete() {
     setError(false);
@@ -49,6 +84,16 @@ export default function UserDetail({
         setError(true);
         setConfirming(false);
       }
+    });
+  }
+
+  function handleRoleToggle() {
+    setRoleError(null);
+    const next: "user" | "admin" = isAdmin ? "user" : "admin";
+    startRole(async () => {
+      const res = await roleAction(user.id, next);
+      if (res.ok) setRole(next);
+      else setRoleError(res.reason ?? "Couldn't change the role. Try again.");
     });
   }
 
@@ -76,11 +121,53 @@ export default function UserDetail({
               {label}
             </dt>
             <dd className="min-w-0 break-words text-zinc-900 dark:text-zinc-100">
-              {display(user[key])}
+              {key === "active" ? (
+                <ActiveBadge active={user.active} />
+              ) : key === "role" ? (
+                display(role)
+              ) : key === "id" ? (
+                <span className="font-mono text-xs">{display(user.id)}</span>
+              ) : DATE_KEYS.has(key) ? (
+                formatDateTime(user[key] as string | null)
+              ) : (
+                display(user[key])
+              )}
             </dd>
           </div>
         ))}
       </dl>
+
+      {/* Role control */}
+      <div className="mt-6">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          Role
+        </h3>
+        {isSelf ? (
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            You can&apos;t change your own role.
+          </p>
+        ) : (
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleRoleToggle}
+              disabled={isRolePending}
+              className="cursor-pointer rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-800 transition-colors hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            >
+              {isRolePending
+                ? "Updating…"
+                : isAdmin
+                  ? "Remove admin"
+                  : "Make admin"}
+            </button>
+            {roleError && (
+              <span className="text-sm text-red-600 dark:text-red-400">
+                {roleError}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="mt-6">
         {error && (
