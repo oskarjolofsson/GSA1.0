@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { isActive } from "@/components/nav/is-active";
+import { isActive } from "@/features/shared/utils/is-active";
 
 const base =
   "cursor-pointer rounded-full px-5 py-1.5 text-sm font-medium transition-colors";
