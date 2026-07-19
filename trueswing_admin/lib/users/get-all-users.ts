@@ -1,4 +1,5 @@
 import { authedFetch } from "@/lib/api/authed-fetch";
+import { routes } from "@/lib/api/routes";
 import { toResult, type FetchResult } from "@/lib/api/result";
 import type { User } from "./types";
 
@@ -16,7 +17,7 @@ import type { User } from "./types";
 export async function getAllUsers(
   token: string,
 ): Promise<FetchResult<User[]>> {
-  const res = await authedFetch("/api/v1/users/all/", token);
+  const res = await authedFetch(routes.usersAll(), token);
   return toResult(res, async (r) => {
     const data = await r.json();
     return Array.isArray(data) ? (data as User[]) : null;

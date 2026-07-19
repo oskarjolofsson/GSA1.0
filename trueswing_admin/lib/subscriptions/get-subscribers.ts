@@ -1,4 +1,5 @@
 import { authedFetch } from "@/lib/api/authed-fetch";
+import { routes } from "@/lib/api/routes";
 import { toResult, type FetchResult } from "@/lib/api/result";
 import type { SubscriberPage } from "./types";
 
@@ -18,7 +19,7 @@ export async function getSubscribers(
   { limit, offset }: { limit: number; offset: number },
 ): Promise<FetchResult<SubscriberPage>> {
   const res = await authedFetch(
-    `/api/v1/admin/subscriptions/?limit=${limit}&offset=${offset}`,
+    routes.adminSubscriptionsPage({ limit, offset }),
     token,
   );
   return toResult(res, async (r) => {

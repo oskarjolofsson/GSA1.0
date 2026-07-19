@@ -1,29 +1,15 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireSessionToken } from "@/lib/auth/require-session";
 import { getSubscribers } from "@/lib/subscriptions/get-subscribers";
 import {
   grantSubscriptionAction,
   revokeSubscriptionAction,
   searchProfilesAction,
 } from "@/features/subscriptions/actions";
+import { FetchResultView } from "@/components/fetch-result";
 import SubscriptionsExplorer from "@/features/subscriptions/components/subscriptions-explorer";
 import { paginate, parsePage } from "@/features/subscriptions/paginate";
 
 const PAGE_SIZE = 10;
-
-/** Small centered message for the non-happy states. */
-function Notice({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="flex min-h-[60vh] flex-col">
-      <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-        {title}
-      </h2>
-      <div className="mt-4 flex flex-1 items-center justify-center rounded-2xl border border-dashed border-zinc-200 px-6 text-center text-sm text-zinc-400 dark:border-zinc-700">
-        {body}
-      </div>
-    </div>
-  );
-}
 
 /**
  * Admin subscriptions screen (server component).
@@ -49,51 +35,35 @@ export default async function SubscriptionsPage({
   const { page: pageParam } = await searchParams;
   const requestedPage = parsePage(pageParam);
 
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session) redirect("/login");
+  const token = await requireSessionToken();
 
   const offset = (requestedPage - 1) * PAGE_SIZE;
-  const result = await getSubscribers(session.access_token, {
+  const result = await getSubscribers(token, {
     limit: PAGE_SIZE,
     offset,
   });
 
-  if (result.status === "denied") {
-    return (
-      <Notice
-        title="Subscriptions"
-        body="Your account isn't an admin, so you can't view subscriptions."
-      />
-    );
-  }
-  if (result.status === "error") {
-    return (
-      <Notice
-        title="Subscriptions"
-        body="Couldn't load subscriptions. The API may be unreachable — try again."
-      />
-    );
-  }
-
-  const page = result.data;
-  const info = paginate({
-    page: requestedPage,
-    total: page.total,
-    limit: PAGE_SIZE,
-    itemsOnPage: page.items.length,
-  });
-
   return (
-    <SubscriptionsExplorer
-      page={page}
-      pageInfo={info}
-      grantAction={grantSubscriptionAction}
-      revokeAction={revokeSubscriptionAction}
-      searchAction={searchProfilesAction}
-    />
+    <FetchResultView
+      result={result}
+      title="Subscriptions"
+      deniedBody="Your account isn't an admin, so you can't view subscriptions."
+      errorBody="Couldn't load subscriptions. The API may be unreachable — try again."
+    >
+      {(page) => (
+        <SubscriptionsExplorer
+          page={page}
+          pageInfo={paginate({
+            page: requestedPage,
+            total: page.total,
+            limit: PAGE_SIZE,
+            itemsOnPage: page.items.length,
+          })}
+          grantAction={grantSubscriptionAction}
+          revokeAction={revokeSubscriptionAction}
+          searchAction={searchProfilesAction}
+        />
+      )}
+    </FetchResultView>
   );
 }

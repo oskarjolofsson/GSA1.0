@@ -1,4 +1,5 @@
 import { authedFetch } from "@/lib/api/authed-fetch";
+import { routes } from "@/lib/api/routes";
 import type { ProfileMatch } from "./types";
 
 /**
@@ -17,7 +18,7 @@ export async function searchProfiles(
   { limit = 10 }: { limit?: number } = {},
 ): Promise<ProfileMatch[] | null> {
   const res = await authedFetch(
-    `/api/v1/admin/subscriptions/search/?q=${encodeURIComponent(query)}&limit=${limit}`,
+    routes.adminSubscriptionsSearch({ q: query, limit }),
     token,
   );
   if (!res || !res.ok) return null;

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireSessionToken } from "@/lib/auth/require-session";
 import { verifyAdmin } from "@/lib/auth/verify-admin";
 import NoAccess from "@/features/auth/components/no-access";
 import VerifyError from "@/features/auth/components/verify-error";
@@ -12,15 +12,9 @@ import VerifyError from "@/features/auth/components/verify-error";
  *                                 └ "error"  ─▶ <VerifyError/>
  */
 export default async function Home() {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const token = await requireSessionToken();
 
-  // Defensive: middleware should have redirected, but never trust a null token.
-  if (!session) redirect("/login");
-
-  const status = await verifyAdmin(session.access_token);
+  const status = await verifyAdmin(token);
 
   console.log("Admin verification status:", status);
   if (status === "admin") redirect("/technical/users");

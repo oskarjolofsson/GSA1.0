@@ -7,7 +7,7 @@ type Props = {
   searchAction: (
     query: string,
   ) => Promise<{ ok: boolean; matches: ProfileMatch[] }>;
-  grantAction: (userId: string) => Promise<{ ok: boolean }>;
+  grantAction: (userId: string) => Promise<{ ok: boolean; reason?: string }>;
 };
 
 /**
@@ -52,7 +52,8 @@ export default function GrantPanel({ searchAction, grantAction }: Props) {
       setGrantingId(null);
       if (!res.ok) {
         setGrantError(
-          "Couldn't grant the subscription. They may already be subscribed — refresh and check.",
+          res.reason ??
+            "Couldn't grant the subscription. They may already be subscribed — refresh and check.",
         );
         return;
       }

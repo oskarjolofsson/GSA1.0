@@ -55,3 +55,23 @@ Each route is marked with one of three access levels:
 | `422` | Request body failed validation |
 
 Error bodies are `{ "detail": "<message>" }`.
+
+## Downstream consumers — regenerate types after changing admin endpoints
+
+The **admin dashboard** (`trueswing_admin/`) generates its TypeScript types from
+this backend's `/openapi.json`. That generation is **manual** — changing a route
+here does not update the dashboard's types on its own.
+
+After you change the request/response shape of an admin-facing endpoint (anything
+under `/api/v1/admin`, `/api/v1/users`, or the subscription routes), regenerate
+the dashboard types so a renamed/removed field surfaces as a compile error there
+instead of a runtime surprise. With this backend running:
+
+```bash
+cd trueswing_admin && npm run gen:api-types
+```
+
+Tip: giving an endpoint an explicit `response_model` puts its shape in
+`/openapi.json`, which lets the dashboard derive its type instead of
+hand-mirroring it. `/api/v1/users/all/` currently lacks one, which is why the
+dashboard still hand-writes its `User` type.
