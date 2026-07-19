@@ -45,17 +45,23 @@ def test_get_subscription_summary_returns_period_and_cancel_fields(db_session, t
 		customer_id="cus_summary",
 		session=db_session,
 	)
-	period_end = 1_720_086_400
+	# A genuinely-current subscription: started in the past, period still in the
+	# future (entitlement is now period-aware, so a past period_end would not
+	# entitle and the summary would be None).
+	now = datetime.now(timezone.utc)
+	period_start = int((now - timedelta(days=1)).timestamp())
+	period_end = int((now + timedelta(days=29)).timestamp())
+	canceled_at = int((now - timedelta(hours=12)).timestamp())
 	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
 		provider="stripe",
 		external_subscription_id="sub_summary",
 		external_price_id="price_summary",
 		status="active",
-		current_period_start=1_720_000_000,
+		current_period_start=period_start,
 		current_period_end=period_end,
 		cancel_at_period_end=True,
-		canceled_at=1_720_040_000,
+		canceled_at=canceled_at,
 		ended_at=None,
 		session=db_session,
 	)
@@ -65,7 +71,7 @@ def test_get_subscription_summary_returns_period_and_cancel_fields(db_session, t
 	assert summary["status"] == "active"
 	assert summary["cancel_at_period_end"] is True
 	assert summary["current_period_end"] == datetime.fromtimestamp(period_end, tz=timezone.utc).isoformat()
-	assert summary["canceled_at"] == datetime.fromtimestamp(1_720_040_000, tz=timezone.utc).isoformat()
+	assert summary["canceled_at"] == datetime.fromtimestamp(canceled_at, tz=timezone.utc).isoformat()
 	assert summary["ended_at"] is None
 
 
@@ -114,6 +120,64 @@ def test_is_subscribed_false_when_status_canceled(db_session, test_user):
 		ended_at=1_700_086_400,
 		session=db_session,
 	)
+
+	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is False
+
+
+def _seed_sub(db_session, test_user, *, customer_id, external_id, status, period_start, period_end):
+	billing_customer = billing_customer_repo.create_billing_customer(
+		user_id=test_user["user_id"],
+		customer_id=customer_id,
+		session=db_session,
+	)
+	billing_subscription_repo.upsert_subscription(
+		billing_customer_id=billing_customer.id,
+		provider="stripe",
+		external_subscription_id=external_id,
+		external_price_id="price_x",
+		status=status,
+		current_period_start=period_start,
+		current_period_end=period_end,
+		cancel_at_period_end=False,
+		canceled_at=None,
+		ended_at=None,
+		session=db_session,
+	)
+
+
+def test_is_subscribed_false_when_active_but_period_expired(db_session, test_user):
+	# The revenue leak: status stayed "active" (terminating webhook never landed)
+	# but the paid period has passed. This must NOT entitle.
+	past = datetime.now(timezone.utc) - timedelta(days=3)
+	_seed_sub(db_session, test_user, customer_id="cus_expired", external_id="sub_expired",
+		status="active", period_start=None, period_end=past)
+
+	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is False
+
+
+def test_is_subscribed_true_when_active_and_period_in_future(db_session, test_user):
+	future = datetime.now(timezone.utc) + timedelta(days=10)
+	_seed_sub(db_session, test_user, customer_id="cus_future", external_id="sub_future",
+		status="active", period_start=None, period_end=future)
+
+	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is True
+
+
+def test_is_subscribed_true_when_past_due_even_if_period_expired(db_session, test_user):
+	# Grace: a past_due row legitimately has a past period_end while the provider
+	# retries payment. Access is kept during the retry window.
+	past = datetime.now(timezone.utc) - timedelta(days=1)
+	_seed_sub(db_session, test_user, customer_id="cus_grace", external_id="sub_grace",
+		status="past_due", period_start=None, period_end=past)
+
+	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is True
+
+
+def test_is_subscribed_false_when_not_yet_started(db_session, test_user):
+	# A future-dated start means the subscription is not active yet.
+	future = datetime.now(timezone.utc) + timedelta(days=2)
+	_seed_sub(db_session, test_user, customer_id="cus_notstarted", external_id="sub_notstarted",
+		status="active", period_start=future, period_end=future + timedelta(days=30))
 
 	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is False
 
