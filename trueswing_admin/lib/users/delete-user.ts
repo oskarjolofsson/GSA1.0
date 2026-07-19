@@ -1,4 +1,6 @@
 import { authedFetch } from "@/lib/api/authed-fetch";
+import { routes } from "@/lib/api/routes";
+import { toMutationResult, type MutationResult } from "@/lib/api/result";
 
 /**
  * Delete a user (admin endpoint).
@@ -7,16 +9,15 @@ import { authedFetch } from "@/lib/api/authed-fetch";
  *   Authorization: Bearer <supabase access token>
  *   → 204 No Content on success
  *
- * Returns `true` only on a 204. Anything else (non-2xx, network failure,
- * missing base URL) is `false` so the caller surfaces a failed-delete state
- * rather than silently pretending it worked.
+ * Returns a `MutationResult` so the caller can tell the failure modes apart
+ * (404 → notFound, network → error) instead of a bare boolean.
  */
 export async function deleteUserRequest(
   userId: string,
   token: string,
-): Promise<boolean> {
-  const res = await authedFetch(`/api/v1/users/${userId}/`, token, {
+): Promise<MutationResult> {
+  const res = await authedFetch(routes.user(userId), token, {
     method: "DELETE",
   });
-  return res?.status === 204;
+  return toMutationResult(res);
 }

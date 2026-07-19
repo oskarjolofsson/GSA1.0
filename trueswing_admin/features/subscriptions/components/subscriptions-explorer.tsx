@@ -10,8 +10,10 @@ import GrantPanel from "./grant-panel";
 type Props = {
   page: SubscriberPage;
   pageInfo: PageInfo;
-  grantAction: (userId: string) => Promise<{ ok: boolean }>;
-  revokeAction: (subscriptionId: string) => Promise<{ ok: boolean }>;
+  grantAction: (userId: string) => Promise<{ ok: boolean; reason?: string }>;
+  revokeAction: (
+    subscriptionId: string,
+  ) => Promise<{ ok: boolean; reason?: string }>;
   searchAction: (
     query: string,
   ) => Promise<{ ok: boolean; matches: ProfileMatch[] }>;
@@ -46,7 +48,8 @@ export default function SubscriptionsExplorer({
       setRevokingId(null);
       if (!res.ok) {
         setError(
-          "Couldn't revoke the subscription. It may already be ended — refresh and check.",
+          res.reason ??
+            "Couldn't revoke the subscription. It may already be ended — refresh and check.",
         );
         return;
       }

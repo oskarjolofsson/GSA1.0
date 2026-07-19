@@ -11,6 +11,8 @@
  * into a deny — that would hide outages, and never into an allow — that would
  * be a security hole.
  */
+import { routes } from "@/lib/api/routes";
+
 export type AdminStatus = "admin" | "denied" | "error";
 
 export async function verifyAdmin(accessToken: string): Promise<AdminStatus> {
@@ -19,7 +21,7 @@ export async function verifyAdmin(accessToken: string): Promise<AdminStatus> {
 
   let res: Response;
   try {
-    res = await fetch(`${base}/api/v1/admin/verify/`, {
+    res = await fetch(`${base}${routes.adminVerify()}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
     });

@@ -15,31 +15,41 @@ describe("deleteUserRequest", () => {
     vi.unstubAllGlobals();
   });
 
-  it("returns true on 204", async () => {
+  it("returns ok on 204", async () => {
     mockFetch(() => new Response(null, { status: 204 }));
-    expect(await deleteUserRequest(ID, "tok")).toBe(true);
+    expect(await deleteUserRequest(ID, "tok")).toEqual({ status: "ok" });
   });
 
-  it("returns false on a 4xx", async () => {
-    mockFetch(() => new Response("nope", { status: 404 }));
-    expect(await deleteUserRequest(ID, "tok")).toBe(false);
+  it("maps a 404 to notFound with the detail", async () => {
+    mockFetch(
+      () =>
+        new Response(JSON.stringify({ detail: "No such user" }), {
+          status: 404,
+        }),
+    );
+    expect(await deleteUserRequest(ID, "tok")).toEqual({
+      status: "notFound",
+      detail: "No such user",
+    });
   });
 
-  it("returns false on a 5xx", async () => {
+  it("maps a 5xx to error", async () => {
     mockFetch(() => new Response("boom", { status: 500 }));
-    expect(await deleteUserRequest(ID, "tok")).toBe(false);
+    expect(await deleteUserRequest(ID, "tok")).toMatchObject({
+      status: "error",
+    });
   });
 
-  it("returns false when fetch throws (network down)", async () => {
+  it("returns error when fetch throws (network down)", async () => {
     mockFetch(() => {
       throw new Error("ECONNREFUSED");
     });
-    expect(await deleteUserRequest(ID, "tok")).toBe(false);
+    expect(await deleteUserRequest(ID, "tok")).toEqual({ status: "error" });
   });
 
-  it("returns false when the base URL is missing", async () => {
+  it("returns error when the base URL is missing", async () => {
     delete process.env.NEXT_PUBLIC_API_URL;
-    expect(await deleteUserRequest(ID, "tok")).toBe(false);
+    expect(await deleteUserRequest(ID, "tok")).toEqual({ status: "error" });
   });
 
   it("sends a DELETE to the right URL with a Bearer header", async () => {
