@@ -324,7 +324,9 @@ def test_webhook_cancel_at_period_end_keeps_subscription_active_and_entitled(
 	)
 
 	canceled_at = 1_720_040_000
-	future_period_end = 1_720_086_400
+	# Must be genuinely in the future: entitlement is period-aware, so a
+	# scheduled-to-cancel sub only keeps access while its period is still open.
+	future_period_end = int((datetime.now(timezone.utc) + timedelta(days=30)).timestamp())
 
 	monkeypatch.setattr(
 		billing_service.webhook_verifier,
@@ -392,14 +394,15 @@ def test_webhook_subscription_deleted_revokes_entitlement(
 		customer_id="cus_deleted_revokes",
 		session=db_session,
 	)
+	now = datetime.now(timezone.utc)
 	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
 		provider="stripe",
 		external_subscription_id="sub_deleted_revokes",
 		external_price_id="price_active",
 		status="active",
-		current_period_start=1_700_000_000,
-		current_period_end=1_700_086_400,
+		current_period_start=int((now - timedelta(days=1)).timestamp()),
+		current_period_end=int((now + timedelta(days=29)).timestamp()),
 		cancel_at_period_end=True,
 		canceled_at=1_700_040_000,
 		ended_at=None,
