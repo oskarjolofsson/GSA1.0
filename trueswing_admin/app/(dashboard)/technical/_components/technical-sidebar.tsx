@@ -13,7 +13,6 @@ const off =
 
 const ITEMS = [
   { href: "/technical/users", label: "Users" },
-  { href: "/technical/db-objects", label: "DB-objects" },
 ];
 
 export default function TechnicalSidebar() {
