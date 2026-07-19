@@ -1,5 +1,6 @@
 import Image from "next/image";
 import TopTabs from "./_components/top-tabs";
+import SignOutButton from "@/features/auth/components/sign-out-button";
 
 export default function DashboardLayout({
   children,
@@ -24,7 +25,11 @@ export default function DashboardLayout({
               TrueSwing Admin
             </span>
           </div>
-          <TopTabs />
+          {/* Right-side actions: nav tabs + sign out */}
+          <div className="flex items-center gap-3">
+            <TopTabs />
+            <SignOutButton />
+          </div>
         </div>
       </header>
 
