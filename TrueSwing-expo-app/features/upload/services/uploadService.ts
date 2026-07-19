@@ -1,5 +1,6 @@
 import type { Prompt, CreateAnalysisResponse, AnalysisStatusResponse } from '../types';
 import apiClient from 'lib/apiClient';
+import { routes } from 'lib/api/routes';
 
 export async function create_analysis(prompt: Prompt, startTime: number = 0, endTime: number = 0): Promise<CreateAnalysisResponse> {
     // create body for the request
@@ -11,7 +12,7 @@ export async function create_analysis(prompt: Prompt, startTime: number = 0, end
         prompt_extra: prompt.extra
     };
 
-    const result = await apiClient.post<CreateAnalysisResponse>('/api/v1/analyses/', requestBody) as CreateAnalysisResponse;
+    const result = await apiClient.post<CreateAnalysisResponse>(routes.analyses.root, requestBody) as CreateAnalysisResponse;
 
     if (!result || !result.upload_url || !result.analysis_id) {
         throw new Error('Failed to create analysis and get upload URL');
@@ -51,7 +52,7 @@ export async function confirm_upload(analysisId: string): Promise<void> {
     if (!analysisId) {
         throw new Error('Invalid analysis ID for confirmation');
     }
-    const result = await apiClient.patch(`/api/v1/analyses/${analysisId}/`);
+    const result = await apiClient.patch(routes.analyses.byId(analysisId));
 }
 
 
@@ -59,5 +60,5 @@ export async function get_analysis_status(analysisId: string): Promise<AnalysisS
     if (!analysisId) {
         throw new Error('Invalid analysis ID for status check');
     }
-    return await apiClient.get<AnalysisStatusResponse>(`/api/v1/analyses/${analysisId}/`) as AnalysisStatusResponse;
+    return await apiClient.get<AnalysisStatusResponse>(routes.analyses.byId(analysisId)) as AnalysisStatusResponse;
 }

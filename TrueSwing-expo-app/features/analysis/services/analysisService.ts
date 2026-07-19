@@ -1,4 +1,5 @@
 import { apiClient } from 'lib/apiClient';
+import { routes } from 'lib/api/routes';
 import type { Analysis, AnalysisIssue, IssueSwingTimelineItem, VideoUrlResponse } from '../types';
 
 class AnalysisService {
@@ -6,7 +7,7 @@ class AnalysisService {
      * Fetch all analyses for current user
      */
     async getAnalysesForUser(): Promise<Analysis[]> {
-        const data = await apiClient.get<Analysis[]>('/api/v1/analyses/');
+        const data = await apiClient.get<Analysis[]>(routes.analyses.root);
         return Array.isArray(data) ? data : [];
     }
 
@@ -14,7 +15,7 @@ class AnalysisService {
      * Fetch single analysis by ID
      */
     async getAnalysisById(analysisId: string): Promise<Analysis> {
-        return apiClient.get<Analysis>(`/api/v1/analyses/${analysisId}/`);
+        return apiClient.get<Analysis>(routes.analyses.byId(analysisId));
     }
 
     /**
@@ -23,7 +24,7 @@ class AnalysisService {
      * this issue (or detected=false when it wasn't flagged).
      */
     async getIssueSwingTimeline(issueId: string): Promise<IssueSwingTimelineItem[]> {
-        const data = await apiClient.get<IssueSwingTimelineItem[]>(`/api/v1/analyses/by-issue/${issueId}/`);
+        const data = await apiClient.get<IssueSwingTimelineItem[]>(routes.analyses.byIssue(issueId));
         return Array.isArray(data) ? data : [];
     }
 
@@ -32,7 +33,7 @@ class AnalysisService {
      */
     async getAnalysisVideoURL(analysisId: string, videoKey: string): Promise<string | null> {
         const data = await apiClient.get<VideoUrlResponse>(
-            `/api/v1/analyses/${analysisId}/video-url/?video_key=${encodeURIComponent(videoKey)}`
+            routes.analyses.videoUrl(analysisId, videoKey)
         );
 
         return data?.video_url || null;
@@ -43,7 +44,7 @@ class AnalysisService {
      */
     async deleteAnalysis(analysisId: string): Promise<void> {
         console.log('Deleting analysis with ID:', analysisId);
-        await apiClient.delete<void>(`/api/v1/analyses/${analysisId}/`);
+        await apiClient.delete<void>(routes.analyses.byId(analysisId));
     }
 
     /**
@@ -51,7 +52,7 @@ class AnalysisService {
      */
     async getAnalysisIssues(analysisId: string): Promise<AnalysisIssue[]> {
         const data = await apiClient.get<AnalysisIssue[]>(
-            `/api/v1/analyses/${analysisId}/issues/`
+            routes.analyses.issues(analysisId)
         );
         return Array.isArray(data) ? data : [];
     }
@@ -60,7 +61,7 @@ class AnalysisService {
      * Dismiss an issue the user disagrees with (soft-deactivates it for the user).
      */
     async dismissAnalysisIssue(analysisIssueId: string): Promise<void> {
-        await apiClient.delete<void>(`/api/v1/analyses/issues/${analysisIssueId}/`);
+        await apiClient.delete<void>(routes.analyses.issueById(analysisIssueId));
     }
 
     /**
@@ -68,7 +69,7 @@ class AnalysisService {
      */
     async deleteAnalysisIssue(analysisId: string, analysisIssueId: string): Promise<void> {
         await apiClient.delete<void>(
-            `/api/v1/analyses/${analysisId}/issues/${analysisIssueId}/`
+            routes.analyses.issueOnAnalysis(analysisId, analysisIssueId)
         );
     }
 }

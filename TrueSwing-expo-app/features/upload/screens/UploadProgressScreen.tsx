@@ -6,7 +6,7 @@ import { UploadProps } from "../hooks/useUpload";
 import * as Progress from 'react-native-progress';
 import LoadingState from "features/shared/components/LoadingState";
 import ErrorState from "features/shared/components/ErrorState";
-import AnalysisSuccess from "../components/greenCheck";
+import AnalysisSuccess from "../components/GreenCheck";
 import { useRouter } from "expo-router";
 
 type ProgressScreenProps = ScreenProps & {

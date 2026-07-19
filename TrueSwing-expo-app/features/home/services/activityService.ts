@@ -1,4 +1,5 @@
 import { apiClient } from "lib/apiClient";
+import { routes } from "lib/api/routes";
 import type { ActivityCount } from "features/home/utils/activityStats";
 
 // Day-detail response shapes (GET /activity/{date}/). Mirror the backend
@@ -43,9 +44,7 @@ class ActivityService {
      * timezone name so the backend groups days in the user's local time.
      */
     async getActivity(tz: string): Promise<ActivityCount[]> {
-        const data = await apiClient.get<ActivityCount[]>(
-            `/api/v1/activity/?tz=${encodeURIComponent(tz)}`
-        );
+        const data = await apiClient.get<ActivityCount[]>(routes.activity.list(tz));
         return Array.isArray(data) ? data : [];
     }
 
@@ -54,9 +53,7 @@ class ActivityService {
      * the same `tz` as the counts so the day window matches the lit square.
      */
     async getDayDetail(date: string, tz: string): Promise<DayDetail> {
-        return apiClient.get<DayDetail>(
-            `/api/v1/activity/${date}/?tz=${encodeURIComponent(tz)}`
-        );
+        return apiClient.get<DayDetail>(routes.activity.byDate(date, tz));
     }
 }
 

@@ -1,7 +1,7 @@
 import { useHomeFlowSequence } from "features/home/hooks/useHomeFlowSequence";
 import HomeScreen from "features/home/screens/HomeScreen";
-import AnalysisResultScreen from "features/analysis/screens/analysisResultScreen";
-import PracticeFlow from "features/practice/practiceFlow";
+import AnalysisResultScreen from "features/analysis/screens/AnalysisResultScreen";
+import PracticeFlow from "features/practice/PracticeFlow";
 import SwingHistoryScreen from "features/progress/screens/SwingHistoryScreen";
 import useHomeAnalysisController from "features/home/hooks/useHomeAnalysisController";
 import { HomeAnalysisProvider } from "features/home/context/HomeAnalysisContext";

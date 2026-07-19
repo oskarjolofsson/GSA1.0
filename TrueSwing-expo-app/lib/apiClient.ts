@@ -35,7 +35,9 @@ export async function fetchWithAuth<T>(
     body?: unknown
 ): Promise<T> {
 
-    console.log(`API Request: ${method} ${`${API}${url}`}`, body ? { body } : {});
+    if (__DEV__) {
+        console.log(`API Request: ${method} ${`${API}${url}`}`, body ? { body } : {});
+    }
 
     const {
         data: { session },

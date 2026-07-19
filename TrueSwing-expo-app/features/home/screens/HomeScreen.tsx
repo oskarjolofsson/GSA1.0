@@ -24,7 +24,7 @@ import useTodaysIssue from "features/home/hooks/useTodaysIssue";
 import { useProgramForIssue } from "features/programs/hooks/useProgramForIssue";
 import { deriveActivityStats } from "features/home/utils/activityStats";
 import type { Issue } from "features/issues/types";
-import type { LogSessionArgs, SkipStepArgs } from "features/home/homeFlow";
+import type { LogSessionArgs, SkipStepArgs } from "features/home/HomeFlow";
 import { setRetestIntent } from "features/programs/retestIntent";
 import { removeFocus } from "features/programs/services/programService";
 import analysisService from "features/analysis/services/analysisService";

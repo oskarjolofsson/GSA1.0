@@ -9,6 +9,7 @@ import { supabase } from "lib/supabase";
 import type { AppUser, AuthContextType } from "./types";
 import * as AppleAuthentication from "expo-apple-authentication";
 import apiClient from "lib/apiClient";
+import { routes } from "lib/api/routes";
 import {
   configurePurchases,
   identifyUser,
@@ -267,7 +268,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       },
 
       removeAccount: async () => {
-        apiClient.delete(`/api/v1/users/${user?.id}/`)
+        apiClient.delete(routes.users.byId(user?.id ?? ""))
           .then(() => supabase.auth.signOut())
           .catch((error) => {
             console.error("Error deleting account:", error);

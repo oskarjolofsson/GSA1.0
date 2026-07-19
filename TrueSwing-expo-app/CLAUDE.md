@@ -26,7 +26,7 @@ Uses **expo-router** with typed file-based routes. No real logic lives here — 
 ### Features (`features/`)
 All real logic. Each feature follows a fixed subfolder convention — see `features/CLAUDE.md` for the rule (`components/`, `utils/`, `hooks/`, `screens/`, optional `flowFile.tsx`).
 
-The **flow file** pattern (e.g. `features/home/homeFlow.tsx`, `features/upload/uploadFlow.tsx`) is how multi-step features are wired together: a flow file owns the screen sequence via `useScreenSequence` (`features/shared/hooks/useScreenState.ts`) and conditionally renders one screen at a time. The corresponding `app/` route just renders the flow component. New multi-step features should follow this pattern instead of pushing routes.
+The **flow file** pattern (e.g. `features/home/HomeFlow.tsx`, `features/upload/UploadFlow.tsx`) is how multi-step features are wired together: a flow file owns the screen sequence via `useScreenSequence` (`features/shared/hooks/useScreenState.ts`) and conditionally renders one screen at a time. The corresponding `app/` route just renders the flow component. New multi-step features should follow this pattern instead of pushing routes.
 
 ### Auth (`features/auth/AuthProvider.tsx`)
 Single `AuthContext` that owns session/user state and exposes `signInWithPassword`, `signUpWithPassword`, `signInWithGoogle`, `signInWithApple`, `signOut`, `removeAccount`. Subscribes to `supabase.auth.onAuthStateChange` and also listens for `Linking` URLs to complete OAuth (Google flow returns via deep link to scheme `trueswing`). Apple sign-in is only rendered on iOS.
@@ -56,7 +56,7 @@ Required env vars (prefix with `EXPO_PUBLIC_` so Expo exposes them to the client
 ## Conventions
 - Light commenting on non-obvious code only.
 - Files in `features/*/components/` should stay under ~200 lines (see `features/CLAUDE.md`).
-- File names start with a capital letter inside `features/` (per `features/CLAUDE.md`); route files in `app/` follow expo-router's lowercase convention.
+- Inside `features/`, screens/components/flow files are PascalCase; hooks and utils keep `useX`/camelCase; `types.ts`/`index.ts` stay lowercase (per `features/CLAUDE.md`). Route files in `app/` follow expo-router's lowercase convention.
 - When you add or remove a native plugin/permission or change anything in `app.json`, run `expo prebuild` and rebuild — the `ios/` and `android/` folders are checked in but regenerated.
 
 ## graphify
