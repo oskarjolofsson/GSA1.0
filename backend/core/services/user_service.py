@@ -74,7 +74,7 @@ def set_admin(user_id: str, set_to_admin: bool, session: Session) -> None:
         
         
 def delete_user_by_user_id(user_id: str, user_id_to_delete: str, db_session: Session):
-    if str(user_id) != str(user_id_to_delete):
+    if str(user_id) != str(user_id_to_delete) and not is_admin(user_id, db_session):
         raise exceptions.ForbiddenException(f"User not authorized to delete another user")
     
     user_to_delete: models.Profile = get_profile_by_id(str(user_id_to_delete), db_session)
