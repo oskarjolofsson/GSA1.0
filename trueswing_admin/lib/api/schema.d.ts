@@ -353,15 +353,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/users/all/": {
+    "/api/v1/users/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get All Users */
-        get: operations["get_all_users_api_v1_users_all__get"];
+        /**
+         * List Users
+         * @description Paginated list of users (newest first). Requires admin privileges.
+         */
+        get: operations["list_users_api_v1_users__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/search/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Users
+         * @description Search users by name/email. Requires admin privileges.
+         */
+        get: operations["search_users_api_v1_users_search__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1962,6 +1985,46 @@ export interface components {
              */
             created_at: string;
         };
+        /** GetUser */
+        GetUser: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /** Role */
+            role?: string | null;
+            /** Authprovider */
+            authProvider?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Analysescount */
+            analysesCount?: number | null;
+            /** Drillscompleted */
+            drillsCompleted?: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Updated At */
+            updated_at: string | null;
+        };
+        /** GetUserPageResponse */
+        GetUserPageResponse: {
+            /** Items */
+            items: components["schemas"]["GetUser"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** GrantSubscriptionRequest */
         GrantSubscriptionRequest: {
             /**
@@ -2844,9 +2907,12 @@ export interface operations {
             };
         };
     };
-    get_all_users_api_v1_users_all__get: {
+    list_users_api_v1_users__get: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
             header: {
                 authorization: string;
             };
@@ -2861,7 +2927,41 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["GetUserPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_users_api_v1_users_search__get: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetUser"][];
                 };
             };
             /** @description Validation Error */

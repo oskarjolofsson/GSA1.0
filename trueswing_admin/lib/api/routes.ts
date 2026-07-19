@@ -10,8 +10,13 @@ export const routes = {
   /** GET → { is_admin: boolean }. Admin gate at sign-in. */
   adminVerify: () => "/api/v1/admin/verify/",
 
-  /** GET → User[]. Every user (require_admin). */
-  usersAll: () => "/api/v1/users/all/",
+  /** GET → UserPage. Paged list of users (require_admin). */
+  usersPage: ({ limit, offset }: { limit: number; offset: number }) =>
+    `/api/v1/users/?limit=${limit}&offset=${offset}`,
+
+  /** GET → User[]. Search users by name/email (require_admin). */
+  usersSearch: ({ q, limit }: { q: string; limit: number }) =>
+    `/api/v1/users/search/?q=${encodeURIComponent(q)}&limit=${limit}`,
 
   /** DELETE → 204. Single user by id. */
   user: (userId: string) => `/api/v1/users/${userId}/`,

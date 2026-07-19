@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import type { ProfileMatch, SubscriberPage } from "@/lib/subscriptions/types";
-import type { PageInfo } from "@/features/subscriptions/paginate";
+import type { PageInfo } from "@/features/shared/paginate";
 import { formatPeriodEnd } from "@/features/subscriptions/format";
 import GrantPanel from "./grant-panel";
 

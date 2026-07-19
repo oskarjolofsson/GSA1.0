@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getAllUsers } from "./get-all-users";
+import { getUsersPage } from "./get-users-page";
 
 function mockFetch(impl: () => Promise<Response> | Response) {
   vi.stubGlobal("fetch", vi.fn(impl));
@@ -11,7 +11,9 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-describe("getAllUsers", () => {
+const PAGE = { items: [], total: 0, limit: 10, offset: 0 };
+
+describe("getUsersPage", () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_API_URL = "https://api.test";
   });
@@ -19,31 +21,51 @@ describe("getAllUsers", () => {
     vi.unstubAllGlobals();
   });
 
-  it("200 with a user array → ok + data", async () => {
-    const users = [{ id: "1", name: "Ada", email: "ada@x.com" }];
-    mockFetch(() => json(users));
-    expect(await getAllUsers("tok")).toEqual({ status: "ok", data: users });
+  it("200 with a page body → ok + data", async () => {
+    mockFetch(() => json(PAGE));
+    expect(await getUsersPage("tok", { limit: 10, offset: 0 })).toEqual({
+      status: "ok",
+      data: PAGE,
+    });
   });
 
   it("403 → denied", async () => {
     mockFetch(() => json({ detail: "forbidden" }, 403));
-    expect(await getAllUsers("tok")).toEqual({ status: "denied" });
+    expect(await getUsersPage("tok", { limit: 10, offset: 0 })).toEqual({
+      status: "denied",
+    });
   });
 
   it("500 → error", async () => {
     mockFetch(() => new Response("boom", { status: 500 }));
-    expect(await getAllUsers("tok")).toEqual({ status: "error" });
+    expect(await getUsersPage("tok", { limit: 10, offset: 0 })).toEqual({
+      status: "error",
+    });
   });
 
   it("network throw → error", async () => {
     mockFetch(() => {
       throw new Error("ECONNREFUSED");
     });
-    expect(await getAllUsers("tok")).toEqual({ status: "error" });
+    expect(await getUsersPage("tok", { limit: 10, offset: 0 })).toEqual({
+      status: "error",
+    });
   });
 
-  it("200 but non-array body → error", async () => {
-    mockFetch(() => json({ not: "an array" }));
-    expect(await getAllUsers("tok")).toEqual({ status: "error" });
+  it("200 but body missing items[] → error", async () => {
+    mockFetch(() => json({ total: 0 }));
+    expect(await getUsersPage("tok", { limit: 10, offset: 0 })).toEqual({
+      status: "error",
+    });
+  });
+
+  it("passes limit/offset in the query", async () => {
+    const spy = vi.fn(() => json(PAGE));
+    mockFetch(spy);
+    await getUsersPage("tok", { limit: 25, offset: 50 });
+    expect(spy).toHaveBeenCalledWith(
+      "https://api.test/api/v1/users/?limit=25&offset=50",
+      expect.objectContaining({ cache: "no-store" }),
+    );
   });
 });

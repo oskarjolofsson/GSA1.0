@@ -1,10 +1,13 @@
 from .dtos.user_service_dto import (
     GetUserDTO,
 )
+from .dtos.subscription import PageDTO
 from core.services import exceptions
 from core.infrastructure.db.repositories.profiles import (
-    get_all_profiles,
+    get_profiles_page,
+    get_profile_count,
     get_profile_by_id,
+    search_profiles,
     delete_profile
 )
 from core.infrastructure.db.repositories import user_roles as user_roles_repo
@@ -17,29 +20,22 @@ from supabase import create_client, Client
 from core.config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLL_KEY
 
 
-def get_all_users(session: Session) -> list[GetUserDTO]:
-    profiles: list[models.Profile] = get_all_profiles(session)
+def get_all_users(session: Session, *, limit: int, offset: int) -> PageDTO[GetUserDTO]:
+    """One page of users (newest first) with the total, for the admin list."""
+    profiles: list[models.Profile] = get_profiles_page(
+        session, limit=limit, offset=offset
+    )
+    total = get_profile_count(session)
+    items = _enrich_profiles(profiles, session)
+    return PageDTO(items=items, total=total, limit=limit, offset=offset)
 
-    if not profiles:
+
+def search_users(session: Session, query: str, *, limit: int) -> list[GetUserDTO]:
+    """Admin search over users by name/email, returning the full user shape."""
+    if not query.strip():
         return []
-
-    # Collect all user IDs
-    user_ids = [UUID(str(profile.id)) for profile in profiles]
-
-    # Batch fetch roles for all users
-    user_roles = user_roles_repo.get_roles_for_users(user_ids, session)
-
-    # Batch fetch analysis counts for all users
-    analysis_counts = get_analysis_counts_by_user_ids(user_ids, session)
-
-    return [
-        from_profile_to_dto(
-            profile,
-            role=user_roles.get(UUID(str(profile.id))),
-            analyses_count=analysis_counts.get(UUID(str(profile.id)), 0),
-        )
-        for profile in profiles
-    ]
+    profiles: list[models.Profile] = search_profiles(session, query, limit=limit)
+    return _enrich_profiles(profiles, session)
 
 
 def is_admin(user_id: str, session: Session) -> bool:
@@ -88,6 +84,31 @@ def delete_user_by_user_id(user_id: str, user_id_to_delete: str, db_session: Ses
 
 
 # -------- Helper functions --------
+
+
+def _enrich_profiles(
+    profiles: list[models.Profile], session: Session
+) -> list[GetUserDTO]:
+    """Map profiles to DTOs, batch-fetching roles + analysis counts.
+
+    Roles and counts are fetched in ONE query each over the whole id set (no
+    per-profile queries — avoids N+1). Shared by the list and search paths.
+    """
+    if not profiles:
+        return []
+
+    user_ids = [UUID(str(profile.id)) for profile in profiles]
+    user_roles = user_roles_repo.get_roles_for_users(user_ids, session)
+    analysis_counts = get_analysis_counts_by_user_ids(user_ids, session)
+
+    return [
+        from_profile_to_dto(
+            profile,
+            role=user_roles.get(UUID(str(profile.id))),
+            analyses_count=analysis_counts.get(UUID(str(profile.id)), 0),
+        )
+        for profile in profiles
+    ]
 
 
 def from_profile_to_dto(
