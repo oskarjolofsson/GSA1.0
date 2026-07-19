@@ -1,4 +1,5 @@
 import { authedFetch } from "@/lib/api/authed-fetch";
+import { toResult, type FetchResult } from "@/lib/api/result";
 import type { User } from "./types";
 
 /**
@@ -6,20 +7,18 @@ import type { User } from "./types";
  *
  * Contract: GET {NEXT_PUBLIC_API_URL}/api/v1/users/all/
  *   Authorization: Bearer <supabase access token>
- *   → 200 User[]
+ *   → 200 User[] | 403 when not an admin
  *
- * Returns `null` on any failure (network, non-2xx, unparseable body, missing
- * base URL) so the caller renders an honest error state rather than an empty
- * list. Never collapse an error into `[]` — that would look like "no users".
+ * Returns a three-state `FetchResult` so the page can tell "not admin" (403 →
+ * denied) apart from "API unreachable" (network / 5xx → error) — the endpoint is
+ * itself `require_admin`, so no separate verify call is needed.
  */
-export async function getAllUsers(token: string): Promise<User[] | null> {
+export async function getAllUsers(
+  token: string,
+): Promise<FetchResult<User[]>> {
   const res = await authedFetch("/api/v1/users/all/", token);
-  if (!res || !res.ok) return null;
-
-  try {
-    const data = await res.json();
+  return toResult(res, async (r) => {
+    const data = await r.json();
     return Array.isArray(data) ? (data as User[]) : null;
-  } catch {
-    return null;
-  }
+  });
 }

@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { verifyAdmin } from "@/lib/auth/verify-admin";
 import { grantSubscription } from "@/lib/subscriptions/grant-subscription";
 import { revokeSubscription } from "@/lib/subscriptions/revoke-subscription";
 import { searchProfiles } from "@/lib/subscriptions/search-profiles";
@@ -11,26 +10,26 @@ import type { ProfileMatch } from "@/lib/subscriptions/types";
 const SUBSCRIPTIONS_PATH = "/business/subscriptions";
 
 /**
- * Server Actions are reachable by direct POST, so each re-verifies admin — do
- * not rely on the page having gated the render. Mutations revalidate the
- * subscriptions route so the next server render fetches a fresh page.
+ * Server Actions are reachable by direct POST, but every admin endpoint they hit
+ * is `require_admin` on the backend — a non-admin token gets a 403 and the lib
+ * wrapper returns `ok:false`. So there's no separate verify here; we just need a
+ * session token. Mutations revalidate the subscriptions route so the next server
+ * render fetches a fresh page.
  */
 
-async function adminToken(): Promise<string | null> {
+async function sessionToken(): Promise<string | null> {
   const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session) return null;
-  if ((await verifyAdmin(session.access_token)) !== "admin") return null;
-  return session.access_token;
+  return session?.access_token ?? null;
 }
 
 export async function grantSubscriptionAction(
   userId: string,
 ): Promise<{ ok: boolean }> {
-  const token = await adminToken();
+  const token = await sessionToken();
   if (!token) return { ok: false };
 
   const ok = await grantSubscription(userId, token);
@@ -41,7 +40,7 @@ export async function grantSubscriptionAction(
 export async function revokeSubscriptionAction(
   subscriptionId: string,
 ): Promise<{ ok: boolean }> {
-  const token = await adminToken();
+  const token = await sessionToken();
   if (!token) return { ok: false };
 
   const ok = await revokeSubscription(subscriptionId, token);
@@ -55,7 +54,7 @@ export async function searchProfilesAction(
   const trimmed = query.trim();
   if (!trimmed) return { ok: true, matches: [] };
 
-  const token = await adminToken();
+  const token = await sessionToken();
   if (!token) return { ok: false, matches: [] };
 
   const matches = await searchProfiles(token, trimmed);

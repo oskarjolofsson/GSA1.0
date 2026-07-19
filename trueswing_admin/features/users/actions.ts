@@ -8,9 +8,12 @@ import { deleteUserRequest } from "@/lib/users/delete-user";
 /**
  * Delete a user. Invoked from the client via an event handler.
  *
- * Server Actions are reachable by direct POST, so re-verify admin here — do not
- * rely on the page having gated the render. On success, revalidate the users
- * route so a fresh list is fetched on the next server render.
+ * Unlike the other admin mutations, the backend DELETE /users/{id}/ endpoint is
+ * NOT `require_admin` — it uses get_current_user and only lets you delete your
+ * own account. So verifyAdmin here is the ONLY admin gate; do not remove it.
+ * (See the flagged bug: this endpoint can't actually delete another user, so the
+ * admin "delete" button is effectively broken server-side.)
+ * On success, revalidate the users route so a fresh list is fetched next render.
  */
 export async function deleteUserAction(
   userId: string,

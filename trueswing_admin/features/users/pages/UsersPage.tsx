@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { verifyAdmin } from "@/lib/auth/verify-admin";
 import { getAllUsers } from "@/lib/users/get-all-users";
 import { deleteUserAction } from "@/features/users/actions";
 import UsersExplorer from "@/features/users/components/users-explorer";
@@ -22,14 +21,13 @@ function Notice({ title, body }: { title: string; body: string }) {
 /**
  * Admin users screen (server component).
  *
- *   session ─▶ verifyAdmin ─┬ admin  ─▶ getAllUsers ─┬ User[] ─▶ <UsersExplorer/>
- *                           │                         └ null   ─▶ error notice
+ *   session ─▶ getAllUsers ─┬ ok     ─▶ <UsersExplorer/>
  *                           ├ denied ─▶ "No access" notice
  *                           └ error  ─▶ error notice
  *
- * Re-verifies admin even though middleware gates the session — the (dashboard)
- * layout does not yet check admin, so this is the defensive boundary for the
- * user list. See the delete Server Action for the matching mutation-side gate.
+ * No separate admin check: the users endpoint is `require_admin`, so its 403
+ * already means "not admin" — one round-trip does both. verifyAdmin runs only at
+ * sign-in (app/page.tsx). The delete Server Action leans on the same backend gate.
  */
 export default async function UsersPage() {
   const supabase = await createClient();
@@ -39,8 +37,8 @@ export default async function UsersPage() {
 
   if (!session) redirect("/login");
 
-  const status = await verifyAdmin(session.access_token);
-  if (status === "denied") {
+  const result = await getAllUsers(session.access_token);
+  if (result.status === "denied") {
     return (
       <Notice
         title="Users"
@@ -48,17 +46,7 @@ export default async function UsersPage() {
       />
     );
   }
-  if (status === "error") {
-    return (
-      <Notice
-        title="Users"
-        body="Couldn't verify admin access. Check the API and try again."
-      />
-    );
-  }
-
-  const users = await getAllUsers(session.access_token);
-  if (!users) {
+  if (result.status === "error") {
     return (
       <Notice
         title="Users"
@@ -67,5 +55,5 @@ export default async function UsersPage() {
     );
   }
 
-  return <UsersExplorer users={users} deleteAction={deleteUserAction} />;
+  return <UsersExplorer users={result.data} deleteAction={deleteUserAction} />;
 }

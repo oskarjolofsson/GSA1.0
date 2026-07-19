@@ -1,32 +1,28 @@
 import { authedFetch } from "@/lib/api/authed-fetch";
+import { toResult, type FetchResult } from "@/lib/api/result";
 import type { SubscriberPage } from "./types";
 
 /**
- * Fetch one page of active subscribers (admin endpoint).
+ * Fetch one page of currently-valid subscribers (admin endpoint).
  *
  * Contract: GET {NEXT_PUBLIC_API_URL}/api/v1/admin/subscriptions/?limit&offset
  *   Authorization: Bearer <supabase access token>
- *   → 200 SubscriberPage
+ *   → 200 SubscriberPage | 403 when not an admin
  *
- * Returns `null` on any failure (network, non-2xx, unparseable body, missing
- * base URL) so the caller renders an honest error state rather than an empty
- * table. Never collapse an error into an empty page — that would look like
- * "no subscribers".
+ * Returns a three-state `FetchResult` so the page distinguishes "not admin"
+ * (403 → denied) from "API unreachable" (network / 5xx → error). The endpoint is
+ * `require_admin`, so its status already carries the admin verdict.
  */
 export async function getSubscribers(
   token: string,
   { limit, offset }: { limit: number; offset: number },
-): Promise<SubscriberPage | null> {
+): Promise<FetchResult<SubscriberPage>> {
   const res = await authedFetch(
     `/api/v1/admin/subscriptions/?limit=${limit}&offset=${offset}`,
     token,
   );
-  if (!res || !res.ok) return null;
-
-  try {
-    const data = (await res.json()) as SubscriberPage;
+  return toResult(res, async (r) => {
+    const data = (await r.json()) as SubscriberPage;
     return Array.isArray(data?.items) ? data : null;
-  } catch {
-    return null;
-  }
+  });
 }

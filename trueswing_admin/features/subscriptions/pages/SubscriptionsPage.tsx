@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { verifyAdmin } from "@/lib/auth/verify-admin";
 import { getSubscribers } from "@/lib/subscriptions/get-subscribers";
 import {
   grantSubscriptionAction,
@@ -29,14 +28,16 @@ function Notice({ title, body }: { title: string; body: string }) {
 /**
  * Admin subscriptions screen (server component).
  *
- *   session ─▶ verifyAdmin ─┬ admin  ─▶ getSubscribers(page) ─┬ Page ─▶ <SubscriptionsExplorer/>
- *                           │                                  └ null ─▶ error notice
- *                           ├ denied ─▶ "No access" notice
- *                           └ error  ─▶ error notice
+ *   session ─▶ getSubscribers(page) ─┬ ok     ─▶ <SubscriptionsExplorer/>
+ *                                     ├ denied ─▶ "No access" notice
+ *                                     └ error  ─▶ error notice
+ *
+ * No separate admin check: the subscriptions endpoint is `require_admin`, so its
+ * 403 already means "not admin" — one round-trip does both. verifyAdmin runs
+ * only at sign-in (app/page.tsx).
  *
  * Pagination is server-side: `?page=N` → offset. Prev/Next are links that change
- * the query, so each page is a fresh server fetch. Re-verifies admin here (the
- * dashboard layout does not gate admin); the Server Actions re-verify too.
+ * the query, so each page is a fresh server fetch.
  *
  * Next 16: `searchParams` is a Promise and must be awaited.
  */
@@ -55,8 +56,13 @@ export default async function SubscriptionsPage({
 
   if (!session) redirect("/login");
 
-  const status = await verifyAdmin(session.access_token);
-  if (status === "denied") {
+  const offset = (requestedPage - 1) * PAGE_SIZE;
+  const result = await getSubscribers(session.access_token, {
+    limit: PAGE_SIZE,
+    offset,
+  });
+
+  if (result.status === "denied") {
     return (
       <Notice
         title="Subscriptions"
@@ -64,21 +70,7 @@ export default async function SubscriptionsPage({
       />
     );
   }
-  if (status === "error") {
-    return (
-      <Notice
-        title="Subscriptions"
-        body="Couldn't verify admin access. Check the API and try again."
-      />
-    );
-  }
-
-  const offset = (requestedPage - 1) * PAGE_SIZE;
-  const page = await getSubscribers(session.access_token, {
-    limit: PAGE_SIZE,
-    offset,
-  });
-  if (!page) {
+  if (result.status === "error") {
     return (
       <Notice
         title="Subscriptions"
@@ -87,6 +79,7 @@ export default async function SubscriptionsPage({
     );
   }
 
+  const page = result.data;
   const info = paginate({
     page: requestedPage,
     total: page.total,

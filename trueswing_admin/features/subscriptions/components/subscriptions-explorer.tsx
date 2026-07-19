@@ -102,7 +102,7 @@ export default function SubscriptionsExplorer({
                 <button
                   type="button"
                   onClick={() => onRevoke(s.subscription_id)}
-                  disabled={revokingId === s.subscription_id}
+                  disabled={revokingId === s.subscription_id || s.provider !== "manual"}
                   className="cursor-pointer rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"
                 >
                   {revokingId === s.subscription_id ? "Revoking…" : "Revoke"}
