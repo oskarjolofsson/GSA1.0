@@ -2,57 +2,55 @@
 
 Next.js (App Router) admin dashboard for the TrueSwing backend.
 
-## Getting started
+## Prerequisites
+
+- Node.js 20+
+- A running TrueSwing backend (see [`../backend/README.md`](../backend/README.md))
+
+## Setup
 
 ```bash
+cd trueswing_admin
 npm install
-npm run dev      # http://localhost:3000
-npm run test     # vitest
-npm run build    # production build + typecheck
+npm run dev
 ```
 
-Environment: set `NEXT_PUBLIC_API_URL` to the TrueSwing backend (default
-`http://localhost:8000`), plus the Supabase vars in `.env`.
-
-## Architecture
-
-Thin `app/` routing over feature modules and a server-side data layer:
-
-- `app/` — layouts, route groups, one-line page re-exports, the OAuth callback.
-- `features/<name>/` — UI (`pages/`, `components/`, `hooks/`) + server `actions.ts`.
-- `lib/<domain>/` — server-side API access, auth, Supabase. See `lib/README.md`.
-- `components/` — cross-feature UI.
-
-## TrueSwing API types (generated)
-
-The types the admin uses for API responses come in two flavors:
-
-- **Generated** — `lib/api/schema.d.ts` is produced by `openapi-typescript` from
-  the backend's `/openapi.json`. `lib/subscriptions/types.ts` aliases straight
-  out of it, so a backend field rename/removal shows up as a TypeScript error at
-  the consumer.
-- **Hand-written** — `lib/users/types.ts`, because the `/users/all/` endpoint has
-  no `response_model` on the backend and so isn't in the schema.
-
-### Regenerating after a backend change
-
-This is **not automatic.** Editing a FastAPI route does nothing to
-`schema.d.ts` — there is no watcher. After you change an admin-facing endpoint's
-request/response shape, with the backend running:
+Runs on `http://localhost:3000`.
 
 ```bash
-npm run gen:api-types     # hits ${NEXT_PUBLIC_API_URL}/openapi.json → lib/api/schema.d.ts
-npm run build             # a changed field now surfaces as a type error
+npm run test   # vitest
+npm run build  # production build + typecheck
+npm run lint   # eslint
 ```
 
-`schema.d.ts` is committed and marked "do not edit by hand" — regenerate it,
-never hand-edit it (a manual change is blown away on the next run).
+## Environment variables
 
-> Editing the backend? See `backend/docs/howToUseAPI/README.md` for the same
-> reminder from the other side.
+Create a `.env` in this directory:
 
-## Testing
+```env
+# TrueSwing API
+NEXT_PUBLIC_API_URL=http://localhost:8000
 
-`npm run test` runs vitest. The data layer (`lib/`) is unit-tested against
-mocked `fetch`/Supabase; pure helpers (pagination, formatting, route-guard) have
-their own tests.
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+## Regenerating API types
+
+`lib/api/schema.d.ts` is generated from the backend's `/openapi.json` and is
+committed. It does not update itself — after changing an admin-facing endpoint's
+request or response shape, with the backend running:
+
+```bash
+npm run gen:api-types
+npm run build   # a changed field now surfaces as a type error
+```
+
+Never hand-edit `schema.d.ts`; the next run overwrites it.
+
+## More docs
+
+- [`lib/README.md`](lib/README.md) — architecture and the server-side data layer
+- [`docs/HowToDeploy.md`](docs/HowToDeploy.md)
+- [`CLAUDE.md`](CLAUDE.md) — project conventions
