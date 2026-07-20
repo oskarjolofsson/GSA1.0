@@ -1,42 +1,14 @@
 import { apiClient } from "lib/apiClient";
 import { routes } from "lib/api/routes";
+import type { Schemas } from "lib/api/types";
 import type { ActivityCount } from "features/home/utils/activityStats";
 
-// Day-detail response shapes (GET /activity/{date}/). Mirror the backend
-// ActivityDayDetail schema.
-export type DayDrillRun = {
-    id: string;
-    drill_id: string;
-    drill_title: string;
-    successful_reps: number;
-    failed_reps: number;
-    skipped: boolean;
-    started_at: string;
-    completed_at: string | null;
-};
-
-export type DaySession = {
-    id: string;
-    status: string;
-    started_at: string;
-    completed_at: string | null;
-    analysis_issue_id: string | null;
-    drill_runs: DayDrillRun[];
-};
-
-export type DayAnalysis = {
-    id: string;
-    status: string;
-    created_at: string;
-    completed_at: string | null;
-    thumbnail_url: string | null;
-};
-
-export type DayDetail = {
-    date: string;
-    sessions: DaySession[];
-    analyses: DayAnalysis[];
-};
+// Day-detail response shapes (GET /activity/{date}/), derived from the backend
+// OpenAPI schema (lib/api/schema.d.ts). Regenerate via `npm run gen:api-types`.
+export type DayDrillRun = Schemas["ActivityDrillRun"];
+export type DaySession = Schemas["ActivitySession"];
+export type DayAnalysis = Schemas["ActivityAnalysis"];
+export type DayDetail = Schemas["ActivityDayDetail"];
 
 class ActivityService {
     /**

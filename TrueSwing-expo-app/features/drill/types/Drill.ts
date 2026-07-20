@@ -1,27 +1,7 @@
-export interface Drill {
-    id: string;
-    title: string;
-    task: string;
-    success_signal: string;
-    fault_indicator: string;
-    created_at: string;
-}
+import type { Schemas } from 'lib/api/types';
 
-export interface CreateDrillRequest {
-    title: string;
-    task: string;
-    success_signal: string;
-    fault_indicator: string;
-}
-
-export interface CreateDrillResponse {
-    success: boolean;
-    drill_id: string;
-}
-
-export interface UpdateDrillRequest {
-    title?: string;
-    task?: string;
-    success_signal?: string;
-    fault_indicator?: string;
-}
+// Derived from the backend OpenAPI schema (lib/api/schema.d.ts).
+export type Drill = Schemas['GetDrill'];
+export type CreateDrillRequest = Schemas['CreateDrillRequest'];
+export type CreateDrillResponse = Schemas['CreateDrillResponse'];
+export type UpdateDrillRequest = Schemas['UpdateDrillRequest'];

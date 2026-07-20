@@ -12,8 +12,7 @@ const BASE = '/api/v1';
 export const routes = {
   activity: {
     list: (tz: string) => `${BASE}/activity/?tz=${encodeURIComponent(tz)}`,
-    byDate: (date: string, tz: string) =>
-      `${BASE}/activity/${date}/?tz=${encodeURIComponent(tz)}`,
+    byDate: (date: string, tz: string) => `${BASE}/activity/${date}/?tz=${encodeURIComponent(tz)}`,
   },
 
   analyses: {
@@ -25,8 +24,7 @@ export const routes = {
     issues: (analysisId: string) => `${BASE}/analyses/${analysisId}/issues/`,
     issueOnAnalysis: (analysisId: string, analysisIssueId: string) =>
       `${BASE}/analyses/${analysisId}/issues/${analysisIssueId}/`,
-    issueById: (analysisIssueId: string) =>
-      `${BASE}/analyses/issues/${analysisIssueId}/`,
+    issueById: (analysisIssueId: string) => `${BASE}/analyses/issues/${analysisIssueId}/`,
   },
 
   billing: {
@@ -48,15 +46,26 @@ export const routes = {
     todays: `${BASE}/issues/todays-issue/`,
     byId: (issueId: string) => `${BASE}/issues/${issueId}/`,
     byAnalysis: (analysisId: string) => `${BASE}/issues/by-analysis/${analysisId}/`,
+    // Authoring / catalog paths (coach-feedback and browse).
+    structureFeedback: `${BASE}/issues/structure-feedback/`,
+    custom: `${BASE}/issues/custom/`,
+    catalog: `${BASE}/issues/catalog/`,
+  },
+
+  programs: {
+    generate: `${BASE}/programs/generate/`,
+    active: (issueId: string) => `${BASE}/programs/active/?issue_id=${issueId}`,
+    byIssue: (issueId: string) => `${BASE}/programs/by-issue/${issueId}/`,
+    nextStep: (programId: string) => `${BASE}/programs/${programId}/next-step/`,
+    stepComplete: (programId: string, stepId: string) =>
+      `${BASE}/programs/${programId}/steps/${stepId}/complete/`,
   },
 
   practice: {
     sessionsStart: `${BASE}/practice/sessions/start/`,
     session: (sessionId: string) => `${BASE}/practice/sessions/${sessionId}/`,
-    sessionComplete: (sessionId: string) =>
-      `${BASE}/practice/sessions/${sessionId}/complete/`,
-    sessionResults: (sessionId: string) =>
-      `${BASE}/practice/sessions/${sessionId}/results/`,
+    sessionComplete: (sessionId: string) => `${BASE}/practice/sessions/${sessionId}/complete/`,
+    sessionResults: (sessionId: string) => `${BASE}/practice/sessions/${sessionId}/results/`,
     sessionDrillsStart: (sessionId: string) =>
       `${BASE}/practice/sessions/${sessionId}/drills/start/`,
     drillRunsComplete: `${BASE}/practice/drill-runs/complete/`,

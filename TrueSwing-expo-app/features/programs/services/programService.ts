@@ -1,7 +1,6 @@
 import { apiClient } from "lib/apiClient";
+import { routes } from "lib/api/routes";
 import type { Program, ProgramStep, StepAdvance, CompleteStepBody } from "../types";
-
-const BASE = "/api/v1/programs";
 
 // ---- 5-minute in-memory cache ----
 // Avoids refetching a program/next-step on every issue switch or home focus.
@@ -46,7 +45,7 @@ export function peekProgramSession(
 export async function getActiveProgramByIssue(issueId: string): Promise<Program | null> {
     const cached = activeCache.get(issueId);
     if (fresh(cached)) return cached.value;
-    const value = await apiClient.get<Program | null>(`${BASE}/active/?issue_id=${issueId}`);
+    const value = await apiClient.get<Program | null>(routes.programs.active(issueId));
     activeCache.set(issueId, { value, ts: Date.now() });
     return value;
 }
@@ -56,7 +55,7 @@ export async function getActiveProgramByIssue(issueId: string): Promise<Program 
  * the analysis_issue_id provenance (history + AI-retest linkage). Premium-gated.
  */
 export async function generateProgram(analysisIssueId: string): Promise<Program> {
-    const program = await apiClient.post<Program>(`${BASE}/generate/`, {
+    const program = await apiClient.post<Program>(routes.programs.generate, {
         analysis_issue_id: analysisIssueId,
     });
     if (program.issue_id) activeCache.set(program.issue_id, { value: program, ts: Date.now() });
@@ -68,7 +67,7 @@ export async function generateProgram(analysisIssueId: string): Promise<Program>
  * coach-feedback and browse paths, which have no source analysis. Premium-gated.
  */
 export async function generateProgramFromIssue(issueId: string): Promise<Program> {
-    const program = await apiClient.post<Program>(`${BASE}/generate/`, {
+    const program = await apiClient.post<Program>(routes.programs.generate, {
         issue_id: issueId,
     });
     activeCache.set(issueId, { value: program, ts: Date.now() });
@@ -82,7 +81,7 @@ export async function generateProgramFromIssue(issueId: string): Promise<Program
  * resurfaced from the 5-minute cache.
  */
 export async function removeFocus(issueId: string): Promise<void> {
-    await apiClient.delete<void>(`${BASE}/by-issue/${issueId}/`);
+    await apiClient.delete<void>(routes.programs.byIssue(issueId));
     clearProgramCache();
 }
 
@@ -90,7 +89,7 @@ export async function removeFocus(issueId: string): Promise<void> {
 export async function getNextStep(programId: string): Promise<ProgramStep | null> {
     const cached = nextStepCache.get(programId);
     if (fresh(cached)) return cached.value;
-    const value = await apiClient.get<ProgramStep | null>(`${BASE}/${programId}/next-step/`);
+    const value = await apiClient.get<ProgramStep | null>(routes.programs.nextStep(programId));
     nextStepCache.set(programId, { value, ts: Date.now() });
     return value;
 }
@@ -102,7 +101,7 @@ export async function completeStep(
     body: CompleteStepBody
 ): Promise<StepAdvance> {
     const result = await apiClient.post<StepAdvance>(
-        `${BASE}/${programId}/steps/${stepId}/complete/`,
+        routes.programs.stepComplete(programId, stepId),
         body
     );
     // The program changed — drop caches so home reloads fresh state.
