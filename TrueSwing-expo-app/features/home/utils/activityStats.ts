@@ -1,7 +1,9 @@
 import type { ActivityLevel } from "features/home/utils/activityLevels";
+import type { Schemas } from "lib/api/types";
 
-// One activity-count row from GET /activity.
-export type ActivityCount = { occurred_on: string; count: number };
+// One activity-count row from GET /activity, derived from the backend OpenAPI
+// schema (lib/api/schema.d.ts).
+export type ActivityCount = Schemas["ActivityCount"];
 
 // One rendered grid cell in the rolling 7-day strip.
 export type DayCell = {

@@ -1,63 +1,24 @@
-
+import type { Schemas } from 'lib/api/types';
 import type { Issue } from 'features/issues/types';
 
-export interface Analysis {
-    analysis_id: string;
-    user_id: string;
-    video_id: string;
-    model_version: string | null;
-    status: string;
-    success: boolean | null;
-    error_message: string | null;
-    thumbnail_url: string | null;
-    created_at: string;
-    started_at: string | null;
-    completed_at: string | null;
-}
+// Response/request shapes derived from the backend OpenAPI schema
+// (lib/api/schema.d.ts, regenerated via `npm run gen:api-types`). A backend
+// field rename/removal surfaces as a TS error at the consumer.
+export type Analysis = Schemas['GetAnalysis'];
+export type AnalysisIssue = Schemas['GetAnalysisIssue'];
+export type IssueSwingTimelineItem = Schemas['IssueSwingTimelineItem'];
+export type CreateAnalysisRequest = Schemas['CreateAnalysisRequest'];
+export type CreateAnalysisResponse = Schemas['CreateAnalysisResponse'];
 
-export interface AnalysisIssue {
-    analysis_issue_id: string;
-    analysis_id: string;
-    issue_id: string;
-    confidence: number;
-    created_at: string;
-}
-
-// One swing in an issue's progress timeline: the clip + the AI's read of THIS
-// issue in it (confidence, or detected=false when it wasn't flagged).
-export interface IssueSwingTimelineItem {
-    analysis_id: string;
-    video_id: string | null;
-    created_at: string;
-    status: string;
-    confidence: number | null;
-    detected: boolean;
-    thumbnail_url: string | null;
-}
-
-export interface CreateAnalysisRequest {
-    model?: string;
-    start_time: number;
-    end_time: number;
-    prompt_shape?: string;
-    prompt_height?: string;
-    prompt_misses?: string;
-    prompt_extra?: string;
-}
-
-export interface CreateAnalysisResponse {
-    success: boolean;
-    analysis_id: string;
-    upload_url: string;
-}
-
+// GET /analyses/{id}/video-url/ has no response_model on the backend (its
+// OpenAPI schema is `{}`), so this stays hand-written until the backend adds one.
 export interface VideoUrlResponse {
-    success: boolean;
-    video_url: string;
+  success: boolean;
+  video_url: string;
 }
 
-// Combined analysis with issues for component use
+// View type: an analysis joined with its issues for component use.
 export interface AnalysisWithIssues extends Analysis {
-    issues?: (Issue & { confidence?: number })[];
-    video_key?: string;
+  issues?: (Issue & { confidence?: number })[];
+  video_key?: string;
 }

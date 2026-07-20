@@ -1,12 +1,5 @@
-export interface DrillRun {
-    id: string;
-    drill_title: string;
-    session_id: string;
-    drill_id: string;
-    status: string;
-    successful_reps: number;
-    failed_reps: number;
-    skipped: boolean;
-    started_at: Date;
-    completed_at?: Date;
-}
+import type { Schemas } from 'lib/api/types';
+
+// Derived from the backend OpenAPI schema. `started_at`/`completed_at` are ISO
+// strings on the wire (the previous `Date` typing was a latent lie).
+export type DrillRun = Schemas['PracticeDrillRun'];
