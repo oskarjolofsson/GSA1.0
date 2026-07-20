@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/media/README_image.png" alt="TrueSwing practice drill on a phone, on the course" width="820" />
+  <img src="docs/images/media/README_image.png" alt="TrueSwing practice drill on a phone, on the course" width="820" style="border-radius: 15px;" />
 </p>
 
 <h1 align="center">TrueSwing</h1>
