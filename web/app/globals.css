@@ -28,11 +28,33 @@
   --font-sans: var(--font-hanken);
 }
 
+/*
+ * overscroll-behavior MUST be on html, not body.
+ *
+ * Unlike `overflow`, which propagates from body to the viewport, the spec
+ * propagates overscroll-behavior from the ROOT element only. Setting it on body
+ * alone is inert — which is why it looked like it did nothing.
+ *
+ * `none` kills the rubber-band bounce past the hero at the top and past the
+ * footer at the bottom, and also disables pull-to-refresh on mobile. That's
+ * wanted here: this is a static marketing page, there is nothing to refresh,
+ * and the bounce exposes bare background above a full-bleed hero.
+ *
+ * scroll-behavior: smooth makes the nav anchors glide instead of jumping.
+ * It is overridden under prefers-reduced-motion further down.
+ */
+html {
+  overscroll-behavior: none;
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--color-ink);
   color: var(--color-sand);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  /* Belt and braces: some engines have historically read it here too. Harmless. */
+  overscroll-behavior: none;
 }
 
 /* The FAQ uses native <details>. Hide the default disclosure marker so the
@@ -43,4 +65,81 @@ summary::-webkit-details-marker {
 summary {
   list-style: none;
   cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------------
+   Hero entrance
+   ---------------------------------------------------------------------------
+   Pure CSS, runs on load, no JavaScript and no "use client".
+
+   The photo animates from 0.55 opacity, NOT from 0. It is the Largest
+   Contentful Paint element, and a 0 -> 1 fade on a full-viewport image defers
+   when the browser records it as painted, which costs Lighthouse Performance on
+   the page built to rank in Google. Starting part-visible means it registers
+   immediately; the motion people actually perceive is the staggered text below,
+   which is not the measured element.
+
+   If you change these, keep the photo's `from` opacity above zero.
+--------------------------------------------------------------------------- */
+@keyframes hero-photo-in {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hero-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hero-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-photo {
+  animation: hero-photo-in 600ms ease-out both;
+}
+.hero-nav {
+  animation: hero-fade-in 500ms ease-out both;
+}
+.hero-headline {
+  animation: hero-rise-in 600ms ease-out 100ms both;
+}
+.hero-sub {
+  animation: hero-rise-in 600ms ease-out 220ms both;
+}
+.hero-cta {
+  animation: hero-rise-in 600ms ease-out 340ms both;
+}
+
+/* Non-negotiable. A full-screen fade plus rising text is a textbook vestibular
+   trigger. Everything appears instantly, in place, with no motion. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-photo,
+  .hero-nav,
+  .hero-headline,
+  .hero-sub,
+  .hero-cta {
+    animation: none !important;
+  }
+
+  /* Smooth anchor scrolling is motion too — a long glide down the page is the
+     same trigger class as the hero fade. Jump instead. */
+  html {
+    scroll-behavior: auto;
+  }
 }

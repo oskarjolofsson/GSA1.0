@@ -12,11 +12,21 @@
 
 export const HERO = {
   headline: "Not an AI coach. A practice plan you'll actually stick to.",
+  /** README.md:12, verbatim. Deliberately short — the hero photo carries the rest. */
   support: "Stay consistent, and you'll get better.",
   cta: "Download on the App Store",
-  /** Screenshot slot — replace with a real device capture. See open deps. */
-  screenshotAlt:
-    "The TrueSwing home screen showing a contribution graph of completed practice sessions and the current streak",
+  /** Secondary action. Scrolls rather than leaving the page. */
+  secondaryCta: "See how it works",
+  secondaryHref: "#start",
+  /**
+   * Full-bleed hero photo. Cropped from docs/images/media/README_image.png past
+   * the baked-in TRUE SWING lockup (ink ends around x=850) — without that crop
+   * the wordmark prints twice, once in the photo and once in the nav.
+   * Shipped as WebP: the source PNG is 1.6MB, this is 38KB, and
+   * `images.unoptimized: true` means Next converts nothing for us.
+   */
+  photoAlt:
+    "A golfer holding a phone on the course, showing a TrueSwing practice drill with step-by-step instructions",
 } as const;
 
 export const PROBLEM = {
