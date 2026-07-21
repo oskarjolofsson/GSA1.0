@@ -22,7 +22,7 @@ export function LegalSection({
   points?: readonly string[];
 }) {
   return (
-    <section className="mx-auto mb-6 w-full max-w-3xl rounded-3xl border border-sand/10 bg-ink-raised/60 px-6 py-8 backdrop-blur-md sm:px-8">
+    <section className="mx-auto mb-6 w-full max-w-3xl rounded-xl border border-sand/20 bg-ink-raised/60 px-6 py-8 backdrop-blur-md sm:px-8">
       {header ? (
         <h1 className="font-display text-3xl font-bold text-sand sm:text-4xl">
           {header}

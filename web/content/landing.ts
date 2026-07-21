@@ -79,15 +79,62 @@ export const PROOF = {
     "A TrueSwing re-test comparing an earlier swing video against a recent one side by side",
 } as const;
 
+/**
+ * Footer, variant D — four columns with the App Store CTA in the brand block.
+ *
+ * Ported from the legacy footer at
+ * frontend/src/layouts/public/components/footer.jsx, which used
+ * Brand | PRODUCT | RESOURCES | LEGAL. PRODUCT there held a single /pricing
+ * link; that page doesn't exist here, so it holds two on-page anchors instead.
+ * Three anchors read as filler, two earn the column.
+ *
+ * The three-column variant was rejected after rendering: giving the brand block
+ * 2fr left ~230px of dead space beside it. Mockups:
+ * ~/.gstack/projects/oskarjolofsson-GSA1.0/designs/footer-variants-20260721/
+ */
 export const FOOTER = {
-  // README.md:39-43, verbatim descriptions.
+  columns: [
+    {
+      id: "product",
+      heading: "Product",
+      links: [
+        { href: "#start", label: "How it works" },
+        { href: "#faq", label: "Questions" },
+      ],
+    },
+    {
+      id: "resources",
+      heading: "Resources",
+      links: [
+        { href: "mailto:CONTACT_EMAIL", label: "Contact" },
+        { href: "mailto:CONTACT_EMAIL", label: "Support" },
+      ],
+    },
+    {
+      id: "legal",
+      heading: "Legal",
+      links: [
+        { href: "/legal/privacy-policy", label: "Privacy Policy" },
+        { href: "/legal/terms-and-conditions", label: "Terms" },
+      ],
+    },
+  ],
+
+  /**
+   * Order matters — this is the visual order of the icon row.
+   * Descriptions from README.md:39-43 become the accessible labels.
+   */
   socials: [
-    { id: "instagram", label: "Instagram", blurb: "swing tips, drills, and what we're building" },
-    { id: "facebook", label: "Facebook", blurb: "updates and community" },
-    { id: "discord", label: "Discord", blurb: "talk to us and other players" },
+    { id: "instagram", label: "Instagram", title: "swing tips, drills, and what we're building" },
+    { id: "facebook", label: "Facebook", title: "updates and community" },
+    { id: "discord", label: "Discord", title: "talk to us and other players" },
+    { id: "linkedin", label: "LinkedIn", title: "company updates" },
   ],
-  legal: [
-    { href: "/legal/privacy-policy", label: "Privacy Policy" },
-    { href: "/legal/terms-and-conditions", label: "Terms & Conditions" },
-  ],
+
+  /** Kept verbatim from the old footer. The only personality in the chrome. */
+  madeIn: "Shipped from 🇸🇪",
+  owner: "Oskar O.",
 } as const;
+
+/** `mailto:CONTACT_EMAIL` is substituted at render time from SITE.contactEmail. */
+export const CONTACT_EMAIL_TOKEN = "CONTACT_EMAIL";

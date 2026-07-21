@@ -65,6 +65,6 @@ export const FAQ: readonly FaqItem[] = [
   {
     id: "what-if-i-need-help",
     q: "What if I need help?",
-    a: "Email us and a real person will answer. There's also a Discord where you can ask questions and see what other golfers are working on.",
+    a: "Email team@trueswing.se and a real person will answer. There's also a Discord where you can ask questions and see what other golfers are working on.",
   },
 ];

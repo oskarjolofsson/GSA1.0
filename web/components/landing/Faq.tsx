@@ -20,12 +20,12 @@ export function Faq() {
     >
       <h2
         id="faq-heading"
-        className="font-display text-3xl font-bold text-sand sm:text-4xl"
+        className="font-display text-3xl font-bold tracking-tight text-sand sm:text-4xl"
       >
         Questions
       </h2>
 
-      <div className="mt-10 divide-y divide-sand/10 border-y border-sand/10">
+      <div className="mt-10 divide-y divide-sand/20 border-y border-sand/20">
         {FAQ.map((item) => (
           <details key={item.id} id={item.id} name="faq" className="group py-5">
             <summary className="flex items-start justify-between gap-6 text-left">

@@ -11,12 +11,12 @@ export function Problem() {
     <section
       id="problem"
       aria-labelledby="problem-heading"
-      className="border-y border-sand/10 bg-ink-raised/30"
+      className="border-y border-sand/20 bg-ink-raised/30"
     >
       <div className="mx-auto w-full max-w-3xl px-6 py-24 sm:py-32">
         <h2
           id="problem-heading"
-          className="font-display text-3xl font-bold text-balance text-gold sm:text-4xl"
+          className="font-display text-3xl font-bold tracking-tight text-balance text-gold sm:text-4xl"
         >
           {PROBLEM.heading}
         </h2>

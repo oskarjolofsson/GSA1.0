@@ -29,7 +29,7 @@ export function Pricing() {
         Pricing
       </h2>
 
-      <div className="mt-10 rounded-3xl border border-gold/30 bg-ink-raised/60 p-8">
+      <div className="mt-10 rounded-xl border border-gold/30 bg-ink-raised/60 p-8">
         <h3 className="font-display text-xl font-semibold text-gold">
           {PRICING.name}
         </h3>
