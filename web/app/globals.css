@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/*
+ * Brand tokens.
+ *
+ * Canonical source: TrueSwing-expo-app/tailwind.config.js
+ * Keep in sync BY HAND. This is deliberately not enforced by a test — a
+ * cross-project assertion would break this build whenever the app changes a
+ * colour, which blocks unrelated deploys for a cosmetic reason.
+ *
+ * Ignore TrueSwing-expo-app/features/upload/components/theme.ts — that is a
+ * conflicting iOS-system-colours palette local to the upload feature.
+ */
+@theme {
+  --color-ink: #0a0f1a;
+  --color-ink-raised: #141f30;
+  --color-sand: #eadfc8;
+  --color-sand-dim: #8a8676;
+  --color-gold: #e4c892;
+  --color-gold-deep: #d2b271;
+  --color-grid-low: #39705a;
+  --color-grid-high: #6fa98a;
+}
+
+/* Font CSS variables are injected by next/font in app/layout.tsx. */
+@theme inline {
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-hanken);
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-sand);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The FAQ uses native <details>. Hide the default disclosure marker so the
+   chevron in Faq.tsx is the only affordance. */
+summary::-webkit-details-marker {
+  display: none;
+}
+summary {
+  list-style: none;
+  cursor: pointer;
+}

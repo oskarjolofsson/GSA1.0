@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="606" viewBox="0 0 280 606" role="img" aria-label="Program step">
+  <rect width="280" height="606" fill="#141F30"/>
+  <rect x="16" y="16" width="248" height="574" rx="18" fill="#0A0F1A" stroke="#8A8676" stroke-opacity="0.25"/>
+  <text x="140" y="292" text-anchor="middle" fill="#E4C892" font-family="system-ui,sans-serif" font-size="15" font-weight="600">Program step</text>
+  <text x="140" y="316" text-anchor="middle" fill="#8A8676" font-family="system-ui,sans-serif" font-size="12">placeholder — replace</text>
+</svg>
