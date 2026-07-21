@@ -1,0 +1,30 @@
+# Inner Caddy — runs INSIDE the web container and serves the static export.
+# The outer Caddy at /srv/trueswing terminates TLS, sets security and cache
+# headers, and reverse-proxies to this on port 80.
+#
+# try_files is the load-bearing line. With `trailingSlash: false` the export
+# emits:
+#
+#   /                            -> out/index.html
+#   /legal/privacy-policy        -> out/legal/privacy-policy.html      <- NOT /index.html
+#   /legal/terms-and-conditions  -> out/legal/terms-and-conditions.html
+#
+# So a bare `file_server` 404s on /legal/privacy-policy, which is the exact URL
+# the App Store listing points at. `{path}.html` is what resolves it, with no
+# redirect hop. Verified against the emitted out/ tree, not assumed.
+
+:80 {
+	root * /srv/web
+
+	encode gzip zstd
+
+	# Extensionless URL -> the emitted .html file.
+	try_files {path} {path}.html {path}/index.html
+
+	file_server
+
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+}

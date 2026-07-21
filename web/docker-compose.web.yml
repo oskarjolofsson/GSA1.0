@@ -1,0 +1,60 @@
+# Reference snippet — NOT run from this repo.
+#
+# Paste this service into the server's /srv/trueswing/docker-compose.yml (the
+# same file that already runs the backend, admin and Caddy). Then add `web` to
+# the caddy service's depends_on and add the site blocks below to the Caddyfile.
+#
+# No env_file: this is a static site with no runtime configuration. Everything
+# is baked in at build time (see Dockerfile / deploy.sh). Ports are only
+# `expose`d — the outer Caddy is the single ingress on 80/443.
+
+services:
+  web:
+    # Pin a SHA tag to roll back instantly:  ...:trueswing_web:b2aeb8c5
+    image: oskarjolofsson/trueswing_web:latest
+    container_name: trueswing-web
+    restart: unless-stopped
+    expose:
+      - "80"
+
+# In the existing `caddy` service, extend depends_on:
+#   depends_on:
+#     - app
+#     - app-preview
+#     - admin
+#     - web
+#
+# Caddyfile — production:
+#
+#   trueswing.se, www.trueswing.se {
+#       header {
+#           Strict-Transport-Security "max-age=31536000; includeSubDomains"
+#           X-Content-Type-Options    nosniff
+#           X-Frame-Options           DENY
+#           Referrer-Policy           strict-origin-when-cross-origin
+#           Content-Security-Policy   "default-src 'self'; script-src 'self' https://plausible.io; connect-src 'self' https://plausible.io; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; base-uri 'self'; frame-ancestors 'none'"
+#       }
+#
+#       # Hashed assets are immutable; HTML must revalidate so copy edits land.
+#       @assets path /_next/static/*
+#       header @assets Cache-Control "public, max-age=31536000, immutable"
+#       header          Cache-Control "public, max-age=0, must-revalidate"
+#
+#       # Legacy routes retired with frontend/. See the plan's BLOCKING QUESTION
+#       # before enabling the /billing/* line — if the app still uses Stripe
+#       # web checkout, redirecting it drops a payer on the landing page.
+#       handle /dashboard/*   { redir / 308 }
+#       handle /pricing       { redir / 308 }
+#       handle /auth/callback { redir / 308 }
+#       # handle /billing/*   { redir / 308 }   # <- BLOCKED, see above
+#
+#       reverse_proxy web:80
+#   }
+#
+# Caddyfile — staging (verify legal URLs here BEFORE moving the apex):
+#
+#   next.trueswing.se {
+#       # Keep staging out of the index.
+#       header X-Robots-Tag "noindex, nofollow"
+#       reverse_proxy web:80
+#   }
