@@ -11,7 +11,7 @@ export function Hero() {
             The only <h1> on the page, and it is the positioning line itself.
             Do not soften it into a feature description — the claim IS the pitch.
           */}
-          <h1 className="font-display text-4xl leading-tight font-bold text-balance text-sand sm:text-5xl">
+          <h1 className="font-display text-4xl leading-tight font-bold tracking-tight text-balance text-sand sm:text-5xl">
             {HERO.headline}
           </h1>
 

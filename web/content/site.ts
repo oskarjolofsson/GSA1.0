@@ -1,16 +1,16 @@
 import type { SiteConfig } from "./types";
 
 /**
- * OPEN DEPENDENCIES — these placeholders must be replaced before cutover.
- * See the plan's "Open dependencies" section.
+ * OPEN DEPENDENCIES — anything still carrying PLACEHOLDER_PREFIX must be
+ * replaced before cutover. content/site.test.ts enumerates what is still
+ * outstanding, so a forgotten placeholder fails the suite rather than shipping.
  *
- *   1. appStoreUrl + appStoreId — the hero CTA and the Smart App Banner both
- *      need these. Nothing ships without them.
- *   3. socials — footer links.
+ * Remaining:
+ *   - appStoreUrl + appStoreId — hero CTA, footer CTA, Smart App Banner
+ *   - socials.discord — the FAQ promises a Discord, so this link has to work
  *
- * They are typed as strings rather than `string | null` so the layout code stays
- * simple; content/site.test.ts asserts the placeholders are gone, so a build
- * that still contains them fails the suite rather than shipping silently.
+ * Closed: Instagram, Facebook and LinkedIn URLs were recovered from the legacy
+ * footer at frontend/src/layouts/public/components/footer.jsx.
  */
 export const SITE: SiteConfig = {
   name: "TrueSwing",
@@ -22,9 +22,18 @@ export const SITE: SiteConfig = {
   appStoreUrl: "REPLACE_ME_APP_STORE_URL",
   appStoreId: "REPLACE_ME_APP_STORE_ID",
 
+  /**
+   * Canonical contact address. The privacy policy publishes this, the FAQ
+   * promises a reply at it, and the footer links it twice. The legacy footer
+   * used trueswing25@gmail.com — that address is retired, and
+   * tests/static-html.test.ts asserts it never reaches the build output.
+   */
+  contactEmail: "team@trueswing.se",
+
   socials: {
-    instagram: "REPLACE_ME_INSTAGRAM_URL",
-    facebook: "REPLACE_ME_FACEBOOK_URL",
+    instagram: "https://www.instagram.com/trueswing25/",
+    facebook: "https://www.facebook.com/people/True-Swing/61585578701767/",
+    linkedin: "https://www.linkedin.com/company/110780177/",
     discord: "REPLACE_ME_DISCORD_URL",
   },
 };

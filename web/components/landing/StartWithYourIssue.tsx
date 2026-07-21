@@ -16,7 +16,7 @@ export function StartWithYourIssue() {
         {ISSUE_SECTION.cards.map((card) => (
           <li
             key={card.id}
-            className="rounded-2xl border border-sand/10 bg-ink-raised/50 p-6"
+            className="rounded-lg border border-sand/20 bg-ink-raised/50 p-6"
           >
             <h3 className="font-display text-lg font-semibold text-gold">
               {card.title}

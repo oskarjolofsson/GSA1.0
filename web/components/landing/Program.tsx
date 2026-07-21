@@ -13,13 +13,13 @@ export function Program() {
     <section
       id="program"
       aria-labelledby="program-heading"
-      className="border-y border-sand/10 bg-ink-raised/30"
+      className="border-y border-sand/20 bg-ink-raised/30"
     >
       <div className="mx-auto grid w-full max-w-5xl items-center gap-12 px-6 py-24 sm:py-28 md:grid-cols-[1fr_auto]">
         <div>
           <h2
             id="program-heading"
-            className="font-display text-3xl font-bold text-balance text-sand sm:text-4xl"
+            className="font-display text-3xl font-bold tracking-tight text-balance text-sand sm:text-4xl"
           >
             {PROGRAM.heading}
           </h2>

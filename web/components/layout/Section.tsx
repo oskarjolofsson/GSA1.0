@@ -24,7 +24,7 @@ export function Section({
       {heading ? (
         <h2
           id={headingId}
-          className="font-display text-3xl font-bold text-balance text-sand sm:text-4xl"
+          className="font-display text-3xl font-bold tracking-tight text-balance text-sand sm:text-4xl"
         >
           {heading}
         </h2>

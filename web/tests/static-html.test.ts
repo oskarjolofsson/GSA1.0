@@ -77,6 +77,25 @@ describe("landing page static HTML", () => {
     expect(html).toContain("plausible.io");
   });
 
+  it("carries the footer's shipped-from line", () => {
+    expect(html).toContain("Shipped from");
+    expect(html).toContain("Oskar O.");
+  });
+
+  it("uses the canonical contact address and not the retired one", () => {
+    // The legacy footer used trueswing25@gmail.com for Contact and Support.
+    // That address is retired; team@trueswing.se is what the privacy policy
+    // publishes and what the FAQ promises a reply at.
+    expect(html).toContain("team@trueswing.se");
+    expect(html).not.toContain("trueswing25@gmail.com");
+  });
+
+  it("links all four socials from the footer", () => {
+    for (const domain of ["instagram.com", "facebook.com", "linkedin.com"]) {
+      expect(html, domain).toContain(domain);
+    }
+  });
+
   it("does NOT expose the unpublished price", () => {
     // Pricing.tsx exists and is tested but is deliberately not imported into
     // app/page.tsx while two conflicting prices (EUR 14.99 vs EUR 9) sit in the

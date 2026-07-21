@@ -22,7 +22,7 @@ export function PhoneFrame({
 }) {
   return (
     <div className="relative mx-auto w-full max-w-[280px]">
-      <div className="overflow-hidden rounded-[2.5rem] border-[6px] border-ink-raised bg-ink-raised shadow-2xl shadow-black/40">
+      <div className="overflow-hidden rounded-[1.25rem] border-[6px] border-ink-raised bg-ink-raised shadow-2xl shadow-black/40">
         <Image
           src={src}
           alt={alt}

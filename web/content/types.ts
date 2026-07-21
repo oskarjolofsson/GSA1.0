@@ -38,9 +38,15 @@ export interface SiteConfig {
   readonly appStoreUrl: string;
   /** Numeric App Store id for the Smart App Banner. OPEN DEPENDENCY. */
   readonly appStoreId: string;
+  /** Canonical contact address, used by the footer and published in the policy. */
+  readonly contactEmail: string;
   readonly socials: {
     readonly instagram: string;
     readonly facebook: string;
+    readonly linkedin: string;
     readonly discord: string;
   };
 }
+
+/** Keys of SITE.socials — keeps the footer's icon map exhaustive at compile time. */
+export type SocialId = keyof SiteConfig["socials"];

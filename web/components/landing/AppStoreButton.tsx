@@ -21,7 +21,7 @@ export function AppStoreButton({
     <a
       href={SITE.appStoreUrl}
       data-section={section}
-      className={`inline-flex items-center gap-3 rounded-full bg-gold px-7 py-4 font-sans text-base font-semibold text-ink transition-colors hover:bg-gold-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${className}`}
+      className={`inline-flex items-center gap-3 rounded-md bg-gold px-7 py-4 font-sans text-base font-semibold text-ink transition-colors hover:bg-gold-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold ${className}`}
     >
       <svg
         aria-hidden="true"
