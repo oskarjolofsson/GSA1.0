@@ -70,6 +70,32 @@ describe("landing page static HTML", () => {
     expect(html).toContain("apple-itunes-app");
   });
 
+  it("ships the hero as WebP, not the 1.6MB PNG", () => {
+    // `images.unoptimized: true` is forced by output:"export", so whatever is in
+    // public/ is served byte for byte. The source PNG is 1.6MB and this is 38KB;
+    // shipping the PNG would cost more Lighthouse than anything else on the page.
+    expect(html).toContain("hero.webp");
+    expect(html).not.toContain("README_image");
+    expect(html).not.toContain("hero.png");
+  });
+
+  it("does not lazy-load the hero image", () => {
+    // The hero photo is the LCP element. `priority` must win over lazy loading.
+    const heroTag = html.match(/<img[^>]*hero\.webp[^>]*>/)?.[0] ?? "";
+    expect(heroTag).not.toContain('loading="lazy"');
+  });
+
+  it("has exactly one h1, and it is the positioning line", () => {
+    expect((html.match(/<h1/g) ?? []).length).toBe(1);
+    expect(html).toContain("Not an AI coach");
+  });
+
+  it("renders the nav with all three section anchors", () => {
+    for (const anchor of ['href="#start"', 'href="#program"', 'href="#faq"']) {
+      expect(html, anchor).toContain(anchor);
+    }
+  });
+
   it("loads Plausible", () => {
     // If the CSP in the Caddyfile blocks plausible.io this still passes — the
     // script tag is present either way. Verify the network request separately
