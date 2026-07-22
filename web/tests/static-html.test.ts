@@ -101,8 +101,10 @@ describe("landing page static HTML", () => {
     }
   });
 
-  it("renders the nav with all three section anchors", () => {
-    for (const anchor of ['href="#start"', 'href="#program"', 'href="#faq"']) {
+  it("renders the nav section anchors", () => {
+    // #program was removed from the nav (still renders as the card's id, just
+    // not as a nav link). Keep this in step with NAV_LINKS in content/nav.ts.
+    for (const anchor of ['href="#start"', 'href="#faq"']) {
       expect(html, anchor).toContain(anchor);
     }
   });
