@@ -42,7 +42,8 @@ export const HERO = {
 export const PROBLEM = {
   heading: "The problem was never the diagnosis",
   // README.md:21-26, verbatim.
-  body: "You've known about your swing fault for years. Someone has already told you what it is. You still grind range balls hoping it clicks, with no way to tell whether any of it is working. The problem was never the diagnosis. It's that nothing closes the loop.",
+  body: "You've known about your swing fault for years. Someone has already told you what it is. You still grind range balls hoping it clicks, with no way to tell whether any of it is working. The problem was never the diagnosis. You just didn't have the correct practice plan.",
+
 } as const;
 
 /**

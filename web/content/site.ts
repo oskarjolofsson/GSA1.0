@@ -19,8 +19,8 @@ export const SITE: SiteConfig = {
   description:
     "You already know your swing fault. TrueSwing turns it into an ordered practice program that blends range drills with prescribed on-course play, and shows you that you showed up.",
 
-  appStoreUrl: "REPLACE_ME_APP_STORE_URL",
-  appStoreId: "REPLACE_ME_APP_STORE_ID",
+  appStoreUrl: "https://apps.apple.com/se/app/true-swing-golf-analysis/id6763497771",
+  appStoreId: "id6763497771",
 
   /**
    * Canonical contact address. The privacy policy publishes this, the FAQ
@@ -34,7 +34,7 @@ export const SITE: SiteConfig = {
     instagram: "https://www.instagram.com/trueswing25/",
     facebook: "https://www.facebook.com/people/True-Swing/61585578701767/",
     linkedin: "https://www.linkedin.com/company/110780177/",
-    discord: "REPLACE_ME_DISCORD_URL",
+    discord: "https://discord.gg/vqXAF2qmt2",
   },
 };
 

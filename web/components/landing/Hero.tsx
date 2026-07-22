@@ -2,6 +2,7 @@ import Image from "next/image";
 import { HERO } from "@/content/landing";
 import { Nav } from "@/components/layout/Nav";
 import { AppStoreButton } from "./AppStoreButton";
+import { ScrollCue } from "./ScrollCue";
 
 /**
  * Full-viewport hero, variant D — the photo IS the first screen.
@@ -85,12 +86,7 @@ export function Hero() {
         </div>
       </div>
 
-      <div
-        aria-hidden="true"
-        className="relative z-20 pb-7 text-center font-sans text-[11px] tracking-[0.18em] text-sand-dim uppercase"
-      >
-        Scroll
-      </div>
+      <ScrollCue href="#problem" label="the problem" />
     </section>
   );
 }
