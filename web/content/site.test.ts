@@ -7,7 +7,7 @@ import { SITE, PLACEHOLDER_PREFIX } from "./site";
  * exactly what is outstanding rather than letting a REPLACE_ME_ string ship.
  */
 
-const OUTSTANDING = ["appStoreUrl", "appStoreId", "socials.discord"] as const;
+const OUTSTANDING: readonly string[] = [];
 
 describe("site config", () => {
   it("has the recovered social URLs", () => {

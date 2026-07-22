@@ -6,10 +6,10 @@
  * section id that actually renders — a nav link that scrolls nowhere is the
  * classic way this breaks.
  *
- * Section ids: HowItWorks carries #start (the section) and #program (card 2);
- * Faq carries #faq. Problem (#problem) and HowItWorks's #proof card also exist
- * but are deliberately not in the nav — three links is enough, and "The problem"
- * is not something anyone navigates to on purpose.
+ * Section ids: HowItWorks carries #start (the section), Faq carries #faq. Other
+ * ids render but are deliberately not in the nav — HowItWorks's #program (card 2)
+ * and #proof, and Problem (#problem). Two links is enough, and "The problem" is
+ * not something anyone navigates to on purpose.
  */
 export const NAV_LINKS = [
   { href: "#start", label: "How it works" },
@@ -17,4 +17,4 @@ export const NAV_LINKS = [
 ] as const;
 
 /** Section ids the nav depends on. Kept explicit so the test can assert them. */
-export const NAV_TARGET_IDS = ["start", "program", "faq"] as const;
+export const NAV_TARGET_IDS = ["start", "faq"] as const;
