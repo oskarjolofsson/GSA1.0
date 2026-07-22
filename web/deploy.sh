@@ -32,6 +32,9 @@ set -euo pipefail
 IMAGE="oskarjolofsson/trueswing_web"
 SERVER="root@188.245.42.39"
 REMOTE_DIR="/srv/trueswing"
+# Compose service name on the server. Scope pull/up to this so a web deploy
+# never pulls or restarts the backend, admin or caddy containers.
+SERVICE="web"
 cd "$(dirname "$0")"
 
 if [[ -n "$(git status --porcelain -- . 2>/dev/null)" ]]; then
@@ -83,16 +86,16 @@ echo
 read -r -p "Deploy ${TAG} to production (${SERVER})? [y/N] " reply
 if [[ "$reply" == "y" || "$reply" == "Y" ]]; then
 	echo "==> Deploying on ${SERVER}"
-	ssh "${SERVER}" "cd ${REMOTE_DIR} && docker compose pull && docker compose up -d"
+	ssh "${SERVER}" "cd ${REMOTE_DIR} && docker compose pull ${SERVICE} && docker compose up -d ${SERVICE}"
 	echo
 	echo "Deployed ${IMAGE}:${TAG} — live at trueswing.se"
 else
 	echo "Skipped deploy. To deploy later:"
 	echo "  ssh ${SERVER}"
-	echo "  cd ${REMOTE_DIR} && docker compose pull && docker compose up -d"
+	echo "  cd ${REMOTE_DIR} && docker compose pull ${SERVICE} && docker compose up -d ${SERVICE}"
 fi
 
 echo
 echo "To roll back, pin the previous SHA in docker-compose.yml:"
 echo "  image: ${IMAGE}:<previous-sha>"
-echo "  docker compose up -d"
+echo "  docker compose up -d ${SERVICE}"
