@@ -1,4 +1,5 @@
 import { PROBLEM } from "@/content/landing";
+import { ScrollCue } from "./ScrollCue";
 
 /**
  * The emotional hook, and the section that earns the most vertical space.
@@ -11,7 +12,7 @@ export function Problem() {
     <section
       id="problem"
       aria-labelledby="problem-heading"
-      className="border-y border-sand/20 bg-ink-raised/30"
+      className="scroll-mt-20 border-y border-sand/20 bg-ink-raised/30"
     >
       <div className="mx-auto w-full max-w-3xl px-6 py-24 sm:py-32">
         <h2
@@ -25,6 +26,8 @@ export function Problem() {
           {PROBLEM.body}
         </p>
       </div>
+
+      <ScrollCue href="#start" label="how it works" />
     </section>
   );
 }

@@ -13,7 +13,6 @@
  */
 export const NAV_LINKS = [
   { href: "#start", label: "How it works" },
-  { href: "#program", label: "The program" },
   { href: "#faq", label: "Questions" },
 ] as const;
 

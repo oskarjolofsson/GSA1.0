@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { HOW_IT_WORKS } from "@/content/howItWorks";
 import { AppStoreButton } from "./AppStoreButton";
+import { ScrollCue } from "./ScrollCue";
 
 /**
  * The "how it works" section. Replaces StartWithYourIssue / Program / Proof.
@@ -21,7 +22,7 @@ export function HowItWorks() {
     <section
       id="start"
       aria-labelledby="how-it-works-heading"
-      className="mx-auto flex w-full max-w-6xl flex-col px-6 py-24 md:min-h-screen md:justify-center md:py-16"
+      className="scroll-mt-20 mx-auto flex w-full max-w-6xl flex-col px-6 py-24 md:min-h-screen md:justify-center md:py-16"
     >
       <p className="text-center font-sans text-[11px] font-semibold tracking-[0.18em] text-gold-deep uppercase">
         {HOW_IT_WORKS.eyebrow}
@@ -79,12 +80,14 @@ export function HowItWorks() {
         ))}
       </div>
 
-      <div className="mt-16 flex flex-col items-center gap-3">
+      <div className="mt-16 mb-4 flex flex-col items-center gap-3">
         <AppStoreButton section="how-it-works" />
         <span className="text-[13px] text-sand-dim">
           {HOW_IT_WORKS.ctaSubline}
         </span>
       </div>
+
+      <ScrollCue href="#faq" label="questions" />
     </section>
   );
 }

@@ -16,7 +16,7 @@ export function Faq() {
     <section
       id="faq"
       aria-labelledby="faq-heading"
-      className="mx-auto w-full max-w-3xl px-6 py-24"
+      className="scroll-mt-20 mx-auto w-full max-w-3xl px-6 py-24"
     >
       <h2
         id="faq-heading"
