@@ -12,13 +12,16 @@ import { SITE } from "@/content/site";
  * legible over any frame — which matters because the hero image is intended to
  * become video, and video brightness changes shot to shot.
  *
- * Static, not sticky. Sticky needs scroll state, which means a client component;
- * the entire page is server-rendered with zero JS and that is worth protecting.
+ * Fixed, so it follows the scroll and stays reachable on a long page. This is
+ * pure CSS position: fixed — no scroll state and no client component, so the
+ * whole page stays server-rendered with zero JS. The gradient + backdrop-blur
+ * give the bar its own surface, so it reads cleanly over the hero photo at the
+ * top and over the dark sections below once you scroll.
  */
 export function Nav() {
   return (
-    <header className="hero-nav absolute inset-x-0 top-0 z-30 border-b border-sand/20 bg-gradient-to-b from-ink/85 to-ink/55 backdrop-blur-sm">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-6 px-6 py-4">
+    <header className="hero-nav fixed inset-x-0 top-0 z-30 border-b border-sand/20 bg-gradient-to-b from-ink/90 to-ink/70 backdrop-blur-md">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:gap-6 sm:px-6 sm:py-4">
         <Link
           href="/"
           className="flex items-center gap-2.5 rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
