@@ -6,10 +6,10 @@
  * section id that actually renders — a nav link that scrolls nowhere is the
  * classic way this breaks.
  *
- * Section ids live on the components: StartWithYourIssue (#start),
- * Program (#program), Faq (#faq). Problem (#problem) and Proof (#proof) also
- * exist but are deliberately not in the nav — three links is enough, and
- * "The problem" is not something anyone navigates to on purpose.
+ * Section ids: HowItWorks carries #start (the section) and #program (card 2);
+ * Faq carries #faq. Problem (#problem) and HowItWorks's #proof card also exist
+ * but are deliberately not in the nav — three links is enough, and "The problem"
+ * is not something anyone navigates to on purpose.
  */
 export const NAV_LINKS = [
   { href: "#start", label: "How it works" },

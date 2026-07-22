@@ -27,7 +27,7 @@ export function Hero() {
       {/* Photo */}
       <div className="hero-photo absolute inset-0 z-0">
         <Image
-          src="/hero.webp"
+          src= {HERO.image}
           alt={HERO.photoAlt}
           fill
           priority
@@ -50,6 +50,16 @@ export function Hero() {
       <Nav />
 
       <div className="relative z-20 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 pt-28 pb-20">
+        {/* Kicker above the headline. A <p>, never a heading: an eyebrow that is
+            an h2 breaks heading order and misreports structure to screen readers.
+            Same token as the "Scroll" label below (sand-dim, uppercase, tracked)
+            so it reads as a quiet system element, not a competing line. Sand-dim
+            clears AA here (~5:1) because it sits in the near-opaque left scrim,
+            unlike over the open photo where the token measured 3.83:1. */}
+        <p className="hero-eyebrow mb-4 font-sans text-[11px] font-semibold tracking-[0.18em] text-sand-dim uppercase">
+          {HERO.eyebrow}
+        </p>
+
         {/* The only h1 on the page, and it is the positioning line itself. */}
         <h1 className="hero-headline font-display text-4xl leading-[1.05] font-bold tracking-tight text-balance text-sand sm:text-5xl lg:text-6xl">
           {HERO.headline}

@@ -116,6 +116,9 @@ summary {
 .hero-nav {
   animation: hero-fade-in 500ms ease-out both;
 }
+.hero-eyebrow {
+  animation: hero-rise-in 600ms ease-out 40ms both;
+}
 .hero-headline {
   animation: hero-rise-in 600ms ease-out 100ms both;
 }
@@ -131,6 +134,7 @@ summary {
 @media (prefers-reduced-motion: reduce) {
   .hero-photo,
   .hero-nav,
+  .hero-eyebrow,
   .hero-headline,
   .hero-sub,
   .hero-cta {

@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { FAQ } from "@/content/faq";
 import { ROUTES, emittedFileFor } from "@/lib/routes";
 import { PRICING } from "@/content/pricing";
+import { HOW_IT_WORKS } from "@/content/howItWorks";
 
 /**
  * The tests that justify this project.
@@ -74,20 +75,30 @@ describe("landing page static HTML", () => {
     // `images.unoptimized: true` is forced by output:"export", so whatever is in
     // public/ is served byte for byte. The source PNG is 1.6MB and this is 38KB;
     // shipping the PNG would cost more Lighthouse than anything else on the page.
-    expect(html).toContain("hero.webp");
+    expect(html).toContain("Golf-19-1280.webp");
     expect(html).not.toContain("README_image");
     expect(html).not.toContain("hero.png");
   });
 
   it("does not lazy-load the hero image", () => {
     // The hero photo is the LCP element. `priority` must win over lazy loading.
-    const heroTag = html.match(/<img[^>]*hero\.webp[^>]*>/)?.[0] ?? "";
+    const heroTag = html.match(/<img[^>]*Golf-19-1280\.webp[^>]*>/)?.[0] ?? "";
     expect(heroTag).not.toContain('loading="lazy"');
   });
 
   it("has exactly one h1, and it is the positioning line", () => {
     expect((html.match(/<h1/g) ?? []).length).toBe(1);
     expect(html).toContain("Not an AI coach");
+  });
+
+  it("renders every 'how it works' step in the static HTML", () => {
+    // The whole point of the 3-card section: no client JS, nothing hidden, so
+    // all three steps are in the bytes on disk for a crawler that never runs JS.
+    expect(html).toContain(HOW_IT_WORKS.heading);
+    for (const step of HOW_IT_WORKS.steps) {
+      expect(html, `title: ${step.id}`).toContain(step.title);
+      expect(html, `body: ${step.id}`).toContain(step.body);
+    }
   });
 
   it("renders the nav with all three section anchors", () => {
