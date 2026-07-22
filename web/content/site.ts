@@ -5,12 +5,12 @@ import type { SiteConfig } from "./types";
  * replaced before cutover. content/site.test.ts enumerates what is still
  * outstanding, so a forgotten placeholder fails the suite rather than shipping.
  *
- * Remaining:
- *   - appStoreUrl + appStoreId — hero CTA, footer CTA, Smart App Banner
- *   - socials.discord — the FAQ promises a Discord, so this link has to work
+ * Remaining: none — all values below are real. If you add a new field with a
+ * REPLACE_ME_ placeholder, add it to OUTSTANDING in content/site.test.ts.
  *
- * Closed: Instagram, Facebook and LinkedIn URLs were recovered from the legacy
- * footer at frontend/src/layouts/public/components/footer.jsx.
+ * Closed: appStoreUrl + appStoreId (hero/footer CTA, Smart App Banner),
+ * socials.discord (the FAQ promises a Discord), and the Instagram, Facebook and
+ * LinkedIn URLs recovered from the legacy footer.
  */
 export const SITE: SiteConfig = {
   name: "TrueSwing",
