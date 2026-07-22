@@ -21,7 +21,7 @@
 #
 # EXAMPLES
 #   ./scripts/optimize-image.sh ~/Desktop/shot.png program-step
-#   ./scripts/optimize-image.sh ../docs/images/media/README_image.png hero 78 1150x857+850+0
+#   ./scripts/optimize-image.sh ../docs/images/media/README_image.png hero 78 1150x857+850+300
 #
 # ON QUALITY
 #   The size/quality curve flattens hard around 78. Measured on the hero photo:

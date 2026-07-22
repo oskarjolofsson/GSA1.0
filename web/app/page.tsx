@@ -2,9 +2,7 @@ import { JsonLd } from "@/lib/seo/JsonLd";
 import { faqPageSchema } from "@/lib/seo/schemas";
 import { Hero } from "@/components/landing/Hero";
 import { Problem } from "@/components/landing/Problem";
-import { StartWithYourIssue } from "@/components/landing/StartWithYourIssue";
-import { Program } from "@/components/landing/Program";
-import { Proof } from "@/components/landing/Proof";
+import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Faq } from "@/components/landing/Faq";
 import { Footer } from "@/components/landing/Footer";
 import { AppStoreButton } from "@/components/landing/AppStoreButton";
@@ -26,9 +24,7 @@ export default function Home() {
       <main>
         <Hero />
         <Problem />
-        <StartWithYourIssue />
-        <Program />
-        <Proof />
+        <HowItWorks />
         <Faq />
 
         {/* Closing CTA: the FAQ is where a convinced reader finishes, so give
