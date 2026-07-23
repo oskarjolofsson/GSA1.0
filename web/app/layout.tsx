@@ -28,6 +28,11 @@ const hanken = Hanken_Grotesk({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   ...buildMetadata("/"),
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/true_swing_logo.png",
+  },
   other: {
     // Smart App Banner: gives iOS Safari visitors a native install prompt.
     "apple-itunes-app": `app-id=${SITE.appStoreId}`,

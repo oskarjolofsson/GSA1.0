@@ -31,7 +31,7 @@ export function Footer() {
             <Link href="/" className="flex items-center gap-2.5">
               <Image
                 src="/true_swing_logo.png"
-                alt=""
+                alt="TrueSwing"
                 width={40}
                 height={40}
                 className="size-10 opacity-90"
