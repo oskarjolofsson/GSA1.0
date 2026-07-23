@@ -34,7 +34,7 @@ export const SITE: SiteConfig = {
     instagram: "https://www.instagram.com/trueswing25/",
     facebook: "https://www.facebook.com/people/True-Swing/61585578701767/",
     linkedin: "https://www.linkedin.com/company/110780177/",
-    discord: "https://discord.gg/vqXAF2qmt2",
+    discord: "https://discord.gg/EsMHGjRG6Q",
   },
 };
 
