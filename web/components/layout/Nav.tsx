@@ -28,7 +28,7 @@ export function Nav() {
         >
           <Image
             src="/true_swing_logo.png"
-            alt=""
+            alt="TrueSwing"
             width={32}
             height={32}
             priority
