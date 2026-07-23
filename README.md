@@ -38,6 +38,7 @@ re-tests where you watch your swing now against your swing then.
 
 ## Community & Support
 
-- [Instagram](INSTAGRAM_URL) — swing tips, drills, and what we're building
-- [Facebook](FACEBOOK_URL) — updates and community
-- [Discord](DISCORD_URL) — talk to us and other players
+- [Instagram](https://www.instagram.com/trueswing25/) — swing tips, drills, and what we're building
+- [Facebook](https://www.facebook.com/people/True-Swing/61585578701767/) — updates and community
+- [Discord](https://discord.gg/EsMHGjRG6Q) — talk to us and other players
+- [LinkedIn](https://www.linkedin.com/company/110780177/) — company updates 
