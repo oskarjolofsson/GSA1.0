@@ -14,9 +14,6 @@ class CreateIssueRequest(BaseModel):
     shot_outcome: str | None = None
     layman_title: str | None = None
     layman_desc: str | None = None
-    # An issue can carry several misses (issue_misses is a many-table). Values are
-    # validated strictly on this admin path: an unknown tag is a 422, not a silent
-    # drop. Fetch the allowed values from GET /api/v1/taxonomy/.
     misses: list[str] = []
     goals: list[str] = []
 
@@ -55,8 +52,6 @@ class GetIssue(BaseModel):
     progress: IssueProgress | None = None
     program_status: str | None = None  # 'active' | 'completed' | None
     source: str = "catalog"  # 'catalog' (admin) | 'custom' (user-authored)
-    # Goal-first library tags. Eager-loaded by the issues repo, so including them
-    # here costs no extra queries per issue.
     goals: list[str] = []
     misses: list[str] = []
 
@@ -102,24 +97,16 @@ class GetIssue(BaseModel):
             progress=progress,
             program_status=getattr(dto, "program_status", None),
             source=getattr(dto, "source", "catalog"),
-            # Explicit access, not getattr: IssueResponseDTO always defines these, and
-            # a missing attribute should fail loudly rather than silently become [].
             goals=dto.goals,
             misses=dto.misses,
         )
 
 
 class UpdateIssueRequest(BaseModel):
-    """Partial update. Omitted fields are left untouched.
+    """Partial update; omitted fields are left untouched.
 
-    For `misses` and `goals` that distinction carries weight:
-
-        field omitted / null -> tags left alone
-        []                   -> every tag of that kind is removed
-        ["SLICE", "PULL"]    -> the tag set is REPLACED, not merged
-
-    Before this schema carried tags at all, they were write-once at creation and no
-    endpoint could correct a mistagged issue.
+    `misses`/`goals` replace the whole set rather than merging into it:
+    omitted leaves tags alone, [] removes them all.
     """
 
     title: str | None = None

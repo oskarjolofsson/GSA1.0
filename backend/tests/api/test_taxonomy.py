@@ -1,18 +1,11 @@
-"""GET /api/v1/taxonomy/
-
-The point of this endpoint is that clients stop hardcoding tag vocabularies. The
-drift test below is the one that earns its keep: if someone adds a value to
-core/services/taxonomy.py (and the matching SQL CHECK) but the endpoint stops
-reporting it, every client silently loses the ability to use it.
-"""
+"""GET /api/v1/taxonomy/ — the vocabularies clients render their tag pickers from."""
 
 from core.services import taxonomy
 
 
 def test_taxonomy_requires_authentication(client):
-    """Matches the convention in test_issue.py: an INVALID token is the 401 case. A
-    missing Authorization header is a 422 instead, because get_current_user declares
-    it as a required Header(...), so FastAPI rejects it during validation."""
+    """An invalid token is the 401 case; a missing header is a 422 from FastAPI,
+    since get_current_user declares Authorization as a required Header(...)."""
     response = client.get(
         "/api/v1/taxonomy/", headers={"Authorization": "Bearer invalid-token"}
     )
@@ -35,7 +28,7 @@ def test_taxonomy_returns_all_four_vocabularies(client, auth_headers):
 
 
 def test_taxonomy_matches_the_canonical_module_exactly(client, auth_headers):
-    """Drift guard. This is the whole reason the endpoint exists."""
+    """The response must track core/services/taxonomy.py exactly."""
     data = client.get("/api/v1/taxonomy/", headers=auth_headers).json()
 
     assert data["areas"] == list(taxonomy.ALLOWED_AREAS)
@@ -47,8 +40,7 @@ def test_taxonomy_matches_the_canonical_module_exactly(client, auth_headers):
 
 
 def test_taxonomy_defaults_are_members_of_their_vocabularies(client, auth_headers):
-    """A default outside its own vocabulary would let the admin create an issue the
-    strict validators immediately reject."""
+    """A default outside its own vocabulary would be rejected by the validators."""
     data = client.get("/api/v1/taxonomy/", headers=auth_headers).json()
 
     assert data["default_area"] in data["areas"]
@@ -56,6 +48,6 @@ def test_taxonomy_defaults_are_members_of_their_vocabularies(client, auth_header
 
 
 def test_taxonomy_is_available_to_non_admins(client, auth_headers):
-    """Deliberately not require_admin: the golfer-facing app needs these values too.
-    The default test_user is not an admin, so a 200 here proves the gating."""
+    """Not require_admin: the golfer-facing app needs these too. test_user is not an
+    admin, so a 200 confirms the gating."""
     assert client.get("/api/v1/taxonomy/", headers=auth_headers).status_code == 200

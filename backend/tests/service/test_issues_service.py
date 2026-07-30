@@ -340,14 +340,12 @@ class TestDeleteIssue:
 class TestIssueTags:
     """Goal/miss tags on create, read and update.
 
-    Before this feature tags were write-once: UpdateIssueDTO had no tag fields, so a
-    mistagged issue could only be corrected with hand-written SQL. These tests pin
-    down the three-state replace semantics that fixed that, plus the strict
-    validation that keeps a typo'd tag from vanishing behind a 200.
+    Covers the three-state update semantics (None keeps, [] clears, list replaces)
+    and the strict validation applied on admin paths.
     """
 
     def test_create_persists_multiple_misses(self, db_session, test_user):
-        """issue_misses is a many-table; one issue can show up as several misses."""
+        """One issue can carry several misses at once."""
         dto = CreateIssueDTO(
             title="Over the top",
             description="Steep out-to-in path",
@@ -382,7 +380,7 @@ class TestIssueTags:
         assert created.goals == []
 
     def test_create_rejects_unknown_miss(self, db_session):
-        """Admin path: loud 422, never a silent drop."""
+        """Admin paths reject unknown tags rather than dropping them."""
         dto = CreateIssueDTO(title="Bad tag", description="d", misses=["BANANA"])
 
         with pytest.raises(exceptions.ValidationException):
@@ -395,8 +393,7 @@ class TestIssueTags:
             create_issue(dto, db_session=db_session)
 
     def test_create_rejects_unknown_area(self, db_session):
-        """Validated in the service so it's a 422, not an IntegrityError 500 from the
-        CHECK constraint."""
+        """Caught in the service, so it never reaches the CHECK constraint."""
         dto = CreateIssueDTO(title="Bad area", description="d", area="MOON")
 
         with pytest.raises(exceptions.ValidationException):
@@ -418,7 +415,7 @@ class TestIssueTags:
         assert fetched.goals == ["CONTACT"]
 
     def test_update_replaces_the_miss_set(self, db_session):
-        """Replace, not merge — the old tags go away."""
+        """Updating misses replaces the set rather than adding to it."""
         created = create_issue(
             CreateIssueDTO(
                 title="Replace me", description="d", misses=["SLICE", "PULL"]
@@ -447,7 +444,7 @@ class TestIssueTags:
         assert updated.goals == ["PUTTING"]
 
     def test_update_with_empty_list_clears_tags(self, db_session):
-        """An explicit [] means "this issue has no tags" and must delete the rows."""
+        """An explicit [] deletes the tag rows."""
         created = create_issue(
             CreateIssueDTO(
                 title="Clear me",
@@ -466,9 +463,7 @@ class TestIssueTags:
         assert updated.goals == []
 
     def test_update_with_none_leaves_tags_untouched(self, db_session):
-        """The partial-PATCH case: a caller updating only the title must not wipe tags.
-        This is the bug that would silently destroy a golfer's tags if the None and []
-        cases were ever collapsed."""
+        """Updating only the title leaves tags alone. None and [] must stay distinct."""
         created = create_issue(
             CreateIssueDTO(
                 title="Keep tags",
@@ -513,18 +508,14 @@ class TestIssueTags:
             )
 
     def test_rejected_update_leaves_existing_tags_intact(self, db_session, test_user):
-        """Validation runs BEFORE the collection is cleared.
+        """A rejected update leaves the existing tags untouched in-session.
 
-        Order matters here. If update_issue cleared `issue.misses` and validated while
-        re-appending, a request carrying one good tag and one typo would strip the
-        issue's tags in-session on its way to raising. The request would still 422 and
-        get_db would still roll back, so nothing would persist — but any code that
-        caught the exception and carried on with the same session would then be
-        looking at an issue whose tags had silently vanished.
+        update_issue validates before calling clear(); the reverse order would strip
+        the tags on the way to raising, which matters to any caller that catches the
+        exception and keeps using the session.
 
-        Asserting on the live ORM object is the point: no rollback, because a rollback
-        would also undo the create above (the whole test runs in one transaction) and
-        prove nothing.
+        Asserts on the live ORM object rather than re-reading: the whole test runs in
+        one transaction, so a rollback would undo the create too.
         """
         created = create_issue(
             CreateIssueDTO(

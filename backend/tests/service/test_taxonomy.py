@@ -1,13 +1,9 @@
 """Taxonomy vocabulary tests.
 
-Two behaviours are deliberately different and both matter:
-
-  * the LENIENT normalizers drop unknown values and succeed — right for the AI
-    structurer, where a hallucinated tag should degrade rather than 500 the request;
-  * the STRICT normalizers raise — right for the admin, where a silently dropped tag
-    is invisible data loss (you tick a box, get a 200, and the tag isn't there).
-
-If someone ever "simplifies" these into one function, these tests should fail loudly.
+The lenient and strict normalizers behave differently on purpose: lenient drops
+unknown values and succeeds (for machine-generated input), strict raises a 422 (for
+admin input). Both behaviours are asserted here so neither can be collapsed into the
+other by accident.
 """
 
 import pytest
@@ -51,8 +47,7 @@ class TestStrictMisses:
             normalize_misses_strict(["SLICE", "BANANA"])
 
     def test_error_message_names_the_offending_value(self):
-        """The admin UI renders this message inline next to the tag picker, so it has
-        to say which value was rejected."""
+        """Clients surface this message directly, so it must name the bad value."""
         with pytest.raises(exceptions.ValidationException) as exc:
             normalize_misses_strict(["BANANA"])
         assert "BANANA" in str(exc.value)
@@ -101,7 +96,7 @@ class TestStrictAreaAndKind:
 
 
 class TestLenientStillLenient:
-    """Regression guard: the AI and user-authoring paths depend on silent dropping."""
+    """The AI and user-authoring paths depend on unknown values being dropped."""
 
     def test_lenient_miss_returns_none_for_unknown(self):
         assert normalize_miss("BANANA") is None
@@ -116,8 +111,7 @@ class TestLenientStillLenient:
 
 
 class TestVocabulariesAreNonEmptyAndConsistent:
-    """Cheap sanity net. The DB CHECK constraints mirror these tuples by hand, so an
-    accidental edit here is a schema drift waiting to happen."""
+    """The DB CHECK constraints mirror these tuples by hand, so guard against drift."""
 
     def test_defaults_are_members_of_their_vocabulary(self):
         assert DEFAULT_AREA in ALLOWED_AREAS

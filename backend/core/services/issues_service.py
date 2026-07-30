@@ -48,10 +48,8 @@ def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
         layman_title=dto.layman_title,
         layman_desc=dto.layman_desc,
     )
-    # Goal/miss tags (WHAT/WHY). This is an admin path (POST /issues/ is
-    # require_admin), so validation is STRICT: an unknown value raises 422 instead
-    # of being silently dropped. The lenient normalizers stay in use on the AI and
-    # user-authoring paths, where a bad tag should degrade rather than fail.
+    # Strict normalizers (not the lenient ones used by issue_authoring_service):
+    # this is an admin path, so an unknown tag is a 422 rather than a silent drop.
     for miss in normalize_misses_strict(dto.misses):
         new_issue.misses.append(models.IssueMiss(miss=miss))
     for goal in normalize_goals_strict(dto.goals):
@@ -194,17 +192,9 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> Is
     if dto.layman_desc is not None:
         issue.layman_desc = dto.layman_desc
 
-    # Tag replacement. `None` means the caller didn't mention tags at all, so leave
-    # them; an empty list is an explicit "this issue has no tags". Clearing the
-    # collection deletes the rows because both relationships are
-    # cascade="all, delete-orphan" (see models/Issue.py).
-    #
-    #   dto.misses is None  ──▶ untouched
-    #   dto.misses == []    ──▶ every IssueMiss row deleted
-    #   dto.misses == [...] ──▶ cleared, then re-appended (replace, not merge)
-    #
-    # Strict validation: this is require_admin, so a bad tag is a 422, never a
-    # silent drop that leaves the admin thinking the tag saved.
+    # Tags replace rather than merge: None leaves them, [] clears them. clear()
+    # deletes the rows via delete-orphan. Validate before clearing so a rejected
+    # tag doesn't empty the existing set.
     if dto.misses is not None:
         validated = normalize_misses_strict(dto.misses)
         issue.misses.clear()

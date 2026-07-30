@@ -7,12 +7,9 @@ Four orthogonal axes describe an issue for the goal-first library:
   * kind  = fault (a swing flaw) vs skill (a non-fault focus, e.g. clubhead speed)
 
 These MUST stay in sync with the CHECK constraints on `issues.area`, `issues.kind`,
-`issue_goals.goal`, and `issue_misses.miss`.
-
-Clients get these values from `GET /api/v1/taxonomy/` rather than hardcoding them, so
-this module is the single source of truth for tag *membership*. Human-readable labels
-stay client-side (the expo app's features/library/constants holds golfer-voice copy;
-the admin uses its own terser labels) because they are presentation, not contract.
+`issue_goals.goal`, and `issue_misses.miss`. Clients read them from
+`GET /api/v1/taxonomy/`; display labels stay client-side (see the expo app's
+features/library/constants) since wording differs per audience.
 """
 
 from core.services.exceptions import ValidationException
@@ -51,18 +48,9 @@ def normalize_goals(values) -> list[str]:
     return seen
 
 
-# ---------------------------------------------------------------------------
-# Strict variants — for admin authoring paths only.
-#
-# The lenient normalizers above drop unknown values and return success. That is
-# right for the AI structurer (a hallucinated tag should degrade, not 500) and for
-# user authoring. It is WRONG for the admin: an admin who ticks a tag and gets a
-# 200 back has every reason to believe it saved. If the admin UI's vocabulary ever
-# drifts from ALLOWED_*, silent-drop turns that into invisible data loss.
-#
-# These raise instead, which app/exception_handlers.py renders as 422 with a
-# message naming the offending value.
-# ---------------------------------------------------------------------------
+# Strict variants, for admin authoring. The lenient functions above drop unknown
+# values and succeed, which suits machine-generated input (the AI structurer); these
+# raise a 422 instead, for paths where a human picked the tag and expects it to save.
 
 def _normalize_strict(values, allowed: tuple[str, ...], label: str) -> list[str]:
     """De-duplicate and upper-case `values`, raising on anything not in `allowed`."""

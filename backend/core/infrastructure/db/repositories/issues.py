@@ -6,23 +6,8 @@ from sqlalchemy.orm import Session, selectinload
 from uuid import UUID
 from sqlalchemy import delete, select, func, or_
 
-# Issue.goals and Issue.misses declare no `lazy=`, so they default to lazy="select".
-# Every issue read feeds a response DTO that now includes the tags, which without
-# eager loading means 2 extra round trips PER ISSUE — on the app's hottest paths
-# (home screen, analysis results). A golfer with 10 issues would pay 20 needless
-# queries per screen. selectinload collapses that to 2 queries total, regardless of
-# how many issues come back.
-#
-#   without:  SELECT issues            (1)
-#             SELECT goals  WHERE issue_id = ?   × N
-#             SELECT misses WHERE issue_id = ?   × N     ── 1 + 2N
-#
-#   with:     SELECT issues                              (1)
-#             SELECT goals  WHERE issue_id IN (...)       (1)
-#             SELECT misses WHERE issue_id IN (...)       (1)   ── 3, flat
-#
-# Apply to every read that can reach issues_service.from_issue_to_response_dto or
-# issue_authoring_service._issue_to_catalog_dto.
+# Issue.goals/misses are lazy by default and every response DTO reads them, so
+# without this each issue costs 2 extra queries. Apply to any read feeding a DTO.
 _TAG_OPTS = (selectinload(models.Issue.goals), selectinload(models.Issue.misses))
 
 # ------------ GET ------------
