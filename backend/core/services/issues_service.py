@@ -114,6 +114,10 @@ def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueRespo
     for program in programs:
         if program.issue_id is None:
             continue
+        # Abandoned programs are a removed focus: they carry no status for the issue
+        # and must not pull a removed issue back into the list via the backfill below.
+        if program.status == "abandoned":
+            continue
         key = str(program.issue_id)
         if key not in status_by_issue or program.status == "active":
             status_by_issue[key] = program.status
