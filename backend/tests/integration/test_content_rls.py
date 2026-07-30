@@ -156,3 +156,85 @@ def test_tag_tables_are_readable_but_not_writable(request, role, table):
     with pytest.raises(APIError) as exc:
         client.table(table).delete().eq("issue_id", UNMATCHABLE_ID).execute()
     assert exc.value.code == INSUFFICIENT_PRIVILEGE
+
+
+# ---------------------------------------------------------------------------
+# Tables closed entirely to client roles.
+#
+# Unlike the catalog above, these are not readable either: nothing reaches them
+# through PostgREST, so they carry no grants and no policies. Guarded by
+# 20260730020000_close_remaining_tables.sql.
+# ---------------------------------------------------------------------------
+
+# table -> (column, value) for a filter that matches nothing. The column has to
+# exist on the table: Postgres resolves column names during parse analysis, so a
+# bogus one raises 42703 (undefined_column) before any privilege check, and the
+# probe would say nothing about permissions.
+CLOSED_TABLE_PROBES = {
+    "profiles": ("created_at", "1970-01-01T00:00:00Z"),
+    "user_roles": ("created_at", "1970-01-01T00:00:00Z"),
+    "roles": ("name", "no-such-role"),
+    "user_feedback": ("created_at", "1970-01-01T00:00:00Z"),
+    "practice_sessions": ("started_at", "1970-01-01T00:00:00Z"),
+    "practice_drill_runs": ("started_at", "1970-01-01T00:00:00Z"),
+    "prompts": ("created_at", "1970-01-01T00:00:00Z"),
+    "billing_customers": ("created_at", "1970-01-01T00:00:00Z"),
+    "billing_subscriptions": ("created_at", "1970-01-01T00:00:00Z"),
+    "processed_webhook_events": ("processed_at", "1970-01-01T00:00:00Z"),
+}
+CLOSED_TABLES = sorted(CLOSED_TABLE_PROBES)
+
+
+@pytest.mark.parametrize("role", ["anon", "authenticated"])
+@pytest.mark.parametrize("table", CLOSED_TABLES)
+def test_client_roles_cannot_read_closed_tables(request, role, table):
+    """A revoked SELECT raises 42501. RLS with no policy would instead return an
+    empty list, so accepting [] here would pass against a table that is merely
+    policy-filtered rather than actually closed."""
+    client = _client(request, role)
+
+    with pytest.raises(APIError) as exc:
+        client.table(table).select("*").limit(1).execute()
+    assert exc.value.code == INSUFFICIENT_PRIVILEGE, (
+        f"{role} SELECT on public.{table} returned {exc.value.code} "
+        f"({exc.value.message}) rather than a privilege refusal."
+    )
+
+
+@pytest.mark.parametrize("role", ["anon", "authenticated"])
+@pytest.mark.parametrize("table", CLOSED_TABLES)
+def test_client_roles_cannot_write_closed_tables(request, role, table):
+    client = _client(request, role)
+    column, value = CLOSED_TABLE_PROBES[table]
+
+    with pytest.raises(APIError) as exc:
+        client.table(table).delete().eq(column, value).execute()
+    assert exc.value.code == INSUFFICIENT_PRIVILEGE, (
+        f"{role} DELETE on public.{table} returned {exc.value.code} "
+        f"({exc.value.message}) rather than a privilege refusal."
+    )
+
+
+def test_anon_cannot_grant_itself_admin(anon_client):
+    """The escalation this migration closes, end to end.
+
+    `roles` was readable and `user_roles` was writable, so a client could look up
+    the admin role id and insert itself a row. user_service.is_admin() reads
+    user_roles directly, so that alone unlocked every require_admin endpoint.
+    """
+    with pytest.raises(APIError) as exc:
+        anon_client.table("roles").select("id").eq("name", "admin").execute()
+    assert exc.value.code == INSUFFICIENT_PRIVILEGE
+
+    with pytest.raises(APIError) as exc:
+        anon_client.table("user_roles").insert(
+            {"user_id": UNMATCHABLE_ID, "role_id": UNMATCHABLE_ID}
+        ).execute()
+    assert exc.value.code == INSUFFICIENT_PRIVILEGE
+
+
+def test_anon_cannot_read_user_emails(anon_client):
+    """profiles holds email and name for every user."""
+    with pytest.raises(APIError) as exc:
+        anon_client.table("profiles").select("email").limit(1).execute()
+    assert exc.value.code == INSUFFICIENT_PRIVILEGE
