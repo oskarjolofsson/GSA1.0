@@ -335,3 +335,213 @@ class TestDeleteIssue:
         assert len(all_issues_before) == len(all_issues_after), "No issues should be deleted when trying to delete a non-existent issue"
             
         
+
+
+class TestIssueTags:
+    """Goal/miss tags on create, read and update.
+
+    Before this feature tags were write-once: UpdateIssueDTO had no tag fields, so a
+    mistagged issue could only be corrected with hand-written SQL. These tests pin
+    down the three-state replace semantics that fixed that, plus the strict
+    validation that keeps a typo'd tag from vanishing behind a 200.
+    """
+
+    def test_create_persists_multiple_misses(self, db_session, test_user):
+        """issue_misses is a many-table; one issue can show up as several misses."""
+        dto = CreateIssueDTO(
+            title="Over the top",
+            description="Steep out-to-in path",
+            misses=["SLICE", "PULL"],
+            goals=["STRAIGHTER", "BIG_MISS"],
+        )
+
+        created = create_issue(dto, db_session=db_session)
+
+        assert sorted(created.misses) == ["PULL", "SLICE"]
+        assert sorted(created.goals) == ["BIG_MISS", "STRAIGHTER"]
+
+    def test_create_normalizes_case_and_deduplicates(self, db_session):
+        dto = CreateIssueDTO(
+            title="Casing",
+            description="d",
+            misses=["slice", "SLICE", " pull "],
+            goals=["contact"],
+        )
+
+        created = create_issue(dto, db_session=db_session)
+
+        assert sorted(created.misses) == ["PULL", "SLICE"]
+        assert created.goals == ["CONTACT"]
+
+    def test_create_with_no_tags_yields_empty_lists(self, db_session):
+        created = create_issue(
+            CreateIssueDTO(title="Untagged", description="d"), db_session=db_session
+        )
+
+        assert created.misses == []
+        assert created.goals == []
+
+    def test_create_rejects_unknown_miss(self, db_session):
+        """Admin path: loud 422, never a silent drop."""
+        dto = CreateIssueDTO(title="Bad tag", description="d", misses=["BANANA"])
+
+        with pytest.raises(exceptions.ValidationException):
+            create_issue(dto, db_session=db_session)
+
+    def test_create_rejects_unknown_goal(self, db_session):
+        dto = CreateIssueDTO(title="Bad goal", description="d", goals=["VIBES"])
+
+        with pytest.raises(exceptions.ValidationException):
+            create_issue(dto, db_session=db_session)
+
+    def test_create_rejects_unknown_area(self, db_session):
+        """Validated in the service so it's a 422, not an IntegrityError 500 from the
+        CHECK constraint."""
+        dto = CreateIssueDTO(title="Bad area", description="d", area="MOON")
+
+        with pytest.raises(exceptions.ValidationException):
+            create_issue(dto, db_session=db_session)
+
+    def test_get_by_id_returns_tags(self, db_session, test_user):
+        created = create_issue(
+            CreateIssueDTO(
+                title="Readback", description="d", misses=["FAT"], goals=["CONTACT"]
+            ),
+            db_session=db_session,
+        )
+
+        fetched = get_issue_by_id(
+            created.id, user_id=test_user["user_id"], db_session=db_session
+        )
+
+        assert fetched.misses == ["FAT"]
+        assert fetched.goals == ["CONTACT"]
+
+    def test_update_replaces_the_miss_set(self, db_session):
+        """Replace, not merge — the old tags go away."""
+        created = create_issue(
+            CreateIssueDTO(
+                title="Replace me", description="d", misses=["SLICE", "PULL"]
+            ),
+            db_session=db_session,
+        )
+
+        updated = update_issue(
+            created.id, UpdateIssueDTO(misses=["HOOK"]), db_session=db_session
+        )
+
+        assert updated.misses == ["HOOK"]
+
+    def test_update_replaces_the_goal_set(self, db_session):
+        created = create_issue(
+            CreateIssueDTO(
+                title="Replace goals", description="d", goals=["CONTACT", "DISTANCE"]
+            ),
+            db_session=db_session,
+        )
+
+        updated = update_issue(
+            created.id, UpdateIssueDTO(goals=["PUTTING"]), db_session=db_session
+        )
+
+        assert updated.goals == ["PUTTING"]
+
+    def test_update_with_empty_list_clears_tags(self, db_session):
+        """An explicit [] means "this issue has no tags" and must delete the rows."""
+        created = create_issue(
+            CreateIssueDTO(
+                title="Clear me",
+                description="d",
+                misses=["SLICE"],
+                goals=["STRAIGHTER"],
+            ),
+            db_session=db_session,
+        )
+
+        updated = update_issue(
+            created.id, UpdateIssueDTO(misses=[], goals=[]), db_session=db_session
+        )
+
+        assert updated.misses == []
+        assert updated.goals == []
+
+    def test_update_with_none_leaves_tags_untouched(self, db_session):
+        """The partial-PATCH case: a caller updating only the title must not wipe tags.
+        This is the bug that would silently destroy a golfer's tags if the None and []
+        cases were ever collapsed."""
+        created = create_issue(
+            CreateIssueDTO(
+                title="Keep tags",
+                description="d",
+                misses=["THIN"],
+                goals=["CONTACT"],
+            ),
+            db_session=db_session,
+        )
+
+        updated = update_issue(
+            created.id, UpdateIssueDTO(title="New title"), db_session=db_session
+        )
+
+        assert updated.title == "New title"
+        assert updated.misses == ["THIN"]
+        assert updated.goals == ["CONTACT"]
+
+    def test_update_can_set_tags_on_a_previously_untagged_issue(self, db_session):
+        created = create_issue(
+            CreateIssueDTO(title="Was untagged", description="d"), db_session=db_session
+        )
+
+        updated = update_issue(
+            created.id,
+            UpdateIssueDTO(misses=["LOW_WEAK"], goals=["DISTANCE"]),
+            db_session=db_session,
+        )
+
+        assert updated.misses == ["LOW_WEAK"]
+        assert updated.goals == ["DISTANCE"]
+
+    def test_update_rejects_unknown_miss(self, db_session):
+        created = create_issue(
+            CreateIssueDTO(title="Reject update", description="d", misses=["SLICE"]),
+            db_session=db_session,
+        )
+
+        with pytest.raises(exceptions.ValidationException):
+            update_issue(
+                created.id, UpdateIssueDTO(misses=["BANANA"]), db_session=db_session
+            )
+
+    def test_rejected_update_leaves_existing_tags_intact(self, db_session, test_user):
+        """Validation runs BEFORE the collection is cleared.
+
+        Order matters here. If update_issue cleared `issue.misses` and validated while
+        re-appending, a request carrying one good tag and one typo would strip the
+        issue's tags in-session on its way to raising. The request would still 422 and
+        get_db would still roll back, so nothing would persist — but any code that
+        caught the exception and carried on with the same session would then be
+        looking at an issue whose tags had silently vanished.
+
+        Asserting on the live ORM object is the point: no rollback, because a rollback
+        would also undo the create above (the whole test runs in one transaction) and
+        prove nothing.
+        """
+        created = create_issue(
+            CreateIssueDTO(
+                title="Atomic reject", description="d", misses=["SLICE", "PULL"]
+            ),
+            db_session=db_session,
+        )
+
+        issue_row = repo_get_issue_by_id(created.id, db_session)
+        assert sorted(m.miss for m in issue_row.misses) == ["PULL", "SLICE"]
+
+        with pytest.raises(exceptions.ValidationException):
+            update_issue(
+                created.id,
+                UpdateIssueDTO(misses=["HOOK", "BANANA"]),
+                db_session=db_session,
+            )
+
+        # Same session, same object: the tags were never touched.
+        assert sorted(m.miss for m in issue_row.misses) == ["PULL", "SLICE"]

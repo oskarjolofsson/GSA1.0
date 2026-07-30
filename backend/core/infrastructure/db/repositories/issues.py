@@ -2,23 +2,47 @@ from core.infrastructure.db import models
 from ..models.AnalysisIssue import AnalysisIssue
 from ..models.IssueDrill import IssueDrill
 from ..models.Analysis import Analysis
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from uuid import UUID
 from sqlalchemy import delete, select, func, or_
+
+# Issue.goals and Issue.misses declare no `lazy=`, so they default to lazy="select".
+# Every issue read feeds a response DTO that now includes the tags, which without
+# eager loading means 2 extra round trips PER ISSUE — on the app's hottest paths
+# (home screen, analysis results). A golfer with 10 issues would pay 20 needless
+# queries per screen. selectinload collapses that to 2 queries total, regardless of
+# how many issues come back.
+#
+#   without:  SELECT issues            (1)
+#             SELECT goals  WHERE issue_id = ?   × N
+#             SELECT misses WHERE issue_id = ?   × N     ── 1 + 2N
+#
+#   with:     SELECT issues                              (1)
+#             SELECT goals  WHERE issue_id IN (...)       (1)
+#             SELECT misses WHERE issue_id IN (...)       (1)   ── 3, flat
+#
+# Apply to every read that can reach issues_service.from_issue_to_response_dto or
+# issue_authoring_service._issue_to_catalog_dto.
+_TAG_OPTS = (selectinload(models.Issue.goals), selectinload(models.Issue.misses))
 
 # ------------ GET ------------
 
 
 def get_issue_by_id(issue_id: UUID, session: Session) -> models.Issue:
-    return session.get(models.Issue, issue_id)
+    return session.get(models.Issue, issue_id, options=_TAG_OPTS)
 
 
 def get_issues_by_ids(issue_ids: list[UUID], session: Session) -> list[models.Issue]:
-    return session.query(models.Issue).filter(models.Issue.id.in_(issue_ids)).all()
+    return (
+        session.query(models.Issue)
+        .filter(models.Issue.id.in_(issue_ids))
+        .options(*_TAG_OPTS)
+        .all()
+    )
 
 
 def get_all_issues(session: Session) -> list[models.Issue]:
-    return session.query(models.Issue).all()
+    return session.query(models.Issue).options(*_TAG_OPTS).all()
 
 
 def get_issues_by_analysis_id(analysis_id: UUID, session: Session) -> list[models.Issue]:
@@ -27,6 +51,7 @@ def get_issues_by_analysis_id(analysis_id: UUID, session: Session) -> list[model
         session.query(models.Issue)
         .join(AnalysisIssue, models.Issue.id == AnalysisIssue.issue_id)
         .filter(AnalysisIssue.analysis_id == analysis_id)
+        .options(*_TAG_OPTS)
         .all()
     )
 
@@ -37,6 +62,7 @@ def get_issues_by_drill_id(drill_id: UUID, session: Session) -> list[models.Issu
         session.query(models.Issue)
         .join(IssueDrill, models.Issue.id == IssueDrill.issue_id)
         .filter(IssueDrill.drill_id == drill_id)
+        .options(*_TAG_OPTS)
         .all()
     )
     
@@ -52,6 +78,7 @@ def get_issues_by_user_id(user_id: UUID, session: Session) -> list[models.Issue]
             & (Analysis.success == True)
         )
         .distinct()
+        .options(*_TAG_OPTS)
         .all())
     
     
@@ -72,6 +99,7 @@ def get_unused_issues_of_user_id(user_id: UUID, session: Session) -> list[models
     return (
         session.query(models.Issue)
         .filter(models.Issue.id.notin_(active_issues))
+        .options(*_TAG_OPTS)
         .all()
     )
 
@@ -82,6 +110,7 @@ def get_custom_issues_by_user_id(user_id: UUID, session: Session) -> list[models
     return (
         session.query(models.Issue)
         .filter(models.Issue.user_id == user_id, models.Issue.source == "custom")
+        .options(*_TAG_OPTS)
         .all()
     )
 
@@ -93,6 +122,7 @@ def get_catalog_and_user_issues(user_id: UUID, session: Session) -> list[models.
         session.query(models.Issue)
         .filter(or_(models.Issue.user_id.is_(None), models.Issue.user_id == user_id))
         .order_by(models.Issue.title)
+        .options(*_TAG_OPTS)
         .all()
     )
 
@@ -116,6 +146,7 @@ def search_catalog_issues_by_text(
         .filter(models.Issue.user_id.is_(None))
         .filter(or_(*conds))
         .limit(limit)
+        .options(*_TAG_OPTS)
         .all()
     )
 

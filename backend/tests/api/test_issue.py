@@ -429,3 +429,223 @@ def test_bulk_delete_issues_partial(client, db_session, auth_headers):
     
     # Verify the real one is not deleted
     assert get_issue_by_id(issue_id=real_issue_id, session=db_session) is not None
+
+
+# ---------------------------------------------------------------------------
+# Goal/miss tags over the API.
+#
+# Tags used to be write-once: UpdateIssueRequest had no tag fields and GetIssue
+# never returned them, so a mistagged issue could only be fixed with hand-written
+# SQL. These tests cover the round trip and the strict validation that replaced the
+# old silent-drop behaviour.
+# ---------------------------------------------------------------------------
+
+
+def test_create_issue_with_tags(client, db_session, auth_headers):
+    """Several misses per issue — issue_misses is a many-table."""
+    response = client.post(
+        "/api/v1/issues/",
+        json={
+            "title": "Steep Path",
+            "description": "Out-to-in downswing path",
+            "misses": ["SLICE", "PULL"],
+            "goals": ["STRAIGHTER", "BIG_MISS"],
+        },
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 201
+    issue_id = uuid.UUID(response.json()["issue_id"])
+
+    issue_result: Issue = get_issue_by_id(issue_id=issue_id, session=db_session)
+    assert sorted(m.miss for m in issue_result.misses) == ["PULL", "SLICE"]
+    assert sorted(g.goal for g in issue_result.goals) == ["BIG_MISS", "STRAIGHTER"]
+
+
+def test_get_issue_returns_tags(client, db_session, auth_headers):
+    """GetIssue carries goals/misses now — without this the admin list is blind."""
+    created = client.post(
+        "/api/v1/issues/",
+        json={
+            "title": "Readback tags",
+            "description": "d",
+            "misses": ["FAT"],
+            "goals": ["CONTACT"],
+        },
+        headers=auth_headers,
+    )
+    issue_id = created.json()["issue_id"]
+
+    response = client.get(f"/api/v1/issues/{issue_id}/", headers=auth_headers)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["misses"] == ["FAT"]
+    assert data["goals"] == ["CONTACT"]
+
+
+def test_get_issue_returns_empty_tag_lists_when_untagged(client, auth_headers):
+    """Untagged issues report [] rather than omitting the keys, so clients can rely on
+    the fields always being present."""
+    created = client.post(
+        "/api/v1/issues/",
+        json={"title": "No tags", "description": "d"},
+        headers=auth_headers,
+    )
+    issue_id = created.json()["issue_id"]
+
+    data = client.get(f"/api/v1/issues/{issue_id}/", headers=auth_headers).json()
+
+    assert data["misses"] == []
+    assert data["goals"] == []
+
+
+def test_patch_replaces_tags(client, auth_headers):
+    """Replace, not merge. This is the capability that did not exist before."""
+    created = client.post(
+        "/api/v1/issues/",
+        json={
+            "title": "Retag me",
+            "description": "d",
+            "misses": ["SLICE", "PULL"],
+            "goals": ["STRAIGHTER"],
+        },
+        headers=auth_headers,
+    )
+    issue_id = created.json()["issue_id"]
+
+    response = client.patch(
+        f"/api/v1/issues/{issue_id}/",
+        json={"misses": ["HOOK"], "goals": ["DISTANCE"]},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["misses"] == ["HOOK"]
+    assert data["goals"] == ["DISTANCE"]
+
+
+def test_patch_with_empty_list_clears_tags(client, auth_headers):
+    created = client.post(
+        "/api/v1/issues/",
+        json={
+            "title": "Clear tags",
+            "description": "d",
+            "misses": ["THIN"],
+            "goals": ["CONTACT"],
+        },
+        headers=auth_headers,
+    )
+    issue_id = created.json()["issue_id"]
+
+    data = client.patch(
+        f"/api/v1/issues/{issue_id}/",
+        json={"misses": [], "goals": []},
+        headers=auth_headers,
+    ).json()
+
+    assert data["misses"] == []
+    assert data["goals"] == []
+
+
+def test_patch_without_tag_fields_leaves_tags_alone(client, auth_headers):
+    """The partial-update case. If omitted tags were treated as [], every title edit
+    would quietly wipe an issue's tags."""
+    created = client.post(
+        "/api/v1/issues/",
+        json={
+            "title": "Keep my tags",
+            "description": "d",
+            "misses": ["TOP"],
+            "goals": ["CONTACT"],
+        },
+        headers=auth_headers,
+    )
+    issue_id = created.json()["issue_id"]
+
+    data = client.patch(
+        f"/api/v1/issues/{issue_id}/",
+        json={"title": "Renamed"},
+        headers=auth_headers,
+    ).json()
+
+    assert data["title"] == "Renamed"
+    assert data["misses"] == ["TOP"]
+    assert data["goals"] == ["CONTACT"]
+
+
+def test_create_with_unknown_miss_returns_422(client, auth_headers):
+    """Loud rejection. The old lenient path returned 201 with the tag silently gone."""
+    response = client.post(
+        "/api/v1/issues/",
+        json={"title": "Bad tag", "description": "d", "misses": ["BANANA"]},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
+    assert "BANANA" in response.json()["detail"]
+
+
+def test_create_with_unknown_goal_returns_422(client, auth_headers):
+    response = client.post(
+        "/api/v1/issues/",
+        json={"title": "Bad goal", "description": "d", "goals": ["VIBES"]},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_with_unknown_area_returns_422_not_500(client, auth_headers):
+    """Validated in the service, so this is a clean 422 rather than an IntegrityError
+    from the CHECK constraint surfacing as a 500."""
+    response = client.post(
+        "/api/v1/issues/",
+        json={"title": "Bad area", "description": "d", "area": "MOON"},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
+
+
+def test_patch_with_unknown_miss_returns_422_and_persists_nothing(
+    client, db_session, auth_headers
+):
+    """A rejected PATCH must not partially apply — the good tag in the payload must
+    not land either."""
+    created = client.post(
+        "/api/v1/issues/",
+        json={"title": "Reject patch", "description": "d", "misses": ["SLICE"]},
+        headers=auth_headers,
+    )
+    issue_id = created.json()["issue_id"]
+
+    response = client.patch(
+        f"/api/v1/issues/{issue_id}/",
+        json={"misses": ["HOOK", "BANANA"]},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
+
+    after = client.get(f"/api/v1/issues/{issue_id}/", headers=auth_headers).json()
+    assert after["misses"] == ["SLICE"], "The original tag should survive a rejected PATCH"
+
+
+def test_create_normalizes_tag_casing(client, auth_headers):
+    created = client.post(
+        "/api/v1/issues/",
+        json={
+            "title": "Lowercase tags",
+            "description": "d",
+            "misses": ["slice"],
+            "goals": ["contact"],
+        },
+        headers=auth_headers,
+    )
+    issue_id = created.json()["issue_id"]
+
+    data = client.get(f"/api/v1/issues/{issue_id}/", headers=auth_headers).json()
+    assert data["misses"] == ["SLICE"]
+    assert data["goals"] == ["CONTACT"]

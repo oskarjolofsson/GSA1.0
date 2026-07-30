@@ -14,9 +14,13 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
+from core.services.taxonomy import ALLOWED_GOALS, ALLOWED_MISSES
 
-_ALLOWED_MISSES = ["SLICE", "HOOK", "PULL", "PUSH", "TOP", "THIN", "FAT", "LOW_WEAK"]
-_ALLOWED_GOALS = ["STRAIGHTER", "DISTANCE", "CONTACT", "BIG_MISS", "SHORT_GAME", "PUTTING"]
+# Rendered into the prompt and used to scrub the model's output. Sourced from
+# core/services/taxonomy.py rather than redeclared, so the vocabulary the model is
+# told about can never drift from the one the database will accept.
+_ALLOWED_MISSES = list(ALLOWED_MISSES)
+_ALLOWED_GOALS = list(ALLOWED_GOALS)
 
 STRUCTURE_SYSTEM_INSTRUCTIONS = f"""
 You convert a golfer's notes from a real coaching lesson into a structured practice

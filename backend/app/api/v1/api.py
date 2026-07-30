@@ -2,7 +2,7 @@ from fastapi import APIRouter
 api_router = APIRouter()
 
 # Include endpoint routers
-from .endpoints import drill, feedback, user, analysis, issue, issue_drill, admin, admin_subscriptions, practice_session, webhooks, billing, activity, program
+from .endpoints import drill, feedback, user, analysis, issue, issue_drill, admin, admin_subscriptions, practice_session, webhooks, billing, activity, program, taxonomy
 
 api_router.include_router(
     router=admin.router,
@@ -80,4 +80,10 @@ api_router.include_router(
     router=program.router,
     prefix="/programs",
     tags=["programs"],
+)
+
+api_router.include_router(
+    router=taxonomy.router,
+    prefix="/taxonomy",
+    tags=["taxonomy"],
 )

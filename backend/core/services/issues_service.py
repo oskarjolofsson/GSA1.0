@@ -24,7 +24,12 @@ from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueRespon
 from core.services.exceptions import NotFoundException
 
 from core.services.progress.analysis_issue_progress import Analysis_progress_service
-from core.services.taxonomy import normalize_miss, normalize_goals
+from core.services.taxonomy import (
+    normalize_area_strict,
+    normalize_goals_strict,
+    normalize_kind_strict,
+    normalize_misses_strict,
+)
 
 
 def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
@@ -32,8 +37,10 @@ def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
     new_issue = Issue(
         title=dto.title,
         description=dto.description,
-        area=dto.area,
-        kind=dto.kind,
+        # Validated here rather than left to the CHECK constraint, so a bad value is
+        # a 422 naming the field instead of an IntegrityError surfacing as a 500.
+        area=normalize_area_strict(dto.area),
+        kind=normalize_kind_strict(dto.kind),
         current_motion=dto.current_motion,
         expected_motion=dto.expected_motion,
         swing_effect=dto.swing_effect,
@@ -41,12 +48,13 @@ def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
         layman_title=dto.layman_title,
         layman_desc=dto.layman_desc,
     )
-    # Goal/miss tags (WHAT/WHY) — validated against the canonical vocabularies so a
-    # bad value is dropped rather than persisted or raised.
-    miss = normalize_miss(dto.miss)
-    if miss:
+    # Goal/miss tags (WHAT/WHY). This is an admin path (POST /issues/ is
+    # require_admin), so validation is STRICT: an unknown value raises 422 instead
+    # of being silently dropped. The lenient normalizers stay in use on the AI and
+    # user-authoring paths, where a bad tag should degrade rather than fail.
+    for miss in normalize_misses_strict(dto.misses):
         new_issue.misses.append(models.IssueMiss(miss=miss))
-    for goal in normalize_goals(dto.goals):
+    for goal in normalize_goals_strict(dto.goals):
         new_issue.goals.append(models.IssueGoal(goal=goal))
 
     created_issue = repo_create_issue(new_issue, db_session)
@@ -168,9 +176,9 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> Is
     if dto.title is not None:
         issue.title = dto.title
     if dto.area is not None:
-        issue.area = dto.area
+        issue.area = normalize_area_strict(dto.area)
     if dto.kind is not None:
-        issue.kind = dto.kind
+        issue.kind = normalize_kind_strict(dto.kind)
     if dto.description is not None:
         issue.description = dto.description
     if dto.current_motion is not None:
@@ -185,6 +193,29 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> Is
         issue.layman_title = dto.layman_title
     if dto.layman_desc is not None:
         issue.layman_desc = dto.layman_desc
+
+    # Tag replacement. `None` means the caller didn't mention tags at all, so leave
+    # them; an empty list is an explicit "this issue has no tags". Clearing the
+    # collection deletes the rows because both relationships are
+    # cascade="all, delete-orphan" (see models/Issue.py).
+    #
+    #   dto.misses is None  ──▶ untouched
+    #   dto.misses == []    ──▶ every IssueMiss row deleted
+    #   dto.misses == [...] ──▶ cleared, then re-appended (replace, not merge)
+    #
+    # Strict validation: this is require_admin, so a bad tag is a 422, never a
+    # silent drop that leaves the admin thinking the tag saved.
+    if dto.misses is not None:
+        validated = normalize_misses_strict(dto.misses)
+        issue.misses.clear()
+        for miss in validated:
+            issue.misses.append(models.IssueMiss(miss=miss))
+    if dto.goals is not None:
+        validated = normalize_goals_strict(dto.goals)
+        issue.goals.clear()
+        for goal in validated:
+            issue.goals.append(models.IssueGoal(goal=goal))
+
     updated_issue = repo_update_issue(issue, db_session)
     
     # Note: update_issue doesn't have user_id context, so progress won't be included
@@ -229,6 +260,8 @@ def from_issue_to_response_dto(issue: Issue, analysis_issue: models.AnalysisIssu
         confidence=analysis_issue.confidence if analysis_issue else None,
         progress=progress,
         source=issue.source,
+        goals=[g.goal for g in issue.goals],
+        misses=[m.miss for m in issue.misses],
     )
 
 
