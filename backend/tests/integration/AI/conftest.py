@@ -13,6 +13,7 @@ backend_dir = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(backend_dir))
 
 from core.infrastructure.AI.google.client import GoogleAnalysisClient
+from core.infrastructure.AI.model_selection import get_active_analysis_model
 
 from ....core.infrastructure.db.session import SessionLocal
 
@@ -66,7 +67,12 @@ def google_client(gemini_api_key):
 @pytest.fixture(scope="module")
 def analysis_result(google_client, test_video_path, db_session, test_user):
     """Run analysis once and share result across all tests."""
-    result = google_client.analyze_video(video_path=test_video_path[0], db_session=db_session, user_id=test_user["user_id"])
+    result = google_client.analyze_video(
+        video_path=test_video_path[0],
+        db_session=db_session,
+        user_id=test_user["user_id"],
+        model=get_active_analysis_model(),
+    )
     return result
 
 
@@ -80,6 +86,7 @@ def analysis_result_with_context(google_client, test_video_path, db_session, tes
         height="mid",
         misses="right",
         extra=None,
+        model=get_active_analysis_model(),
         db_session=db_session
     )
     return result
@@ -88,5 +95,9 @@ def analysis_result_with_context(google_client, test_video_path, db_session, tes
 @pytest.fixture(scope="module")
 def analysis_result_non_golf(google_client, test_video_path, db_session):
     """Run analysis once and share result across all tests."""
-    result = google_client.analyze_video(video_path=test_video_path[1], db_session=db_session)
+    result = google_client.analyze_video(
+        video_path=test_video_path[1],
+        db_session=db_session,
+        model=get_active_analysis_model(),
+    )
     return result
