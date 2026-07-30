@@ -24,6 +24,7 @@ from core.infrastructure.db import models
 from core.infrastructure.db.repositories.issues import create_issue
 from core.infrastructure.db.repositories import programs as programs_repo
 
+from core.services import exceptions
 from core.services import issue_authoring_service as ias
 from core.services import issues_service as issvc
 from core.services import program_service as ps
@@ -400,3 +401,103 @@ class TestRemoveFocus:
 
         with pytest.raises(exceptions.ForbiddenException):
             ps.remove_focus_for_issue(test_user["user_id"], other_issue.id, db_session)
+
+
+class TestPersistIssueWithDrills:
+    """The write path shared by user authoring and the admin catalog.
+
+    The first two tests guard the extraction: create_custom_issue now delegates
+    here, and it serves the live coach-feedback flow, so its ownership and its
+    leniency about bad tags must stay exactly as they were.
+    """
+
+    def _draft(self, title="Shared path", **kw):
+        return DraftIssueDTO(title=title, description="d", **kw)
+
+    def test_create_custom_issue_still_owns_and_marks_custom(self, db_session, test_user):
+        dto = ias.create_custom_issue(
+            user_id=test_user["user_id"],
+            issue=self._draft("Still custom", miss="SLICE", goals=["STRAIGHTER"]),
+            drills=[],
+            db_session=db_session,
+        )
+
+        row = db_session.get(Issue, dto.id)
+        assert str(row.user_id) == str(test_user["user_id"])
+        assert row.source == "custom"
+        assert dto.misses == ["SLICE"]
+
+    def test_create_custom_issue_still_drops_bad_tags_silently(self, db_session, test_user):
+        """The AI path must degrade rather than raise — that is why strict_tags exists."""
+        dto = ias.create_custom_issue(
+            user_id=test_user["user_id"],
+            issue=self._draft("Lenient", miss="BANANA", goals=["VIBES", "CONTACT"]),
+            drills=[],
+            db_session=db_session,
+        )
+
+        assert dto.misses == []
+        assert dto.goals == ["CONTACT"]
+
+    def test_admin_path_is_global_and_catalog_sourced(self, db_session):
+        dto = ias.persist_issue_with_drills(
+            issue=self._draft("Admin authored", misses=["SLICE", "PULL"]),
+            new_drills=[],
+            existing_drill_ids=[],
+            user_id=None,
+            source="catalog",
+            strict_tags=True,
+            db_session=db_session,
+        )
+
+        row = db_session.get(Issue, dto.id)
+        assert row.user_id is None, "a catalog issue belongs to no one"
+        assert row.source == "catalog"
+        assert sorted(dto.misses) == ["PULL", "SLICE"], "admin path supports many misses"
+
+    def test_admin_path_rejects_unknown_tags(self, db_session):
+        with pytest.raises(exceptions.ValidationException):
+            ias.persist_issue_with_drills(
+                issue=self._draft("Bad tag", misses=["BANANA"]),
+                new_drills=[],
+                existing_drill_ids=[],
+                user_id=None,
+                source="catalog",
+                strict_tags=True,
+                db_session=db_session,
+            )
+
+    def test_links_new_and_existing_drills(self, db_session):
+        existing = models.Drill(
+            title="Existing", task="t", success_signal="s", fault_indicator="f"
+        )
+        db_session.add(existing)
+        db_session.flush()
+
+        dto = ias.persist_issue_with_drills(
+            issue=self._draft("Mixed drills"),
+            new_drills=[
+                DraftDrillDTO(
+                    title="Brand new", task="t", success_signal="s", fault_indicator="f"
+                )
+            ],
+            existing_drill_ids=[existing.id],
+            user_id=None,
+            source="catalog",
+            strict_tags=True,
+            db_session=db_session,
+        )
+
+        assert sorted(d.title for d in dto.drills) == ["Brand new", "Existing"]
+
+    def test_unknown_existing_drill_id_raises(self, db_session):
+        with pytest.raises(exceptions.NotFoundException):
+            ias.persist_issue_with_drills(
+                issue=self._draft("Bad drill ref"),
+                new_drills=[],
+                existing_drill_ids=[uuid.uuid4()],
+                user_id=None,
+                source="catalog",
+                strict_tags=True,
+                db_session=db_session,
+            )

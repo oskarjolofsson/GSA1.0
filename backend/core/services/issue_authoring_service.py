@@ -25,7 +25,15 @@ from core.services.dtos.issue_authoring_service_dto import (
     CatalogIssueDTO,
     FeedbackDraftDTO,
 )
-from core.services.taxonomy import normalize_miss, normalize_goals
+from core.services.exceptions import NotFoundException
+from core.services.taxonomy import (
+    normalize_area_strict,
+    normalize_goals,
+    normalize_goals_strict,
+    normalize_kind_strict,
+    normalize_miss,
+    normalize_misses_strict,
+)
 
 # Tokens too generic to be useful for dedup matching.
 _STOPWORDS = {
@@ -56,8 +64,11 @@ def _default_structurer(text: str, image_bytes: bytes | None, image_mime: str | 
     )
 
 
-def _issue_to_catalog_dto(issue: models.Issue, session: Session) -> CatalogIssueDTO:
-    drills = drill_repo.get_drills_by_issue_id(issue.id, session)
+def _issue_to_catalog_dto(issue: models.Issue) -> CatalogIssueDTO:
+    # Walk the already-loaded join rows rather than making a per-issue repo call:
+    # the issues repo eager-loads issue_drills and their drills, so mapping this
+    # over a whole catalog stays flat instead of 1+N.
+    drills = [link.drill for link in issue.issue_drills]
     return CatalogIssueDTO(
         id=issue.id,
         title=issue.title,
@@ -122,43 +133,70 @@ def structure_feedback(
     return FeedbackDraftDTO(
         issue=draft_issue,
         drills=draft_drills,
-        similar_issues=[_issue_to_catalog_dto(i, db_session) for i in similar],
+        similar_issues=[_issue_to_catalog_dto(i) for i in similar],
     )
 
 
-def create_custom_issue(
-    user_id: UUID,
+def persist_issue_with_drills(
     issue: DraftIssueDTO,
-    drills: list[DraftDrillDTO],
+    new_drills: list[DraftDrillDTO],
+    existing_drill_ids: list[UUID],
+    user_id: UUID | None,
+    source: str,
+    strict_tags: bool,
     db_session: Session,
 ) -> CatalogIssueDTO:
-    """Persist a user-owned issue + its drills + links. Does NOT start a program —
-    the caller starts one via program_service.generate_program_from_issue(issue_id),
-    exactly like the browse path."""
-    if not issue.title.strip():
-        from core.services.exceptions import ValidationException
+    """Write an issue, its tags, any new drills and all the links, in one go.
 
-        raise ValidationException("A custom issue needs a title.")
+    Shared by the user-authoring path and the admin catalog path, which differ only
+    in ownership and how strictly tags are validated:
+
+        user  -> user_id=<uid>, source="custom",  strict_tags=False
+        admin -> user_id=None,  source="catalog", strict_tags=True
+
+    Atomicity comes from the request session: every repo call flushes rather than
+    commits, and app/dependencies/db.py commits once at the end or rolls back on any
+    exception. A failure part-way through leaves no rows behind.
+
+    `strict_tags` picks the validator. Lenient drops unknown values, which suits
+    AI-generated input; strict raises 422 so an admin never sees a tag silently
+    vanish. Does NOT start a program — callers use
+    program_service.generate_program_from_issue(issue_id) for that.
+    """
+    from core.services.exceptions import ValidationException
+
+    if not issue.title.strip():
+        raise ValidationException("An issue needs a title.")
+
+    raw_misses = issue.misses or ([issue.miss] if issue.miss else [])
+    if strict_tags:
+        misses = normalize_misses_strict(raw_misses)
+        goals = normalize_goals_strict(issue.goals)
+        area = normalize_area_strict(issue.area)
+        kind = normalize_kind_strict(issue.kind)
+    else:
+        misses = [m for m in (normalize_miss(v) for v in raw_misses) if m]
+        goals = normalize_goals(issue.goals)
+        area = issue.area or "FULL_SWING"
+        kind = issue.kind or "fault"
 
     new_issue = models.Issue(
         user_id=user_id,
-        source="custom",
+        source=source,
         title=issue.title.strip(),
         description=issue.description.strip(),
-        area=issue.area or "FULL_SWING",
-        kind=issue.kind or "fault",
+        area=area,
+        kind=kind,
         layman_title=issue.layman_title,
         layman_desc=issue.layman_desc,
     )
-    # Goal/miss tags, validated so a bad value is dropped, not persisted or raised.
-    miss = normalize_miss(issue.miss)
-    if miss:
-        new_issue.misses.append(models.IssueMiss(miss=miss))
-    for goal in normalize_goals(issue.goals):
+    for miss_value in misses:
+        new_issue.misses.append(models.IssueMiss(miss=miss_value))
+    for goal in goals:
         new_issue.goals.append(models.IssueGoal(goal=goal))
     issue_repo.create_issue(new_issue, db_session)
 
-    for d in drills:
+    for d in new_drills:
         new_drill = models.Drill(
             user_id=user_id,
             title=d.title.strip(),
@@ -172,11 +210,37 @@ def create_custom_issue(
             db_session,
         )
 
-    return _issue_to_catalog_dto(new_issue, db_session)
+    for drill_id in existing_drill_ids or []:
+        if drill_repo.get_drill_by_id(drill_id, db_session) is None:
+            raise NotFoundException("Drill", str(drill_id))
+        issue_drill_repo.create_issue_drill(
+            models.IssueDrill(issue_id=new_issue.id, drill_id=drill_id),
+            db_session,
+        )
+
+    return _issue_to_catalog_dto(new_issue)
+
+
+def create_custom_issue(
+    user_id: UUID,
+    issue: DraftIssueDTO,
+    drills: list[DraftDrillDTO],
+    db_session: Session,
+) -> CatalogIssueDTO:
+    """Persist a user-owned issue + its drills + links."""
+    return persist_issue_with_drills(
+        issue=issue,
+        new_drills=drills,
+        existing_drill_ids=[],
+        user_id=user_id,
+        source="custom",
+        strict_tags=False,
+        db_session=db_session,
+    )
 
 
 def list_catalog_issues(user_id: UUID, db_session: Session) -> list[CatalogIssueDTO]:
     """The browseable library: global catalog + this user's custom issues, each with
     its drills."""
     issues = issue_repo.get_catalog_and_user_issues(user_id, db_session)
-    return [_issue_to_catalog_dto(i, db_session) for i in issues]
+    return [_issue_to_catalog_dto(i) for i in issues]

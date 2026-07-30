@@ -112,14 +112,19 @@ class TestTagEagerLoading:
     def test_get_catalog_and_user_issues_is_flat_in_query_count(
         self, db_session, tagged_issues, test_user
     ):
-        """Feeds GET /issues/catalog/, the Library screen."""
+        """Feeds GET /issues/catalog/, the Library screen.
+
+        Five queries, not three: this read uses _CATALOG_OPTS, which loads the join
+        rows and their drills on top of the tags, because the catalog DTO carries
+        them. Still flat — the count does not move with the number of issues.
+        """
         with QueryCounter(db_session) as counter:
             issues = get_catalog_and_user_issues(test_user["user_id"], db_session)
             for issue in issues:
-                _ = (issue.goals, issue.misses)
+                _ = (issue.goals, issue.misses, [l.drill for l in issue.issue_drills])
 
-        assert counter.count == 3, (
-            f"Library catalog read lazy-loaded tags. Queries:\n{counter.explain()}"
+        assert counter.count == 5, (
+            f"Library catalog read lazy-loaded a collection. Queries:\n{counter.explain()}"
         )
 
     def test_get_issue_by_id_loads_tags_before_they_are_touched(
@@ -170,4 +175,39 @@ class TestTagEagerLoading:
         assert counter_small.count == counter_large.count, (
             f"Query count grew from {counter_small.count} (2 issues) to "
             f"{counter_large.count} (8 issues) — that is an N+1."
+        )
+
+
+class TestCatalogDrillEagerLoading:
+    """The catalog DTO also carries each issue's drills.
+
+    `_issue_to_catalog_dto` walks `issue.issue_drills` to reach them, so
+    `get_catalog_and_user_issues` has to eager-load that chain via `_CATALOG_OPTS`.
+    Without it, building the Library payload costs a drill query per issue.
+    """
+
+    def test_list_catalog_issues_is_flat_in_query_count(self, db_session, test_user):
+        from ....core.services.issue_authoring_service import list_catalog_issues
+
+        suffix = uuid.uuid4().hex[:8]
+        for i in range(4):
+            issue = _make_tagged_issue(db_session, f"Catalog drills {suffix} {i}")
+            drill = models.Drill(
+                title=f"d{i}", task="t", success_signal="s", fault_indicator="f"
+            )
+            db_session.add(drill)
+            db_session.flush()
+            db_session.add(models.IssueDrill(issue_id=issue.id, drill_id=drill.id))
+        db_session.flush()
+        db_session.expunge_all()
+
+        with QueryCounter(db_session) as counter:
+            dtos = list_catalog_issues(test_user["user_id"], db_session)
+
+        assert any(d.drills for d in dtos), "fixture should produce issues with drills"
+        # issues + goals + misses + issue_drill + drills, regardless of how many
+        # issues came back.
+        assert counter.count == 5, (
+            "list_catalog_issues should stay flat; a per-issue drill query means the "
+            f"Library screen is 1+N. Queries:\n{counter.explain()}"
         )
