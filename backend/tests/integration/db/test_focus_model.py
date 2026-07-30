@@ -96,11 +96,16 @@ def test_todays_issue_is_active_program_issue(db_session, test_user):
 def test_completed_issues_sink_below_not_started(db_session, test_user):
     user_id = test_user["user_id"]
     not_started, _ = _seed_issue(db_session, user_id, "Not started", 0.4)
-    _, ai_done = _seed_issue(db_session, user_id, "Done", 0.95, num_drills=1)
+    done_issue, ai_done = _seed_issue(db_session, user_id, "Done", 0.95, num_drills=1)
     # A completed program for the high-confidence issue should still sink below the
-    # not-started one.
     db_session.add(
-        Program(user_id=user_id, analysis_issue_id=ai_done.id, title="done", status="completed")
+        Program(
+            user_id=user_id,
+            analysis_issue_id=ai_done.id,
+            issue_id=done_issue.id,
+            title="done",
+            status="completed",
+        )
     )
     db_session.flush()
 

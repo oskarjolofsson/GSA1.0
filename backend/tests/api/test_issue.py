@@ -89,7 +89,13 @@ def test_todays_issue_prefers_active_program(client, test_user, db_session, auth
     # Give the lower-confidence issue an active program — it becomes the focus.
     ais = get_analysis_issues_by_user_id_and_issue_id(user_id, winner.id, db_session)
     db_session.add(
-        Program(user_id=user_id, analysis_issue_id=ais[0].id, title="Fix early extension", status="active")
+        Program(
+            user_id=user_id,
+            analysis_issue_id=ais[0].id,
+            issue_id=winner.id,
+            title="Fix early extension",
+            status="active",
+        )
     )
     db_session.flush()
 
