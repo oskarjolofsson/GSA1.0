@@ -16,9 +16,7 @@ from pydantic import BaseModel, Field
 
 from core.services.taxonomy import ALLOWED_GOALS, ALLOWED_MISSES
 
-# Rendered into the prompt and used to scrub the model's output. Sourced from
-# core/services/taxonomy.py rather than redeclared, so the vocabulary the model is
-# told about can never drift from the one the database will accept.
+# Rendered into the prompt and used to scrub the model's output.
 _ALLOWED_MISSES = list(ALLOWED_MISSES)
 _ALLOWED_GOALS = list(ALLOWED_GOALS)
 

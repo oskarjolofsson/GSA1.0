@@ -11,11 +11,7 @@ def get_taxonomy(current_user: dict = Depends(get_current_user)):
     """
     The canonical practice-taxonomy vocabularies: areas, misses, goals, kinds.
 
-    Gated by `get_current_user` rather than `require_admin`: this is public
-    vocabulary that both the admin dashboard and the golfer-facing app need. The
-    admin renders its tag pickers from this response so it can never offer a value
-    that the strict validators on POST/PATCH /issues/ would reject.
-
-    Takes no database session — the values are module constants.
+    Gated by `get_current_user`, not `require_admin` — both the admin dashboard and
+    the golfer-facing app render tag pickers from this.
     """
     return TaxonomyResponse.from_taxonomy()

@@ -60,9 +60,7 @@ def create_issue(
         misses (list[str], optional): Ball-flight miss tags
         goals (list[str], optional): Goal tags
 
-    Tag, area and kind values are validated strictly: an unknown value returns 422
-    naming the offending field rather than being silently discarded. Fetch the
-    allowed values from GET /api/v1/taxonomy/.
+    Unknown area/kind/tag values return 422. Allowed values: GET /api/v1/taxonomy/.
     """
     dto = CreateIssueDTO(
         title=request.title,
@@ -297,11 +295,11 @@ def update_issue(
         swing_effect (str, optional): Effect on swing
         shot_outcome (str, optional): Expected shot outcome
         layman_title/layman_desc (str, optional): Plain-language browse copy
-        misses (list[str], optional): Ball-flight miss tags — REPLACES the set.
-            Omit to leave tags alone; pass [] to remove them all.
-        goals (list[str], optional): Goal tags — same replace semantics.
+        misses (list[str], optional): Miss tags. Replaces the set; omit to leave
+            tags alone, pass [] to remove them all.
+        goals (list[str], optional): Goal tags, same replace semantics.
 
-    Tag, area and kind values are validated strictly (422 on an unknown value).
+    Unknown area/kind/tag values return 422.
 
     Returns:
         JSON response with updated issue details

@@ -15,21 +15,16 @@ class CreateIssueDTO:
     shot_outcome: str | None = None
     layman_title: str | None = None
     layman_desc: str | None = None
-    # An issue can carry several ball-flight misses (issue_misses is a many-table),
-    # e.g. a steep out-to-in path shows up as both SLICE and PULL.
     misses: list[str] = field(default_factory=list)
     goals: list[str] = field(default_factory=list)
 
 
 @dataclass
 class UpdateIssueDTO:
-    """Partial update. Every field is None-means-untouched.
+    """Partial update; None means untouched.
 
-    For the tag lists that distinction is load-bearing:
-
-        misses is None   -> leave issue.misses alone   (field absent from PATCH)
-        misses == []     -> clear every miss tag       (explicit "no tags")
-        misses == [...]  -> replace the whole set
+    For `misses`/`goals` that leaves three states: None keeps the existing tags,
+    [] clears them, and a populated list replaces the set.
     """
     title: str | None = None
     description: str | None = None
@@ -76,7 +71,5 @@ class IssueResponseDTO:
     progress: SimplifiedIssueProgressDTO | None = None
     program_status: str | None = None  # 'active' | 'completed' | None
     source: str = "catalog"  # 'catalog' (admin) | 'custom' (user-authored)
-    # Goal-first library tags. Read from issue.goals / issue.misses, which the
-    # issues repo eager-loads (selectinload) so this costs no extra queries.
     goals: list[str] = field(default_factory=list)
     misses: list[str] = field(default_factory=list)

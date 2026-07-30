@@ -1,16 +1,11 @@
 """Query-count guards for goal/miss tag eager loading.
 
-Issue.goals and Issue.misses declare no `lazy=`, so they default to lazy="select".
-Once the response DTOs started including tags, every issue read became a candidate
-for an N+1: one SELECT for the issues, then two more PER ISSUE as the mapper walked
-the collections. On the app's home screen that is 20 needless round trips for a
-golfer with 10 issues.
+Issue.goals and Issue.misses are lazy by default, and every issue read feeds a
+response DTO that includes them — so without `_TAG_OPTS` in repositories/issues.py
+each issue costs two extra queries.
 
-`_TAG_OPTS` in repositories/issues.py fixes it with selectinload. These tests are
-what stop it from silently regressing — a future query added without `.options()`
-looks perfectly fine in review and only shows up as a slow screen in production.
-
-The assertion is on query COUNT, not on wall time, so it is deterministic.
+A query added without `.options(*_TAG_OPTS)` reads fine and only shows up as a slow
+screen in production, so these tests assert on query count, which is deterministic.
 """
 
 import uuid
@@ -66,7 +61,7 @@ class QueryCounter:
 
 
 def _make_tagged_issue(session, title: str) -> models.Issue:
-    """An issue carrying two goals and two misses, so a lazy load would be visible."""
+    """An issue with two goals and two misses, so a lazy load is visible."""
     issue = models.Issue(title=title, description="tag eager-loading fixture")
     issue.goals.append(models.IssueGoal(goal="STRAIGHTER"))
     issue.goals.append(models.IssueGoal(goal="BIG_MISS"))
@@ -77,8 +72,7 @@ def _make_tagged_issue(session, title: str) -> models.Issue:
 
 @pytest.fixture()
 def tagged_issues(db_session):
-    """Five tagged issues. Five is enough that an N+1 is unmistakable: eager loading
-    stays flat at 3 queries while lazy loading would climb to 11."""
+    """Five tagged issues: enough that eager (3 queries) and lazy (11) differ clearly."""
     suffix = uuid.uuid4().hex[:8]
     issues = [_make_tagged_issue(db_session, f"Eager fixture {suffix} {i}") for i in range(5)]
     db_session.flush()
@@ -118,7 +112,7 @@ class TestTagEagerLoading:
     def test_get_catalog_and_user_issues_is_flat_in_query_count(
         self, db_session, tagged_issues, test_user
     ):
-        """This one feeds GET /issues/catalog/, the expo Library screen."""
+        """Feeds GET /issues/catalog/, the Library screen."""
         with QueryCounter(db_session) as counter:
             issues = get_catalog_and_user_issues(test_user["user_id"], db_session)
             for issue in issues:
@@ -131,13 +125,11 @@ class TestTagEagerLoading:
     def test_get_issue_by_id_loads_tags_before_they_are_touched(
         self, db_session, tagged_issues
     ):
-        """session.get() takes options too — an easy one to miss.
+        """session.get() takes options too.
 
-        Note this cannot be a total-query-count assertion: for a SINGLE issue, lazy
-        and eager loading both cost 3 queries (the fetch plus one per collection), so
-        a count check here passes either way and proves nothing. What distinguishes
-        them is WHEN the tags load. Eagerly loaded collections are already populated,
-        so touching them emits zero further queries.
+        A total-count assertion cannot work for a single issue: lazy and eager both
+        cost 3 queries. What separates them is when the tags load, so this asserts
+        that touching the collections afterwards emits nothing.
         """
         target = tagged_issues[0].id
 
@@ -155,7 +147,7 @@ class TestTagEagerLoading:
         )
 
     def test_query_count_does_not_grow_with_issue_count(self, db_session):
-        """The actual N+1 property: doubling the rows must not change the query count."""
+        """Query count must not grow with the number of issues."""
         suffix = uuid.uuid4().hex[:8]
         small = [_make_tagged_issue(db_session, f"Grow {suffix} a{i}") for i in range(2)]
         db_session.flush()

@@ -431,18 +431,11 @@ def test_bulk_delete_issues_partial(client, db_session, auth_headers):
     assert get_issue_by_id(issue_id=real_issue_id, session=db_session) is not None
 
 
-# ---------------------------------------------------------------------------
-# Goal/miss tags over the API.
-#
-# Tags used to be write-once: UpdateIssueRequest had no tag fields and GetIssue
-# never returned them, so a mistagged issue could only be fixed with hand-written
-# SQL. These tests cover the round trip and the strict validation that replaced the
-# old silent-drop behaviour.
-# ---------------------------------------------------------------------------
+# ---------- Goal/miss tags ----------
 
 
 def test_create_issue_with_tags(client, db_session, auth_headers):
-    """Several misses per issue — issue_misses is a many-table."""
+    """An issue can carry several misses at once."""
     response = client.post(
         "/api/v1/issues/",
         json={
@@ -463,7 +456,7 @@ def test_create_issue_with_tags(client, db_session, auth_headers):
 
 
 def test_get_issue_returns_tags(client, db_session, auth_headers):
-    """GetIssue carries goals/misses now — without this the admin list is blind."""
+    """GetIssue exposes the tags, not just the core fields."""
     created = client.post(
         "/api/v1/issues/",
         json={
@@ -485,8 +478,7 @@ def test_get_issue_returns_tags(client, db_session, auth_headers):
 
 
 def test_get_issue_returns_empty_tag_lists_when_untagged(client, auth_headers):
-    """Untagged issues report [] rather than omitting the keys, so clients can rely on
-    the fields always being present."""
+    """Untagged issues report [], never omit the keys."""
     created = client.post(
         "/api/v1/issues/",
         json={"title": "No tags", "description": "d"},
@@ -501,7 +493,7 @@ def test_get_issue_returns_empty_tag_lists_when_untagged(client, auth_headers):
 
 
 def test_patch_replaces_tags(client, auth_headers):
-    """Replace, not merge. This is the capability that did not exist before."""
+    """A PATCH replaces the tag set rather than merging into it."""
     created = client.post(
         "/api/v1/issues/",
         json={
@@ -550,8 +542,7 @@ def test_patch_with_empty_list_clears_tags(client, auth_headers):
 
 
 def test_patch_without_tag_fields_leaves_tags_alone(client, auth_headers):
-    """The partial-update case. If omitted tags were treated as [], every title edit
-    would quietly wipe an issue's tags."""
+    """Omitting the tag fields must not be read as an instruction to clear them."""
     created = client.post(
         "/api/v1/issues/",
         json={
@@ -576,7 +567,7 @@ def test_patch_without_tag_fields_leaves_tags_alone(client, auth_headers):
 
 
 def test_create_with_unknown_miss_returns_422(client, auth_headers):
-    """Loud rejection. The old lenient path returned 201 with the tag silently gone."""
+    """Unknown tags are rejected outright, not dropped from an otherwise-201."""
     response = client.post(
         "/api/v1/issues/",
         json={"title": "Bad tag", "description": "d", "misses": ["BANANA"]},
@@ -598,8 +589,7 @@ def test_create_with_unknown_goal_returns_422(client, auth_headers):
 
 
 def test_create_with_unknown_area_returns_422_not_500(client, auth_headers):
-    """Validated in the service, so this is a clean 422 rather than an IntegrityError
-    from the CHECK constraint surfacing as a 500."""
+    """Caught in the service, so it never reaches the CHECK constraint as a 500."""
     response = client.post(
         "/api/v1/issues/",
         json={"title": "Bad area", "description": "d", "area": "MOON"},
@@ -612,8 +602,7 @@ def test_create_with_unknown_area_returns_422_not_500(client, auth_headers):
 def test_patch_with_unknown_miss_returns_422_and_persists_nothing(
     client, db_session, auth_headers
 ):
-    """A rejected PATCH must not partially apply — the good tag in the payload must
-    not land either."""
+    """A rejected PATCH applies nothing, including the valid tags in the payload."""
     created = client.post(
         "/api/v1/issues/",
         json={"title": "Reject patch", "description": "d", "misses": ["SLICE"]},
