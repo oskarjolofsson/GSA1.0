@@ -19,7 +19,10 @@ class DraftIssueDTO:
     description: str
     area: str = "FULL_SWING"
     kind: str = "fault"
+    # `miss` is the coach-feedback path, where the AI emits at most one. `misses`
+    # is the admin path, which can tag several. When both are set, `misses` wins.
     miss: str | None = None
+    misses: list[str] = field(default_factory=list)
     goals: list[str] = field(default_factory=list)
     layman_title: str | None = None
     layman_desc: str | None = None
