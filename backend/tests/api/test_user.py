@@ -5,13 +5,6 @@ from core.infrastructure.db import models
 from core.services import user_service
 
 
-# NOTE ON ORDERING: test_delete_user performs a REAL Supabase
-# auth.admin.delete_user on the session-scoped test_user (not rolled back with
-# the db transaction), which cascades and removes test_user's profile. Any test
-# that needs test_user must therefore run BEFORE it — keep the self-delete test
-# last in this module.
-
-
 # A non-admin user may delete only themselves. Deleting a different user is
 # forbidden (403) — the guard raises before any Supabase/profile work.
 def test_non_admin_cannot_delete_another_user(test_user, db_session, auth_headers, client):
@@ -92,20 +85,21 @@ def test_set_role_invalid_role(test_user, db_session, auth_headers, client):
     assert response.status_code == 422
 
 
-# Keep last — really deletes the shared test_user in Supabase (see note above).
-def test_delete_user(test_user, db_session, auth_headers, client):
+# Uses disposable_user, not the shared test_user: the endpoint really deletes the
+# Supabase auth row, which is committed outside the test transaction.
+def test_delete_user(disposable_user, db_session, disposable_auth_headers, client):
     # Verify that user exists
-    profile: models.Profile = profiles.get_profile_by_id(test_user["user_id"], db_session)
+    profile: models.Profile = profiles.get_profile_by_id(disposable_user["user_id"], db_session)
     assert profile is not None
 
     # Make the user delete itself
     response = client.delete(
         f"/api/v1/users/{profile.id}/",
-        headers=auth_headers,
+        headers=disposable_auth_headers,
     )
 
     assert response.status_code == 204
 
     # Make sure profile is not present anymore
-    profile: models.Profile = profiles.get_profile_by_id(test_user["user_id"], db_session)
+    profile: models.Profile = profiles.get_profile_by_id(disposable_user["user_id"], db_session)
     assert profile is None

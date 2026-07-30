@@ -24,8 +24,6 @@ engine = create_engine(DATABASE_URL)
 @pytest.fixture(scope="module")
 def db_session():
     session = SessionLocal()
-    print("Databse URL:", DATABASE_URL)
-    print("Database Password:", DATABASE_PASSWORD)
     try:
         yield session
     finally:
