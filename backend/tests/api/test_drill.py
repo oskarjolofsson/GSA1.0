@@ -32,6 +32,27 @@ def drill_with_id(client, db_session, auth_headers):
     return uuid.UUID(data["drill_id"])
 
 
+def test_create_drill_requires_admin(client, disposable_auth_headers):
+    """POST /drills/ writes to the GLOBAL catalog — create_drill leaves user_id NULL,
+    and NULL means global. A non-admin must not be able to reach it; users author
+    their own drills through POST /issues/custom/, which stamps ownership.
+
+    Uses disposable_user because the autouse fixture above makes test_user an admin.
+    """
+    response = client.post(
+        "/api/v1/drills/",
+        json={
+            "title": "Should not be created",
+            "task": "t",
+            "success_signal": "s",
+            "fault_indicator": "f",
+        },
+        headers=disposable_auth_headers,
+    )
+
+    assert response.status_code == 403
+
+
 def test_create_drill(client, db_session, auth_headers):
     """Test creating a new drill."""
     response = client.post(

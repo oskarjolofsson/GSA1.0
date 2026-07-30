@@ -32,17 +32,21 @@ router = APIRouter()
 def create_drill(
     request: CreateDrillRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(require_admin)
 ):
     """
-    Create a new drill.
+    Create a new drill in the global catalog.
+
+    Admin-only: drill_service.create_drill leaves user_id NULL, and a NULL user_id
+    means the drill is global. Users author their own drills through
+    POST /issues/custom/, which stamps ownership.
 
     Arguments (JSON body):
         title (str): Title of the drill
         task (str): Description of the drill task
         success_signal (str): Description of what indicates a successful drill
-        fault_indicator (str): Description of what indicates a failed drill 
-        
+        fault_indicator (str): Description of what indicates a failed drill
+
     Returns:
         JSON response with:
         - success
