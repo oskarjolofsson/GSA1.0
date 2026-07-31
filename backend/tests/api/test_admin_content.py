@@ -384,3 +384,169 @@ class TestCoverage:
 
         after = cell(client.get(f"{BASE}/coverage/", headers=auth_headers).json())
         assert after["issue_count"] == before["issue_count"] + 1
+
+
+class TestUpdateIssue:
+    """PATCH /admin/content/issues/{id}/
+
+    The clearing tests are the reason this endpoint needed care: before the
+    three-state handling, a blank field arrived as null, read as "untouched", and
+    the admin was told the save worked while nothing changed.
+    """
+
+    def test_non_admin_is_refused(self, client, disposable_auth_headers, composed_issue):
+        response = client.patch(
+            f"{BASE}/issues/{composed_issue['id']}/",
+            json={"title": "nope"},
+            headers=disposable_auth_headers,
+        )
+        assert response.status_code == 403
+
+    def test_unknown_issue_is_404(self, client, auth_headers):
+        response = client.patch(
+            f"{BASE}/issues/{uuid.uuid4()}/", json={"title": "x"}, headers=auth_headers
+        )
+        assert response.status_code == 404
+
+    def test_updates_core_fields(self, client, auth_headers, composed_issue):
+        data = client.patch(
+            f"{BASE}/issues/{composed_issue['id']}/",
+            json={
+                "title": "Renamed issue",
+                "description": "new description",
+                "current_motion": "steep",
+                "area": "BUNKER",
+            },
+            headers=auth_headers,
+        ).json()
+
+        assert data["title"] == "Renamed issue"
+        assert data["description"] == "new description"
+        assert data["current_motion"] == "steep"
+        assert data["area"] == "BUNKER"
+
+    def test_omitted_fields_are_left_alone(self, client, auth_headers, composed_issue):
+        before = client.get(
+            f"{BASE}/issues/{composed_issue['id']}/", headers=auth_headers
+        ).json()
+
+        data = client.patch(
+            f"{BASE}/issues/{composed_issue['id']}/",
+            json={"title": "Only the title"},
+            headers=auth_headers,
+        ).json()
+
+        assert data["title"] == "Only the title"
+        assert data["description"] == before["description"]
+        assert sorted(data["misses"]) == sorted(before["misses"])
+        assert sorted(data["goals"]) == sorted(before["goals"])
+
+    def test_empty_string_clears_an_optional_field(self, client, auth_headers):
+        """The silent-failure regression. An admin who deletes the plain-language
+        copy must find it gone after a reload."""
+        created = client.post(
+            f"{BASE}/issues/",
+            json=_compose_payload(layman_title="You come over the top"),
+            headers=auth_headers,
+        ).json()
+        assert created["layman_title"] == "You come over the top"
+
+        data = client.patch(
+            f"{BASE}/issues/{created['id']}/",
+            json={"layman_title": ""},
+            headers=auth_headers,
+        ).json()
+        assert data["layman_title"] is None
+
+        # And it stays cleared on a fresh read, not just in the response.
+        reread = client.get(f"{BASE}/issues/{created['id']}/", headers=auth_headers).json()
+        assert reread["layman_title"] is None
+
+    def test_replaces_the_tag_sets(self, client, auth_headers, composed_issue):
+        data = client.patch(
+            f"{BASE}/issues/{composed_issue['id']}/",
+            json={"misses": ["SLICE", "PULL"], "goals": ["STRAIGHTER"]},
+            headers=auth_headers,
+        ).json()
+
+        assert sorted(data["misses"]) == ["PULL", "SLICE"]
+        assert data["goals"] == ["STRAIGHTER"]
+
+    def test_empty_tag_list_clears_tags(self, client, auth_headers, composed_issue):
+        data = client.patch(
+            f"{BASE}/issues/{composed_issue['id']}/",
+            json={"misses": []},
+            headers=auth_headers,
+        ).json()
+
+        assert data["misses"] == []
+        assert data["goals"] != [], "clearing misses must not touch goals"
+
+    def test_unknown_tag_returns_422_and_changes_nothing(
+        self, client, auth_headers, composed_issue
+    ):
+        before = client.get(
+            f"{BASE}/issues/{composed_issue['id']}/", headers=auth_headers
+        ).json()
+
+        response = client.patch(
+            f"{BASE}/issues/{composed_issue['id']}/",
+            json={"title": "Should not stick", "misses": ["BANANA"]},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 422
+        assert "BANANA" in response.json()["detail"]
+
+        after = client.get(
+            f"{BASE}/issues/{composed_issue['id']}/", headers=auth_headers
+        ).json()
+        assert after["title"] == before["title"], "a rejected PATCH must not partially apply"
+        assert sorted(after["misses"]) == sorted(before["misses"])
+
+    def test_unknown_area_returns_422(self, client, auth_headers, composed_issue):
+        response = client.patch(
+            f"{BASE}/issues/{composed_issue['id']}/",
+            json={"area": "MOON"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 422
+
+    def test_drills_survive_an_edit(self, client, auth_headers, composed_issue):
+        """Drills are managed through the attach/detach routes, so a field edit must
+        leave them alone."""
+        data = client.patch(
+            f"{BASE}/issues/{composed_issue['id']}/",
+            json={"title": "Still has its drill"},
+            headers=auth_headers,
+        ).json()
+
+        assert data["drill_count"] == 1
+        assert [d["id"] for d in data["drills"]] == [
+            composed_issue["drills"][0]["id"]
+        ]
+
+    def test_editing_a_custom_issue_leaves_ownership_alone(
+        self, client, auth_headers, db_session, test_user
+    ):
+        """Editing user-authored content is the moderation path, but it must not
+        quietly reassign the issue to the catalog."""
+        from core.services import issue_authoring_service as ias
+        from core.services.dtos.issue_authoring_service_dto import DraftIssueDTO
+
+        custom = ias.create_custom_issue(
+            user_id=test_user["user_id"],
+            issue=DraftIssueDTO(title="Golfer's own", description="d"),
+            drills=[],
+            db_session=db_session,
+        )
+
+        data = client.patch(
+            f"{BASE}/issues/{custom.id}/",
+            json={"title": "Tidied up by admin"},
+            headers=auth_headers,
+        ).json()
+
+        assert data["title"] == "Tidied up by admin"
+        assert data["source"] == "custom"
+        assert data["user_id"] == str(test_user["user_id"])

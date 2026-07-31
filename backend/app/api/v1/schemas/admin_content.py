@@ -127,6 +127,32 @@ class ComposeIssueRequest(BaseModel):
     existing_drill_ids: list[UUID] = []
 
 
+class UpdateAdminIssueRequest(BaseModel):
+    """Partial update of a catalog issue.
+
+    Three-state on the nullable text fields, matching issues_service.update_issue:
+    omit to leave a field alone, send "" to clear it, send text to set it. Tags work
+    the same way — omit to keep, [] to remove them all, a list to replace the set.
+
+    `source` and `user_id` are deliberately absent. The admin edits content, never
+    ownership; reassigning a golfer's issue to the catalog is not something a text
+    form should be able to do by accident.
+    """
+
+    title: str | None = None
+    description: str | None = None
+    area: str | None = None
+    kind: str | None = None
+    current_motion: str | None = None
+    expected_motion: str | None = None
+    swing_effect: str | None = None
+    shot_outcome: str | None = None
+    layman_title: str | None = None
+    layman_desc: str | None = None
+    misses: list[str] | None = None
+    goals: list[str] | None = None
+
+
 class UpdateAdminDrillRequest(BaseModel):
     title: str | None = None
     task: str | None = None

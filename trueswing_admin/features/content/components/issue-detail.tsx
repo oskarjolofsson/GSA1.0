@@ -26,6 +26,7 @@ export default function IssueDetail({
   issue,
   onBack,
   onDeleted,
+  onEdit,
   deleteAction,
   impactAction,
   attachAction,
@@ -35,6 +36,7 @@ export default function IssueDetail({
   issue: AdminIssue;
   onBack: () => void;
   onDeleted: (id: string) => void;
+  onEdit: () => void;
   deleteAction: (id: string, confirmImpact: boolean) => Promise<ActionResult>;
   impactAction: (id: string) => Promise<DeleteImpact | null>;
   attachAction: (issueId: string, drillId: string) => Promise<ActionResult>;
@@ -118,15 +120,32 @@ export default function IssueDetail({
         <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
           {issue.title}
         </h2>
-        <button
-          type="button"
-          onClick={openDeleteDialog}
-          disabled={pending}
-          className="shrink-0 cursor-pointer rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-40 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
-        >
-          Delete
-        </button>
+        <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={onEdit}
+            disabled={pending}
+            className="cursor-pointer rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={openDeleteDialog}
+            disabled={pending}
+            className="cursor-pointer rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-40 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+          >
+            Delete
+          </button>
+        </div>
       </div>
+
+      {issue.source === "custom" && (
+        <p className="mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+          Written by a golfer, not by you. Editing changes what they see in their own
+          library. Owner: <code>{issue.user_id}</code>
+        </p>
+      )}
 
       <div className="mt-2 flex flex-wrap gap-1">
         <TagChip>{areaLabel(issue.area)}</TagChip>

@@ -8,6 +8,63 @@ from core.infrastructure.db.session import SessionLocal
 from core.config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLL_KEY
 
 
+# ---------------------------------------------------------------------------
+# Opt-in gate for the live-AI tests.
+#
+# Everything under tests/integration/AI/ calls the real Gemini API on real video,
+# which costs money per run, and writes through a module-scoped session that is
+# never rolled back (tests/integration/AI/conftest.py), so its rows persist in
+# whatever database is configured. Those rows attach to the shared `test_user` and
+# have been observed changing the outcome of later tests that assert on that user's
+# issues — the AI directory sorts before tests/integration/db/, so it runs first.
+#
+# They are therefore skipped by default and run only when asked for:
+#
+#     pytest                                   AI tests skipped
+#     pytest --run-ai                           everything, including AI
+#     pytest --run-ai tests/integration/AI      only the AI tests
+#
+# Skipped rather than deselected on purpose: the run still reports them, so it is
+# obvious they exist and were not run.
+# ---------------------------------------------------------------------------
+
+AI_TEST_DIR = "AI"
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--run-ai",
+        action="store_true",
+        default=False,
+        help=(
+            "Run the live-AI tests. They call the billed Gemini API and write rows "
+            "that are not rolled back. Skipped without this flag."
+        ),
+    )
+
+
+def _is_ai_test(item) -> bool:
+    """Marked `ai`, or living under tests/integration/AI/.
+
+    Path-based as well as marker-based so a new file in that directory is gated
+    without anyone remembering to mark it.
+    """
+    if item.get_closest_marker("ai"):
+        return True
+    return AI_TEST_DIR in item.path.parts
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--run-ai"):
+        return
+    skip_ai = pytest.mark.skip(
+        reason="live-AI test: billed Gemini call and unrolled-back writes. Use --run-ai."
+    )
+    for item in items:
+        if _is_ai_test(item):
+            item.add_marker(skip_ai)
+
+
 @pytest.fixture(scope="function")
 def db_session():
     """Function-scoped session for fast, isolated tests."""

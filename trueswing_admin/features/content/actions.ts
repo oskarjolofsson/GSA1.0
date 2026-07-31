@@ -15,7 +15,15 @@ import {
 } from "@/lib/content/get-delete-impact";
 import { getIssuesPage } from "@/lib/content/get-issues-page";
 import { updateDrill } from "@/lib/content/update-drill";
-import type { AdminDrill, AdminIssue, ComposeIssueBody, DeleteImpact } from "@/lib/content/types";
+import { updateIssue } from "@/lib/content/update-issue";
+import { getIssue } from "@/lib/content/get-issue";
+import type {
+  AdminDrill,
+  AdminIssue,
+  ComposeIssueBody,
+  DeleteImpact,
+  UpdateIssueBody,
+} from "@/lib/content/types";
 
 import { contentFailureReason } from "./failure-reason";
 
@@ -60,6 +68,33 @@ export async function composeIssueAction(
     return { ok: false, reason: contentFailureReason(result) };
   });
 }
+
+/**
+ * Edit an issue.
+ *
+ * Returns the refreshed issue alongside the usual `{ ok, reason }` so the detail
+ * view can re-render what was just saved instead of the snapshot the list loaded.
+ * The PATCH response already contains it, but `MutationResult` carries no body, so
+ * this re-reads rather than widening that type for one caller.
+ */
+export async function updateIssueAction(
+  issueId: string,
+  body: UpdateIssueBody,
+): Promise<{ ok: boolean; reason?: string; issue?: AdminIssue }> {
+  return withToken({ ok: false, reason: "Your session expired." }, async (token) => {
+    const result = await updateIssue(issueId, body, token);
+    if (result.status !== "ok") {
+      return { ok: false, reason: contentFailureReason(result) };
+    }
+    revalidateContent();
+    const refreshed = await getIssue(issueId, token);
+    return {
+      ok: true,
+      issue: refreshed.status === "ok" ? refreshed.data : undefined,
+    };
+  });
+}
+
 
 export async function deleteIssueAction(
   issueId: string,

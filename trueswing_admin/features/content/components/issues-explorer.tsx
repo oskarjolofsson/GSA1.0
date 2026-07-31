@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 
 import Pagination from "@/features/content/components/pagination";
@@ -15,6 +16,7 @@ import type {
   ComposeIssueBody,
   DeleteImpact,
   Taxonomy,
+  UpdateIssueBody,
 } from "@/lib/content/types";
 
 type ActionResult = { ok: boolean; reason?: string };
@@ -26,6 +28,11 @@ type Props = {
   searchAction: (q: string) => Promise<{ ok: boolean; matches: AdminIssue[] }>;
   searchDrillsAction: (q: string) => Promise<{ ok: boolean; matches: AdminDrill[] }>;
   composeAction: (body: ComposeIssueBody) => Promise<ActionResult>;
+  updateAction: (
+    id: string,
+    body: UpdateIssueBody,
+  ) => Promise<ActionResult & { issue?: AdminIssue }>;
+  source: string;
   deleteAction: (id: string, confirmImpact: boolean) => Promise<ActionResult>;
   impactAction: (id: string) => Promise<DeleteImpact | null>;
   attachAction: (issueId: string, drillId: string) => Promise<ActionResult>;
@@ -47,9 +54,11 @@ export default function IssuesExplorer({
   page,
   pageInfo,
   taxonomy,
+  source,
   searchAction,
   searchDrillsAction,
   composeAction,
+  updateAction,
   deleteAction,
   impactAction,
   attachAction,
@@ -61,6 +70,7 @@ export default function IssuesExplorer({
   const [isSearching, startSearch] = useTransition();
   const [selected, setSelected] = useState<AdminIssue | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
 
   const trimmed = query.trim();
@@ -79,6 +89,25 @@ export default function IssuesExplorer({
     return () => clearTimeout(handle);
   }, [trimmed, searchAction]);
 
+  if (editing && selected && taxonomy) {
+    return (
+      <IssueForm
+        taxonomy={taxonomy}
+        issue={selected}
+        updateAction={updateAction}
+        composeAction={composeAction}
+        searchDrillsAction={searchDrillsAction}
+        onCancel={() => setEditing(false)}
+        onSaved={(updated) => {
+          // Land back on the detail showing what was just saved, not the snapshot
+          // the list loaded.
+          if (updated) setSelected(updated);
+          setEditing(false);
+        }}
+      />
+    );
+  }
+
   if (creating && taxonomy) {
     return (
       <IssueForm
@@ -96,6 +125,7 @@ export default function IssuesExplorer({
       <IssueDetail
         issue={selected}
         onBack={() => setSelected(null)}
+        onEdit={() => setEditing(true)}
         onDeleted={(id) => {
           setRemoved((prev) => new Set(prev).add(id));
           setSelected(null);
@@ -125,7 +155,9 @@ export default function IssuesExplorer({
         </span>
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <SourceTabs active={source} />
+
+      <div className="mt-3 flex gap-2">
         <input
           type="search"
           value={query}
@@ -174,6 +206,47 @@ export default function IssuesExplorer({
           <IssueList issues={searchRows} onSelect={setSelected} />
         )}
       </div>
+    </div>
+  );
+}
+
+const SOURCE_TABS = [
+  { value: "catalog", label: "Catalog" },
+  { value: "custom", label: "User-authored" },
+  { value: "", label: "All" },
+] as const;
+
+/**
+ * Which slice of the catalog is on screen.
+ *
+ * Links rather than local state so each tab is a fresh server fetch with its own
+ * total and its own pagination, the same way `?page=` works. Defaults to Catalog:
+ * mixing golfer-authored issues into the list you curate is what made the
+ * distinction invisible.
+ */
+function SourceTabs({ active }: { active: string }) {
+  return (
+    <div className="mt-4 inline-flex rounded-full border border-black/[.08] bg-zinc-100 p-1 dark:border-white/[.1] dark:bg-zinc-900">
+      {SOURCE_TABS.map((tab) => {
+        const on = tab.value === active;
+        return (
+          <Link
+            key={tab.label}
+            href={
+              tab.value
+                ? `/content/issues?source=${tab.value}`
+                : "/content/issues?source=all"
+            }
+            className={`cursor-pointer rounded-full px-4 py-1 text-sm font-medium transition-colors ${
+              on
+                ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-white"
+                : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+            }`}
+          >
+            {tab.label}
+          </Link>
+        );
+      })}
     </div>
   );
 }

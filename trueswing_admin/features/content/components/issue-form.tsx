@@ -15,14 +15,23 @@ import {
   emptyWizardState,
   isDirty,
   isPartialDrill,
+  stateFromIssue,
   toComposeBody,
+  toUpdateBody,
   validateWizard,
   wizardWarning,
   type WizardState,
 } from "@/features/content/compose-payload";
-import type { AdminDrill, ComposeIssueBody, Taxonomy } from "@/lib/content/types";
+import type {
+  AdminDrill,
+  AdminIssue,
+  ComposeIssueBody,
+  Taxonomy,
+  UpdateIssueBody,
+} from "@/lib/content/types";
 
 type ActionResult = { ok: boolean; reason?: string };
+type UpdateResult = ActionResult & { issue?: AdminIssue };
 
 const EMPTY_DRILL = {
   title: "",
@@ -41,6 +50,10 @@ const labelCls = "text-xs font-semibold uppercase tracking-wide text-zinc-400";
  * one request to the composite endpoint.
  *
  * The guards are the point of this component:
+ * Create and edit are the same form. Edit seeds from the issue, hides the drill
+ * section (drills are attached from the detail view) and PATCHes instead of POSTing.
+ *
+ * The guards are the point of this component:
  *   double-click     the save button disables while pending — the endpoint has no
  *                    idempotency key, so two clicks would create two issues
  *   navigate away    beforeunload fires while the form differs from its initial state
@@ -54,6 +67,8 @@ export default function IssueForm({
   searchDrillsAction,
   onCancel,
   onSaved,
+  issue,
+  updateAction,
   initialArea,
   initialMiss,
   initialGoal,
@@ -62,14 +77,19 @@ export default function IssueForm({
   composeAction: (body: ComposeIssueBody) => Promise<ActionResult>;
   searchDrillsAction: (q: string) => Promise<{ ok: boolean; matches: AdminDrill[] }>;
   onCancel: () => void;
-  onSaved: () => void;
+  onSaved: (issue?: AdminIssue) => void;
+  /** Present in edit mode. Its absence is what makes this a create form. */
+  issue?: AdminIssue;
+  updateAction?: (id: string, body: UpdateIssueBody) => Promise<UpdateResult>;
   initialArea?: string;
   initialMiss?: string;
   initialGoal?: string;
 }) {
+  const editing = Boolean(issue);
   // Prefilled when arriving from an empty cell on the coverage grid, so the gap the
   // admin clicked is already selected.
   const initial = useMemo<WizardState>(() => {
+    if (issue) return stateFromIssue(issue);
     const base = emptyWizardState({
       area: initialArea ?? taxonomy.default_area,
       kind: taxonomy.default_kind,
@@ -79,7 +99,7 @@ export default function IssueForm({
       misses: initialMiss ? [initialMiss] : [],
       goals: initialGoal ? [initialGoal] : [],
     };
-  }, [taxonomy, initialArea, initialMiss, initialGoal]);
+  }, [issue, taxonomy, initialArea, initialMiss, initialGoal]);
 
   const [state, setState] = useState<WizardState>(initial);
   const [attached, setAttached] = useState<AdminDrill[]>([]);
@@ -89,10 +109,11 @@ export default function IssueForm({
 
   const dirty = isDirty(state, initial) || attached.length > 0;
   const blocker = validateWizard(state);
-  const warning = wizardWarning({
-    ...state,
-    existingDrillIds: attached.map((d) => d.id),
-  });
+  const warning = wizardWarning(
+    { ...state, existingDrillIds: attached.map((d) => d.id) },
+    // In edit mode the drills live on the issue, not in this form.
+    { existingDrillCount: issue?.drill_count ?? 0 },
+  );
 
   // Browser-level guard. Cancel/back inside the app is handled by onCancel, which
   // is a deliberate action; this catches closing the tab or a hard reload.
@@ -117,11 +138,22 @@ export default function IssueForm({
   function save() {
     setError(undefined);
     startTransition(async () => {
-      const body = toComposeBody({
-        ...state,
-        existingDrillIds: attached.map((d) => d.id),
-      });
-      const res = await composeAction(body);
+      // Branch first rather than narrowing a union afterwards: only the edit path
+      // has an issue to hand back.
+      if (issue && updateAction) {
+        const res = await updateAction(issue.id, toUpdateBody(state));
+        if (res.ok) {
+          savedRef.current = true;
+          onSaved(res.issue);
+        } else {
+          setError(res.reason);
+        }
+        return;
+      }
+
+      const res = await composeAction(
+        toComposeBody({ ...state, existingDrillIds: attached.map((d) => d.id) }),
+      );
       if (res.ok) {
         savedRef.current = true;
         onSaved();
@@ -148,8 +180,18 @@ export default function IssueForm({
       </button>
 
       <h2 className="mt-3 text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-        New issue
+        {editing ? "Edit issue" : "New issue"}
       </h2>
+
+      {/* Editing user-authored content is allowed — it is the moderation path — but
+          it rewrites something a specific golfer wrote and still sees, so it should
+          never happen without noticing. */}
+      {issue?.source === "custom" && (
+        <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+          This issue was written by a golfer, not by you. Saving changes what they
+          see in their own library. Owner: <code className="text-xs">{issue.user_id}</code>
+        </p>
+      )}
 
       {generalError && (
         <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-400">
@@ -279,6 +321,10 @@ export default function IssueForm({
             </div>
           </details>
 
+          {/* Create only. In edit mode drills are attached and detached from the
+              detail view, where each change is applied immediately rather than
+              waiting on a form submit. */}
+          {!editing && (
           <div className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-baseline justify-between">
               <p className={labelCls}>Drills</p>
@@ -377,6 +423,7 @@ export default function IssueForm({
               />
             </div>
           </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -401,9 +448,10 @@ export default function IssueForm({
               type="button"
               onClick={save}
               disabled={pending || Boolean(blocker)}
+              data-testid="save-issue"
               className="cursor-pointer rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
             >
-              {pending ? "Saving…" : "Save issue"}
+              {pending ? "Saving…" : editing ? "Save changes" : "Save issue"}
             </button>
           </div>
         </div>

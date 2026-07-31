@@ -21,6 +21,9 @@ export type AdminDrillPage = components["schemas"]["AdminDrillPageResponse"];
 /** Body for the composite create: issue + tags + new drills + existing links. */
 export type ComposeIssueBody = components["schemas"]["ComposeIssueRequest"];
 
+/** Body for a partial edit. Omit a field to keep it, send "" to clear it. */
+export type UpdateIssueBody = components["schemas"]["UpdateAdminIssueRequest"];
+
 /** A drill supplied inline to the composite create. */
 export type DraftDrill = components["schemas"]["DraftDrillSchema"];
 
