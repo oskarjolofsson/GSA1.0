@@ -12,10 +12,23 @@ import {
   issueImpactAction,
   searchDrillsAction,
   searchIssuesAction,
+  updateIssueAction,
 } from "@/features/content/actions";
 import IssuesExplorer from "@/features/content/components/issues-explorer";
 
 const PAGE_SIZE = 20;
+
+/**
+ * Which slice of the catalog to show. Defaults to `catalog` — the content you
+ * curate — so golfer-authored issues don't silently pad the list you browse.
+ * `?source=all` is the explicit opt-out and maps to no filter at all.
+ */
+function parseSource(raw: string | string[] | undefined): string {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (value === "all") return "";
+  if (value === "custom") return "custom";
+  return "catalog";
+}
 
 /**
  * Content → Issues (server component).
@@ -37,16 +50,18 @@ const PAGE_SIZE = 20;
 export default async function IssuesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string | string[] }>;
+  searchParams: Promise<{ page?: string | string[]; source?: string | string[] }>;
 }) {
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, source: sourceParam } = await searchParams;
   const requestedPage = parsePage(pageParam);
+  const source = parseSource(sourceParam);
 
   const token = await requireSessionToken();
   const offset = (requestedPage - 1) * PAGE_SIZE;
 
   const [result, taxonomyResult] = await Promise.all([
-    getIssuesPage(token, { limit: PAGE_SIZE, offset }),
+    // An empty source means "all"; the request module omits the param entirely.
+    getIssuesPage(token, { limit: PAGE_SIZE, offset, source: source || undefined }),
     getTaxonomy(token),
   ]);
   const taxonomy: Taxonomy | null =
@@ -69,9 +84,11 @@ export default async function IssuesPage({
             itemsOnPage: page.items.length,
           })}
           taxonomy={taxonomy}
+          source={source}
           searchAction={searchIssuesAction}
           searchDrillsAction={searchDrillsAction}
           composeAction={composeIssueAction}
+          updateAction={updateIssueAction}
           deleteAction={deleteIssueAction}
           impactAction={issueImpactAction}
           attachAction={attachDrillAction}

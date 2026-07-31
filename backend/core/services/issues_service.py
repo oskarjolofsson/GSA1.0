@@ -174,40 +174,58 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> Is
     if not issue:
         raise NotFoundException(f"Issue with ID {issue_id} not found", str(issue_id))
     
+    # Validate everything before touching the issue. The request transaction would
+    # roll a half-applied update back anyway, but that only protects the database —
+    # a caller that catches the exception and keeps using the session would still be
+    # looking at an object carrying edits it was told were rejected.
+    area = normalize_area_strict(dto.area) if dto.area is not None else None
+    kind = normalize_kind_strict(dto.kind) if dto.kind is not None else None
+    misses = normalize_misses_strict(dto.misses) if dto.misses is not None else None
+    goals = normalize_goals_strict(dto.goals) if dto.goals is not None else None
+
     # Only update fields that are provided
     if dto.title is not None:
         issue.title = dto.title
-    if dto.area is not None:
-        issue.area = normalize_area_strict(dto.area)
-    if dto.kind is not None:
-        issue.kind = normalize_kind_strict(dto.kind)
+    if area is not None:
+        issue.area = area
+    if kind is not None:
+        issue.kind = kind
     if dto.description is not None:
         issue.description = dto.description
-    if dto.current_motion is not None:
-        issue.current_motion = dto.current_motion
-    if dto.expected_motion is not None:
-        issue.expected_motion = dto.expected_motion
-    if dto.swing_effect is not None:
-        issue.swing_effect = dto.swing_effect
-    if dto.shot_outcome is not None:
-        issue.shot_outcome = dto.shot_outcome
-    if dto.layman_title is not None:
-        issue.layman_title = dto.layman_title
-    if dto.layman_desc is not None:
-        issue.layman_desc = dto.layman_desc
+
+    # Nullable text fields are three-state, same idea as the tag lists below:
+    #
+    #   None       ──▶ field absent from the request, leave it alone
+    #   "" or "  " ──▶ caller cleared it, store NULL
+    #   text       ──▶ store the trimmed text
+    #
+    # Without the empty case there is no way to remove copy once it exists: a blank
+    # input would arrive as None and read as "untouched", so the field would silently
+    # keep its old value while the caller was told the save succeeded. Whitespace is
+    # trimmed first because a field holding only spaces reads as empty to whoever
+    # sees it. title and description are NOT NULL and so stay two-state.
+    for field in (
+        "current_motion",
+        "expected_motion",
+        "swing_effect",
+        "shot_outcome",
+        "layman_title",
+        "layman_desc",
+    ):
+        value = getattr(dto, field)
+        if value is not None:
+            setattr(issue, field, value.strip() or None)
 
     # Tags replace rather than merge: None leaves them, [] clears them. clear()
-    # deletes the rows via delete-orphan. Validate before clearing so a rejected
-    # tag doesn't empty the existing set.
-    if dto.misses is not None:
-        validated = normalize_misses_strict(dto.misses)
+    # deletes the rows via delete-orphan. Already validated above, so a bad tag
+    # never reaches the point of emptying the existing set.
+    if misses is not None:
         issue.misses.clear()
-        for miss in validated:
+        for miss in misses:
             issue.misses.append(models.IssueMiss(miss=miss))
-    if dto.goals is not None:
-        validated = normalize_goals_strict(dto.goals)
+    if goals is not None:
         issue.goals.clear()
-        for goal in validated:
+        for goal in goals:
             issue.goals.append(models.IssueGoal(goal=goal))
 
     updated_issue = repo_update_issue(issue, db_session)

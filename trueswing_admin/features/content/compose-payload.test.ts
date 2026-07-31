@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 
+import type { AdminIssue } from "@/lib/content/types";
+
 import {
   emptyWizardState,
   isCompleteDrill,
   isDirty,
   isPartialDrill,
+  stateFromIssue,
   toComposeBody,
+  toUpdateBody,
   validateWizard,
   wizardWarning,
   type WizardState,
@@ -153,5 +157,113 @@ describe("isDirty", () => {
   it("notices a toggled tag", () => {
     const initial = base();
     expect(isDirty({ ...initial, misses: ["SLICE"] }, initial)).toBe(true);
+  });
+});
+
+describe("edit-mode helpers", () => {
+  const issue = {
+    id: "abc",
+    title: "Early extension",
+    description: "hips move toward the ball",
+    area: "PITCHING",
+    kind: "fault",
+    source: "catalog",
+    user_id: null,
+    layman_title: "You stand up out of it",
+    layman_desc: "Your hips drift toward the ball.",
+    current_motion: "steep",
+    expected_motion: "shallow",
+    swing_effect: null,
+    shot_outcome: null,
+    created_at: "2026-01-01T00:00:00Z",
+    goals: ["CONTACT"],
+    misses: ["THIN", "FAT"],
+    drills: [],
+    drill_count: 0,
+  } satisfies AdminIssue;
+
+  describe("stateFromIssue", () => {
+    it("carries every field across", () => {
+      const state = stateFromIssue(issue);
+
+      expect(state.title).toBe("Early extension");
+      expect(state.area).toBe("PITCHING");
+      expect(state.laymanTitle).toBe("You stand up out of it");
+      expect(state.currentMotion).toBe("steep");
+      expect(state.misses).toEqual(["THIN", "FAT"]);
+      expect(state.goals).toEqual(["CONTACT"]);
+    });
+
+    it("turns nulls into empty strings so inputs stay controlled", () => {
+      const state = stateFromIssue(issue);
+      expect(state.swingEffect).toBe("");
+      expect(state.shotOutcome).toBe("");
+    });
+
+    it("copies the tag arrays rather than aliasing the issue", () => {
+      // Toggling a tag in the form must not mutate the object the list is showing.
+      const state = stateFromIssue(issue);
+      state.misses.push("SLICE");
+      expect(issue.misses).toEqual(["THIN", "FAT"]);
+    });
+
+    it("carries no drills, since the form does not own them in edit mode", () => {
+      const state = stateFromIssue(issue);
+      expect(state.newDrills).toEqual([]);
+      expect(state.existingDrillIds).toEqual([]);
+    });
+  });
+
+  describe("toUpdateBody vs toComposeBody", () => {
+    it("sends \"\" for a cleared field where create sends null", () => {
+      // The whole point: on PATCH, null reads as "field absent" and leaves the old
+      // value, so a cleared field has to travel as "".
+      const state = { ...stateFromIssue(issue), laymanTitle: "   " };
+
+      expect(toUpdateBody(state).layman_title).toBe("");
+      expect(toComposeBody(state).layman_title).toBeNull();
+    });
+
+    it("trims and sends text identically in both", () => {
+      const state = { ...stateFromIssue(issue), laymanTitle: "  Kept  " };
+
+      expect(toUpdateBody(state).layman_title).toBe("Kept");
+      expect(toComposeBody(state).layman_title).toBe("Kept");
+    });
+
+    it("always sends both tag arrays, so an emptied set clears", () => {
+      const state = { ...stateFromIssue(issue), misses: [], goals: [] };
+
+      expect(toUpdateBody(state).misses).toEqual([]);
+      expect(toUpdateBody(state).goals).toEqual([]);
+    });
+
+    it("omits the drill fields, which the edit endpoint does not accept", () => {
+      const body = toUpdateBody(stateFromIssue(issue));
+      expect("new_drills" in body).toBe(false);
+      expect("existing_drill_ids" in body).toBe(false);
+    });
+  });
+
+  describe("wizardWarning with drills the form does not own", () => {
+    it("stays quiet when the issue already has drills", () => {
+      const state = { ...stateFromIssue(issue), misses: ["FAT"] };
+
+      expect(wizardWarning(state, { existingDrillCount: 2 })).toBeUndefined();
+    });
+
+    it("still warns when the issue genuinely has none", () => {
+      const state = { ...stateFromIssue(issue), misses: ["FAT"] };
+
+      expect(wizardWarning(state, { existingDrillCount: 0 })).toMatch(
+        /nothing to practise/i,
+      );
+    });
+
+    it("still warns about missing tags even with drills attached", () => {
+      const state = { ...stateFromIssue(issue), misses: [], goals: [] };
+
+      expect(wizardWarning(state, { existingDrillCount: 3 })).toMatch(/won't surface/i);
+    });
   });
 });

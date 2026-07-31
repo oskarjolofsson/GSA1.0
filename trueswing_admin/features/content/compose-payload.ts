@@ -1,4 +1,9 @@
-import type { ComposeIssueBody, DraftDrill } from "@/lib/content/types";
+import type {
+  AdminIssue,
+  ComposeIssueBody,
+  DraftDrill,
+  UpdateIssueBody,
+} from "@/lib/content/types";
 
 /** Everything the wizard tracks. Kept separate from the request body so the form
  * can hold half-finished drill rows the payload builder then filters out. */
@@ -64,27 +69,66 @@ export function isPartialDrill(drill: DraftDrill): boolean {
   return values.some(Boolean) && !values.every(Boolean);
 }
 
-/** Optional text field: send null rather than "" so the column stays NULL instead
- * of holding an empty string that reads as "set but blank". */
-const orNull = (value: string) => {
-  const trimmed = value.trim();
-  return trimmed ? trimmed : null;
-};
+/**
+ * How a blank optional field is expressed, which differs by verb.
+ *
+ *   create ─▶ null  the column has never been set, so leave it NULL
+ *   edit   ─▶ ""    the admin cleared a field that had text in it
+ *
+ * That difference is load-bearing. On PATCH the backend reads null as "this field
+ * was not part of the request" and leaves the old value in place, so sending null
+ * for a cleared field would report success and change nothing.
+ */
+const blankAs = (value: string, empty: null | "") => value.trim() || empty;
 
-export function toComposeBody(state: WizardState): ComposeIssueBody {
+/** The fields create and edit share, mapped once so the two bodies cannot drift. */
+function commonFields(state: WizardState, empty: null | "") {
   return {
     title: state.title.trim(),
     description: state.description.trim(),
     area: state.area,
     kind: state.kind,
-    layman_title: orNull(state.laymanTitle),
-    layman_desc: orNull(state.laymanDesc),
-    current_motion: orNull(state.currentMotion),
-    expected_motion: orNull(state.expectedMotion),
-    swing_effect: orNull(state.swingEffect),
-    shot_outcome: orNull(state.shotOutcome),
+    layman_title: blankAs(state.laymanTitle, empty),
+    layman_desc: blankAs(state.laymanDesc, empty),
+    current_motion: blankAs(state.currentMotion, empty),
+    expected_motion: blankAs(state.expectedMotion, empty),
+    swing_effect: blankAs(state.swingEffect, empty),
+    shot_outcome: blankAs(state.shotOutcome, empty),
     misses: state.misses,
     goals: state.goals,
+  };
+}
+
+/** Seed the wizard from an existing issue, for edit mode. */
+export function stateFromIssue(issue: AdminIssue): WizardState {
+  return {
+    title: issue.title ?? "",
+    description: issue.description ?? "",
+    area: issue.area,
+    kind: issue.kind,
+    laymanTitle: issue.layman_title ?? "",
+    laymanDesc: issue.layman_desc ?? "",
+    currentMotion: issue.current_motion ?? "",
+    expectedMotion: issue.expected_motion ?? "",
+    swingEffect: issue.swing_effect ?? "",
+    shotOutcome: issue.shot_outcome ?? "",
+    misses: [...issue.misses],
+    goals: [...issue.goals],
+    // Drills are attached and detached from the detail view, not through the form,
+    // so edit mode carries none of its own.
+    newDrills: [],
+    existingDrillIds: [],
+  };
+}
+
+/** Body for a partial edit. Blank optional text becomes "" so it clears. */
+export function toUpdateBody(state: WizardState): UpdateIssueBody {
+  return commonFields(state, "");
+}
+
+export function toComposeBody(state: WizardState): ComposeIssueBody {
+  return {
+    ...commonFields(state, null),
     new_drills: state.newDrills.filter(isCompleteDrill),
     existing_drill_ids: state.existingDrillIds,
   };
@@ -105,9 +149,18 @@ export function validateWizard(state: WizardState): string | undefined {
 
 /** A non-blocking caution: an issue with no drills is valid but unpractisable, and
  * shows up in the coverage page's issues-with-no-drills count. */
-export function wizardWarning(state: WizardState): string | undefined {
+export function wizardWarning(
+  state: WizardState,
+  { existingDrillCount = 0 }: { existingDrillCount?: number } = {},
+): string | undefined {
+  // In edit mode the form holds no drills — they are attached from the detail view —
+  // so the caller passes the issue's real count. Without it the warning would fire
+  // on every edit, and a warning that cries wolf gets ignored along with the ones
+  // that matter.
   const drills =
-    state.newDrills.filter(isCompleteDrill).length + state.existingDrillIds.length;
+    state.newDrills.filter(isCompleteDrill).length +
+    state.existingDrillIds.length +
+    existingDrillCount;
   if (drills === 0) {
     return "No drills attached — a golfer can start this issue but has nothing to practise.";
   }

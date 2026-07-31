@@ -9,7 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import IssueForm from "./issue-form";
-import type { Taxonomy } from "@/lib/content/types";
+import type { Taxonomy, UpdateIssueBody } from "@/lib/content/types";
 
 const taxonomy: Taxonomy = {
   areas: ["FULL_SWING", "PITCHING"],
@@ -160,5 +160,146 @@ describe("IssueForm", () => {
     );
 
     expect(screen.getByText("You swing across it")).toBeInTheDocument();
+  });
+});
+
+/** Declared with its arguments so mock.calls can be inspected — a zero-arg mock
+ * types its call tuple as empty. */
+type UpdateFn = (
+  id: string,
+  body: UpdateIssueBody,
+) => Promise<{ ok: boolean; reason?: string }>;
+
+describe("IssueForm in edit mode", () => {
+  const issue = {
+    id: "issue-1",
+    title: "Early extension",
+    description: "hips move toward the ball",
+    area: "PITCHING",
+    kind: "fault",
+    source: "catalog",
+    user_id: null,
+    layman_title: "You stand up out of it",
+    layman_desc: "Your hips drift toward the ball.",
+    current_motion: "steep",
+    expected_motion: null,
+    swing_effect: null,
+    shot_outcome: null,
+    created_at: "2026-01-01T00:00:00Z",
+    goals: ["CONTACT"],
+    misses: ["FAT"],
+    drills: [],
+    drill_count: 2,
+  } as never;
+
+  function setupEdit(
+    update = vi.fn<UpdateFn>(async () => ({ ok: true })),
+    override: Record<string, unknown> = {},
+  ) {
+    const compose = vi.fn(async () => ({ ok: true }));
+    render(
+      <IssueForm
+        taxonomy={taxonomy}
+        issue={{ ...(issue as object), ...override } as never}
+        updateAction={update}
+        composeAction={compose}
+        searchDrillsAction={noDrills}
+        onCancel={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    );
+    return { update, compose };
+  }
+
+  const saveChanges = () => screen.getByRole("button", { name: /save changes/i });
+
+  it("prefills every field from the issue", () => {
+    setupEdit();
+
+    expect(screen.getByPlaceholderText("Early extension")).toHaveValue(
+      "Early extension",
+    );
+    expect(screen.getByPlaceholderText("You come over the top")).toHaveValue(
+      "You stand up out of it",
+    );
+    expect(screen.getByRole("button", { name: "Fat" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Contact" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("saves through updateAction, never composeAction", async () => {
+    const { update, compose } = setupEdit();
+
+    await userEvent.click(saveChanges());
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(compose).not.toHaveBeenCalled();
+    expect(update.mock.calls[0][0]).toBe("issue-1");
+  });
+
+  it("sends \"\" for a field the admin cleared, so it actually clears", async () => {
+    // null would read as "field absent" on PATCH and leave the old copy in place.
+    const { update } = setupEdit();
+
+    await userEvent.clear(screen.getByPlaceholderText("You come over the top"));
+    await userEvent.click(saveChanges());
+
+    expect(update.mock.calls[0][1].layman_title).toBe("");
+  });
+
+  it("does not warn about missing drills when the issue has them", () => {
+    // drill_count is 2 and the form holds none, because drills are attached from
+    // the detail view.
+    setupEdit();
+
+    expect(screen.queryByText(/nothing to practise/i)).not.toBeInTheDocument();
+  });
+
+  it("still warns about missing drills when the issue genuinely has none", () => {
+    setupEdit(vi.fn<UpdateFn>(async () => ({ ok: true })), { drill_count: 0 });
+
+    expect(screen.getByText(/nothing to practise/i)).toBeInTheDocument();
+  });
+
+  it("hides the drill section, which the detail view owns", () => {
+    setupEdit();
+
+    expect(
+      screen.queryByRole("button", { name: /add a new drill/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("warns before rewriting a golfer's own issue", () => {
+    setupEdit(vi.fn<UpdateFn>(async () => ({ ok: true })), {
+      source: "custom",
+      user_id: "golfer-42",
+    });
+
+    expect(screen.getByText(/written by a golfer/i)).toBeInTheDocument();
+    expect(screen.getByText("golfer-42")).toBeInTheDocument();
+  });
+
+  it("shows no owner banner for a catalog issue", () => {
+    setupEdit();
+
+    expect(screen.queryByText(/written by a golfer/i)).not.toBeInTheDocument();
+  });
+
+  it("fires the update exactly once on a double-click", async () => {
+    let release: (v: { ok: boolean }) => void = () => {};
+    const update = vi.fn<UpdateFn>(
+      () => new Promise<{ ok: boolean }>((resolve) => (release = resolve)),
+    );
+    setupEdit(update);
+
+    await userEvent.dblClick(saveChanges());
+
+    expect(update).toHaveBeenCalledTimes(1);
+    release({ ok: true });
   });
 });

@@ -185,7 +185,22 @@ export interface paths {
         delete: operations["delete_issue_api_v1_admin_content_issues__issue_id___delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Issue
+         * @description Edit a catalog issue. Partial: omitted fields are left untouched.
+         *
+         *     Three-state on the nullable text fields — omit to keep, "" to clear, text to
+         *     set. Tags behave the same: omit to keep, [] to remove them all, a list to
+         *     replace the set. Without the "" case there would be no way to remove copy once
+         *     written, and the save would report success while changing nothing.
+         *
+         *     Unknown area/kind/tag values return 422 naming the value, and nothing is
+         *     written. Allowed values: GET /api/v1/taxonomy/.
+         *
+         *     Editing a user-authored issue is permitted — it is the moderation path — and
+         *     leaves its `source` and `user_id` alone, neither being accepted here.
+         */
+        patch: operations["update_issue_api_v1_admin_content_issues__issue_id___patch"];
         trace?: never;
     };
     "/api/v1/admin/content/issues/{issue_id}/impact/": {
@@ -2862,6 +2877,44 @@ export interface components {
             /** Fault Indicator */
             fault_indicator?: string | null;
         };
+        /**
+         * UpdateAdminIssueRequest
+         * @description Partial update of a catalog issue.
+         *
+         *     Three-state on the nullable text fields, matching issues_service.update_issue:
+         *     omit to leave a field alone, send "" to clear it, send text to set it. Tags work
+         *     the same way — omit to keep, [] to remove them all, a list to replace the set.
+         *
+         *     `source` and `user_id` are deliberately absent. The admin edits content, never
+         *     ownership; reassigning a golfer's issue to the catalog is not something a text
+         *     form should be able to do by accident.
+         */
+        UpdateAdminIssueRequest: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Area */
+            area?: string | null;
+            /** Kind */
+            kind?: string | null;
+            /** Current Motion */
+            current_motion?: string | null;
+            /** Expected Motion */
+            expected_motion?: string | null;
+            /** Swing Effect */
+            swing_effect?: string | null;
+            /** Shot Outcome */
+            shot_outcome?: string | null;
+            /** Layman Title */
+            layman_title?: string | null;
+            /** Layman Desc */
+            layman_desc?: string | null;
+            /** Misses */
+            misses?: string[] | null;
+            /** Goals */
+            goals?: string[] | null;
+        };
         /** UpdateDrillRequest */
         UpdateDrillRequest: {
             /** Title */
@@ -3272,6 +3325,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_issue_api_v1_admin_content_issues__issue_id___patch: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAdminIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssueSchema"];
+                };
             };
             /** @description Validation Error */
             422: {

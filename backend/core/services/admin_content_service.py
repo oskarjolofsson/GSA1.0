@@ -19,6 +19,7 @@ from core.infrastructure.db.repositories import drills as drill_repo
 from core.infrastructure.db.repositories import issue_drills as issue_drill_repo
 from core.infrastructure.db.repositories import issues as issue_repo
 from core.services import issue_authoring_service as authoring
+from core.services import issues_service
 from core.services.dtos.admin_content_dto import (
     AdminDrillDTO,
     AdminIssueDTO,
@@ -32,6 +33,7 @@ from core.services.dtos.issue_authoring_service_dto import (
     DraftDrillDTO,
     DraftIssueDTO,
 )
+from core.services.dtos.issues_service_dto import UpdateIssueDTO
 from core.services.exceptions import ConflictException, NotFoundException
 from core.services.taxonomy import ALLOWED_AREAS, ALLOWED_GOALS, ALLOWED_MISSES
 
@@ -147,6 +149,24 @@ def _apply_motion_fields(issue_id: UUID, motion_fields: dict, db_session: Sessio
         if value is not None:
             setattr(issue, name, value)
     issue_repo.update_issue(issue, db_session)
+
+
+def update_issue(issue_id: UUID, fields: dict, db_session: Session) -> AdminIssueDTO:
+    """Edit a catalog issue.
+
+    Delegates to issues_service.update_issue, which owns the three-state field
+    semantics and the strict tag validation, then re-reads through get_issue so the
+    response carries the tags and drills the admin list expects.
+
+    Works on user-authored issues too — that is the moderation path — and leaves
+    their `source` and `user_id` alone, because neither is accepted here.
+    """
+    issues_service.update_issue(
+        issue_id,
+        UpdateIssueDTO(**fields),
+        db_session,
+    )
+    return get_issue(issue_id, db_session)
 
 
 def issue_delete_impact(issue_id: UUID, db_session: Session) -> DeleteImpactDTO:

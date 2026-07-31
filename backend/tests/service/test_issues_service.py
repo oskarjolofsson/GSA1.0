@@ -536,3 +536,93 @@ class TestIssueTags:
 
         # Same session, same object: the tags were never touched.
         assert sorted(m.miss for m in issue_row.misses) == ["PULL", "SLICE"]
+
+
+class TestClearingOptionalFields:
+    """Nullable text fields are three-state on update.
+
+    None means the field was absent from the request; "" means the caller
+    deliberately emptied it. Collapsing those two would make copy impossible to
+    remove once written — the save would report success and change nothing.
+    """
+
+    OPTIONAL_FIELDS = (
+        "current_motion",
+        "expected_motion",
+        "swing_effect",
+        "shot_outcome",
+        "layman_title",
+        "layman_desc",
+    )
+
+    def _issue_with_all_fields(self, db_session):
+        return create_issue(
+            CreateIssueDTO(
+                title="Fully populated",
+                description="d",
+                current_motion="steep",
+                expected_motion="shallow",
+                swing_effect="power loss",
+                shot_outcome="slice",
+                layman_title="You come over the top",
+                layman_desc="Your shoulders start the downswing.",
+            ),
+            db_session=db_session,
+        )
+
+    @pytest.mark.parametrize("field", OPTIONAL_FIELDS)
+    def test_empty_string_clears_the_field(self, db_session, field):
+        created = self._issue_with_all_fields(db_session)
+
+        updated = update_issue(
+            created.id, UpdateIssueDTO(**{field: ""}), db_session=db_session
+        )
+
+        assert getattr(updated, field) is None, (
+            f"{field} was not cleared by an empty string — the admin would clear it, "
+            "be told the save worked, and find the old value still there"
+        )
+
+    @pytest.mark.parametrize("field", OPTIONAL_FIELDS)
+    def test_omitting_the_field_leaves_it_untouched(self, db_session, field):
+        created = self._issue_with_all_fields(db_session)
+        before = getattr(created, field)
+
+        updated = update_issue(
+            created.id, UpdateIssueDTO(title="Renamed"), db_session=db_session
+        )
+
+        assert getattr(updated, field) == before
+
+    def test_whitespace_only_also_clears(self, db_session):
+        """A field holding only spaces reads as empty to a human, so store NULL
+        rather than a blank-looking value that is technically set."""
+        created = self._issue_with_all_fields(db_session)
+
+        updated = update_issue(
+            created.id, UpdateIssueDTO(layman_title="   "), db_session=db_session
+        )
+
+        assert updated.layman_title is None
+
+    def test_text_still_updates_normally(self, db_session):
+        created = self._issue_with_all_fields(db_session)
+
+        updated = update_issue(
+            created.id,
+            UpdateIssueDTO(layman_title="You swing across it"),
+            db_session=db_session,
+        )
+
+        assert updated.layman_title == "You swing across it"
+
+    def test_clearing_one_field_leaves_the_others(self, db_session):
+        created = self._issue_with_all_fields(db_session)
+
+        updated = update_issue(
+            created.id, UpdateIssueDTO(layman_title=""), db_session=db_session
+        )
+
+        assert updated.layman_title is None
+        assert updated.layman_desc == "Your shoulders start the downswing."
+        assert updated.current_motion == "steep"

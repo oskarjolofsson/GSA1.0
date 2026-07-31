@@ -22,6 +22,7 @@ from app.api.v1.schemas.admin_content import (
     CreateAdminDrillRequest,
     DeleteImpactResponse,
     UpdateAdminDrillRequest,
+    UpdateAdminIssueRequest,
 )
 from app.dependencies.db import get_db
 from app.dependencies.require_admin import require_admin
@@ -131,6 +132,32 @@ def compose_issue(
             },
             db_session=db,
         )
+    )
+
+
+@router.patch("/issues/{issue_id}/", response_model=AdminIssueSchema)
+def update_issue(
+    issue_id: UUID,
+    request: UpdateAdminIssueRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Edit a catalog issue. Partial: omitted fields are left untouched.
+
+    Three-state on the nullable text fields — omit to keep, "" to clear, text to
+    set. Tags behave the same: omit to keep, [] to remove them all, a list to
+    replace the set. Without the "" case there would be no way to remove copy once
+    written, and the save would report success while changing nothing.
+
+    Unknown area/kind/tag values return 422 naming the value, and nothing is
+    written. Allowed values: GET /api/v1/taxonomy/.
+
+    Editing a user-authored issue is permitted — it is the moderation path — and
+    leaves its `source` and `user_id` alone, neither being accepted here.
+    """
+    return AdminIssueSchema.from_domain(
+        service.update_issue(issue_id, request.model_dump(exclude_unset=True), db)
     )
 
 
