@@ -16,6 +16,7 @@ const off =
 // while still highlighting for any /technical/* route.
 const TABS = [
   { href: "/business/subscriptions", match: "/business", label: "Business" },
+  { href: "/content/issues", match: "/content", label: "Content" },
   { href: "/technical/users", match: "/technical", label: "Technical" },
 ];
 

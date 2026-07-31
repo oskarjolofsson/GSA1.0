@@ -1,0 +1,83 @@
+import { FetchResultView } from "@/components/fetch-result";
+import { paginate, parsePage } from "@/features/shared/paginate";
+import { requireSessionToken } from "@/lib/auth/require-session";
+import { getIssuesPage } from "@/lib/content/get-issues-page";
+import { getTaxonomy } from "@/lib/content/get-taxonomy";
+import type { Taxonomy } from "@/lib/content/types";
+import {
+  attachDrillAction,
+  composeIssueAction,
+  deleteIssueAction,
+  detachDrillAction,
+  issueImpactAction,
+  searchDrillsAction,
+  searchIssuesAction,
+} from "@/features/content/actions";
+import IssuesExplorer from "@/features/content/components/issues-explorer";
+
+const PAGE_SIZE = 20;
+
+/**
+ * Content → Issues (server component).
+ *
+ *   session ─▶ getIssuesPage(page) ─┬ ok     ─▶ <IssuesExplorer/>
+ *                                    ├ denied ─▶ "No access" notice
+ *                                    └ error  ─▶ error notice
+ *
+ * No separate admin check: /admin/content/issues/ is `require_admin`, so its 403
+ * already carries the verdict in the same round trip.
+ *
+ * The taxonomy is fetched here rather than in the client so the tag pickers have
+ * their vocabulary before first paint. If it fails the explorer still renders — it
+ * just cannot offer the wizard, because a picker with no vocabulary would let the
+ * admin save tags the backend then rejects.
+ *
+ * Next 16: `searchParams` is a Promise and must be awaited.
+ */
+export default async function IssuesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string | string[] }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const requestedPage = parsePage(pageParam);
+
+  const token = await requireSessionToken();
+  const offset = (requestedPage - 1) * PAGE_SIZE;
+
+  const [result, taxonomyResult] = await Promise.all([
+    getIssuesPage(token, { limit: PAGE_SIZE, offset }),
+    getTaxonomy(token),
+  ]);
+  const taxonomy: Taxonomy | null =
+    taxonomyResult.status === "ok" ? taxonomyResult.data : null;
+
+  return (
+    <FetchResultView
+      result={result}
+      title="Issues"
+      deniedBody="Your account isn't an admin, so you can't manage content."
+      errorBody="Couldn't load issues. The API may be unreachable — try again."
+    >
+      {(page) => (
+        <IssuesExplorer
+          page={page}
+          pageInfo={paginate({
+            page: requestedPage,
+            total: page.total,
+            limit: PAGE_SIZE,
+            itemsOnPage: page.items.length,
+          })}
+          taxonomy={taxonomy}
+          searchAction={searchIssuesAction}
+          searchDrillsAction={searchDrillsAction}
+          composeAction={composeIssueAction}
+          deleteAction={deleteIssueAction}
+          impactAction={issueImpactAction}
+          attachAction={attachDrillAction}
+          detachAction={detachDrillAction}
+        />
+      )}
+    </FetchResultView>
+  );
+}
