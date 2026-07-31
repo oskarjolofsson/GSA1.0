@@ -43,4 +43,90 @@ export const routes = {
   /** GET → ProfileMatch[]. Search customers to grant to. */
   adminSubscriptionsSearch: ({ q, limit }: { q: string; limit: number }) =>
     `/api/v1/admin/subscriptions/search/?q=${encodeURIComponent(q)}&limit=${limit}`,
+
+  // ---------- content catalog (all require_admin) ----------
+
+  /** GET → Taxonomy. The allowed area/miss/goal/kind values. Authenticated, not
+   * admin-only: tag pickers render from this so they can never offer a value the
+   * strict validators on the write paths would reject. */
+  taxonomy: () => "/api/v1/taxonomy/",
+
+  /** GET → AdminIssuePage. Paged catalog issues with tags and drills. */
+  contentIssuesPage: ({
+    limit,
+    offset,
+    q,
+    area,
+    kind,
+    source,
+  }: {
+    limit: number;
+    offset: number;
+    q?: string;
+    area?: string;
+    kind?: string;
+    source?: string;
+  }) => {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (q) params.set("q", q);
+    if (area) params.set("area", area);
+    if (kind) params.set("kind", kind);
+    if (source) params.set("source", source);
+    return `/api/v1/admin/content/issues/?${params}`;
+  },
+
+  /** GET → AdminIssue. POST (compose) → AdminIssue. */
+  contentIssues: () => "/api/v1/admin/content/issues/",
+
+  /** GET → AdminIssue. DELETE → 204, or 409 without confirmImpact when referenced. */
+  contentIssue: (issueId: string, { confirmImpact }: { confirmImpact?: boolean } = {}) =>
+    `/api/v1/admin/content/issues/${issueId}/${
+      confirmImpact ? "?confirm_impact=true" : ""
+    }`,
+
+  /** GET → DeleteImpact. What a delete of this issue would destroy. */
+  contentIssueImpact: (issueId: string) =>
+    `/api/v1/admin/content/issues/${issueId}/impact/`,
+
+  /** GET → AdminDrillPage. Paged drills with the issues that prescribe them. */
+  contentDrillsPage: ({
+    limit,
+    offset,
+    q,
+  }: {
+    limit: number;
+    offset: number;
+    q?: string;
+  }) => {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (q) params.set("q", q);
+    return `/api/v1/admin/content/drills/?${params}`;
+  },
+
+  /** POST → AdminDrill. Create a global catalog drill. */
+  contentDrills: () => "/api/v1/admin/content/drills/",
+
+  /** GET → AdminDrill. PATCH → AdminDrill. DELETE → 204 / 409. */
+  contentDrill: (drillId: string, { confirmImpact }: { confirmImpact?: boolean } = {}) =>
+    `/api/v1/admin/content/drills/${drillId}/${
+      confirmImpact ? "?confirm_impact=true" : ""
+    }`,
+
+  /** GET → DeleteImpact. drill_runs > 0 means the delete is impossible, not just
+   * destructive — practice_drill_runs is ON DELETE NO ACTION. */
+  contentDrillImpact: (drillId: string) =>
+    `/api/v1/admin/content/drills/${drillId}/impact/`,
+
+  /** POST (attach) / DELETE (detach) → AdminIssue. */
+  contentIssueDrill: (issueId: string, drillId: string) =>
+    `/api/v1/admin/content/issues/${issueId}/drills/${drillId}/`,
+
+  /** GET → Coverage. Issue counts per area/miss/goal, plus catalog health counts. */
+  contentCoverage: () => "/api/v1/admin/content/coverage/",
 } as const;

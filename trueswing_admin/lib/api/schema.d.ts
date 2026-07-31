@@ -135,6 +135,199 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/content/issues/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Issues
+         * @description One page of catalog issues with their tags and drills.
+         *
+         *     Arguments (query):
+         *         limit/offset: page window, newest first
+         *         q: substring match on title, description or layman_title
+         *         area/kind/source: exact-match filters
+         */
+        get: operations["list_issues_api_v1_admin_content_issues__get"];
+        put?: never;
+        /**
+         * Compose Issue
+         * @description Create a catalog issue together with its tags, new drills and links to existing
+         *     drills, in one request.
+         *
+         *     Everything shares the request transaction, so a failure anywhere — an unknown
+         *     tag, a drill id that does not resolve — leaves no partial issue behind.
+         *
+         *     Unknown area/kind/tag values return 422. Allowed values: GET /api/v1/taxonomy/.
+         */
+        post: operations["compose_issue_api_v1_admin_content_issues__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/issues/{issue_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Issue */
+        get: operations["get_issue_api_v1_admin_content_issues__issue_id___get"];
+        put?: never;
+        post?: never;
+        /** Delete Issue */
+        delete: operations["delete_issue_api_v1_admin_content_issues__issue_id___delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/issues/{issue_id}/impact/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Issue Delete Impact
+         * @description What deleting this issue would remove. Read-only.
+         *
+         *     Analyses, programs and practice sessions all CASCADE from an issue, so these
+         *     counts are real user data that would be destroyed.
+         */
+        get: operations["issue_delete_impact_api_v1_admin_content_issues__issue_id__impact__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/drills/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Drills
+         * @description One page of drills, each with the issues that prescribe it.
+         */
+        get: operations["list_drills_api_v1_admin_content_drills__get"];
+        put?: never;
+        /**
+         * Create Drill
+         * @description Create a global catalog drill. It is unattached until linked to an issue.
+         */
+        post: operations["create_drill_api_v1_admin_content_drills__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/drills/{drill_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Drill */
+        get: operations["get_drill_api_v1_admin_content_drills__drill_id___get"];
+        put?: never;
+        post?: never;
+        /** Delete Drill */
+        delete: operations["delete_drill_api_v1_admin_content_drills__drill_id___delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Drill
+         * @description Partial update; omitted fields are left untouched.
+         */
+        patch: operations["update_drill_api_v1_admin_content_drills__drill_id___patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/content/drills/{drill_id}/impact/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Drill Delete Impact
+         * @description What deleting this drill would touch.
+         *
+         *     `drill_runs` is the one that cannot be confirmed past: practice_drill_runs has
+         *     ON DELETE NO ACTION, so the database refuses the delete outright.
+         */
+        get: operations["drill_delete_impact_api_v1_admin_content_drills__drill_id__impact__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/issues/{issue_id}/drills/{drill_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attach Drill
+         * @description Prescribe an existing drill for an issue. 409 if already attached.
+         */
+        post: operations["attach_drill_api_v1_admin_content_issues__issue_id__drills__drill_id___post"];
+        /**
+         * Detach Drill
+         * @description Unlink a drill from an issue. The drill and its practice history survive.
+         */
+        delete: operations["detach_drill_api_v1_admin_content_issues__issue_id__drills__drill_id___delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/coverage/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Coverage
+         * @description Issue counts across every area / miss / goal combination, plus the two catalog
+         *     health counts already tracked by /admin/stats/.
+         *
+         *     Cells with issue_count 0 are gaps: a golfer choosing that goal and miss has
+         *     nothing to practise.
+         */
+        get: operations["coverage_api_v1_admin_content_coverage__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/drills/": {
         parameters: {
             query?: never;
@@ -146,7 +339,11 @@ export interface paths {
         put?: never;
         /**
          * Create Drill
-         * @description Create a new drill.
+         * @description Create a new drill in the global catalog.
+         *
+         *     Admin-only: drill_service.create_drill leaves user_id NULL, and a NULL user_id
+         *     means the drill is global. Users author their own drills through
+         *     POST /issues/custom/, which stamps ownership.
          *
          *     Arguments (JSON body):
          *         title (str): Title of the drill
@@ -393,6 +590,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users/{user_id}/role/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Set User Role
+         * @description Change a user's role (admin only). Cannot change your own role (403).
+         */
+        patch: operations["set_user_role_api_v1_users__user_id__role__patch"];
+        trace?: never;
+    };
     "/api/v1/users/{user_id}/": {
         parameters: {
             query?: never;
@@ -585,8 +802,10 @@ export interface paths {
          *         swing_effect (str, optional): Effect on swing
          *         shot_outcome (str, optional): Expected shot outcome
          *         layman_title/layman_desc (str, optional): Plain-language browse copy
-         *         miss (str, optional): Ball-flight miss tag
+         *         misses (list[str], optional): Ball-flight miss tags
          *         goals (list[str], optional): Goal tags
+         *
+         *     Unknown area/kind/tag values return 422. Allowed values: GET /api/v1/taxonomy/.
          */
         post: operations["create_issue_api_v1_issues__post"];
         delete?: never;
@@ -809,6 +1028,11 @@ export interface paths {
          *         swing_effect (str, optional): Effect on swing
          *         shot_outcome (str, optional): Expected shot outcome
          *         layman_title/layman_desc (str, optional): Plain-language browse copy
+         *         misses (list[str], optional): Miss tags. Replaces the set; omit to leave
+         *             tags alone, pass [] to remove them all.
+         *         goals (list[str], optional): Goal tags, same replace semantics.
+         *
+         *     Unknown area/kind/tag values return 422.
          *
          *     Returns:
          *         JSON response with updated issue details
@@ -1384,6 +1608,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/taxonomy/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Taxonomy
+         * @description The canonical practice-taxonomy vocabularies: areas, misses, goals, kinds.
+         *
+         *     Gated by `get_current_user`, not `require_admin` — both the admin dashboard and
+         *     the golfer-facing app render tag pickers from this.
+         */
+        get: operations["get_taxonomy_api_v1_taxonomy__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1480,6 +1727,132 @@ export interface components {
             analysis_issue_id: string | null;
             /** Drill Runs */
             drill_runs: components["schemas"]["ActivityDrillRun"][];
+        };
+        /** AdminDrillPageResponse */
+        AdminDrillPageResponse: {
+            /** Items */
+            items: components["schemas"]["AdminDrillSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** AdminDrillSchema */
+        AdminDrillSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Task */
+            task: string;
+            /** Success Signal */
+            success_signal: string;
+            /** Fault Indicator */
+            fault_indicator: string;
+            /** User Id */
+            user_id: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Issues
+             * @default []
+             */
+            issues: components["schemas"]["AdminIssueRefSchema"][];
+            /**
+             * Issue Count
+             * @default 0
+             */
+            issue_count: number;
+        };
+        /** AdminIssuePageResponse */
+        AdminIssuePageResponse: {
+            /** Items */
+            items: components["schemas"]["AdminIssueSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /**
+         * AdminIssueRefSchema
+         * @description Just enough of an issue to show what a drill is attached to.
+         */
+        AdminIssueRefSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * AdminIssueSchema
+         * @description An issue as the content admin sees it.
+         *
+         *     Distinct from GetIssue, which is shaped for the analysis flow and carries
+         *     progress and analysis linkage the admin has no use for. This one carries what
+         *     the catalog editor needs: ownership, tags and the linked drills.
+         */
+        AdminIssueSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string | null;
+            /** Area */
+            area: string;
+            /** Kind */
+            kind: string;
+            /** Source */
+            source: string;
+            /** User Id */
+            user_id: string | null;
+            /** Layman Title */
+            layman_title?: string | null;
+            /** Layman Desc */
+            layman_desc?: string | null;
+            /** Current Motion */
+            current_motion?: string | null;
+            /** Expected Motion */
+            expected_motion?: string | null;
+            /** Swing Effect */
+            swing_effect?: string | null;
+            /** Shot Outcome */
+            shot_outcome?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Goals
+             * @default []
+             */
+            goals: string[];
+            /**
+             * Misses
+             * @default []
+             */
+            misses: string[];
+            /**
+             * Drills
+             * @default []
+             */
+            drills: components["schemas"]["CatalogDrillSchema"][];
+            /**
+             * Drill Count
+             * @default 0
+             */
+            drill_count: number;
         };
         /**
          * AdminStatsResponse
@@ -1583,6 +1956,102 @@ export interface components {
              * @default []
              */
             grades: components["schemas"]["DrillGrade"][];
+        };
+        /**
+         * ComposeIssueRequest
+         * @description Create or replace an issue together with its tags and drill links.
+         *
+         *     One request rather than the six writes the catalog used to need (issue, goal
+         *     tags, miss tags, drills, links) — they share the request transaction, so a
+         *     failure anywhere leaves nothing behind.
+         */
+        ComposeIssueRequest: {
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Area
+             * @default FULL_SWING
+             */
+            area: string;
+            /**
+             * Kind
+             * @default fault
+             */
+            kind: string;
+            /** Layman Title */
+            layman_title?: string | null;
+            /** Layman Desc */
+            layman_desc?: string | null;
+            /** Current Motion */
+            current_motion?: string | null;
+            /** Expected Motion */
+            expected_motion?: string | null;
+            /** Swing Effect */
+            swing_effect?: string | null;
+            /** Shot Outcome */
+            shot_outcome?: string | null;
+            /**
+             * Misses
+             * @default []
+             */
+            misses: string[];
+            /**
+             * Goals
+             * @default []
+             */
+            goals: string[];
+            /**
+             * New Drills
+             * @default []
+             */
+            new_drills: components["schemas"]["DraftDrillSchema"][];
+            /**
+             * Existing Drill Ids
+             * @default []
+             */
+            existing_drill_ids: string[];
+        };
+        /** CoverageCellSchema */
+        CoverageCellSchema: {
+            /** Area */
+            area: string;
+            /** Miss */
+            miss: string | null;
+            /** Goal */
+            goal: string | null;
+            /** Issue Count */
+            issue_count: number;
+        };
+        /**
+         * CoverageResponse
+         * @description Which parts of the taxonomy have content and which are empty.
+         *
+         *     Cells with issue_count 0 are gaps: a golfer picking that goal and miss finds
+         *     nothing to practise.
+         */
+        CoverageResponse: {
+            /** Cells */
+            cells: components["schemas"]["CoverageCellSchema"][];
+            /** Unmapped Drills */
+            unmapped_drills: number;
+            /** Issues With No Drills */
+            issues_with_no_drills: number;
+        };
+        /** CreateAdminDrillRequest */
+        CreateAdminDrillRequest: {
+            /** Title */
+            title: string;
+            /** Task */
+            task: string;
+            /** Success Signal */
+            success_signal: string;
+            /** Fault Indicator */
+            fault_indicator: string;
         };
         /** CreateAnalysisRequest */
         CreateAnalysisRequest: {
@@ -1709,8 +2178,11 @@ export interface components {
             layman_title?: string | null;
             /** Layman Desc */
             layman_desc?: string | null;
-            /** Miss */
-            miss?: string | null;
+            /**
+             * Misses
+             * @default []
+             */
+            misses: string[];
             /**
              * Goals
              * @default []
@@ -1726,6 +2198,46 @@ export interface components {
              * Format: uuid
              */
             issue_id: string;
+        };
+        /**
+         * DeleteImpactResponse
+         * @description What a delete would take with it.
+         *
+         *     Every count is a row that CASCADEs away with the record, most of them belonging
+         *     to real users. `blocking` is true when anything at all references it, which is
+         *     what makes the caller pass ?confirm_impact=true.
+         */
+        DeleteImpactResponse: {
+            /**
+             * Analysis Issues
+             * @default 0
+             */
+            analysis_issues: number;
+            /**
+             * Programs
+             * @default 0
+             */
+            programs: number;
+            /**
+             * Practice Sessions
+             * @default 0
+             */
+            practice_sessions: number;
+            /**
+             * Drill Runs
+             * @default 0
+             */
+            drill_runs: number;
+            /**
+             * Mappings
+             * @default 0
+             */
+            mappings: number;
+            /**
+             * Blocking
+             * @default false
+             */
+            blocking: boolean;
         };
         /** DeleteIssueDrillResponse */
         DeleteIssueDrillResponse: {
@@ -1961,6 +2473,16 @@ export interface components {
              * @default catalog
              */
             source: string;
+            /**
+             * Goals
+             * @default []
+             */
+            goals: string[];
+            /**
+             * Misses
+             * @default []
+             */
+            misses: string[];
         };
         /** GetIssueDrill */
         GetIssueDrill: {
@@ -2218,6 +2740,14 @@ export interface components {
              */
             drills: components["schemas"]["StepDrillResponse"][];
         };
+        /** SetUserRoleRequest */
+        SetUserRoleRequest: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "admin";
+        };
         /** StartDrillRunRequest */
         StartDrillRunRequest: {
             /**
@@ -2301,6 +2831,37 @@ export interface components {
             /** Current Period End */
             current_period_end: string | null;
         };
+        /**
+         * TaxonomyResponse
+         * @description The canonical tag vocabularies, so clients never hardcode them.
+         *
+         *     Values only, no display labels: membership is a contract, wording is not.
+         */
+        TaxonomyResponse: {
+            /** Areas */
+            areas: string[];
+            /** Misses */
+            misses: string[];
+            /** Goals */
+            goals: string[];
+            /** Kinds */
+            kinds: string[];
+            /** Default Area */
+            default_area: string;
+            /** Default Kind */
+            default_kind: string;
+        };
+        /** UpdateAdminDrillRequest */
+        UpdateAdminDrillRequest: {
+            /** Title */
+            title?: string | null;
+            /** Task */
+            task?: string | null;
+            /** Success Signal */
+            success_signal?: string | null;
+            /** Fault Indicator */
+            fault_indicator?: string | null;
+        };
         /** UpdateDrillRequest */
         UpdateDrillRequest: {
             /** Title */
@@ -2312,7 +2873,13 @@ export interface components {
             /** Fault Indicator */
             fault_indicator?: string | null;
         };
-        /** UpdateIssueRequest */
+        /**
+         * UpdateIssueRequest
+         * @description Partial update; omitted fields are left untouched.
+         *
+         *     `misses`/`goals` replace the whole set rather than merging into it:
+         *     omitted leaves tags alone, [] removes them all.
+         */
         UpdateIssueRequest: {
             /** Title */
             title?: string | null;
@@ -2334,6 +2901,10 @@ export interface components {
             layman_title?: string | null;
             /** Layman Desc */
             layman_desc?: string | null;
+            /** Misses */
+            misses?: string[] | null;
+            /** Goals */
+            goals?: string[] | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -2561,6 +3132,484 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_issues_api_v1_admin_content_issues__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                q?: string | null;
+                area?: string | null;
+                kind?: string | null;
+                source?: string | null;
+            };
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssuePageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compose_issue_api_v1_admin_content_issues__post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ComposeIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssueSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_issue_api_v1_admin_content_issues__issue_id___get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssueSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_issue_api_v1_admin_content_issues__issue_id___delete: {
+        parameters: {
+            query?: {
+                /** @description Required when the issue is referenced; without it the request is refused with 409. */
+                confirm_impact?: boolean;
+            };
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_delete_impact_api_v1_admin_content_issues__issue_id__impact__get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteImpactResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_drills_api_v1_admin_content_drills__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                q?: string | null;
+            };
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDrillPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_drill_api_v1_admin_content_drills__post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAdminDrillRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDrillSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_drill_api_v1_admin_content_drills__drill_id___get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDrillSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_drill_api_v1_admin_content_drills__drill_id___delete: {
+        parameters: {
+            query?: {
+                confirm_impact?: boolean;
+            };
+            header: {
+                authorization: string;
+            };
+            path: {
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_drill_api_v1_admin_content_drills__drill_id___patch: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAdminDrillRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDrillSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    drill_delete_impact_api_v1_admin_content_drills__drill_id__impact__get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteImpactResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attach_drill_api_v1_admin_content_issues__issue_id__drills__drill_id___post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssueSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detach_drill_api_v1_admin_content_issues__issue_id__drills__drill_id___delete: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssueSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    coverage_api_v1_admin_content_coverage__get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoverageResponse"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -2962,6 +4011,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetUser"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_user_role_api_v1_users__user_id__role__patch: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetUserRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetUser"];
                 };
             };
             /** @description Validation Error */
@@ -4517,6 +5603,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StepAdvanceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_taxonomy_api_v1_taxonomy__get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyResponse"];
                 };
             };
             /** @description Validation Error */

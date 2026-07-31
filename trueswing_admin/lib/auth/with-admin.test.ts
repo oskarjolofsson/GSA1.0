@@ -38,7 +38,12 @@ describe("withAdmin", () => {
     getSessionToken.mockResolvedValue("tok");
     verifyAdmin.mockResolvedValue("admin");
     const fn = vi.fn(async (t: string) => ({ ok: true, seen: t }));
-    expect(await withAdmin(fn, { ok: false })).toEqual({ ok: true, seen: "tok" });
+    // withAdmin infers T from fn, so the fallback has to be the same shape — it is
+    // unused on this path, but the signature still requires it to typecheck.
+    expect(await withAdmin(fn, { ok: false, seen: "" })).toEqual({
+      ok: true,
+      seen: "tok",
+    });
     expect(fn).toHaveBeenCalledWith("tok");
   });
 });
