@@ -1,5 +1,13 @@
 import React from "react";
-import { Text as RNText, TextInput as RNTextInput, StyleSheet } from "react-native";
+import {
+    Text as RNText,
+    TextInput as RNTextInput,
+    StyleSheet,
+    type StyleProp,
+    type TextStyle,
+} from "react-native";
+
+type StyledElement = React.ReactElement<{ style?: StyleProp<TextStyle> }>;
 
 /**
  * App-wide default font.
@@ -38,7 +46,7 @@ export function applyGlobalFont(): void {
     if (patched) return;
     patched = true;
 
-    for (const Component of [RNText, RNTextInput] as { render?: (...a: unknown[]) => React.ReactElement }[]) {
+    for (const Component of [RNText, RNTextInput] as { render?: (...a: unknown[]) => StyledElement }[]) {
         const originalRender = Component.render;
         if (!originalRender) continue; // class components (no static render) are skipped
 

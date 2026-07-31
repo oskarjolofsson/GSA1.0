@@ -1,4 +1,4 @@
-import HomeFlow from "features/home/HomeFlow";
+import HomeFlow from "features/home/homeFlow";
 
 export default function AnalysisScreen() {
   return (
