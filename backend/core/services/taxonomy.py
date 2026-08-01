@@ -1,58 +1,242 @@
-"""Canonical practice-taxonomy vocabularies, defined once and reused everywhere.
+"""Canonical practice-taxonomy vocabularies, read from the database.
 
-Four orthogonal axes describe an issue for the goal-first library:
+Four axes describe an issue for the library:
   * area  = WHERE in the game (course location)
-  * miss  = WHAT the golfer sees (ball flight / strike) — the golfer-facing entry
+  * miss  = WHAT the golfer sees, scoped to one area — the golfer-facing entry
   * goal  = WHY they practice (aspiration)
   * kind  = fault (a swing flaw) vs skill (a non-fault focus, e.g. clubhead speed)
 
-These MUST stay in sync with the CHECK constraints on `issues.area`, `issues.kind`,
-`issue_goals.goal`, and `issue_misses.miss`. Clients read them from
-`GET /api/v1/taxonomy/`; display labels stay client-side (see the expo app's
-features/library/constants) since wording differs per audience.
+Areas, goals and misses live in the `taxonomy_*` tables (migration 20260802000000) and are
+edited from the admin dashboard. `kind` stays a module constant: it is a two-value
+structural flag that drives program semantics, not vocabulary anyone authors.
+
+WHY A CACHE
+-----------
+These validators are pure functions called from a dozen places that have no database
+session to hand — `normalize_area_strict(dto.area)` deep inside a service, the AI
+structurer, schema builders. Threading a session through all of them to read three tiny
+tables would be a large diff for no benefit, so the vocabulary is loaded once per process
+and held in `_CACHE`.
+
+That makes this the backend's first piece of process-lived mutable state, which has two
+consequences worth naming:
+
+  1. Admin writes must call `reset_cache()`, or new vocabulary is invisible until restart.
+  2. Tests must start cold. The suite rolls back after every test, so a cache warmed by
+     rows that were then rolled back would serve values that no longer exist and leak
+     across test boundaries. `tests/conftest.py` has an autouse fixture for this, in the
+     same spirit as `_shared_user_intact`.
+
+AREA-SCOPED MISSES
+------------------
+`normalize_misses_strict` takes an area and refuses anything belonging elsewhere. A putt is
+not sliced and a chip is not hooked; before the taxonomy moved into the database all eight
+misses were one flat ball-flight list, so nothing stopped a putting issue being tagged
+SLICE. That check is what makes area-first navigation honest.
+
+The lenient variants (`normalize_miss`, `normalize_goals`) stay area-agnostic: they exist
+for machine-generated input, where dropping an unrecognised value beats raising.
 """
+
+from __future__ import annotations
+
+from dataclasses import dataclass
 
 from core.services.exceptions import ValidationException
 
-ALLOWED_AREAS = ("FULL_SWING", "CHIPPING", "PUTTING", "BUNKER", "PITCHING")
-
-ALLOWED_MISSES = ("SLICE", "HOOK", "PULL", "PUSH", "TOP", "THIN", "FAT", "LOW_WEAK")
-
-ALLOWED_GOALS = ("STRAIGHTER", "DISTANCE", "CONTACT", "BIG_MISS", "SHORT_GAME", "PUTTING")
-
+# Not table-driven. `kind` distinguishes a diagnosable fault from a non-fault training
+# focus, which changes how the program engine behaves (a skill focus has no retest). That
+# is code, not content.
 ALLOWED_KINDS = ("fault", "skill")
-
-DEFAULT_AREA = "FULL_SWING"
 DEFAULT_KIND = "fault"
+
+# Likewise a behavioural default rather than vocabulary: an issue created without an area
+# is a full-swing issue. Deleting this area is blocked by RESTRICT while any issue uses it.
+DEFAULT_AREA = "FULL_SWING"
+
+
+@dataclass(frozen=True)
+class _Vocabulary:
+    """One immutable snapshot of the taxonomy tables."""
+
+    areas: tuple[str, ...]
+    goals: tuple[str, ...]
+    misses: tuple[str, ...]                     # every miss, flat, across all areas
+    misses_by_area: dict[str, tuple[str, ...]]
+    area_of_miss: dict[str, str]
+
+
+_CACHE: _Vocabulary | None = None
+
+
+def _load(session=None) -> _Vocabulary:
+    """Read the three taxonomy tables into an immutable snapshot.
+
+    With no `session` it opens its own, because the callers are pure validators with no
+    session in scope and this runs once per process against three tables holding a few
+    dozen rows.
+
+    Pass one to read through an existing transaction — see `prime_from`.
+
+    Only `active` rows are returned. Deleting a value is blocked by RESTRICT once any issue
+    references it, so `active = false` is how a value is taken out of circulation without
+    disturbing content that already uses it.
+    """
+    from contextlib import nullcontext
+
+    from sqlalchemy import select
+
+    from core.infrastructure.db import models
+    from core.infrastructure.db.session import SessionLocal
+
+    # nullcontext so a caller-supplied session is not closed out from under them.
+    with (nullcontext(session) if session is not None else SessionLocal()) as session:
+        areas = tuple(
+            session.scalars(
+                select(models.TaxonomyArea.key)
+                .where(models.TaxonomyArea.active.is_(True))
+                .order_by(models.TaxonomyArea.sort, models.TaxonomyArea.key)
+            ).all()
+        )
+        goals = tuple(
+            session.scalars(
+                select(models.TaxonomyGoal.key)
+                .where(models.TaxonomyGoal.active.is_(True))
+                .order_by(models.TaxonomyGoal.sort, models.TaxonomyGoal.key)
+            ).all()
+        )
+        miss_rows = session.execute(
+            select(models.TaxonomyMiss.key, models.TaxonomyMiss.area)
+            .where(models.TaxonomyMiss.active.is_(True))
+            .order_by(models.TaxonomyMiss.sort, models.TaxonomyMiss.key)
+        ).all()
+
+    by_area: dict[str, list[str]] = {area: [] for area in areas}
+    area_of: dict[str, str] = {}
+    for key, area in miss_rows:
+        by_area.setdefault(area, []).append(key)
+        area_of[key] = area
+
+    return _Vocabulary(
+        areas=areas,
+        goals=goals,
+        misses=tuple(key for key, _ in miss_rows),
+        misses_by_area={a: tuple(m) for a, m in by_area.items()},
+        area_of_miss=area_of,
+    )
+
+
+def _vocab() -> _Vocabulary:
+    global _CACHE
+    if _CACHE is None:
+        _CACHE = _load()
+    return _CACHE
+
+
+def reset_cache() -> None:
+    """Drop the cached vocabulary so the next read reloads it.
+
+    Call after any admin write to the taxonomy tables. Tests call it around every test via
+    an autouse fixture — see tests/conftest.py.
+
+    The reload opens a fresh session, so it sees committed rows only. That is right for
+    production, where the request has committed by the time anything reads again, but a
+    test writing through the rolling-back `db_session` needs `prime_from` instead.
+    """
+    global _CACHE
+    _CACHE = None
+
+
+def prime_from(session) -> None:
+    """Reload the cache through an existing session.
+
+    For tests. `db_session` holds its writes in a transaction that is rolled back and never
+    committed, so the fresh session `reset_cache` would open cannot see them — a test that
+    inserts a miss and then calls a validator would find it missing, on a different
+    connection entirely.
+
+    Production has no use for this: admin writes commit, and `reset_cache` is enough.
+    """
+    global _CACHE
+    _CACHE = _load(session)
+
+
+# =========== READ ACCESSORS ===========
+#
+# Functions rather than module constants on purpose. `from taxonomy import ALLOWED_MISSES`
+# would snapshot the tuple at import time and never see an admin edit — which is exactly
+# the bug feedbackStructurer.py had, baking the list into a Gemini prompt at module load.
+
+
+def allowed_areas() -> tuple[str, ...]:
+    return _vocab().areas
+
+
+def allowed_goals() -> tuple[str, ...]:
+    return _vocab().goals
+
+
+def allowed_misses() -> tuple[str, ...]:
+    """Every miss across every area. Prefer `misses_for(area)` where an area is known."""
+    return _vocab().misses
+
+
+def misses_for(area: str) -> tuple[str, ...]:
+    """The misses belonging to `area`. Raises ValidationException on an unknown area."""
+    v = _vocab()
+    key = _normalize_key(area)
+    if key not in v.areas:
+        raise ValidationException(
+            f"Unknown area '{key}'. Allowed values: {', '.join(v.areas)}."
+        )
+    return v.misses_by_area.get(key, ())
+
+
+def area_of_miss(miss: str) -> str | None:
+    """Which area a miss belongs to, or None if it is not a known miss."""
+    return _vocab().area_of_miss.get(_normalize_key(miss))
+
+
+def _normalize_key(value: str) -> str:
+    return str(value).strip().upper()
+
+
+# =========== LENIENT NORMALIZERS ===========
+#
+# For machine-generated input (the AI structurer). Unknown values are dropped rather than
+# raised on: a model returning one bad tag should not fail the whole request.
 
 
 def normalize_miss(value: str | None) -> str | None:
-    """Return the miss if it's a known value, else None (drop unknowns silently)."""
+    """Return the miss if it is known, else None. Not area-scoped."""
     if value is None:
         return None
-    v = value.strip().upper()
-    return v if v in ALLOWED_MISSES else None
+    key = _normalize_key(value)
+    return key if key in _vocab().misses else None
 
 
 def normalize_goals(values) -> list[str]:
     """Keep only known goal values, de-duplicated, order preserved."""
     if not values:
         return []
+    allowed = _vocab().goals
     seen: list[str] = []
     for raw in values:
         if not raw:
             continue
-        v = str(raw).strip().upper()
-        if v in ALLOWED_GOALS and v not in seen:
-            seen.append(v)
+        key = _normalize_key(raw)
+        if key in allowed and key not in seen:
+            seen.append(key)
     return seen
 
 
-# Strict variants, for admin authoring. The lenient functions above drop unknown
-# values and succeed, which suits machine-generated input (the AI structurer); these
-# raise a 422 instead, for paths where a human picked the tag and expects it to save.
+# =========== STRICT NORMALIZERS ===========
+#
+# For human authoring. These raise ValidationException (422) instead of dropping, so a tag
+# the admin deliberately picked never disappears silently.
 
-def _normalize_strict(values, allowed: tuple[str, ...], label: str) -> list[str]:
+
+def _normalize_strict(values, allowed, label: str) -> list[str]:
     """De-duplicate and upper-case `values`, raising on anything not in `allowed`."""
     if not values:
         return []
@@ -60,45 +244,86 @@ def _normalize_strict(values, allowed: tuple[str, ...], label: str) -> list[str]
     for raw in values:
         if raw is None or str(raw).strip() == "":
             continue
-        v = str(raw).strip().upper()
-        if v not in allowed:
+        key = _normalize_key(raw)
+        if key not in allowed:
             raise ValidationException(
-                f"Unknown {label} '{v}'. Allowed values: {', '.join(allowed)}."
+                f"Unknown {label} '{key}'. Allowed values: {', '.join(allowed)}."
             )
-        if v not in seen:
-            seen.append(v)
+        if key not in seen:
+            seen.append(key)
     return seen
 
 
-def normalize_misses_strict(values) -> list[str]:
-    """Validated miss tags. Raises ValidationException (422) on an unknown value."""
-    return _normalize_strict(values, ALLOWED_MISSES, "miss")
+def normalize_misses_strict(values, area: str) -> list[str]:
+    """Validated miss tags for one area.
+
+    Raises ValidationException (422) on an unknown miss, and on a miss that exists but
+    belongs to a different area — tagging a putting issue SLICE is refused, and the message
+    says which area it actually belongs to rather than just listing the legal values.
+
+    `area` is required. Every caller has one: create computes it before tagging, and the
+    PATCH path resolves it from the persisted issue when the request omits it. Making it
+    optional would let the edit path accept what the create path rejects.
+    """
+    if not values:
+        return []
+
+    v = _vocab()
+    key_area = _normalize_key(area)
+    if key_area not in v.areas:
+        raise ValidationException(
+            f"Unknown area '{key_area}'. Allowed values: {', '.join(v.areas)}."
+        )
+
+    in_area = v.misses_by_area.get(key_area, ())
+    seen: list[str] = []
+    for raw in values:
+        if raw is None or str(raw).strip() == "":
+            continue
+        key = _normalize_key(raw)
+        if key in in_area:
+            if key not in seen:
+                seen.append(key)
+            continue
+
+        owner = v.area_of_miss.get(key)
+        if owner is not None:
+            raise ValidationException(
+                f"Miss '{key}' belongs to {owner}, not {key_area}. "
+                f"Allowed for {key_area}: {', '.join(in_area) or '(none yet)'}."
+            )
+        raise ValidationException(
+            f"Unknown miss '{key}'. Allowed for {key_area}: "
+            f"{', '.join(in_area) or '(none yet)'}."
+        )
+    return seen
 
 
 def normalize_goals_strict(values) -> list[str]:
     """Validated goal tags. Raises ValidationException (422) on an unknown value."""
-    return _normalize_strict(values, ALLOWED_GOALS, "goal")
+    return _normalize_strict(values, _vocab().goals, "goal")
 
 
 def normalize_area_strict(value: str | None) -> str:
     """Validated area, defaulting when absent. Raises on an unknown value."""
     if value is None or str(value).strip() == "":
         return DEFAULT_AREA
-    v = str(value).strip().upper()
-    if v not in ALLOWED_AREAS:
+    key = _normalize_key(value)
+    areas = _vocab().areas
+    if key not in areas:
         raise ValidationException(
-            f"Unknown area '{v}'. Allowed values: {', '.join(ALLOWED_AREAS)}."
+            f"Unknown area '{key}'. Allowed values: {', '.join(areas)}."
         )
-    return v
+    return key
 
 
 def normalize_kind_strict(value: str | None) -> str:
     """Validated kind, defaulting when absent. Raises on an unknown value."""
     if value is None or str(value).strip() == "":
         return DEFAULT_KIND
-    v = str(value).strip().lower()
-    if v not in ALLOWED_KINDS:
+    key = str(value).strip().lower()
+    if key not in ALLOWED_KINDS:
         raise ValidationException(
-            f"Unknown kind '{v}'. Allowed values: {', '.join(ALLOWED_KINDS)}."
+            f"Unknown kind '{key}'. Allowed values: {', '.join(ALLOWED_KINDS)}."
         )
-    return v
+    return key

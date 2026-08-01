@@ -35,7 +35,7 @@ from core.services.dtos.issue_authoring_service_dto import (
 )
 from core.services.dtos.issues_service_dto import UpdateIssueDTO
 from core.services.exceptions import ConflictException, NotFoundException
-from core.services.taxonomy import ALLOWED_AREAS, ALLOWED_GOALS, ALLOWED_MISSES
+from core.services import taxonomy
 
 
 # ------------------------------ mapping ------------------------------
@@ -351,6 +351,18 @@ def coverage(db_session: Session) -> CoverageDTO:
     Cells are generated from the taxonomy rather than from the data, so a
     combination with no issues still appears — an absent row is exactly the gap
     worth seeing.
+
+    Two things this deliberately does NOT do:
+
+    Outer joins, not inner. An issue with no miss or goal tags used to produce zero rows
+    and vanish from the grid entirely — invisible in the one tool built to find untagged
+    content. With ~30 issues to author across four new areas that stops being a curiosity
+    and becomes the main thing you would want the grid to show you.
+
+    Cells scoped by area, not a cross-product. Misses belong to exactly one area now, so
+    iterating every area against every miss would emit CHIPPING x SLICE and similar —
+    permanently unfillable cells that read as gaps forever. The old shape produced
+    5 x 8 x 6 = 240 cells, most of them nonsense.
     """
     rows = db_session.execute(
         select(
@@ -360,8 +372,8 @@ def coverage(db_session: Session) -> CoverageDTO:
             func.count(func.distinct(models.Issue.id)),
         )
         .select_from(models.Issue)
-        .join(models.IssueMiss, models.IssueMiss.issue_id == models.Issue.id)
-        .join(models.IssueGoal, models.IssueGoal.issue_id == models.Issue.id)
+        .outerjoin(models.IssueMiss, models.IssueMiss.issue_id == models.Issue.id)
+        .outerjoin(models.IssueGoal, models.IssueGoal.issue_id == models.Issue.id)
         .group_by(models.Issue.area, models.IssueMiss.miss, models.IssueGoal.goal)
     ).all()
     counts = {(r[0], r[1], r[2]): r[3] for r in rows}
@@ -370,13 +382,21 @@ def coverage(db_session: Session) -> CoverageDTO:
         CoverageCellDTO(
             area=area, miss=miss, goal=goal, issue_count=counts.get((area, miss, goal), 0)
         )
-        for area in ALLOWED_AREAS
-        for miss in ALLOWED_MISSES
-        for goal in ALLOWED_GOALS
+        for area in taxonomy.allowed_areas()
+        for miss in taxonomy.misses_for(area)
+        for goal in taxonomy.allowed_goals()
     ]
+
+    # Issues carrying no miss or goal at all. The outer joins above give them a cell keyed
+    # on NULL, which no (area, miss, goal) triple can reach, so surface the count directly
+    # rather than letting them disappear again a layer up.
+    untagged = sum(
+        n for (area, miss, goal), n in counts.items() if miss is None or goal is None
+    )
 
     return CoverageDTO(
         cells=cells,
         unmapped_drills=drill_repo.get_unmapped_drills_count(db_session),
         issues_with_no_drills=issue_repo.get_issues_with_no_drills_count(db_session),
+        untagged_issues=untagged,
     )
