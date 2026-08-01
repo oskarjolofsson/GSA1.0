@@ -156,6 +156,12 @@ def prime_from(session) -> None:
     connection entirely.
 
     Production has no use for this: admin writes commit, and `reset_cache` is enough.
+
+    IMPORT THIS MODULE ABSOLUTELY: `from core.services import taxonomy`. Some test files
+    reach into the package with relative imports (`from ...core.services import taxonomy`),
+    which Python resolves to a *separate module object* under `backend.` with its own
+    `_CACHE`. Priming that one leaves the services' copy untouched, and the failure reads as
+    "the vocabulary is empty" rather than "you imported it twice".
     """
     global _CACHE
     _CACHE = _load(session)

@@ -19,6 +19,13 @@ from ...core.infrastructure.db.models.Video import Video
 from ...core.infrastructure.db.models.Drill import Drill
 from ...core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from ...core.infrastructure.db.models.IssueDrill import IssueDrill
+from ...core.infrastructure.db import models
+# Absolute, NOT `from ...core.services import taxonomy`. The relative form resolves to
+# `backend.core.services.taxonomy`, a different module object from the
+# `core.services.taxonomy` the services import — with its own _CACHE. Priming one would
+# leave the other untouched, and the test would fail claiming the vocabulary is empty.
+# Same trap test_analysis_service.py documents for run_analysis.
+from core.services import taxonomy
 from ...core.infrastructure.db.repositories.analysis import create_analysis as repo_create_analysis
 from ...core.infrastructure.db.repositories.videos import create_video as repo_create_video
 from ...core.infrastructure.db.repositories.drills import create_drill as repo_create_drill
@@ -343,6 +350,80 @@ class TestIssueTags:
     Covers the three-state update semantics (None keeps, [] clears, list replaces)
     and the strict validation applied on admin paths.
     """
+
+    def test_moving_an_issue_to_another_area_prunes_stale_misses(self, db_session):
+        """The API enforces area/miss coherence, not just the admin form.
+
+        A form is one caller. If only the UI cleared these, a script or curl could file an
+        issue under BUNKER while it kept a full-swing SLICE — a row the coverage grid
+        cannot display and the library cannot navigate to.
+
+        Pruned rather than rejected on purpose: correcting an issue's area should not
+        require hand-removing the tags that the correction itself invalidates.
+        """
+        created = create_issue(
+            CreateIssueDTO(
+                title="Filed under the wrong area",
+                description="d",
+                area="FULL_SWING",
+                misses=["SLICE", "PULL"],
+                goals=["STRAIGHTER"],
+            ),
+            db_session=db_session,
+        )
+        assert sorted(created.misses) == ["PULL", "SLICE"]
+
+        # PUTTING has no misses seeded yet, so every existing tag becomes invalid.
+        updated = update_issue(
+            created.id, UpdateIssueDTO(area="PUTTING"), db_session=db_session
+        )
+
+        assert updated.area == "PUTTING"
+        assert updated.misses == []
+        # Goals are area-agnostic, so they survive the move untouched.
+        assert updated.goals == ["STRAIGHTER"]
+
+    def test_area_change_keeps_misses_that_still_belong(self, db_session):
+        """Pruning is surgical: only tags invalid in the new area are dropped."""
+        db_session.add(
+            models.TaxonomyMiss(
+                key="CHUNK", area="CHIPPING", label="Chunk",
+                golfer_label="I chunk it", blurb="Club hits the ground first",
+            )
+        )
+        db_session.flush()
+        taxonomy.prime_from(db_session)
+
+        created = create_issue(
+            CreateIssueDTO(
+                title="Chipping issue", description="d",
+                area="CHIPPING", misses=["CHUNK"],
+            ),
+            db_session=db_session,
+        )
+
+        # An unrelated edit must not disturb the tags.
+        updated = update_issue(
+            created.id, UpdateIssueDTO(title="Renamed"), db_session=db_session
+        )
+        assert updated.misses == ["CHUNK"]
+
+    def test_supplied_misses_win_over_pruning(self, db_session):
+        """When the caller sends both, their list is validated against the new area."""
+        created = create_issue(
+            CreateIssueDTO(
+                title="Both at once", description="d",
+                area="FULL_SWING", misses=["SLICE"],
+            ),
+            db_session=db_session,
+        )
+
+        updated = update_issue(
+            created.id,
+            UpdateIssueDTO(area="FULL_SWING", misses=["FAT", "THIN"]),
+            db_session=db_session,
+        )
+        assert sorted(updated.misses) == ["FAT", "THIN"]
 
     def test_create_persists_multiple_misses(self, db_session, test_user):
         """One issue can carry several misses at once."""
