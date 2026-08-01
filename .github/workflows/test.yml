@@ -53,6 +53,11 @@ jobs:
   backend:
     name: backend (pytest)
     runs-on: ubuntu-latest
+    # The R2 and Stripe secrets are ENVIRONMENT secrets, not repository secrets, so a
+    # job only sees them if it names the environment. Without this line every
+    # secrets.* reference below renders as an empty string — which does not fail, it
+    # just surfaces later as "ValueError: Invalid endpoint:" from inside botocore.
+    environment: "CI/CD pipeline testing"
     defaults:
       run:
         working-directory: backend
