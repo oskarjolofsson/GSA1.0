@@ -1,0 +1,77 @@
+name: test
+
+# Runs the three existing suites on every push and PR.
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  admin:
+    name: admin (vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: trueswing_admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: trueswing_admin/package-lock.json
+      - run: npm ci
+      - run: npm run test
+
+  expo:
+    name: expo (typecheck + jest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: TrueSwing-expo-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: TrueSwing-expo-app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  backend:
+    name: backend (pytest)
+    runs-on: ubuntu-latest
+    concurrency:
+      group: backend-tests
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt
+      - name: pytest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLL_KEY: ${{ secrets.SUPABASE_SERVICE_ROLL_KEY }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::warning title=Backend tests skipped::Set DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLL_KEY under Settings > Secrets and variables > Actions to enable this job."
+            exit 0
+          fi
+          # AI tests are skipped without --run-ai (billed Gemini calls, unrolled-back
+          # writes). See backend/tests/conftest.py.
+          pytest
