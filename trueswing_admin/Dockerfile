@@ -63,11 +63,11 @@ CMD ["node", "server.js"]
 # docker login
 
 # --- Deploy (multi-arch, pushes to Docker Hub) ---
-# Prefer ./deploy.sh which expands .env.production into --build-arg flags:
 #   ./deploy.sh            # -> :latest  (production)
 #
-# Equivalent raw command:
-# docker buildx build --platform linux/amd64,linux/arm64    --build-arg GIT_COMMIT=$(git rev-parse --short HEAD)    --build-arg NEXT_PUBLIC_SUPABASE_URL=https://ravbetnydtdxiuisypct.supabase.co    --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhdmJldG55ZHRkeGl1aXN5cGN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzNjc1NzIsImV4cCI6MjA4NDk0MzU3Mn0.klq57RDoWCvkwjOf75zVBpsVL1gQOQ1d0qdudi6aT1Q    --build-arg NEXT_PUBLIC_API_URL=https://api.trueswing.se     -t oskarjolofsson/true_swing_admin:latest --push .    && docker image rm oskarjolofsson/true_swing_admin:latest 2>/dev/null && docker buildx prune -f
+# deploy.sh reads .env.production (gitignored) and expands every NEXT_PUBLIC_* line
+# into a --build-arg flag, so the values stay out of this file and out of your shell
+# history. See the script for first-time setup.
 
 # --- Pull and run on the server ---
 # cd /srv/trueswing
@@ -75,5 +75,14 @@ CMD ["node", "server.js"]
 # docker compose up -d admin
 
 # --- Test the image locally ---
-# docker build --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) --build-arg NEXT_PUBLIC_SUPABASE_URL=https://ravbetnydtdxiuisypct.supabase.co   --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhdmJldG55ZHRkeGl1aXN5cGN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkzNjc1NzIsImV4cCI6MjA4NDk0MzU3Mn0.klq57RDoWCvkwjOf75zVBpsVL1gQOQ1d0qdudi6aT1Q   --build-arg NEXT_PUBLIC_API_URL=https://api.trueswing.se   -t trueswing-admin-test .
-# docker run --rm -p 3000:3000 trueswing-admin-test
+# Single-arch, no push. deploy.sh does not cover this. Sources the same
+# .env.production so no credentials live in this file:
+#
+#   set -a; . ./.env.production; set +a
+#   docker build \
+#     --build-arg GIT_COMMIT="$(git rev-parse --short HEAD)" \
+#     --build-arg NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
+#     --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+#     --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
+#     -t trueswing-admin-test .
+#   docker run --rm -p 3000:3000 trueswing-admin-test
