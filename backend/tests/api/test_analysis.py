@@ -12,7 +12,7 @@ from core.infrastructure.db.models.Video import Video
 from core.infrastructure.db.models.Analysis import Analysis
 from core.infrastructure.db.models.Issue import Issue
 from pathlib import Path
-from core.infrastructure.storage.r2Adaptor import generate_upload_url
+from core.infrastructure.storage.r2Adaptor import generate_upload_url, delete
 from core.infrastructure.AI.model_selection import get_active_analysis_model
 from core.infrastructure.db.repositories.issues import get_all_issues
 from unittest.mock import patch
@@ -81,8 +81,21 @@ def run_analysis_and_set_completed(client, db_session, analysis_with_id, auth_he
         )
 
     data = response.json()
-    return data, analysis_id, user_id
-    
+    yield data, analysis_id, user_id
+
+    # Delete the object this fixture pushed to R2. Without it every run left one behind
+    # in trueswing-videos permanently — `db_session` rolls back the rows, but nothing
+    # rolled back the upload. Mirrors the cleanup _run_completed_analysis already does
+    # (test_analysis_service.py:120).
+    #
+    # Best-effort: a failed delete must not fail a test that already passed, and the
+    # object may legitimately be gone if the test exercised deletion itself.
+    try:
+        delete(video_key)
+    except Exception as exc:  # noqa: BLE001 - cleanup must never mask a test result
+        print(f"Warning: could not delete test video {video_key} from R2: {exc}")
+
+
 
 def test_create_analysis(client, test_user, db_session, auth_headers):
     response = client.post(

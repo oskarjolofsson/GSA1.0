@@ -148,13 +148,17 @@ which drives the real `get_db` and checks committed state from a separate connec
 
 ## Other state that outlives a test
 
-Beyond the AI directory, two more places write outside the rolling-back session:
+Beyond the AI directory, one place still writes outside the rolling-back session:
 
 - `tests/service/test_analysis_service.py` holds a session-scoped second connection
   open for the whole file. Rows written there are invisible to `db_session` tests and
   vice versa.
-- `tests/api/test_analysis.py` uploads a real object to R2 with no cleanup, leaking
-  one per run.
 
-Neither is gated today. If a test fails only in a full run and passes on its own,
-suspect one of these before suspecting your change.
+Not gated today. If a test fails only in a full run and passes on its own, suspect this
+before suspecting your change.
+
+Both files also upload a real object to R2, which no transaction can roll back. Each now
+deletes it in teardown — `_run_completed_analysis` and the `run_analysis_and_set_completed`
+fixture. Cleanup is best-effort and swallows its own errors, so a failed delete prints a
+warning rather than failing a test that already passed. If you add another test that
+uploads, delete after yourself: nothing else will.
