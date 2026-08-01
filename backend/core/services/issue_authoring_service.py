@@ -27,6 +27,8 @@ from core.services.dtos.issue_authoring_service_dto import (
 )
 from core.services.exceptions import NotFoundException
 from core.services.taxonomy import (
+    DEFAULT_AREA,
+    DEFAULT_KIND,
     normalize_area_strict,
     normalize_goals,
     normalize_goals_strict,
@@ -170,15 +172,22 @@ def persist_issue_with_drills(
 
     raw_misses = issue.misses or ([issue.miss] if issue.miss else [])
     if strict_tags:
-        misses = normalize_misses_strict(raw_misses)
-        goals = normalize_goals_strict(issue.goals)
+        # Area first: misses are validated against it, so a chipping issue cannot be
+        # tagged with a full-swing ball flight.
         area = normalize_area_strict(issue.area)
+        misses = normalize_misses_strict(raw_misses, area)
+        goals = normalize_goals_strict(issue.goals)
         kind = normalize_kind_strict(issue.kind)
     else:
+        # Lenient path: AI-generated input, where an unrecognised tag is dropped rather
+        # than raised on. normalize_miss stays area-agnostic on purpose — a model that
+        # returns a miss from the wrong area should lose that one tag, not fail the whole
+        # request. The prompt is area-scoped upstream (feedbackStructurer) so this is a
+        # backstop, not the primary defence.
         misses = [m for m in (normalize_miss(v) for v in raw_misses) if m]
         goals = normalize_goals(issue.goals)
-        area = issue.area or "FULL_SWING"
-        kind = issue.kind or "fault"
+        area = issue.area or DEFAULT_AREA
+        kind = issue.kind or DEFAULT_KIND
 
     new_issue = models.Issue(
         user_id=user_id,

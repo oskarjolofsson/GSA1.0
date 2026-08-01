@@ -200,3 +200,7 @@ class CoverageResponse(BaseModel):
     cells: list[CoverageCellSchema]
     unmapped_drills: int
     issues_with_no_drills: int
+
+    # Issues with no miss or no goal. They match no cell, so the grid alone would hide
+    # them — the exact failure the inner joins used to cause.
+    untagged_issues: int = 0

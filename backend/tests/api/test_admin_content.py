@@ -27,7 +27,9 @@ def _compose_payload(title=None, **overrides):
     payload = {
         "title": title or f"Admin issue {uuid.uuid4().hex[:8]}",
         "description": "authored through the admin API",
-        "area": "PITCHING",
+        # FULL_SWING because the misses below belong to it. Misses are area-scoped
+        # now, so pairing PITCHING with FAT is refused — which is the point.
+        "area": "FULL_SWING",
         "kind": "fault",
         "misses": ["FAT"],
         "goals": ["CONTACT"],
@@ -348,17 +350,50 @@ class TestDrills:
 
 
 class TestCoverage:
-    def test_reports_every_taxonomy_combination(self, client, auth_headers):
-        from core.services.taxonomy import ALLOWED_AREAS, ALLOWED_GOALS, ALLOWED_MISSES
+    def test_reports_every_fillable_combination(self, client, auth_headers):
+        """Cells come from each area's OWN misses, not the cross-product.
+
+        Misses are area-scoped now, so iterating every area against every miss would emit
+        CHIPPING x SLICE and similar — cells that no issue can ever legally occupy, which
+        read as permanent gaps and drown the real ones. The old shape was 5 x 8 x 6 = 240
+        cells, most of them nonsense.
+        """
+        from core.services import taxonomy
 
         data = client.get(f"{BASE}/coverage/", headers=auth_headers).json()
 
-        expected = len(ALLOWED_AREAS) * len(ALLOWED_MISSES) * len(ALLOWED_GOALS)
+        expected = sum(
+            len(taxonomy.misses_for(area)) for area in taxonomy.allowed_areas()
+        ) * len(taxonomy.allowed_goals())
         assert len(data["cells"]) == expected, (
             "cells are generated from the taxonomy, not the data — an absent "
             "combination is exactly the gap worth showing"
         )
         assert any(c["issue_count"] == 0 for c in data["cells"])
+
+        # No cell may pair a miss with an area it does not belong to.
+        for c in data["cells"]:
+            assert c["miss"] in taxonomy.misses_for(c["area"])
+
+    def test_untagged_issues_are_counted_rather_than_hidden(
+        self, client, auth_headers, db_session
+    ):
+        """An issue with no tags matches no cell, so it needs its own count.
+
+        The grid used to inner-join the tag tables, which made untagged issues vanish
+        entirely — invisible in the one tool built to find untagged content.
+        """
+        from core.infrastructure.db import models
+
+        before = client.get(f"{BASE}/coverage/", headers=auth_headers).json()
+
+        db_session.add(
+            models.Issue(title="No tags at all", description="deliberately untagged")
+        )
+        db_session.flush()
+
+        after = client.get(f"{BASE}/coverage/", headers=auth_headers).json()
+        assert after["untagged_issues"] == before["untagged_issues"] + 1
 
     def test_includes_catalog_health_counts(self, client, auth_headers):
         data = client.get(f"{BASE}/coverage/", headers=auth_headers).json()
@@ -371,14 +406,14 @@ class TestCoverage:
             return next(
                 c
                 for c in payload["cells"]
-                if c["area"] == "BUNKER" and c["miss"] == "TOP" and c["goal"] == "BIG_MISS"
+                if c["area"] == "FULL_SWING" and c["miss"] == "TOP" and c["goal"] == "BIG_MISS"
             )
 
         before = cell(client.get(f"{BASE}/coverage/", headers=auth_headers).json())
 
         client.post(
             f"{BASE}/issues/",
-            json=_compose_payload(area="BUNKER", misses=["TOP"], goals=["BIG_MISS"]),
+            json=_compose_payload(area="FULL_SWING", misses=["TOP"], goals=["BIG_MISS"]),
             headers=auth_headers,
         )
 
