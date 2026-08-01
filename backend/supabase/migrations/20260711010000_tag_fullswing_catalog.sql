@@ -6,7 +6,11 @@
 -- faults -> THIN/FAT + CONTACT. The three marked (REVIEW) are genuinely ambiguous
 -- on ball flight — adjust the miss if your coaching read differs.
 --
--- Idempotent: safe to re-run. Only valid goal/miss values (see the CHECK
+-- Idempotent: safe to re-run. The tag inserts are additionally guarded on the
+-- issue existing (WHERE EXISTS), because this migration only ever decorated rows
+-- that were created outside version control. Without the guard it aborts the whole
+-- chain with a foreign-key violation on any empty database — which is every fresh
+-- `supabase db reset`, every new environment, and CI. Only valid goal/miss values (see the CHECK
 -- constraints in 20260711000000_issue_goal_miss.sql) are used.
 
 -- ---------- plain-language copy ----------
@@ -86,7 +90,9 @@ UPDATE public.issues SET
 WHERE id = 'fef8fbdd-353c-4c68-b2a5-f1cc0512a355';
 
 -- ---------- goal tags (WHY) ----------
-INSERT INTO public.issue_goals (issue_id, goal) VALUES
+INSERT INTO public.issue_goals (issue_id, goal)
+SELECT v.issue_id::uuid, v.goal
+FROM (VALUES
   ('09584930-fd03-4d53-aa50-295d4cd1adac','STRAIGHTER'),
   ('09584930-fd03-4d53-aa50-295d4cd1adac','DISTANCE'),
   ('09584930-fd03-4d53-aa50-295d4cd1adac','BIG_MISS'),
@@ -116,10 +122,14 @@ INSERT INTO public.issue_goals (issue_id, goal) VALUES
   ('d525a0d5-92df-4dd3-85b3-41191f793bda','DISTANCE'),
   ('fef8fbdd-353c-4c68-b2a5-f1cc0512a355','CONTACT'),
   ('fef8fbdd-353c-4c68-b2a5-f1cc0512a355','DISTANCE')
+) AS v(issue_id, goal)
+WHERE EXISTS (SELECT 1 FROM public.issues i WHERE i.id = v.issue_id::uuid)
 ON CONFLICT (issue_id, goal) DO NOTHING;
 
 -- ---------- miss tags (WHAT the golfer sees) ----------
-INSERT INTO public.issue_misses (issue_id, miss) VALUES
+INSERT INTO public.issue_misses (issue_id, miss)
+SELECT v.issue_id::uuid, v.miss
+FROM (VALUES
   ('09584930-fd03-4d53-aa50-295d4cd1adac','SLICE'),
   ('09584930-fd03-4d53-aa50-295d4cd1adac','PULL'),
   ('103a42d5-e760-4ead-8233-03e4a4ee6d52','THIN'),      -- REVIEW: flat shoulder plane
@@ -146,4 +156,6 @@ INSERT INTO public.issue_misses (issue_id, miss) VALUES
   ('d525a0d5-92df-4dd3-85b3-41191f793bda','THIN'),
   ('fef8fbdd-353c-4c68-b2a5-f1cc0512a355','FAT'),
   ('fef8fbdd-353c-4c68-b2a5-f1cc0512a355','THIN')
+) AS v(issue_id, miss)
+WHERE EXISTS (SELECT 1 FROM public.issues i WHERE i.id = v.issue_id::uuid)
 ON CONFLICT (issue_id, miss) DO NOTHING;

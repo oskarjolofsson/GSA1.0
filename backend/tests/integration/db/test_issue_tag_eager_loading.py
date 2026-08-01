@@ -61,12 +61,30 @@ class QueryCounter:
 
 
 def _make_tagged_issue(session, title: str) -> models.Issue:
-    """An issue with two goals and two misses, so a lazy load is visible."""
+    """An issue with two goals, two misses and one drill, so a lazy load is visible.
+
+    The drill matters for the catalog test specifically. `_CATALOG_OPTS` chains
+    selectinload(Issue.issue_drills) -> selectinload(IssueDrill.drill), and SQLAlchemy
+    skips the second query when the first returns no rows. Without a linked drill the
+    catalog read costs 4 queries instead of 5, and the assertion that guards the chain
+    never actually exercises it. That passed only because the long-lived dev database
+    happened to hold catalog issues with drills attached.
+    """
+    drill = models.Drill(
+        title=f"Drill for {title}",
+        task="eager-loading fixture",
+        success_signal="eager-loading fixture",
+        fault_indicator="eager-loading fixture",
+    )
+    session.add(drill)
+    session.flush()
+
     issue = models.Issue(title=title, description="tag eager-loading fixture")
     issue.goals.append(models.IssueGoal(goal="STRAIGHTER"))
     issue.goals.append(models.IssueGoal(goal="BIG_MISS"))
     issue.misses.append(models.IssueMiss(miss="SLICE"))
     issue.misses.append(models.IssueMiss(miss="PULL"))
+    issue.issue_drills.append(models.IssueDrill(drill_id=drill.id))
     return create_issue(issue, session)
 
 
