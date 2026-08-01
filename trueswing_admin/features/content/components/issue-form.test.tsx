@@ -11,10 +11,42 @@ import { describe, expect, it, vi } from "vitest";
 import IssueForm from "./issue-form";
 import type { Taxonomy, UpdateIssueBody } from "@/lib/content/types";
 
+const term = (key: string, label: string, golfer = label, blurb: string | null = null) => ({
+  key,
+  label,
+  golfer_label: golfer,
+  blurb,
+  sort: 0,
+});
+
+const miss = (key: string, area: string, label: string, golfer: string, blurb: string) => ({
+  ...term(key, label, golfer, blurb),
+  area,
+});
+
+/**
+ * Terms carry their labels now, and misses carry their area.
+ *
+ * PITCHING deliberately has a miss of its own, so the area-change behaviour has somewhere
+ * real to switch to: picking it must drop the full-swing tags rather than leave an issue
+ * carrying a SLICE it can never legally have.
+ */
+const FULL_SWING_MISSES = [
+  miss("SLICE", "FULL_SWING", "Slice", "I slice it", "Curves hard right"),
+  miss("FAT", "FULL_SWING", "Fat", "I hit it fat", "Ground first"),
+];
+const PITCHING_MISSES = [
+  miss("DISTANCE_CONTROL", "PITCHING", "Distance control", "I never get the distance right", "Long one, short the next"),
+];
+
 const taxonomy: Taxonomy = {
-  areas: ["FULL_SWING", "PITCHING"],
-  misses: ["SLICE", "FAT"],
-  goals: ["STRAIGHTER", "CONTACT"],
+  areas: [term("FULL_SWING", "Full swing"), term("PITCHING", "Pitching")],
+  goals: [term("STRAIGHTER", "Straighter", "Hit it straighter"), term("CONTACT", "Contact", "Better contact")],
+  misses: [...FULL_SWING_MISSES, ...PITCHING_MISSES],
+  misses_by_area: {
+    FULL_SWING: FULL_SWING_MISSES,
+    PITCHING: PITCHING_MISSES,
+  },
   kinds: ["fault", "skill"],
   default_area: "FULL_SWING",
   default_kind: "fault",
@@ -133,6 +165,56 @@ describe("IssueForm", () => {
     expect(slice).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("only offers the misses that belong to the chosen area", async () => {
+    // A putt is not sliced. The backend refuses a cross-area tag, so offering the full
+    // list would let an admin tick something the save then rejects.
+    setup();
+
+    expect(screen.getByRole("button", { name: "Slice" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Distance control" })).toBeNull();
+
+    await userEvent.selectOptions(screen.getByLabelText("Area"), "PITCHING");
+
+    expect(screen.getByRole("button", { name: "Distance control" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Slice" })).toBeNull();
+  });
+
+  it("clears now-invalid misses when the area changes, and says so", async () => {
+    // The API prunes these too — a script or curl cannot file an issue under PITCHING
+    // carrying a full-swing SLICE. Doing it here as well means the admin watches it
+    // happen instead of discovering it in the response.
+    setup();
+    await userEvent.type(titleBox(), "Moved areas");
+    await userEvent.click(screen.getByRole("button", { name: "Slice" }));
+
+    await userEvent.selectOptions(screen.getByLabelText("Area"), "PITCHING");
+
+    expect(screen.getByText(/removed slice/i)).toBeInTheDocument();
+    expect(screen.getByText(/not a pitching miss/i)).toBeInTheDocument();
+  });
+
+  it("tells the admin where to go when an area has no misses yet", async () => {
+    // Authoring four areas of vocabulary is weeks of work; an empty picker must point
+    // somewhere rather than look broken.
+    const empty: Taxonomy = {
+      ...taxonomy,
+      misses_by_area: { ...taxonomy.misses_by_area, PITCHING: [] },
+    };
+    render(
+      <IssueForm
+        taxonomy={empty}
+        composeAction={vi.fn(async () => ({ ok: true }))}
+        searchDrillsAction={noDrills}
+        onCancel={vi.fn()}
+        onSaved={vi.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getAllByLabelText("Area")[0], "PITCHING");
+
+    expect(screen.getByText(/no misses defined for pitching yet/i)).toBeInTheDocument();
+  });
+
   it("calls onSaved after a successful compose", async () => {
     const { onSaved } = setup();
     await userEvent.type(titleBox(), "Good one");
@@ -175,7 +257,10 @@ describe("IssueForm in edit mode", () => {
     id: "issue-1",
     title: "Early extension",
     description: "hips move toward the ball",
-    area: "PITCHING",
+    // FULL_SWING because the miss below belongs to it. Misses are area-scoped now, so
+    // the picker for PITCHING would not offer FAT at all — the old fixture paired them
+    // without noticing, which is exactly what the scoping exists to catch.
+    area: "FULL_SWING",
     kind: "fault",
     source: "catalog",
     user_id: null,
