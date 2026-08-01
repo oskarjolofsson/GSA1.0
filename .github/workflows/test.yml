@@ -75,18 +75,38 @@ jobs:
         run: supabase start
 
       - name: pytest
-        # Only these three are real secrets. core/config.py reads them with
-        # os.environ[...] rather than os.getenv, so a missing value raises at import
-        # and no test runs at all. They live in GitHub's encrypted secret store —
-        # the lines below are references, never values, and GitHub masks them in logs.
+        # These must be REPOSITORY SECRETS (Settings > Secrets and variables > Actions >
+        # Secrets tab), not Variables. `${{ secrets.X }}` and `${{ vars.X }}` read
+        # different stores, and a missing secret renders as an empty string rather than
+        # failing — which surfaces as an obscure downstream error like
+        # "ValueError: Invalid endpoint:" instead of anything naming the real cause.
+        # Secrets are also masked in logs; Variables are printed in plain text.
         #
-        # Everything else config.py reads uses os.getenv and degrades to None, which
-        # the suite tolerates: Stripe, RevenueCat and Gemini are all either mocked or
-        # gated. Supabase comes from the local stack below, not from secrets.
+        # Only what the suite genuinely needs. Everything else config.py reads uses
+        # os.getenv and degrades to None, which the tests tolerate. Supabase comes from
+        # the local stack, not from secrets.
         env:
+          # Forces the SANDBOX Stripe path. Without it, config.py computes DEV=False and
+          # reaches for LIVE_STRIPE_SECRET_KEY — CI must never touch live Stripe.
+          DEV: 'TRUE'
+          # Only used to build Stripe's success_url. The checkout test never completes a
+          # payment, so any well-formed URL works; it just cannot be empty, or Stripe
+          # rejects the session with "An explicit scheme (such as https) must be provided".
+          VITE_API_URL: 'https://example.com'
+
+          # R2: config.py reads these with os.environ[...] rather than os.getenv, so a
+          # missing value raises at import and NOT ONE of the 648 tests runs.
+          # 31 tests exercise real uploads (test_r2_adaptor, test_analysis, …).
           S3_API: ${{ secrets.S3_API }}
           CLOUDFLARE_R2_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
           CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+
+          # Stripe sandbox. core/infrastructure/payment/stripe/client.py builds the client
+          # at module import, so a missing key breaks collection of the billing tests.
+          # test_start_checkout_success additionally makes a real sandbox API call — it
+          # asserts the returned URL starts with https://checkout.stripe.com/.
+          SANDBOX_STRIPE_SECRET_KEY: ${{ secrets.SANDBOX_STRIPE_SECRET_KEY }}
+          SANDBOX_STRIPE_PRICE_ID: ${{ secrets.SANDBOX_STRIPE_PRICE_ID }}
         run: |
           eval "$(supabase status -o env)"
           export DATABASE_URL="$DB_URL"
