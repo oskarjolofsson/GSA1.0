@@ -75,6 +75,18 @@ jobs:
         run: supabase start
 
       - name: pytest
+        # Only these three are real secrets. core/config.py reads them with
+        # os.environ[...] rather than os.getenv, so a missing value raises at import
+        # and no test runs at all. They live in GitHub's encrypted secret store —
+        # the lines below are references, never values, and GitHub masks them in logs.
+        #
+        # Everything else config.py reads uses os.getenv and degrades to None, which
+        # the suite tolerates: Stripe, RevenueCat and Gemini are all either mocked or
+        # gated. Supabase comes from the local stack below, not from secrets.
+        env:
+          S3_API: ${{ secrets.S3_API }}
+          CLOUDFLARE_R2_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
         run: |
           eval "$(supabase status -o env)"
           export DATABASE_URL="$DB_URL"
