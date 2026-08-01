@@ -108,6 +108,19 @@ jobs:
           SANDBOX_STRIPE_SECRET_KEY: ${{ secrets.SANDBOX_STRIPE_SECRET_KEY }}
           SANDBOX_STRIPE_PRICE_ID: ${{ secrets.SANDBOX_STRIPE_PRICE_ID }}
         run: |
+          # A missing secret renders as an empty string rather than failing, so without
+          # this the symptom is "ValueError: Invalid endpoint:" from inside botocore,
+          # three layers from the cause. Fail here instead, naming the variable.
+          missing=""
+          for v in S3_API CLOUDFLARE_R2_ACCESS_KEY CLOUDFLARE_R2_SECRET_ACCESS_KEY \
+                   SANDBOX_STRIPE_SECRET_KEY SANDBOX_STRIPE_PRICE_ID; do
+            [ -z "${!v}" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Missing repository secrets::Empty or unset:$missing — add them under Settings > Secrets and variables > Actions > Secrets (NOT Variables; those are read via vars.* and are not masked in logs)."
+            exit 1
+          fi
+
           eval "$(supabase status -o env)"
           export DATABASE_URL="$DB_URL"
           export SUPABASE_URL="$API_URL"
