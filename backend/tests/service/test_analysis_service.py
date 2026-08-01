@@ -48,7 +48,7 @@ def shared_db_session(shared_connection):
 
 
 @pytest.fixture(scope="class")
-def completed_analysis_shared(test_user, shared_db_session):
+def completed_analysis_shared(test_user, shared_db_session, sample_video_path):
     """
     Run analysis exactly once per TestRunAnalysis class.
 
@@ -85,10 +85,10 @@ def completed_analysis_shared(test_user, shared_db_session):
         f"{service_module}.analyze_video",
         return_value=canned_result,
     ), patch(f"{service_module}.GoogleAnalysisClient"):
-        return _run_completed_analysis(test_user, shared_db_session)
+        return _run_completed_analysis(test_user, shared_db_session, sample_video_path)
 
 
-def _run_completed_analysis(test_user, shared_db_session):
+def _run_completed_analysis(test_user, shared_db_session, sample_video_path):
     create_result = create_analysis(
         CreateAnalysisDTO(
             user_id=test_user["user_id"],
@@ -100,9 +100,10 @@ def _run_completed_analysis(test_user, shared_db_session):
     analysis_id = create_result["analysis_id"]
     url = create_result["upload_url"]
     
-    # Upload dummy video data to the pre-signed URL (simulate client upload)
-    with open("uploads/video/golf.mp4", "rb") as f:
-        video_data = f.read()
+    # Upload the video to the pre-signed URL (simulate client upload).
+    # sample_video_path skips these tests when uploads/ is absent (CI); see
+    # tests/conftest.py. uploads/ is gitignored and the clip is 8.6MB.
+    video_data = sample_video_path.read_bytes()
     requests.put(url, data=video_data)
 
     run_analysis(

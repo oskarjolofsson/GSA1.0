@@ -36,14 +36,14 @@ def analysis_with_id(client, test_user, db_session, auth_headers):
     return uuid.UUID(data["analysis_id"]), test_user["user_id"]
 
 @pytest.fixture()
-def run_analysis_and_set_completed(client, db_session, analysis_with_id, auth_headers):
+def run_analysis_and_set_completed(client, db_session, analysis_with_id, auth_headers, sample_video_path):
     """Helper function to set an analysis as completed for testing."""
     analysis_id, user_id = analysis_with_id
     video_object: Video = get_video_by_analysis_id(analysis_id=analysis_id, session=db_session)
     video_key = video_object.video_key
-    
-    video_path = Path("uploads/video/golf.mp4")
-    video_blob = video_path.read_bytes()
+
+    # sample_video_path skips this test when uploads/ is absent (CI). See tests/conftest.py.
+    video_blob = sample_video_path.read_bytes()
     upload_url = generate_upload_url(key=video_key)
     
     # Simulate uploading the video to the storage using the generated upload URL
