@@ -49,8 +49,14 @@ def test_delete_analysis_and_cascade(test_user, db_session):
     
 
 def test_delete_one_analysis_issue_and_all_other_should_also_be_dissableed(test_user, db_session):
+    # Both analyses must reference the SAME issues — the behaviour under test is that
+    # dismissing an issue in one analysis dismisses it everywhere. Previously this held
+    # by accident, because the helper borrowed the same catalog rows every time.
     to1: AnalysisTestObject = create_analysis_and_analysis_issues(db_session, test_user["user_id"])
-    to2: AnalysisTestObject = create_analysis_and_analysis_issues(db_session, test_user["user_id"])
+    shared_issues = [ai.issue for ai in to1.analysis_issues]
+    to2: AnalysisTestObject = create_analysis_and_analysis_issues(
+        db_session, test_user["user_id"], issues=shared_issues
+    )
     
     analysis_service.delete_analysis_issue(to1.analysis_issues[0].id, db_session=db_session, user_id=test_user["user_id"])
     
@@ -143,7 +149,14 @@ def create_analysis_and_analysis_issues(
     user_id: UUID,
     status: str = "completed",
     success: bool = True,
+    issues: list[models.Issue] | None = None,
 ) -> AnalysisTestObject:
+    """Build an analysis with three AnalysisIssue rows.
+
+    Pass `issues` to make two analyses reference the SAME issues — which is what
+    deactivation-across-analyses behaviour depends on. Omit it and three fresh issues
+    are created, so the helper works on an empty database.
+    """
     analysis: models.Analysis = models.Analysis(
         user_id=user_id,
         model_version="test_model",
@@ -155,23 +168,39 @@ def create_analysis_and_analysis_issues(
     analysis_repo.create_analysis(analysis=analysis, session=session)
     session.flush()
 
-    all_issues: list[models.Issue] = issues_repo.get_all_issues(session=session)
-    if len(all_issues) < 3:
-        raise ValueError("Need at least 3 issues in DB")
+    # Build the three issues this analysis references, rather than borrowing whichever
+    # rows happen to be sitting in the catalog. The previous version did the latter and
+    # raised "Need at least 3 issues in DB" on any database without seeded content —
+    # which is every `supabase db reset`, every new environment, and CI. It passed only
+    # against the long-lived dev database, so the dependency on ambient state was
+    # invisible. Creating them here also makes the helper deterministic: the same three
+    # issues every run, regardless of what else the database holds. `db_session` rolls
+    # back, so nothing persists.
+    if issues is None:
+        issues = []
+        for n in range(3):
+            issue = models.Issue(
+                title=f"Test issue {n} for analysis {analysis.id}",
+                description="Created by create_analysis_and_analysis_issues.",
+            )
+            session.add(issue)
+            issues.append(issue)
+        session.flush()
+    owned_issues = issues
 
     analysis_issue1 = models.AnalysisIssue(
         analysis_id=analysis.id,
-        issue_id=all_issues[0].id,
+        issue_id=owned_issues[0].id,
         confidence=0.8,
     )
     analysis_issue2 = models.AnalysisIssue(
         analysis_id=analysis.id,
-        issue_id=all_issues[1].id,
+        issue_id=owned_issues[1].id,
         confidence=0.85,
     )
     analysis_issue3 = models.AnalysisIssue(
         analysis_id=analysis.id,
-        issue_id=all_issues[2].id,
+        issue_id=owned_issues[2].id,
         confidence=0.9,
     )
 

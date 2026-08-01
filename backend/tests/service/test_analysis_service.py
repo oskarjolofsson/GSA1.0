@@ -17,6 +17,7 @@ from ...core.infrastructure.db.repositories.analysis import get_analysis_by_id
 from ...core.infrastructure.db.repositories.videos import get_video_by_id
 
 from ...core.infrastructure.db.repositories.analysis_issues import get_analysis_issues_by_analysis_id
+from core.infrastructure.db import models
 
 from core.infrastructure.db.session import SessionLocal
 from core.infrastructure.db.engine import engine
@@ -53,11 +54,21 @@ def completed_analysis_shared(test_user, shared_db_session):
 
     The real Gemini call is mocked here: this layer tests service orchestration and
     persistence, not the AI client itself (the real call is exercised in
-    tests/integration/AI). The canned result uses a real issue id from the DB so the
-    AnalysisIssue rows persist correctly.
+    tests/integration/AI). The canned result needs a real issue id so the AnalysisIssue
+    rows satisfy their foreign key.
+
+    That issue is created here rather than taken from the catalog. Reading
+    `get_all_issues(...)[0]` raised IndexError on any database without seeded content —
+    every `supabase db reset`, every new environment, CI — and passed only against the
+    long-lived dev database, which hid the dependency on ambient state.
     """
-    from core.infrastructure.db.repositories.issues import get_all_issues
-    issue = get_all_issues(shared_db_session)[0]
+
+    issue = models.Issue(
+        title="Test issue for TestRunAnalysis",
+        description="Created by the completed_analysis_shared fixture.",
+    )
+    shared_db_session.add(issue)
+    shared_db_session.flush()
     canned_result = {
         "metadata": {"camera_view": "face_on", "club_type": "iron"},
         "club_type": "iron",

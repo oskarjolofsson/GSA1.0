@@ -10,6 +10,7 @@ from core.infrastructure.db.repositories.analysis_issues import get_analysis_iss
 from core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from core.infrastructure.db.models.Video import Video
 from core.infrastructure.db.models.Analysis import Analysis
+from core.infrastructure.db.models.Issue import Issue
 from pathlib import Path
 from core.infrastructure.storage.r2Adaptor import generate_upload_url
 from core.infrastructure.AI.model_selection import get_active_analysis_model
@@ -50,9 +51,18 @@ def run_analysis_and_set_completed(client, db_session, analysis_with_id, auth_he
     assert upload_response.status_code in [200, 201], f"Failed to upload video, status code: {upload_response.status_code}, response: {upload_response.text}"
 
     # Mock the real Gemini call: this layer tests the endpoint + orchestration, not the
-    # AI client (the real call is exercised in tests/integration/AI). Use a real issue
-    # id from the DB so the AnalysisIssue rows persist correctly.
-    issue = get_all_issues(db_session)[0]
+    # AI client (the real call is exercised in tests/integration/AI). The canned result
+    # needs a real issue id so the AnalysisIssue rows satisfy their foreign key.
+    #
+    # Created here rather than read from the catalog: `get_all_issues(db_session)[0]`
+    # raised IndexError on any database without seeded content, and passed only against
+    # the long-lived dev database.
+    issue = Issue(
+        title="Test issue for test_run_analysis",
+        description="Created by test_run_analysis.",
+    )
+    db_session.add(issue)
+    db_session.flush()
     canned_result = {
         "metadata": {"camera_view": "face_on", "club_type": "iron"},
         "club_type": "iron",

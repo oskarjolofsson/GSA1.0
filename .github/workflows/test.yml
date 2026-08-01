@@ -44,12 +44,15 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
+  # Runs against a throwaway local Supabase built from supabase/migrations/, NOT the
+  # remote project. Consequences worth knowing:
+  #   - no secrets: the local stack ships fixed, publicly documented demo credentials
+  #   - no concurrency group: each run gets its own database, so nothing to serialize
+  #   - every run applies all migrations to a clean Postgres, so this doubles as the
+  #     migration test (FK swaps, renames, ordering) that nothing else covers
   backend:
     name: backend (pytest)
     runs-on: ubuntu-latest
-    concurrency:
-      group: backend-tests
-      cancel-in-progress: false
     defaults:
       run:
         working-directory: backend
@@ -61,17 +64,23 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      # config.toml keeps only db + auth + api enabled. auth is required because
+      # tests/conftest.py creates real GoTrue users; api because
+      # tests/integration/test_content_rls.py probes PostgREST with the anon key.
+      - name: start local supabase
+        run: supabase start
+
       - name: pytest
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLL_KEY: ${{ secrets.SUPABASE_SERVICE_ROLL_KEY }}
         run: |
-          if [ -z "$DATABASE_URL" ]; then
-            echo "::warning title=Backend tests skipped::Set DATABASE_URL, SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLL_KEY under Settings > Secrets and variables > Actions to enable this job."
-            exit 0
-          fi
-          # AI tests are skipped without --run-ai (billed Gemini calls, unrolled-back
-          # writes). See backend/tests/conftest.py.
+          eval "$(supabase status -o env)"
+          export DATABASE_URL="$DB_URL"
+          export SUPABASE_URL="$API_URL"
+          export SUPABASE_ANON_KEY="$ANON_KEY"
+          export SUPABASE_SERVICE_ROLL_KEY="$SERVICE_ROLE_KEY"
+          # AI tests stay skipped without --run-ai (billed Gemini calls,
+          # unrolled-back writes). See backend/tests/conftest.py.
           pytest
