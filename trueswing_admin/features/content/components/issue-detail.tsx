@@ -6,8 +6,8 @@ import DeleteImpactDialog from "@/features/content/components/delete-impact-dial
 import DrillAttachPanel from "@/features/content/components/drill-attach-panel";
 import GolferPreview from "@/features/content/components/golfer-preview";
 import TagChip from "@/features/content/components/tag-chip";
-import { areaLabel, goalLabel, kindLabel, missLabel } from "@/features/content/constants";
-import type { AdminDrill, AdminIssue, DeleteImpact } from "@/lib/content/types";
+import { labelsFrom } from "@/features/content/constants";
+import type { AdminDrill, AdminIssue, DeleteImpact, Taxonomy } from "@/lib/content/types";
 
 type ActionResult = { ok: boolean; reason?: string };
 
@@ -32,6 +32,7 @@ export default function IssueDetail({
   attachAction,
   detachAction,
   searchDrillsAction,
+  taxonomy,
 }: {
   issue: AdminIssue;
   onBack: () => void;
@@ -42,7 +43,11 @@ export default function IssueDetail({
   attachAction: (issueId: string, drillId: string) => Promise<ActionResult>;
   detachAction: (issueId: string, drillId: string) => Promise<ActionResult>;
   searchDrillsAction: (q: string) => Promise<{ ok: boolean; matches: AdminDrill[] }>;
+  // Display words for the tag chips. Nullable: a failed taxonomy fetch degrades to
+  // raw keys rather than blanking the page.
+  taxonomy: Taxonomy | null;
 }) {
+  const labels = labelsFrom(taxonomy);
   // Drills are edited in place, so the local copy is the source of truth for this
   // view; the server actions revalidate the list behind it.
   const [drills, setDrills] = useState(issue.drills);
@@ -148,17 +153,17 @@ export default function IssueDetail({
       )}
 
       <div className="mt-2 flex flex-wrap gap-1">
-        <TagChip>{areaLabel(issue.area)}</TagChip>
-        <TagChip>{kindLabel(issue.kind)}</TagChip>
+        <TagChip>{labels.areaLabel(issue.area)}</TagChip>
+        <TagChip>{labels.kindLabel(issue.kind)}</TagChip>
         {issue.source === "custom" && <TagChip>user-authored</TagChip>}
         {issue.misses.map((m) => (
           <TagChip key={m} tone="miss">
-            {missLabel(m)}
+            {labels.missLabel(m)}
           </TagChip>
         ))}
         {issue.goals.map((g) => (
           <TagChip key={g} tone="goal">
-            {goalLabel(g)}
+            {labels.goalLabel(g)}
           </TagChip>
         ))}
       </div>
@@ -234,6 +239,7 @@ export default function IssueDetail({
         </div>
 
         <GolferPreview
+          labels={labels}
           title={issue.title}
           description={issue.description ?? ""}
           laymanTitle={issue.layman_title ?? ""}

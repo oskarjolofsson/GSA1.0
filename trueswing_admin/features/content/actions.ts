@@ -16,12 +16,18 @@ import {
 import { getIssuesPage } from "@/lib/content/get-issues-page";
 import { updateDrill } from "@/lib/content/update-drill";
 import { updateIssue } from "@/lib/content/update-issue";
+import {
+  createTaxonomyTerm,
+  deleteTaxonomyTerm,
+  updateTaxonomyTerm,
+} from "@/lib/content/taxonomy-terms";
 import { getIssue } from "@/lib/content/get-issue";
 import type {
   AdminDrill,
   AdminIssue,
   ComposeIssueBody,
   DeleteImpact,
+  TaxonomyKind,
   UpdateIssueBody,
 } from "@/lib/content/types";
 
@@ -30,6 +36,7 @@ import { contentFailureReason } from "./failure-reason";
 const ISSUES_PATH = "/content/issues";
 const DRILLS_PATH = "/content/drills";
 const COVERAGE_PATH = "/content/coverage";
+const TAXONOMY_PATH = "/content/taxonomy";
 
 type ActionResult = { ok: boolean; reason?: string };
 
@@ -54,6 +61,18 @@ function revalidateContent() {
   revalidatePath(ISSUES_PATH);
   revalidatePath(DRILLS_PATH);
   revalidatePath(COVERAGE_PATH);
+}
+
+/**
+ * A vocabulary change reaches further than the taxonomy page.
+ *
+ * The issue form renders its pickers from the taxonomy, and the coverage grid builds
+ * its cells from it — add a chipping miss and a new column should appear there. So a
+ * write here revalidates the content pages too, not just its own.
+ */
+function revalidateTaxonomy() {
+  revalidatePath(TAXONOMY_PATH);
+  revalidateContent();
 }
 
 export async function composeIssueAction(
@@ -233,5 +252,59 @@ export async function searchDrillsAction(
     const result = await getDrillsPage(token, { limit: 20, offset: 0, q: trimmed });
     if (result.status !== "ok") return { ok: false, matches: [] };
     return { ok: true, matches: result.data.items };
+  });
+}
+
+
+// ------------------------------ taxonomy ------------------------------
+
+export async function createTaxonomyTermAction(
+  kind: TaxonomyKind,
+  body: Record<string, unknown>,
+): Promise<ActionResult> {
+  return withToken({ ok: false, reason: "Your session expired." }, async (token) => {
+    const result = await createTaxonomyTerm(kind, body, token);
+    if (result.status !== "ok") {
+      return { ok: false, reason: contentFailureReason(result) };
+    }
+    revalidateTaxonomy();
+    return { ok: true };
+  });
+}
+
+export async function updateTaxonomyTermAction(
+  kind: TaxonomyKind,
+  key: string,
+  body: Record<string, unknown>,
+): Promise<ActionResult> {
+  return withToken({ ok: false, reason: "Your session expired." }, async (token) => {
+    const result = await updateTaxonomyTerm(kind, key, body, token);
+    if (result.status !== "ok") {
+      return { ok: false, reason: contentFailureReason(result) };
+    }
+    revalidateTaxonomy();
+    return { ok: true };
+  });
+}
+
+/**
+ * Delete a vocabulary value.
+ *
+ * A 409 here is expected rather than exceptional: the API refuses while issues still
+ * carry the term and its `detail` gives the count ("12 issues use this"). contentFailureReason
+ * passes that through verbatim, which is the whole point — replacing it with a generic
+ * line would throw away the only number the admin needs.
+ */
+export async function deleteTaxonomyTermAction(
+  kind: TaxonomyKind,
+  key: string,
+): Promise<ActionResult> {
+  return withToken({ ok: false, reason: "Your session expired." }, async (token) => {
+    const result = await deleteTaxonomyTerm(kind, key, token);
+    if (result.status !== "ok") {
+      return { ok: false, reason: contentFailureReason(result) };
+    }
+    revalidateTaxonomy();
+    return { ok: true };
   });
 }
