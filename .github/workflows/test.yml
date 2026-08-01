@@ -50,6 +50,27 @@ jobs:
   #   - no concurrency group: each run gets its own database, so nothing to serialize
   #   - every run applies all migrations to a clean Postgres, so this doubles as the
   #     migration test (FK swaps, renames, ordering) that nothing else covers
+  web:
+    name: web (vitest + build + html)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      # test:all = vitest, then `next build`, then the static-HTML suite against the
+      # build output. Worth running the whole chain: it is ~6s total, and the build
+      # step catches the failure mode a marketing site actually has — a page that
+      # stops compiling. Needs no secrets; NEXT_PUBLIC_IMAGE_BASE has a fallback in
+      # lib/images.ts:17, so a missing web/.env (gitignored) is fine.
+      - run: npm run test:all
+
   backend:
     name: backend (pytest)
     runs-on: ubuntu-latest
