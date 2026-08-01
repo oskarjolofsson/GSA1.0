@@ -1,6 +1,7 @@
 import uuid
 import pytest
 import time
+from pathlib import Path
 from sqlalchemy import text
 from supabase import create_client, Client
 from core.infrastructure.db.engine import engine
@@ -63,6 +64,27 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if _is_ai_test(item):
             item.add_marker(skip_ai)
+
+
+@pytest.fixture(scope="session")
+def sample_video_path() -> Path:
+    """The golf clip the analysis tests upload to R2.
+
+    `uploads/` is gitignored (.gitignore:118) and golf.mp4 is 8.6MB, so it exists on a
+    developer's machine and never in CI. Skip rather than fail — the same convention
+    tests/integration/AI/conftest.py already uses for its own videos.
+
+    These tests are NOT the live-AI tests: they mock the Gemini call and only need
+    bytes to push through the real upload path. They are gated on the file existing,
+    not on --run-ai.
+    """
+    path = Path(__file__).resolve().parent.parent / "uploads" / "video" / "golf.mp4"
+    if not path.exists():
+        pytest.skip(
+            f"Sample video not present at {path}. uploads/ is gitignored, so these "
+            "run locally but not in CI."
+        )
+    return path
 
 
 @pytest.fixture(scope="function")
