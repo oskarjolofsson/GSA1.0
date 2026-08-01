@@ -33,8 +33,35 @@ UNMATCHABLE_ID = "00000000-0000-0000-0000-000000000000"
 # pass against a wide-open catalog.
 INSUFFICIENT_PRIVILEGE = "42501"
 
-WRITE_PROTECTED_TABLES = ["issues", "drills", "issue_drill"]
-READABLE_TABLES = ["issues", "drills", "issue_drill", "issue_goals", "issue_misses"]
+# The taxonomy tables were locked down in their creating migration (20260802000000)
+# rather than a follow-up, precisely because issue_goals and issue_misses shipped
+# world-writable for nineteen days when they were not. This is what proves it held.
+WRITE_PROTECTED_TABLES = [
+    "issues", "drills", "issue_drill",
+    "taxonomy_areas", "taxonomy_goals", "taxonomy_misses",
+]
+READABLE_TABLES = [
+    "issues", "drills", "issue_drill", "issue_goals", "issue_misses",
+    "taxonomy_areas", "taxonomy_goals", "taxonomy_misses",
+]
+
+# Which column the update/delete probes filter on. Everything in the catalog is keyed
+# on a uuid `id`; the taxonomy tables use a text `key`. Getting this wrong yields 42703
+# (undefined_column) instead of 42501, which would look like a pass if the assertion
+# were loose about the code — it is not, deliberately.
+ID_COLUMN = {
+    "taxonomy_areas": "key",
+    "taxonomy_goals": "key",
+    "taxonomy_misses": "key",
+}
+UNMATCHABLE_KEY = "RLS_PROBE_NO_SUCH_KEY"
+
+
+def _unmatchable(table: str) -> tuple[str, str]:
+    """The (column, value) pair that matches no row in `table`."""
+    column = ID_COLUMN.get(table, "id")
+    return column, (UNMATCHABLE_KEY if column == "key" else UNMATCHABLE_ID)
+
 
 # Minimal rows that satisfy NOT NULL, so a rejection can only be about permission.
 INSERT_PAYLOADS = {
@@ -46,6 +73,19 @@ INSERT_PAYLOADS = {
         "fault_indicator": "rls probe",
     },
     "issue_drill": {"issue_id": UNMATCHABLE_ID, "drill_id": UNMATCHABLE_ID},
+    # Keys that cannot collide with a seeded row, so a rejection can only be about
+    # permission. taxonomy_misses carries an area FK that does not resolve, which is
+    # why asserting on SQLSTATE 42501 rather than "any error" matters here too.
+    "taxonomy_areas": {
+        "key": "RLS_PROBE_AREA", "label": "rls probe", "golfer_label": "rls probe",
+    },
+    "taxonomy_goals": {
+        "key": "RLS_PROBE_GOAL", "label": "rls probe", "golfer_label": "rls probe",
+    },
+    "taxonomy_misses": {
+        "key": "RLS_PROBE_MISS", "area": "RLS_PROBE_NOPE",
+        "label": "rls probe", "golfer_label": "rls probe",
+    },
 }
 
 
@@ -110,9 +150,12 @@ def test_client_roles_cannot_insert(request, role, table, service_client):
 
     # Reached only when the write went through: undo it before failing, so a missing
     # migration does not leave junk in the catalog.
+    cleanup_column = ID_COLUMN.get(table, "id")
     for row in response.data or []:
-        if row.get("id"):
-            service_client.table(table).delete().eq("id", row["id"]).execute()
+        if row.get(cleanup_column):
+            service_client.table(table).delete().eq(
+                cleanup_column, row[cleanup_column]
+            ).execute()
     pytest.fail(
         f"{role} was able to INSERT into public.{table} via PostgREST. "
         f"The anon key ships in the mobile app, so this is a writable catalog. "
@@ -127,10 +170,13 @@ def test_client_roles_cannot_update(request, role, table):
     has to be refused."""
     client = _client(request, role)
 
+    column, value = _unmatchable(table)
+    # `sort` exists on the taxonomy tables, `created_at` on the catalog ones. Either
+    # way the column must exist, or the request fails on the wrong thing.
+    patch = {"sort": 999} if column == "key" else {"created_at": "2020-01-01T00:00:00Z"}
+
     with pytest.raises(APIError) as exc:
-        client.table(table).update({"created_at": "2020-01-01T00:00:00Z"}).eq(
-            "id", UNMATCHABLE_ID
-        ).execute()
+        client.table(table).update(patch).eq(column, value).execute()
     assert exc.value.code == INSUFFICIENT_PRIVILEGE
 
 
@@ -139,8 +185,10 @@ def test_client_roles_cannot_update(request, role, table):
 def test_client_roles_cannot_delete(request, role, table):
     client = _client(request, role)
 
+    column, value = _unmatchable(table)
+
     with pytest.raises(APIError) as exc:
-        client.table(table).delete().eq("id", UNMATCHABLE_ID).execute()
+        client.table(table).delete().eq(column, value).execute()
     assert exc.value.code == INSUFFICIENT_PRIVILEGE
 
 

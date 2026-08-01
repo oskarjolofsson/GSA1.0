@@ -2,7 +2,7 @@ from fastapi import APIRouter
 api_router = APIRouter()
 
 # Include endpoint routers
-from .endpoints import drill, feedback, user, analysis, issue, issue_drill, admin, admin_content, admin_subscriptions, practice_session, webhooks, billing, activity, program, taxonomy
+from .endpoints import drill, feedback, user, analysis, issue, issue_drill, admin, admin_content, admin_subscriptions, admin_taxonomy, practice_session, webhooks, billing, activity, program, taxonomy
 
 api_router.include_router(
     router=admin.router,
@@ -18,6 +18,15 @@ api_router.include_router(
 
 api_router.include_router(
     router=admin_content.router,
+    prefix="/admin/content",
+    tags=["admin"],
+)
+
+# Same prefix as admin_content, separate router: that file is about issues and drills,
+# this one about the vocabulary they are tagged with. Reads for clients live on
+# /taxonomy/ below and are only get_current_user-gated.
+api_router.include_router(
+    router=admin_taxonomy.router,
     prefix="/admin/content",
     tags=["admin"],
 )
