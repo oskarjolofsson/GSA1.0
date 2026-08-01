@@ -1,6 +1,6 @@
 from ..base import Base
 import uuid
-from sqlalchemy import Text, CheckConstraint, ForeignKey
+from sqlalchemy import Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -16,11 +16,10 @@ class IssueGoal(Base):
         ForeignKey("issues.id", ondelete="CASCADE"),
         primary_key=True,
     )
+    # References taxonomy_goals. RESTRICT so removing a goal still in use fails loudly.
     goal: Mapped[str] = mapped_column(
         Text,
-        CheckConstraint(
-            "goal IN ('STRAIGHTER','DISTANCE','CONTACT','BIG_MISS','SHORT_GAME','PUTTING')"
-        ),
+        ForeignKey("taxonomy_goals.key", ondelete="RESTRICT"),
         primary_key=True,
     )
 
