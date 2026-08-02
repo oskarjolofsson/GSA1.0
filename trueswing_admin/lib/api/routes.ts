@@ -51,6 +51,22 @@ export const routes = {
    * strict validators on the write paths would reject. */
   taxonomy: () => "/api/v1/taxonomy/",
 
+  /** GET → AdminTaxonomyTerm[]. Every term of one kind, including retired ones, each
+   * with a usage count. Admin-only, unlike the read above: this is the editor. */
+  contentTaxonomyList: (kind: string) => `/api/v1/admin/content/taxonomy/${kind}/`,
+
+  /** POST → AdminTaxonomyTerm. Add a vocabulary value. 409 if the key is taken. */
+  contentTaxonomyCreate: (kind: string) => `/api/v1/admin/content/taxonomy/${kind}/`,
+
+  /** PATCH → AdminTaxonomyTerm. Edit labels, ordering or active state. `key` is
+   * immutable — content references it, so a rename would orphan every tag. */
+  contentTaxonomyUpdate: (kind: string, key: string) =>
+    `/api/v1/admin/content/taxonomy/${kind}/${encodeURIComponent(key)}/`,
+
+  /** DELETE → 204, or 409 with a count when issues still use the term. */
+  contentTaxonomyDelete: (kind: string, key: string) =>
+    `/api/v1/admin/content/taxonomy/${kind}/${encodeURIComponent(key)}/`,
+
   /** GET → AdminIssuePage. Paged catalog issues with tags and drills. */
   contentIssuesPage: ({
     limit,

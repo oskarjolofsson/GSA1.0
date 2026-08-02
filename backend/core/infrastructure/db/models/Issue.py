@@ -4,6 +4,7 @@ from sqlalchemy import (
     Text,
     DateTime,
     CheckConstraint,
+    ForeignKey,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
@@ -33,9 +34,13 @@ class Issue(Base):
     )
 
     # Area of the game this issue belongs to (WHERE). Drives the Library's grouping.
+    #
+    # References taxonomy_areas rather than a CHECK list: the vocabulary is data now, so
+    # adding an area is an admin action rather than a migration. RESTRICT so deleting an
+    # area that issues still use fails loudly and can be counted back to the admin.
     area: Mapped[str] = mapped_column(
         Text,
-        CheckConstraint("area IN ('FULL_SWING','CHIPPING','PUTTING','BUNKER','PITCHING')"),
+        ForeignKey("taxonomy_areas.key", ondelete="RESTRICT"),
         nullable=False,
         server_default="FULL_SWING",
     )

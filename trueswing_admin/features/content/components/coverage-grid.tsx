@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { areaLabel, goalLabel, missLabel } from "@/features/content/constants";
-import type { Coverage } from "@/lib/content/types";
+import { labelsFrom } from "@/features/content/constants";
+import type { Taxonomy, Coverage } from "@/lib/content/types";
 
 /**
  * Where the catalog has content and where it does not.
@@ -13,7 +13,16 @@ import type { Coverage } from "@/lib/content/types";
  * picks that goal and reports that miss gets nothing back — those are the gaps
  * worth filling, so they are the ones highlighted rather than the populated cells.
  */
-export default function CoverageGrid({ coverage }: { coverage: Coverage }) {
+export default function CoverageGrid({
+  coverage,
+  taxonomy,
+}: {
+  coverage: Coverage;
+  // Supplies the display words. Nullable because the taxonomy fetch can fail
+  // independently of the coverage fetch; the labels then fall back to raw keys.
+  taxonomy: Taxonomy | null;
+}) {
+  const labels = labelsFrom(taxonomy);
   const areas = [...new Set(coverage.cells.map((c) => c.area))];
   const [area, setArea] = useState(areas[0] ?? "");
 
@@ -59,12 +68,12 @@ export default function CoverageGrid({ coverage }: { coverage: Coverage }) {
                 : "bg-white text-zinc-600 ring-zinc-200 hover:bg-zinc-50 dark:bg-zinc-900 dark:text-zinc-300 dark:ring-zinc-700"
             }`}
           >
-            {areaLabel(a)}
+            {labels.areaLabel(a)}
           </button>
         ))}
         <span className="ml-auto text-xs text-zinc-400">
           {gapsInArea} empty combination{gapsInArea === 1 ? "" : "s"} in{" "}
-          {areaLabel(area)}
+          {labels.areaLabel(area)}
         </span>
       </div>
 
@@ -80,7 +89,7 @@ export default function CoverageGrid({ coverage }: { coverage: Coverage }) {
                   key={goal}
                   className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-400"
                 >
-                  {goalLabel(goal)}
+                  {labels.goalLabel(goal)}
                 </th>
               ))}
             </tr>
@@ -92,7 +101,7 @@ export default function CoverageGrid({ coverage }: { coverage: Coverage }) {
                 className="border-t border-black/[.06] dark:border-white/[.08]"
               >
                 <th className="sticky left-0 bg-white px-3 py-2 text-left text-xs font-medium text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
-                  {missLabel(miss)}
+                  {labels.missLabel(miss)}
                 </th>
                 {goals.map((goal) => {
                   const count = countFor(miss, goal);
@@ -101,7 +110,7 @@ export default function CoverageGrid({ coverage }: { coverage: Coverage }) {
                       {count === 0 ? (
                         <Link
                           href={`/content/issues?new=1&area=${area}&miss=${miss}&goal=${goal}`}
-                          title={`No issues for ${missLabel(miss)} + ${goalLabel(goal)} — create one`}
+                          title={`No issues for ${labels.missLabel(miss)} + ${labels.goalLabel(goal)} — create one`}
                           className="flex h-8 w-full items-center justify-center rounded-md border border-dashed border-amber-300 text-xs text-amber-700 transition-colors hover:bg-amber-50 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/10"
                         >
                           +

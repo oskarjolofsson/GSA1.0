@@ -5,12 +5,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import DrillAttachPanel from "@/features/content/components/drill-attach-panel";
 import GolferPreview from "@/features/content/components/golfer-preview";
 import TagPicker from "@/features/content/components/tag-picker";
-import {
-  areaLabel,
-  goalLabel,
-  kindLabel,
-  missLabel,
-} from "@/features/content/constants";
+import { labelsFrom, missesForArea } from "@/features/content/constants";
 import {
   emptyWizardState,
   isDirty,
@@ -135,6 +130,40 @@ export default function IssueForm({
         : [...prev[key], value],
     }));
 
+  const labels = useMemo(() => labelsFrom(taxonomy), [taxonomy]);
+
+  // Only the misses that belong to the chosen area. A putt is not sliced, and the API
+  // refuses a cross-area tag — offering the full list would let an admin tick something
+  // the save then rejects.
+  const availableMisses = useMemo(
+    () => missesForArea(taxonomy, state.area),
+    [taxonomy, state.area],
+  );
+
+  // Names the misses dropped by the last area change, so it happens visibly.
+  const [droppedMisses, setDroppedMisses] = useState<string[]>([]);
+
+  /**
+   * Change the area, dropping any selected miss that does not belong to the new one.
+   *
+   * The API does this too — `update_issue` prunes stale tags server-side, so a script or
+   * curl cannot create an issue filed under BUNKER carrying a full-swing SLICE. Doing it
+   * here as well is not redundant: it means the admin watches it happen instead of
+   * discovering it in the response.
+   */
+  const changeArea = (area: string) => {
+    const keep = new Set(missesForArea(taxonomy, area));
+    setState((prev) => {
+      const dropped = prev.misses.filter((m) => !keep.has(m));
+      setDroppedMisses(dropped);
+      return {
+        ...prev,
+        area,
+        misses: prev.misses.filter((m) => keep.has(m)),
+      };
+    });
+  };
+
   function save() {
     setError(undefined);
     startTransition(async () => {
@@ -227,13 +256,13 @@ export default function IssueForm({
                 <span className={labelCls}>Area</span>
                 <select
                   value={state.area}
-                  onChange={(e) => set("area", e.target.value)}
+                  onChange={(e) => changeArea(e.target.value)}
                   disabled={pending}
                   className={`mt-1 ${field}`}
                 >
                   {taxonomy.areas.map((a) => (
-                    <option key={a} value={a}>
-                      {areaLabel(a)}
+                    <option key={a.key} value={a.key}>
+                      {a.label}
                     </option>
                   ))}
                 </select>
@@ -248,7 +277,7 @@ export default function IssueForm({
                 >
                   {taxonomy.kinds.map((k) => (
                     <option key={k} value={k}>
-                      {kindLabel(k)}
+                      {labels.kindLabel(k)}
                     </option>
                   ))}
                 </select>
@@ -258,20 +287,32 @@ export default function IssueForm({
 
           <div className="space-y-4 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-700">
             <TagPicker
-              legend="Misses (what the golfer sees)"
-              values={taxonomy.misses}
+              legend={`Misses (what the golfer sees in ${labels.areaLabel(state.area)})`}
+              values={availableMisses}
               selected={state.misses}
               onToggle={(v) => toggle("misses", v)}
-              label={missLabel}
+              label={labels.missLabel}
               disabled={pending}
               error={tagError}
             />
+            {droppedMisses.length > 0 ? (
+              <p className="text-sm text-amber-700 dark:text-amber-500">
+                Removed {droppedMisses.map(labels.missLabel).join(", ")} — not a{" "}
+                {labels.areaLabel(state.area)} miss.
+              </p>
+            ) : null}
+            {availableMisses.length === 0 ? (
+              <p className="text-sm text-zinc-500">
+                No misses defined for {labels.areaLabel(state.area)} yet. Add them under
+                Content → Taxonomy.
+              </p>
+            ) : null}
             <TagPicker
               legend="Goals (why they practise)"
-              values={taxonomy.goals}
+              values={taxonomy.goals.map((g) => g.key)}
               selected={state.goals}
               onToggle={(v) => toggle("goals", v)}
-              label={goalLabel}
+              label={labels.goalLabel}
               disabled={pending}
             />
           </div>
@@ -428,6 +469,7 @@ export default function IssueForm({
 
         <div className="space-y-4">
           <GolferPreview
+            labels={labels}
             title={state.title}
             description={state.description}
             laymanTitle={state.laymanTitle}

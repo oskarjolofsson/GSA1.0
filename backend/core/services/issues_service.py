@@ -24,6 +24,7 @@ from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueRespon
 from core.services.exceptions import NotFoundException
 
 from core.services.progress.analysis_issue_progress import Analysis_progress_service
+from core.services import taxonomy
 from core.services.taxonomy import (
     normalize_area_strict,
     normalize_goals_strict,
@@ -34,12 +35,16 @@ from core.services.taxonomy import (
 
 def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
     """Create a new issue."""
+    # Resolved first because the miss tags below are validated against it: a miss belongs
+    # to exactly one area, so SLICE on a putting issue is refused.
+    area = normalize_area_strict(dto.area)
+
     new_issue = Issue(
         title=dto.title,
         description=dto.description,
-        # Validated here rather than left to the CHECK constraint, so a bad value is
-        # a 422 naming the field instead of an IntegrityError surfacing as a 500.
-        area=normalize_area_strict(dto.area),
+        # Validated here rather than left to the foreign key, so a bad value is a 422
+        # naming the field instead of an IntegrityError surfacing as a 500.
+        area=area,
         kind=normalize_kind_strict(dto.kind),
         current_motion=dto.current_motion,
         expected_motion=dto.expected_motion,
@@ -50,7 +55,7 @@ def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
     )
     # Strict normalizers (not the lenient ones used by issue_authoring_service):
     # this is an admin path, so an unknown tag is a 422 rather than a silent drop.
-    for miss in normalize_misses_strict(dto.misses):
+    for miss in normalize_misses_strict(dto.misses, area):
         new_issue.misses.append(models.IssueMiss(miss=miss))
     for goal in normalize_goals_strict(dto.goals):
         new_issue.goals.append(models.IssueGoal(goal=goal))
@@ -180,8 +185,39 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> Is
     # looking at an object carrying edits it was told were rejected.
     area = normalize_area_strict(dto.area) if dto.area is not None else None
     kind = normalize_kind_strict(dto.kind) if dto.kind is not None else None
-    misses = normalize_misses_strict(dto.misses) if dto.misses is not None else None
+
+    # Misses are validated against an area, and a PATCH may change one without the other.
+    # Resolve which area applies before checking them:
+    #
+    #   misses only  ──▶ dto.area is None, so validate against the persisted issue's area
+    #   both         ──▶ the request's area wins, misses checked against the new one
+    #   area only    ──▶ see below: existing misses are pruned to the new area
+    #
+    # Falling back to "skip the check when area is absent" would put a hole through the
+    # rule: create would refuse SLICE on a putting issue while edit quietly accepted it,
+    # and the coverage grid would then report content its own navigation cannot reach.
+    effective_area = area if area is not None else issue.area
+    misses = (
+        normalize_misses_strict(dto.misses, effective_area)
+        if dto.misses is not None
+        else None
+    )
     goals = normalize_goals_strict(dto.goals) if dto.goals is not None else None
+
+    # Moving an issue to a different area invalidates tags that only made sense in the old
+    # one — a full-swing SLICE on an issue now filed under BUNKER. Prune them here.
+    #
+    # The admin form also clears them client-side, with a visible note, but a form is one
+    # caller. Leaving this to the UI would let any other client (a script, a future mobile
+    # editor, curl) create a row the coverage grid cannot display and the library cannot
+    # navigate to — exactly the incoherence area scoping exists to prevent.
+    #
+    # Pruning rather than rejecting is deliberate: an admin correcting an issue's area
+    # should not first have to hand-remove tags that the correction itself invalidates. The
+    # response carries the reduced set, so nothing is hidden.
+    if area is not None and area != issue.area and dto.misses is None:
+        keep = set(taxonomy.misses_for(area))
+        misses = [t.miss for t in issue.misses if t.miss in keep]
 
     # Only update fields that are provided
     if dto.title is not None:

@@ -1,6 +1,6 @@
 from ..base import Base
 import uuid
-from sqlalchemy import Text, CheckConstraint, ForeignKey
+from sqlalchemy import Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,11 +17,12 @@ class IssueMiss(Base):
         ForeignKey("issues.id", ondelete="CASCADE"),
         primary_key=True,
     )
+    # References taxonomy_misses, which scopes each miss to an area — a putt is not sliced.
+    # RESTRICT so removing a miss that issues still carry fails loudly rather than silently
+    # stripping tags off authored content.
     miss: Mapped[str] = mapped_column(
         Text,
-        CheckConstraint(
-            "miss IN ('SLICE','HOOK','PULL','PUSH','TOP','THIN','FAT','LOW_WEAK')"
-        ),
+        ForeignKey("taxonomy_misses.key", ondelete="RESTRICT"),
         primary_key=True,
     )
 

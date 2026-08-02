@@ -7,6 +7,7 @@ from supabase import create_client, Client
 from core.infrastructure.db.engine import engine
 from core.infrastructure.db.session import SessionLocal
 from core.config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLL_KEY
+from core.services import taxonomy
 
 
 # ---------------------------------------------------------------------------
@@ -64,6 +65,24 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if _is_ai_test(item):
             item.add_marker(skip_ai)
+
+
+@pytest.fixture(autouse=True)
+def _cold_taxonomy_cache():
+    """Start and end every test with an empty taxonomy cache.
+
+    `core.services.taxonomy` holds the vocabulary in a process-level cache so its pure
+    validators need no session. That state outlives a test, and `db_session` rolls back —
+    so a test that inserts a miss, reads it through a service, then rolls back would leave
+    the cache serving a row that no longer exists, and the next test would see it.
+
+    Same class of problem as `_shared_user_intact` below: cheap to prevent, and miserable
+    to diagnose otherwise because the failure surfaces in whichever test happens to run
+    next rather than the one that caused it.
+    """
+    taxonomy.reset_cache()
+    yield
+    taxonomy.reset_cache()
 
 
 @pytest.fixture(scope="session")

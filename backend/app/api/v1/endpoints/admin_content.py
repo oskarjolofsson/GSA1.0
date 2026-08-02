@@ -326,4 +326,5 @@ def coverage(
         ],
         unmapped_drills=dto.unmapped_drills,
         issues_with_no_drills=dto.issues_with_no_drills,
+        untagged_issues=dto.untagged_issues,
     )

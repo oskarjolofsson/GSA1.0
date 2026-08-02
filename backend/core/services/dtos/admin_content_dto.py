@@ -98,3 +98,8 @@ class CoverageDTO:
     cells: list[CoverageCellDTO] = field(default_factory=list)
     unmapped_drills: int = 0
     issues_with_no_drills: int = 0
+
+    # Issues carrying no miss or no goal tag. They cannot appear in any (area, miss, goal)
+    # cell, so without this count they stay invisible in the very tool meant to surface
+    # gaps — which is what the old inner joins did to them silently.
+    untagged_issues: int = 0

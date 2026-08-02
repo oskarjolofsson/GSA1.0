@@ -4,6 +4,7 @@ const CONTENT_ITEMS = [
   { href: "/content/issues", label: "Issues" },
   { href: "/content/drills", label: "Drills" },
   { href: "/content/coverage", label: "Coverage" },
+  { href: "/content/taxonomy", label: "Taxonomy" },
 ];
 
 export default function ContentLayout({
