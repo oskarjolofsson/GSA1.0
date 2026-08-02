@@ -1,5 +1,5 @@
 import TagChip from "@/features/content/components/tag-chip";
-import { golferGoalLabel, golferMissLabel } from "@/features/content/constants";
+import type { Labels } from "@/features/content/constants";
 
 /**
  * The issue as a golfer sees it in the app's library.
@@ -19,6 +19,7 @@ export default function GolferPreview({
   laymanDesc,
   misses,
   goals,
+  labels,
 }: {
   title: string;
   description: string;
@@ -26,6 +27,9 @@ export default function GolferPreview({
   laymanDesc: string;
   misses: string[];
   goals: string[];
+  // Label lookups built from the fetched taxonomy. Passed rather than imported so the
+  // words come from the database, not a second hardcoded copy.
+  labels: Labels;
 }) {
   const usingFallback = !laymanTitle.trim() || !laymanDesc.trim();
   const shownTitle = laymanTitle.trim() || title.trim() || "Untitled issue";
@@ -51,12 +55,12 @@ export default function GolferPreview({
           <div className="mt-3 flex flex-wrap gap-1">
             {misses.map((m) => (
               <TagChip key={m} tone="miss">
-                {golferMissLabel(m)}
+                {labels.golferMissLabel(m)}
               </TagChip>
             ))}
             {goals.map((g) => (
               <TagChip key={g} tone="goal">
-                {golferGoalLabel(g)}
+                {labels.golferGoalLabel(g)}
               </TagChip>
             ))}
           </div>

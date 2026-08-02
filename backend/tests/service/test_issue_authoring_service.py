@@ -90,12 +90,12 @@ class TestStructureFeedback:
             user_id=test_user["user_id"],
             issue=DraftIssueDTO(
                 title="Chunked chips", description="hitting the ground first",
-                area="CHIPPING", miss="FAT", goals=["CONTACT", "SHORT_GAME"],
+                area="FULL_SWING", miss="FAT", goals=["CONTACT", "SHORT_GAME"],
             ),
             drills=[DraftDrillDTO(title="Ladder drill", task="t", success_signal="s", fault_indicator="f")],
             db_session=db_session,
         )
-        assert created.area == "CHIPPING"
+        assert created.area == "FULL_SWING"
         assert created.misses == ["FAT"]
         assert set(created.goals) == {"CONTACT", "SHORT_GAME"}
 

@@ -36,5 +36,28 @@ export type Coverage = components["schemas"]["CoverageResponse"];
 /** One area/miss/goal cell. `issue_count` 0 is a gap. */
 export type CoverageCell = components["schemas"]["CoverageCellSchema"];
 
-/** The allowed tag vocabularies. Never hardcode these client-side. */
+/** The allowed tag vocabularies, with the words each audience sees. */
 export type Taxonomy = components["schemas"]["TaxonomyResponse"];
+
+/**
+ * One vocabulary value: `label` for the admin, `golfer_label` + `blurb` for the player.
+ *
+ * These labels used to live in features/content/constants.ts and, separately, in the expo
+ * app — four hand-synced copies of the same list. They come from the API now, which is
+ * what let those files go.
+ */
+export type TaxonomyTerm = components["schemas"]["TaxonomyTermSchema"];
+
+/** A miss, plus the area it belongs to. A putt is not sliced. */
+export type TaxonomyMiss = components["schemas"]["TaxonomyMissSchema"];
+
+/**
+ * A term as the editor sees it: includes retired values and a usage count.
+ *
+ * `usage_count > 0` means delete is blocked — issues reference it — and retiring via
+ * `active: false` is the way to take it out of circulation instead.
+ */
+export type AdminTaxonomyTerm = components["schemas"]["AdminTaxonomyTermSchema"];
+
+/** Which vocabulary a taxonomy request targets. Matches the URL segment. */
+export type TaxonomyKind = "areas" | "goals" | "misses";

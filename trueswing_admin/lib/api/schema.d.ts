@@ -343,6 +343,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/content/taxonomy/{segment}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Terms
+         * @description Every term of one kind, in picker order, including retired ones.
+         *
+         *     Inactive rows are included deliberately: this is the editor, and a retired value you
+         *     cannot see is a value you cannot bring back. Each row carries `usage_count` so the UI
+         *     can show that a term is in use — and therefore can be retired but not deleted — without
+         *     a second round trip per row.
+         */
+        get: operations["list_terms_api_v1_admin_content_taxonomy__segment___get"];
+        put?: never;
+        /**
+         * Create Term
+         * @description Add a vocabulary value.
+         *
+         *     This is the endpoint the whole taxonomy refactor exists for: adding a miss used to mean
+         *     a migration plus three hand-synced file edits, which is why four areas of the game went
+         *     unauthored. Creating a miss requires an existing area — that scoping is what lets the
+         *     backend refuse a full-swing tag on a putting issue.
+         *
+         *     409 if the key is taken. Keys are normalised, so `slice` collides with `SLICE`.
+         */
+        post: operations["create_term_api_v1_admin_content_taxonomy__segment___post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/taxonomy/{segment}/{key}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Term
+         * @description Remove a vocabulary value, if nothing references it.
+         *
+         *     409 with a count when issues still carry it ("12 issues use this"), rather than letting
+         *     ON DELETE RESTRICT surface as a raw IntegrityError. Deleting an area that still has
+         *     misses attached is refused the same way.
+         *
+         *     The refusal names `active = false` as the alternative, because retiring is almost always
+         *     what someone actually wants — deleting would mean retagging everything that carries it.
+         */
+        delete: operations["delete_term_api_v1_admin_content_taxonomy__segment___key___delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Term
+         * @description Edit labels, ordering or active state. Partial: omitted fields are left untouched.
+         *
+         *     `key` cannot be changed — issues, issue_goals and issue_misses all reference it, so a
+         *     rename would orphan every tag. Reword a term by editing its labels; replace it by
+         *     adding the new one and retiring the old.
+         *
+         *     Setting `active = false` is how a term is taken out of circulation when content still
+         *     carries it: gone from the pickers and from validation, existing tags untouched.
+         */
+        patch: operations["update_term_api_v1_admin_content_taxonomy__segment___key___patch"];
+        trace?: never;
+    };
     "/api/v1/drills/": {
         parameters: {
             query?: never;
@@ -1632,10 +1706,16 @@ export interface paths {
         };
         /**
          * Get Taxonomy
-         * @description The canonical practice-taxonomy vocabularies: areas, misses, goals, kinds.
+         * @description The canonical practice-taxonomy vocabularies: areas, goals, misses, kinds — with the
+         *     display labels each audience sees.
          *
-         *     Gated by `get_current_user`, not `require_admin` — both the admin dashboard and
-         *     the golfer-facing app render tag pickers from this.
+         *     Gated by `get_current_user`, not `require_admin`: both the admin dashboard and the
+         *     golfer-facing app render tag pickers from this. Writes are a separate, admin-only
+         *     surface under /admin/content/taxonomy/.
+         *
+         *     Misses arrive twice — flat in `misses`, and grouped in `misses_by_area`. The grouped
+         *     view is what the library navigates, since a miss belongs to exactly one area and the
+         *     "which sounds like you?" step can only offer the right options once an area is chosen.
          */
         get: operations["get_taxonomy_api_v1_taxonomy__get"];
         put?: never;
@@ -1891,6 +1971,42 @@ export interface components {
             /** Newuserslast30Days */
             newUsersLast30Days: number;
         };
+        /**
+         * AdminTaxonomyTermSchema
+         * @description A vocabulary value as the editor sees it, including retired ones.
+         *
+         *     `active` is the important column here. Deleting a term is blocked by ON DELETE RESTRICT
+         *     once any issue carries it, so retiring is the usual way to take something out of
+         *     circulation: it vanishes from the pickers and from validation while existing content
+         *     keeps its tags.
+         */
+        AdminTaxonomyTermSchema: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Golfer Label */
+            golfer_label: string;
+            /** Blurb */
+            blurb?: string | null;
+            /**
+             * Sort
+             * @default 0
+             */
+            sort: number;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Area */
+            area?: string | null;
+            /**
+             * Usage Count
+             * @default 0
+             */
+            usage_count: number;
+        };
         /** AdminVerifyResponse */
         AdminVerifyResponse: {
             /** Is Admin */
@@ -2056,6 +2172,11 @@ export interface components {
             unmapped_drills: number;
             /** Issues With No Drills */
             issues_with_no_drills: number;
+            /**
+             * Untagged Issues
+             * @default 0
+             */
+            untagged_issues: number;
         };
         /** CreateAdminDrillRequest */
         CreateAdminDrillRequest: {
@@ -2213,6 +2334,33 @@ export interface components {
              * Format: uuid
              */
             issue_id: string;
+        };
+        /**
+         * CreateTaxonomyTermRequest
+         * @description `key` is normalised server-side (upper-cased, spaces and hyphens to underscores) so
+         *     `slice`, `Slice` and `SLICE` cannot become three rows.
+         */
+        CreateTaxonomyTermRequest: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Golfer Label */
+            golfer_label: string;
+            /** Blurb */
+            blurb?: string | null;
+            /**
+             * Sort
+             * @default 0
+             */
+            sort: number;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Area */
+            area?: string | null;
         };
         /**
          * DeleteImpactResponse
@@ -2847,24 +2995,88 @@ export interface components {
             current_period_end: string | null;
         };
         /**
-         * TaxonomyResponse
-         * @description The canonical tag vocabularies, so clients never hardcode them.
+         * TaxonomyMissSchema
+         * @description A miss, plus the area it belongs to.
          *
-         *     Values only, no display labels: membership is a contract, wording is not.
+         *     Misses are area-scoped: a putt is not sliced, a chip is not hooked. Clients group by
+         *     this to offer the right options once an area is chosen, and the backend enforces the
+         *     same rule in `normalize_misses_strict`.
+         */
+        TaxonomyMissSchema: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Golfer Label */
+            golfer_label: string;
+            /** Blurb */
+            blurb?: string | null;
+            /**
+             * Sort
+             * @default 0
+             */
+            sort: number;
+            /** Area */
+            area: string;
+        };
+        /**
+         * TaxonomyResponse
+         * @description The canonical tag vocabularies with their display labels.
+         *
+         *     Read-gated by `get_current_user`, not `require_admin`: both the admin dashboard and the
+         *     golfer-facing app render pickers from this. Writes live on the admin router.
+         *
+         *     `misses_by_area` is the shape the library actually navigates — area first, then "which
+         *     sounds like you?" — while `misses` stays flat for callers that only need membership.
+         *     Both views come from the same rows.
          */
         TaxonomyResponse: {
             /** Areas */
-            areas: string[];
-            /** Misses */
-            misses: string[];
+            areas: components["schemas"]["TaxonomyTermSchema"][];
             /** Goals */
-            goals: string[];
+            goals: components["schemas"]["TaxonomyTermSchema"][];
+            /** Misses */
+            misses: components["schemas"]["TaxonomyMissSchema"][];
+            /** Misses By Area */
+            misses_by_area: {
+                [key: string]: components["schemas"]["TaxonomyMissSchema"][];
+            };
             /** Kinds */
             kinds: string[];
             /** Default Area */
             default_area: string;
             /** Default Kind */
             default_kind: string;
+        };
+        /**
+         * TaxonomyTermSchema
+         * @description One vocabulary value with the words each audience sees.
+         *
+         *     The clients used to hold these labels themselves — `constants.ts` in the admin and
+         *     `constants/Misses.ts` in the expo app — which meant four hand-synced copies of the same
+         *     list. Serving them here is what lets those files be deleted.
+         *
+         *         label         coach vocabulary, admin-facing     "Slice"
+         *         golfer_label  golfer-facing title                "I slice it"
+         *         blurb         golfer-facing subtitle, optional   "Curves hard right"
+         *
+         *     `blurb` is nullable and the clients render it conditionally, so a term whose title says
+         *     everything can stay a single line.
+         */
+        TaxonomyTermSchema: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Golfer Label */
+            golfer_label: string;
+            /** Blurb */
+            blurb?: string | null;
+            /**
+             * Sort
+             * @default 0
+             */
+            sort: number;
         };
         /** UpdateAdminDrillRequest */
         UpdateAdminDrillRequest: {
@@ -2958,6 +3170,28 @@ export interface components {
             misses?: string[] | null;
             /** Goals */
             goals?: string[] | null;
+        };
+        /**
+         * UpdateTaxonomyTermRequest
+         * @description Partial edit. Omitted fields are left untouched.
+         *
+         *     `key` is absent on purpose: it is the foreign key that issue_goals, issue_misses and
+         *     issues reference, so renaming it would orphan every tag. Change what a term *says* by
+         *     editing its labels; replace it entirely by adding the new one and retiring the old.
+         */
+        UpdateTaxonomyTermRequest: {
+            /** Label */
+            label?: string | null;
+            /** Golfer Label */
+            golfer_label?: string | null;
+            /** Blurb */
+            blurb?: string | null;
+            /** Sort */
+            sort?: number | null;
+            /** Active */
+            active?: boolean | null;
+            /** Area */
+            area?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -3699,6 +3933,146 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CoverageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_terms_api_v1_admin_content_taxonomy__segment___get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                segment: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminTaxonomyTermSchema"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_term_api_v1_admin_content_taxonomy__segment___post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                segment: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxonomyTermRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminTaxonomyTermSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_term_api_v1_admin_content_taxonomy__segment___key___delete: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                segment: string;
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_term_api_v1_admin_content_taxonomy__segment___key___patch: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                segment: string;
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaxonomyTermRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminTaxonomyTermSchema"];
                 };
             };
             /** @description Validation Error */

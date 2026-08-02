@@ -7,7 +7,7 @@ import Pagination from "@/features/content/components/pagination";
 import TagChip from "@/features/content/components/tag-chip";
 import IssueDetail from "@/features/content/components/issue-detail";
 import IssueForm from "@/features/content/components/issue-form";
-import { areaLabel, goalLabel, kindLabel, missLabel } from "@/features/content/constants";
+import { labelsFrom, type Labels } from "@/features/content/constants";
 import type { PageInfo } from "@/features/shared/paginate";
 import type {
   AdminDrill,
@@ -64,6 +64,7 @@ export default function IssuesExplorer({
   attachAction,
   detachAction,
 }: Props) {
+  const labels = labelsFrom(taxonomy);
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<AdminIssue[]>([]);
   const [searchError, setSearchError] = useState(false);
@@ -123,6 +124,7 @@ export default function IssuesExplorer({
   if (selected) {
     return (
       <IssueDetail
+        taxonomy={taxonomy}
         issue={selected}
         onBack={() => setSelected(null)}
         onEdit={() => setEditing(true)}
@@ -188,7 +190,7 @@ export default function IssuesExplorer({
             </p>
           ) : (
             <>
-              <IssueList issues={browseRows} onSelect={setSelected} />
+              <IssueList issues={browseRows} onSelect={setSelected} labels={labels} />
               <Pagination pageInfo={pageInfo} basePath="/content/issues" />
             </>
           )
@@ -203,7 +205,7 @@ export default function IssuesExplorer({
             No issues match “{trimmed}”.
           </p>
         ) : (
-          <IssueList issues={searchRows} onSelect={setSelected} />
+          <IssueList issues={searchRows} onSelect={setSelected} labels={labels} />
         )}
       </div>
     </div>
@@ -254,9 +256,13 @@ function SourceTabs({ active }: { active: string }) {
 function IssueList({
   issues,
   onSelect,
+  labels,
 }: {
   issues: AdminIssue[];
   onSelect: (issue: AdminIssue) => void;
+  // Built from the fetched taxonomy by the parent. Passed rather than imported so
+  // the tag chips read the database's words, not a second hardcoded copy.
+  labels: Labels;
 }) {
   return (
     <ul className="divide-y divide-black/[.06] overflow-hidden rounded-2xl border border-zinc-200 dark:divide-white/[.08] dark:border-zinc-700">
@@ -284,17 +290,17 @@ function IssueList({
               </span>
             </span>
             <span className="flex flex-wrap gap-1">
-              <TagChip>{areaLabel(issue.area)}</TagChip>
-              <TagChip>{kindLabel(issue.kind)}</TagChip>
+              <TagChip>{labels.areaLabel(issue.area)}</TagChip>
+              <TagChip>{labels.kindLabel(issue.kind)}</TagChip>
               {issue.source === "custom" && <TagChip>user-authored</TagChip>}
               {issue.misses.map((m) => (
                 <TagChip key={m} tone="miss">
-                  {missLabel(m)}
+                  {labels.missLabel(m)}
                 </TagChip>
               ))}
               {issue.goals.map((g) => (
                 <TagChip key={g} tone="goal">
-                  {goalLabel(g)}
+                  {labels.goalLabel(g)}
                 </TagChip>
               ))}
             </span>

@@ -2,7 +2,12 @@
 from ..base import Base
 
 # Import all models in order
-# Import independent models first
+# Import independent models first.
+# Taxonomy tables lead: issues.area, issue_goals.goal and issue_misses.miss all point
+# at them, so they have to be registered before those models resolve their FKs.
+from .TaxonomyArea import TaxonomyArea
+from .TaxonomyGoal import TaxonomyGoal
+from .TaxonomyMiss import TaxonomyMiss
 from .Profile import Profile
 from .Video import Video
 from .Drill import Drill
@@ -33,6 +38,9 @@ from .ProgramDrillState import ProgramDrillState
 # Export all models
 __all__ = [
     "Base",
+    "TaxonomyArea",
+    "TaxonomyGoal",
+    "TaxonomyMiss",
     "Profile",
     "Video",
     "Drill",
