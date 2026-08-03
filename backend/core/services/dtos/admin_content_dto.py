@@ -46,6 +46,10 @@ class AdminDrillDTO:
     fault_indicator: str
     user_id: UUID | None
     created_at: str | None = None
+    # NULL means the drill suits any area, not that it is a full-swing drill.
+    area: str | None = None
+    # NULL means feel-only: the golfer rates the block rough/ok/dialed instead of scoring it.
+    metric: dict | None = None
     issues: list[AdminIssueRefDTO] = field(default_factory=list)
 
 
@@ -53,9 +57,10 @@ class AdminDrillDTO:
 class DeleteImpactDTO:
     """What a delete would take with it.
 
-    Most of these rows CASCADE away silently. `drill_runs` is the exception:
-    practice_drill_runs.drill_id is ON DELETE NO ACTION, so a drill with recorded
-    practice runs cannot be deleted at all — the database refuses it.
+    Most of these rows CASCADE away silently. `drill_runs` is the exception in the other
+    direction: practice_drill_runs.drill_id is ON DELETE SET NULL, so those runs survive
+    the delete and keep counting toward the golfer's streak — they just lose the drill
+    they name. Still worth showing, because the history stops being readable.
     """
 
     analysis_issues: int = 0

@@ -135,6 +135,294 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/content/issues/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Issues
+         * @description One page of catalog issues with their tags and drills.
+         *
+         *     Arguments (query):
+         *         limit/offset: page window, newest first
+         *         q: substring match on title, description or layman_title
+         *         area/kind/source: exact-match filters
+         */
+        get: operations["list_issues_api_v1_admin_content_issues__get"];
+        put?: never;
+        /**
+         * Compose Issue
+         * @description Create a catalog issue together with its tags, new drills and links to existing
+         *     drills, in one request.
+         *
+         *     Everything shares the request transaction, so a failure anywhere — an unknown
+         *     tag, a drill id that does not resolve — leaves no partial issue behind.
+         *
+         *     Unknown area/kind/tag values return 422. Allowed values: GET /api/v1/taxonomy/.
+         */
+        post: operations["compose_issue_api_v1_admin_content_issues__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/issues/{issue_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Issue */
+        get: operations["get_issue_api_v1_admin_content_issues__issue_id___get"];
+        put?: never;
+        post?: never;
+        /** Delete Issue */
+        delete: operations["delete_issue_api_v1_admin_content_issues__issue_id___delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Issue
+         * @description Edit a catalog issue. Partial: omitted fields are left untouched.
+         *
+         *     Three-state on the nullable text fields — omit to keep, "" to clear, text to
+         *     set. Tags behave the same: omit to keep, [] to remove them all, a list to
+         *     replace the set. Without the "" case there would be no way to remove copy once
+         *     written, and the save would report success while changing nothing.
+         *
+         *     Unknown area/kind/tag values return 422 naming the value, and nothing is
+         *     written. Allowed values: GET /api/v1/taxonomy/.
+         *
+         *     Editing a user-authored issue is permitted — it is the moderation path — and
+         *     leaves its `source` and `user_id` alone, neither being accepted here.
+         */
+        patch: operations["update_issue_api_v1_admin_content_issues__issue_id___patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/content/issues/{issue_id}/impact/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Issue Delete Impact
+         * @description What deleting this issue would remove. Read-only.
+         *
+         *     Analyses, programs and practice sessions all CASCADE from an issue, so these
+         *     counts are real user data that would be destroyed.
+         */
+        get: operations["issue_delete_impact_api_v1_admin_content_issues__issue_id__impact__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/drills/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Drills
+         * @description One page of drills, each with the issues that prescribe it.
+         */
+        get: operations["list_drills_api_v1_admin_content_drills__get"];
+        put?: never;
+        /**
+         * Create Drill
+         * @description Create a global catalog drill. It is unattached until linked to an issue.
+         */
+        post: operations["create_drill_api_v1_admin_content_drills__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/drills/{drill_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Drill */
+        get: operations["get_drill_api_v1_admin_content_drills__drill_id___get"];
+        put?: never;
+        post?: never;
+        /** Delete Drill */
+        delete: operations["delete_drill_api_v1_admin_content_drills__drill_id___delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Drill
+         * @description Partial update; omitted fields are left untouched.
+         *
+         *     `exclude_unset` is load-bearing now that `area` and `metric` are nullable. They are
+         *     the only fields that can be *cleared*, so the service distinguishes "sent as null"
+         *     from "not sent" — dumping unset keys as None would silently strip a drill's metric
+         *     on any patch that only touched its title.
+         */
+        patch: operations["update_drill_api_v1_admin_content_drills__drill_id___patch"];
+        trace?: never;
+    };
+    "/api/v1/admin/content/drills/{drill_id}/impact/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Drill Delete Impact
+         * @description What deleting this drill would touch.
+         *
+         *     `drill_runs` no longer blocks: practice_drill_runs is ON DELETE SET NULL, so those
+         *     sessions survive and keep counting toward the streak. They just stop naming the drill,
+         *     which is why the count is still worth showing before confirming.
+         */
+        get: operations["drill_delete_impact_api_v1_admin_content_drills__drill_id__impact__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/issues/{issue_id}/drills/{drill_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attach Drill
+         * @description Prescribe an existing drill for an issue. 409 if already attached.
+         */
+        post: operations["attach_drill_api_v1_admin_content_issues__issue_id__drills__drill_id___post"];
+        /**
+         * Detach Drill
+         * @description Unlink a drill from an issue. The drill and its practice history survive.
+         */
+        delete: operations["detach_drill_api_v1_admin_content_issues__issue_id__drills__drill_id___delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/coverage/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Coverage
+         * @description Issue counts across every area / miss / goal combination, plus the two catalog
+         *     health counts already tracked by /admin/stats/.
+         *
+         *     Cells with issue_count 0 are gaps: a golfer choosing that goal and miss has
+         *     nothing to practise.
+         */
+        get: operations["coverage_api_v1_admin_content_coverage__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/taxonomy/{segment}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Terms
+         * @description Every term of one kind, in picker order, including retired ones.
+         *
+         *     Inactive rows are included deliberately: this is the editor, and a retired value you
+         *     cannot see is a value you cannot bring back. Each row carries `usage_count` so the UI
+         *     can show that a term is in use — and therefore can be retired but not deleted — without
+         *     a second round trip per row.
+         */
+        get: operations["list_terms_api_v1_admin_content_taxonomy__segment___get"];
+        put?: never;
+        /**
+         * Create Term
+         * @description Add a vocabulary value.
+         *
+         *     This is the endpoint the whole taxonomy refactor exists for: adding a miss used to mean
+         *     a migration plus three hand-synced file edits, which is why four areas of the game went
+         *     unauthored. Creating a miss requires an existing area — that scoping is what lets the
+         *     backend refuse a full-swing tag on a putting issue.
+         *
+         *     409 if the key is taken. Keys are normalised, so `slice` collides with `SLICE`.
+         */
+        post: operations["create_term_api_v1_admin_content_taxonomy__segment___post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/taxonomy/{segment}/{key}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Term
+         * @description Remove a vocabulary value, if nothing references it.
+         *
+         *     409 with a count when issues still carry it ("12 issues use this"), rather than letting
+         *     ON DELETE RESTRICT surface as a raw IntegrityError. Deleting an area that still has
+         *     misses attached is refused the same way.
+         *
+         *     The refusal names `active = false` as the alternative, because retiring is almost always
+         *     what someone actually wants — deleting would mean retagging everything that carries it.
+         */
+        delete: operations["delete_term_api_v1_admin_content_taxonomy__segment___key___delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Term
+         * @description Edit labels, ordering or active state. Partial: omitted fields are left untouched.
+         *
+         *     `key` cannot be changed — issues, issue_goals and issue_misses all reference it, so a
+         *     rename would orphan every tag. Reword a term by editing its labels; replace it by
+         *     adding the new one and retiring the old.
+         *
+         *     Setting `active = false` is how a term is taken out of circulation when content still
+         *     carries it: gone from the pickers and from validation, existing tags untouched.
+         */
+        patch: operations["update_term_api_v1_admin_content_taxonomy__segment___key___patch"];
+        trace?: never;
+    };
     "/api/v1/drills/": {
         parameters: {
             query?: never;
@@ -146,7 +434,11 @@ export interface paths {
         put?: never;
         /**
          * Create Drill
-         * @description Create a new drill.
+         * @description Create a new drill in the global catalog.
+         *
+         *     Admin-only: drill_service.create_drill leaves user_id NULL, and a NULL user_id
+         *     means the drill is global. Users author their own drills through
+         *     POST /issues/custom/, which stamps ownership.
          *
          *     Arguments (JSON body):
          *         title (str): Title of the drill
@@ -605,8 +897,10 @@ export interface paths {
          *         swing_effect (str, optional): Effect on swing
          *         shot_outcome (str, optional): Expected shot outcome
          *         layman_title/layman_desc (str, optional): Plain-language browse copy
-         *         miss (str, optional): Ball-flight miss tag
+         *         misses (list[str], optional): Ball-flight miss tags
          *         goals (list[str], optional): Goal tags
+         *
+         *     Unknown area/kind/tag values return 422. Allowed values: GET /api/v1/taxonomy/.
          */
         post: operations["create_issue_api_v1_issues__post"];
         delete?: never;
@@ -829,6 +1123,11 @@ export interface paths {
          *         swing_effect (str, optional): Effect on swing
          *         shot_outcome (str, optional): Expected shot outcome
          *         layman_title/layman_desc (str, optional): Plain-language browse copy
+         *         misses (list[str], optional): Miss tags. Replaces the set; omit to leave
+         *             tags alone, pass [] to remove them all.
+         *         goals (list[str], optional): Goal tags, same replace semantics.
+         *
+         *     Unknown area/kind/tag values return 422.
          *
          *     Returns:
          *         JSON response with updated issue details
@@ -1394,10 +1693,40 @@ export interface paths {
         /**
          * Complete Step
          * @description Mark a program step completed, optionally linking the practice session that
-         *     fulfilled it and passing per-drill block-feel grades (rough/ok/dialed). Grades
-         *     update the spaced-repetition state that schedules future range sessions.
+         *     fulfilled it and passing per-drill results. Each drill reports either a block-feel
+         *     grade (rough/ok/dialed) or a raw metric_value the server grades itself. Both routes
+         *     move the spaced-repetition state that schedules future range sessions.
          */
         post: operations["complete_step_api_v1_programs__program_id__steps__step_id__complete__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/taxonomy/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Taxonomy
+         * @description The canonical practice-taxonomy vocabularies: areas, goals, misses, kinds — with the
+         *     display labels each audience sees.
+         *
+         *     Gated by `get_current_user`, not `require_admin`: both the admin dashboard and the
+         *     golfer-facing app render tag pickers from this. Writes are a separate, admin-only
+         *     surface under /admin/content/taxonomy/.
+         *
+         *     Misses arrive twice — flat in `misses`, and grouped in `misses_by_area`. The grouped
+         *     view is what the library navigates, since a miss belongs to exactly one area and the
+         *     "which sounds like you?" step can only offer the right options once an area is chosen.
+         */
+        get: operations["get_taxonomy_api_v1_taxonomy__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1459,11 +1788,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Drill Id
-             * Format: uuid
-             */
-            drill_id: string;
+            /** Drill Id */
+            drill_id?: string | null;
             /** Drill Title */
             drill_title: string;
             /** Successful Reps */
@@ -1479,6 +1805,14 @@ export interface components {
             started_at: string;
             /** Completed At */
             completed_at: string | null;
+            /** Feel */
+            feel?: number | null;
+            /** Metric Value */
+            metric_value?: number | null;
+            /** Metric Type */
+            metric_type?: string | null;
+            /** Grade */
+            grade?: string | null;
         };
         /** ActivitySession */
         ActivitySession: {
@@ -1501,6 +1835,138 @@ export interface components {
             /** Drill Runs */
             drill_runs: components["schemas"]["ActivityDrillRun"][];
         };
+        /** AdminDrillPageResponse */
+        AdminDrillPageResponse: {
+            /** Items */
+            items: components["schemas"]["AdminDrillSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** AdminDrillSchema */
+        AdminDrillSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Task */
+            task: string;
+            /** Success Signal */
+            success_signal: string;
+            /** Fault Indicator */
+            fault_indicator: string;
+            /** User Id */
+            user_id: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Area */
+            area?: string | null;
+            /** Metric */
+            metric?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Issues
+             * @default []
+             */
+            issues: components["schemas"]["AdminIssueRefSchema"][];
+            /**
+             * Issue Count
+             * @default 0
+             */
+            issue_count: number;
+        };
+        /** AdminIssuePageResponse */
+        AdminIssuePageResponse: {
+            /** Items */
+            items: components["schemas"]["AdminIssueSchema"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /**
+         * AdminIssueRefSchema
+         * @description Just enough of an issue to show what a drill is attached to.
+         */
+        AdminIssueRefSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+        };
+        /**
+         * AdminIssueSchema
+         * @description An issue as the content admin sees it.
+         *
+         *     Distinct from GetIssue, which is shaped for the analysis flow and carries
+         *     progress and analysis linkage the admin has no use for. This one carries what
+         *     the catalog editor needs: ownership, tags and the linked drills.
+         */
+        AdminIssueSchema: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string | null;
+            /** Area */
+            area: string;
+            /** Kind */
+            kind: string;
+            /** Source */
+            source: string;
+            /** User Id */
+            user_id: string | null;
+            /** Layman Title */
+            layman_title?: string | null;
+            /** Layman Desc */
+            layman_desc?: string | null;
+            /** Current Motion */
+            current_motion?: string | null;
+            /** Expected Motion */
+            expected_motion?: string | null;
+            /** Swing Effect */
+            swing_effect?: string | null;
+            /** Shot Outcome */
+            shot_outcome?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Goals
+             * @default []
+             */
+            goals: string[];
+            /**
+             * Misses
+             * @default []
+             */
+            misses: string[];
+            /**
+             * Drills
+             * @default []
+             */
+            drills: components["schemas"]["CatalogDrillSchema"][];
+            /**
+             * Drill Count
+             * @default 0
+             */
+            drill_count: number;
+        };
         /**
          * AdminStatsResponse
          * @description Response schema for admin dashboard statistics.
@@ -1522,6 +1988,42 @@ export interface components {
             newUsersLast7Days: number;
             /** Newuserslast30Days */
             newUsersLast30Days: number;
+        };
+        /**
+         * AdminTaxonomyTermSchema
+         * @description A vocabulary value as the editor sees it, including retired ones.
+         *
+         *     `active` is the important column here. Deleting a term is blocked by ON DELETE RESTRICT
+         *     once any issue carries it, so retiring is the usual way to take something out of
+         *     circulation: it vanishes from the pickers and from validation while existing content
+         *     keeps its tags.
+         */
+        AdminTaxonomyTermSchema: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Golfer Label */
+            golfer_label: string;
+            /** Blurb */
+            blurb?: string | null;
+            /**
+             * Sort
+             * @default 0
+             */
+            sort: number;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Area */
+            area?: string | null;
+            /**
+             * Usage Count
+             * @default 0
+             */
+            usage_count: number;
         };
         /** AdminVerifyResponse */
         AdminVerifyResponse: {
@@ -1603,6 +2105,113 @@ export interface components {
              * @default []
              */
             grades: components["schemas"]["DrillGrade"][];
+        };
+        /**
+         * ComposeIssueRequest
+         * @description Create or replace an issue together with its tags and drill links.
+         *
+         *     One request rather than the six writes the catalog used to need (issue, goal
+         *     tags, miss tags, drills, links) — they share the request transaction, so a
+         *     failure anywhere leaves nothing behind.
+         */
+        ComposeIssueRequest: {
+            /** Title */
+            title: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Area
+             * @default FULL_SWING
+             */
+            area: string;
+            /**
+             * Kind
+             * @default fault
+             */
+            kind: string;
+            /** Layman Title */
+            layman_title?: string | null;
+            /** Layman Desc */
+            layman_desc?: string | null;
+            /** Current Motion */
+            current_motion?: string | null;
+            /** Expected Motion */
+            expected_motion?: string | null;
+            /** Swing Effect */
+            swing_effect?: string | null;
+            /** Shot Outcome */
+            shot_outcome?: string | null;
+            /**
+             * Misses
+             * @default []
+             */
+            misses: string[];
+            /**
+             * Goals
+             * @default []
+             */
+            goals: string[];
+            /**
+             * New Drills
+             * @default []
+             */
+            new_drills: components["schemas"]["DraftDrillSchema"][];
+            /**
+             * Existing Drill Ids
+             * @default []
+             */
+            existing_drill_ids: string[];
+        };
+        /** CoverageCellSchema */
+        CoverageCellSchema: {
+            /** Area */
+            area: string;
+            /** Miss */
+            miss: string | null;
+            /** Goal */
+            goal: string | null;
+            /** Issue Count */
+            issue_count: number;
+        };
+        /**
+         * CoverageResponse
+         * @description Which parts of the taxonomy have content and which are empty.
+         *
+         *     Cells with issue_count 0 are gaps: a golfer picking that goal and miss finds
+         *     nothing to practise.
+         */
+        CoverageResponse: {
+            /** Cells */
+            cells: components["schemas"]["CoverageCellSchema"][];
+            /** Unmapped Drills */
+            unmapped_drills: number;
+            /** Issues With No Drills */
+            issues_with_no_drills: number;
+            /**
+             * Untagged Issues
+             * @default 0
+             */
+            untagged_issues: number;
+        };
+        /** CreateAdminDrillRequest */
+        CreateAdminDrillRequest: {
+            /** Title */
+            title: string;
+            /** Task */
+            task: string;
+            /** Success Signal */
+            success_signal: string;
+            /** Fault Indicator */
+            fault_indicator: string;
+            /** Area */
+            area?: string | null;
+            /** Metric */
+            metric?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** CreateAnalysisRequest */
         CreateAnalysisRequest: {
@@ -1729,8 +2338,11 @@ export interface components {
             layman_title?: string | null;
             /** Layman Desc */
             layman_desc?: string | null;
-            /** Miss */
-            miss?: string | null;
+            /**
+             * Misses
+             * @default []
+             */
+            misses: string[];
             /**
              * Goals
              * @default []
@@ -1746,6 +2358,73 @@ export interface components {
              * Format: uuid
              */
             issue_id: string;
+        };
+        /**
+         * CreateTaxonomyTermRequest
+         * @description `key` is normalised server-side (upper-cased, spaces and hyphens to underscores) so
+         *     `slice`, `Slice` and `SLICE` cannot become three rows.
+         */
+        CreateTaxonomyTermRequest: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Golfer Label */
+            golfer_label: string;
+            /** Blurb */
+            blurb?: string | null;
+            /**
+             * Sort
+             * @default 0
+             */
+            sort: number;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Area */
+            area?: string | null;
+        };
+        /**
+         * DeleteImpactResponse
+         * @description What a delete would take with it.
+         *
+         *     Every count is a row that CASCADEs away with the record, most of them belonging
+         *     to real users. `blocking` is true when anything at all references it, which is
+         *     what makes the caller pass ?confirm_impact=true.
+         */
+        DeleteImpactResponse: {
+            /**
+             * Analysis Issues
+             * @default 0
+             */
+            analysis_issues: number;
+            /**
+             * Programs
+             * @default 0
+             */
+            programs: number;
+            /**
+             * Practice Sessions
+             * @default 0
+             */
+            practice_sessions: number;
+            /**
+             * Drill Runs
+             * @default 0
+             */
+            drill_runs: number;
+            /**
+             * Mappings
+             * @default 0
+             */
+            mappings: number;
+            /**
+             * Blocking
+             * @default false
+             */
+            blocking: boolean;
         };
         /** DeleteIssueDrillResponse */
         DeleteIssueDrillResponse: {
@@ -1799,7 +2478,15 @@ export interface components {
             /** Layman Desc */
             layman_desc?: string | null;
         };
-        /** DrillGrade */
+        /**
+         * DrillGrade
+         * @description How one drill block went. Send exactly one of `grade` or `metric_value`.
+         *
+         *     A feel drill sends `grade` -- the golfer's tap is the measurement. A scored drill sends
+         *     `metric_value`, the raw number, and the server grades it against the drill's current
+         *     thresholds. Clients never compute a grade from a metric: `grade_at` is admin-editable,
+         *     so a build that shipped before a retune would grade on numbers nobody can see any more.
+         */
         DrillGrade: {
             /**
              * Drill Id
@@ -1807,7 +2494,9 @@ export interface components {
              */
             drill_id: string;
             /** Grade */
-            grade: string;
+            grade?: string | null;
+            /** Metric Value */
+            metric_value?: number | null;
         };
         /** FeedbackDraftResponse */
         FeedbackDraftResponse: {
@@ -1912,6 +2601,12 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Area */
+            area?: string | null;
+            /** Metric */
+            metric?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** GetFeedback */
         GetFeedback: {
@@ -1973,7 +2668,6 @@ export interface components {
             analysis_id?: string | null;
             /** Confidence */
             confidence?: number | null;
-            progress?: components["schemas"]["IssueProgress"] | null;
             /** Program Status */
             program_status?: string | null;
             /**
@@ -1981,6 +2675,16 @@ export interface components {
              * @default catalog
              */
             source: string;
+            /**
+             * Goals
+             * @default []
+             */
+            goals: string[];
+            /**
+             * Misses
+             * @default []
+             */
+            misses: string[];
         };
         /** GetIssueDrill */
         GetIssueDrill: {
@@ -2058,24 +2762,6 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /**
-         * IssueProgress
-         * @description Progress tracking for an analysis issue.
-         */
-        IssueProgress: {
-            /** Completed Sessions */
-            completed_sessions: number;
-            /** Total Successful Reps */
-            total_successful_reps: number;
-            /** Overall Success Rate */
-            overall_success_rate: number | null;
-            /** Recent Session Success Rates */
-            recent_session_success_rates: number | null;
-            /** Delta */
-            delta: number | null;
-            /** Last Completed At */
-            last_completed_at?: string | null;
-        };
         /** IssueSwingTimelineItem */
         IssueSwingTimelineItem: {
             /**
@@ -2113,14 +2799,14 @@ export interface components {
              * Format: uuid
              */
             session_id: string;
-            /**
-             * Drill Id
-             * Format: uuid
-             */
-            drill_id: string;
+            /** Drill Id */
+            drill_id: string | null;
             /** Status */
             status: string;
-            /** Successful Reps */
+            /**
+             * Successful Reps
+             * @default 0
+             */
             successful_reps: number;
             /** Failed Reps */
             failed_reps: number;
@@ -2133,6 +2819,14 @@ export interface components {
             started_at: string;
             /** Completed At */
             completed_at: string | null;
+            /** Feel */
+            feel?: number | null;
+            /** Metric Value */
+            metric_value?: number | null;
+            /** Metric Type */
+            metric_type?: string | null;
+            /** Grade */
+            grade?: string | null;
         };
         /** PracticeSessionResponse */
         PracticeSessionResponse: {
@@ -2329,6 +3023,145 @@ export interface components {
             /** Current Period End */
             current_period_end: string | null;
         };
+        /**
+         * TaxonomyMissSchema
+         * @description A miss, plus the area it belongs to.
+         *
+         *     Misses are area-scoped: a putt is not sliced, a chip is not hooked. Clients group by
+         *     this to offer the right options once an area is chosen, and the backend enforces the
+         *     same rule in `normalize_misses_strict`.
+         */
+        TaxonomyMissSchema: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Golfer Label */
+            golfer_label: string;
+            /** Blurb */
+            blurb?: string | null;
+            /**
+             * Sort
+             * @default 0
+             */
+            sort: number;
+            /** Area */
+            area: string;
+        };
+        /**
+         * TaxonomyResponse
+         * @description The canonical tag vocabularies with their display labels.
+         *
+         *     Read-gated by `get_current_user`, not `require_admin`: both the admin dashboard and the
+         *     golfer-facing app render pickers from this. Writes live on the admin router.
+         *
+         *     `misses_by_area` is the shape the library actually navigates — area first, then "which
+         *     sounds like you?" — while `misses` stays flat for callers that only need membership.
+         *     Both views come from the same rows.
+         */
+        TaxonomyResponse: {
+            /** Areas */
+            areas: components["schemas"]["TaxonomyTermSchema"][];
+            /** Goals */
+            goals: components["schemas"]["TaxonomyTermSchema"][];
+            /** Misses */
+            misses: components["schemas"]["TaxonomyMissSchema"][];
+            /** Misses By Area */
+            misses_by_area: {
+                [key: string]: components["schemas"]["TaxonomyMissSchema"][];
+            };
+            /** Kinds */
+            kinds: string[];
+            /** Default Area */
+            default_area: string;
+            /** Default Kind */
+            default_kind: string;
+        };
+        /**
+         * TaxonomyTermSchema
+         * @description One vocabulary value with the words each audience sees.
+         *
+         *     The clients used to hold these labels themselves — `constants.ts` in the admin and
+         *     `constants/Misses.ts` in the expo app — which meant four hand-synced copies of the same
+         *     list. Serving them here is what lets those files be deleted.
+         *
+         *         label         coach vocabulary, admin-facing     "Slice"
+         *         golfer_label  golfer-facing title                "I slice it"
+         *         blurb         golfer-facing subtitle, optional   "Curves hard right"
+         *
+         *     `blurb` is nullable and the clients render it conditionally, so a term whose title says
+         *     everything can stay a single line.
+         */
+        TaxonomyTermSchema: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Golfer Label */
+            golfer_label: string;
+            /** Blurb */
+            blurb?: string | null;
+            /**
+             * Sort
+             * @default 0
+             */
+            sort: number;
+        };
+        /** UpdateAdminDrillRequest */
+        UpdateAdminDrillRequest: {
+            /** Title */
+            title?: string | null;
+            /** Task */
+            task?: string | null;
+            /** Success Signal */
+            success_signal?: string | null;
+            /** Fault Indicator */
+            fault_indicator?: string | null;
+            /** Area */
+            area?: string | null;
+            /** Metric */
+            metric?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * UpdateAdminIssueRequest
+         * @description Partial update of a catalog issue.
+         *
+         *     Three-state on the nullable text fields, matching issues_service.update_issue:
+         *     omit to leave a field alone, send "" to clear it, send text to set it. Tags work
+         *     the same way — omit to keep, [] to remove them all, a list to replace the set.
+         *
+         *     `source` and `user_id` are deliberately absent. The admin edits content, never
+         *     ownership; reassigning a golfer's issue to the catalog is not something a text
+         *     form should be able to do by accident.
+         */
+        UpdateAdminIssueRequest: {
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Area */
+            area?: string | null;
+            /** Kind */
+            kind?: string | null;
+            /** Current Motion */
+            current_motion?: string | null;
+            /** Expected Motion */
+            expected_motion?: string | null;
+            /** Swing Effect */
+            swing_effect?: string | null;
+            /** Shot Outcome */
+            shot_outcome?: string | null;
+            /** Layman Title */
+            layman_title?: string | null;
+            /** Layman Desc */
+            layman_desc?: string | null;
+            /** Misses */
+            misses?: string[] | null;
+            /** Goals */
+            goals?: string[] | null;
+        };
         /** UpdateDrillRequest */
         UpdateDrillRequest: {
             /** Title */
@@ -2340,7 +3173,13 @@ export interface components {
             /** Fault Indicator */
             fault_indicator?: string | null;
         };
-        /** UpdateIssueRequest */
+        /**
+         * UpdateIssueRequest
+         * @description Partial update; omitted fields are left untouched.
+         *
+         *     `misses`/`goals` replace the whole set rather than merging into it:
+         *     omitted leaves tags alone, [] removes them all.
+         */
         UpdateIssueRequest: {
             /** Title */
             title?: string | null;
@@ -2362,6 +3201,32 @@ export interface components {
             layman_title?: string | null;
             /** Layman Desc */
             layman_desc?: string | null;
+            /** Misses */
+            misses?: string[] | null;
+            /** Goals */
+            goals?: string[] | null;
+        };
+        /**
+         * UpdateTaxonomyTermRequest
+         * @description Partial edit. Omitted fields are left untouched.
+         *
+         *     `key` is absent on purpose: it is the foreign key that issue_goals, issue_misses and
+         *     issues reference, so renaming it would orphan every tag. Change what a term *says* by
+         *     editing its labels; replace it entirely by adding the new one and retiring the old.
+         */
+        UpdateTaxonomyTermRequest: {
+            /** Label */
+            label?: string | null;
+            /** Golfer Label */
+            golfer_label?: string | null;
+            /** Blurb */
+            blurb?: string | null;
+            /** Sort */
+            sort?: number | null;
+            /** Active */
+            active?: boolean | null;
+            /** Area */
+            area?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -2589,6 +3454,661 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_issues_api_v1_admin_content_issues__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                q?: string | null;
+                area?: string | null;
+                kind?: string | null;
+                source?: string | null;
+            };
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssuePageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compose_issue_api_v1_admin_content_issues__post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ComposeIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssueSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_issue_api_v1_admin_content_issues__issue_id___get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssueSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_issue_api_v1_admin_content_issues__issue_id___delete: {
+        parameters: {
+            query?: {
+                /** @description Required when the issue is referenced; without it the request is refused with 409. */
+                confirm_impact?: boolean;
+            };
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_issue_api_v1_admin_content_issues__issue_id___patch: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAdminIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssueSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_delete_impact_api_v1_admin_content_issues__issue_id__impact__get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteImpactResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_drills_api_v1_admin_content_drills__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                q?: string | null;
+            };
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDrillPageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_drill_api_v1_admin_content_drills__post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAdminDrillRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDrillSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_drill_api_v1_admin_content_drills__drill_id___get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDrillSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_drill_api_v1_admin_content_drills__drill_id___delete: {
+        parameters: {
+            query?: {
+                confirm_impact?: boolean;
+            };
+            header: {
+                authorization: string;
+            };
+            path: {
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_drill_api_v1_admin_content_drills__drill_id___patch: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAdminDrillRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDrillSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    drill_delete_impact_api_v1_admin_content_drills__drill_id__impact__get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteImpactResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attach_drill_api_v1_admin_content_issues__issue_id__drills__drill_id___post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssueSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detach_drill_api_v1_admin_content_issues__issue_id__drills__drill_id___delete: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                issue_id: string;
+                drill_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminIssueSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    coverage_api_v1_admin_content_coverage__get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CoverageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_terms_api_v1_admin_content_taxonomy__segment___get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                segment: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminTaxonomyTermSchema"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_term_api_v1_admin_content_taxonomy__segment___post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                segment: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxonomyTermRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminTaxonomyTermSchema"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_term_api_v1_admin_content_taxonomy__segment___key___delete: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                segment: string;
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_term_api_v1_admin_content_taxonomy__segment___key___patch: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                segment: string;
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaxonomyTermRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminTaxonomyTermSchema"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -4582,6 +6102,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StepAdvanceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_taxonomy_api_v1_taxonomy__get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxonomyResponse"];
                 };
             };
             /** @description Validation Error */

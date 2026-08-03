@@ -35,7 +35,7 @@ from core.services.dtos.issue_authoring_service_dto import (
 )
 from core.services.dtos.issues_service_dto import UpdateIssueDTO
 from core.services.exceptions import ConflictException, NotFoundException
-from core.services import taxonomy
+from core.services import drill_metrics, taxonomy
 
 
 # ------------------------------ mapping ------------------------------
@@ -81,6 +81,8 @@ def _to_admin_drill_dto(drill: models.Drill) -> AdminDrillDTO:
         fault_indicator=drill.fault_indicator,
         user_id=drill.user_id,
         created_at=drill.created_at.isoformat() if drill.created_at else None,
+        area=drill.area,
+        metric=drill.metric,
         issues=[
             AdminIssueRefDTO(id=link.issue.id, title=link.issue.title)
             for link in drill.issue_drills
@@ -234,7 +236,14 @@ def get_drill(drill_id: UUID, db_session: Session) -> AdminDrillDTO:
 
 
 def create_drill(
-    *, title: str, task: str, success_signal: str, fault_indicator: str, db_session: Session
+    *,
+    title: str,
+    task: str,
+    success_signal: str,
+    fault_indicator: str,
+    area: str | None = None,
+    metric: dict | None = None,
+    db_session: Session,
 ) -> AdminDrillDTO:
     """A catalog drill: user_id stays NULL, which is what makes it global."""
     drill = models.Drill(
@@ -243,18 +252,37 @@ def create_drill(
         task=task.strip(),
         success_signal=success_signal.strip(),
         fault_indicator=fault_indicator.strip(),
+        # Both validated here rather than left to the column: a bad area is a 422 naming
+        # the field instead of an IntegrityError surfacing as a 500, and a bad metric is
+        # caught while the person who wrote it is still looking at the form.
+        area=taxonomy.normalize_area_optional(area),
+        metric=drill_metrics.validate_metric(metric),
     )
     drill_repo.create_drill(drill, db_session)
     return get_drill(drill.id, db_session)
+
+
+#: Fields on a drill that are not free text, so `update_drill` must not `.strip()` them.
+_DRILL_STRUCTURED_FIELDS = {"area", "metric"}
 
 
 def update_drill(drill_id: UUID, fields: dict, db_session: Session) -> AdminDrillDTO:
     drill = drill_repo.get_drill_by_id(drill_id, db_session)
     if not drill:
         raise NotFoundException("Drill", str(drill_id))
+
+    # `area` and `metric` are the only fields that can be *cleared*, so they read the
+    # supplied keys rather than skipping on None: a drill that stops being scored has to
+    # be able to go back to feel-only, and `None` is how the form says so.
+    if "area" in fields:
+        drill.area = taxonomy.normalize_area_optional(fields["area"])
+    if "metric" in fields:
+        drill.metric = drill_metrics.validate_metric(fields["metric"])
+
     for name, value in fields.items():
-        if value is not None:
+        if name not in _DRILL_STRUCTURED_FIELDS and value is not None:
             setattr(drill, name, value.strip())
+
     drill_repo.update_drill(drill, db_session)
     return get_drill(drill_id, db_session)
 
@@ -262,9 +290,9 @@ def update_drill(drill_id: UUID, fields: dict, db_session: Session) -> AdminDril
 def drill_delete_impact(drill_id: UUID, db_session: Session) -> DeleteImpactDTO:
     """Count what a delete of this drill would touch.
 
-    issue_drill and program_drill_states CASCADE. practice_drill_runs does NOT —
-    its FK is ON DELETE NO ACTION, so any recorded practice run makes the delete
-    impossible rather than merely destructive.
+    issue_drill and program_drill_states CASCADE. practice_drill_runs does not: its FK is
+    ON DELETE SET NULL, so those runs outlive the drill. The count still matters — that is
+    how much practice history stops naming what it was.
     """
     if drill_repo.get_drill_by_id(drill_id, db_session) is None:
         raise NotFoundException("Drill", str(drill_id))

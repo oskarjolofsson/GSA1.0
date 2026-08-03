@@ -585,3 +585,108 @@ class TestUpdateIssue:
         assert data["title"] == "Tidied up by admin"
         assert data["source"] == "custom"
         assert data["user_id"] == str(test_user["user_id"])
+
+
+class TestDrillAreaAndMetric:
+    """Authoring a scored drill.
+
+    Slice B built the whole scoring path — validator, grade derivation, counting UI —
+    but until these two fields were writable from the admin there was no way to author
+    a metric except by hand in SQL, so every drill was feel-only and the counting UI
+    never rendered for anyone.
+    """
+
+    MAKE_RATE = {"type": "make_rate", "reps": 10, "label": "6-foot putts made"}
+
+    def _create(self, client, auth_headers, **extra):
+        return client.post(
+            f"{BASE}/drills/",
+            json={
+                "title": "Ten six-footers",
+                "task": "t",
+                "success_signal": "s",
+                "fault_indicator": "f",
+                **extra,
+            },
+            headers=auth_headers,
+        )
+
+    def test_creates_a_scored_drill(self, client, auth_headers):
+        created = self._create(
+            client, auth_headers, area="PUTTING", metric=self.MAKE_RATE
+        ).json()
+
+        assert created["area"] == "PUTTING"
+        assert created["metric"]["type"] == "make_rate"
+        assert created["metric"]["reps"] == 10
+        # Normalised on the way in, so the app never has to guess a default it might
+        # disagree with the server about.
+        assert created["metric"]["grade_at"] == {"dialed": 0.8, "ok": 0.5}
+
+    def test_a_drill_with_no_area_suits_every_area(self, client, auth_headers):
+        """Mirror work belongs everywhere. Defaulting a missing area to FULL_SWING would
+        hide it from the short-game library the moment Slice C filters by area."""
+        created = self._create(client, auth_headers).json()
+
+        assert created["area"] is None
+        assert created["metric"] is None
+
+    def test_an_unknown_area_is_refused(self, client, auth_headers):
+        resp = self._create(client, auth_headers, area="CROQUET")
+        assert resp.status_code == 422
+        assert "CROQUET" in resp.text
+
+    def test_a_malformed_metric_is_refused_at_authoring_time(self, client, auth_headers):
+        resp = self._create(client, auth_headers, metric={"type": "make_rate"})
+        assert resp.status_code == 422
+        assert "reps" in resp.text
+
+    def test_grade_at_out_of_order_is_refused(self, client, auth_headers):
+        resp = self._create(
+            client,
+            auth_headers,
+            metric={"type": "make_rate", "reps": 10, "grade_at": {"dialed": 0.4, "ok": 0.9}},
+        )
+        assert resp.status_code == 422
+
+    def test_a_patch_that_ignores_the_metric_leaves_it_alone(self, client, auth_headers):
+        """The regression this guards: dumping unset keys as None made every partial
+        patch strip the metric, so renaming a drill silently un-scored it."""
+        drill = self._create(client, auth_headers, metric=self.MAKE_RATE).json()
+
+        patched = client.patch(
+            f"{BASE}/drills/{drill['id']}/", json={"title": "Renamed"}, headers=auth_headers
+        ).json()
+
+        assert patched["title"] == "Renamed"
+        assert patched["metric"]["type"] == "make_rate"
+
+    def test_a_metric_can_be_cleared_back_to_feel_only(self, client, auth_headers):
+        drill = self._create(
+            client, auth_headers, area="PUTTING", metric=self.MAKE_RATE
+        ).json()
+
+        patched = client.patch(
+            f"{BASE}/drills/{drill['id']}/",
+            json={"metric": None, "area": None},
+            headers=auth_headers,
+        ).json()
+
+        assert patched["metric"] is None
+        assert patched["area"] is None
+
+    def test_proximity_keeps_its_unit_and_ceiling(self, client, auth_headers):
+        created = self._create(
+            client,
+            auth_headers,
+            metric={"type": "proximity", "reps": 10, "unit": "ft", "ceiling": 15},
+        ).json()
+
+        assert created["metric"]["unit"] == "ft"
+        assert created["metric"]["ceiling"] == 15
+        assert created["metric"]["lower_is_better"] is True
+
+    def test_proximity_without_a_unit_is_refused(self, client, auth_headers):
+        resp = self._create(client, auth_headers, metric={"type": "proximity", "reps": 10})
+        assert resp.status_code == 422
+        assert "unit" in resp.text

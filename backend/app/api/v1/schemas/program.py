@@ -12,8 +12,16 @@ class GenerateProgramRequest(BaseModel):
 
 
 class DrillGrade(BaseModel):
+    """How one drill block went. Send exactly one of `grade` or `metric_value`.
+
+    A feel drill sends `grade` -- the golfer's tap is the measurement. A scored drill sends
+    `metric_value`, the raw number, and the server grades it against the drill's current
+    thresholds. Clients never compute a grade from a metric: `grade_at` is admin-editable,
+    so a build that shipped before a retune would grade on numbers nobody can see any more.
+    """
     drill_id: UUID
-    grade: str  # 'rough' | 'ok' | 'dialed'
+    grade: str | None = None  # 'rough' | 'ok' | 'dialed'
+    metric_value: float | None = None
 
 
 class CompleteStepRequest(BaseModel):

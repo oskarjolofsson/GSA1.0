@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from core.services import program_service as ps
+from core.services.dtos.program_service_dto import DrillGradeDTO
 
 
 # ---------------- _decide_next_type (scheduler cadence) ----------------
@@ -115,3 +116,44 @@ def test_next_strength_rough_decrements_and_floors():
 
 def test_next_strength_unknown_grade_is_noop():
     assert ps._next_strength(3, "banana") == 3
+
+
+# ---------------- _resolve_grade (feel tap vs derived score) ----------------
+#
+# The scheduler has always run on a tapped rough/ok/dialed. Slice B lets a drill report a
+# number instead, and the server -- not the phone -- decides what that number was worth.
+# These cover the seam where the two meet.
+
+_METRIC_10 = {"type": "make_rate", "reps": 10, "grade_at": {"dialed": 0.8, "ok": 0.5}}
+
+
+def _grade(drill_id, **kw):
+    return DrillGradeDTO(drill_id=drill_id, **kw)
+
+
+def test_resolve_grade_passes_a_feel_tap_straight_through():
+    drill_id = uuid4()
+    assert ps._resolve_grade(_grade(drill_id, grade="rough"), {}) == "rough"
+
+
+def test_resolve_grade_derives_from_a_raw_score():
+    drill_id = uuid4()
+    resolved = ps._resolve_grade(_grade(drill_id, metric_value=8), {drill_id: _METRIC_10})
+    assert resolved == "dialed"
+
+
+def test_resolve_grade_prefers_the_number_over_the_tap():
+    # The measurement beats an opinion about the measurement. A well-behaved client never
+    # sends both, but if one does, 3/10 is rough however good it felt.
+    drill_id = uuid4()
+    resolved = ps._resolve_grade(
+        _grade(drill_id, grade="dialed", metric_value=3), {drill_id: _METRIC_10}
+    )
+    assert resolved == "rough"
+
+
+def test_resolve_grade_survives_a_score_for_a_drill_with_no_metric():
+    # Returns None -> _apply_grades skips it -> strength unchanged. The session still
+    # records; only the grade is lost.
+    drill_id = uuid4()
+    assert ps._resolve_grade(_grade(drill_id, metric_value=8), {drill_id: None}) is None

@@ -14,13 +14,18 @@ class ActivityCountDTO:
 class ActivityDrillRunDTO:
     """A drill run nested inside a day-detail practice session."""
     id: UUID
-    drill_id: UUID
+    drill_id: UUID | None
     drill_title: str
+    # FROZEN. Held a feel ordinal, never a rep count. Kept because old builds read it.
     successful_reps: int
     failed_reps: int
     skipped: bool
     started_at: datetime
     completed_at: datetime | None
+    feel: int | None = None
+    metric_value: float | None = None
+    metric_type: str | None = None
+    grade: str | None = None
 
 
 @dataclass(frozen=True)

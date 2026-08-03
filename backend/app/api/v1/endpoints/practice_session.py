@@ -145,6 +145,8 @@ def complete_drill_run(
         successful_reps=request.successful_reps,
         failed_reps=request.failed_reps,
         skipped=request.skipped,
+        feel=request.feel,
+        metric_value=request.metric_value,
     )
     
     result = service_complete_drill_run(drill_run_dto=dto, session=db)

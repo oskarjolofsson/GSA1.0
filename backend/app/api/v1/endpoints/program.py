@@ -131,10 +131,14 @@ def complete_step(
 ):
     """
     Mark a program step completed, optionally linking the practice session that
-    fulfilled it and passing per-drill block-feel grades (rough/ok/dialed). Grades
-    update the spaced-repetition state that schedules future range sessions.
+    fulfilled it and passing per-drill results. Each drill reports either a block-feel
+    grade (rough/ok/dialed) or a raw metric_value the server grades itself. Both routes
+    move the spaced-repetition state that schedules future range sessions.
     """
-    grades = [DrillGradeDTO(drill_id=g.drill_id, grade=g.grade) for g in request.grades]
+    grades = [
+        DrillGradeDTO(drill_id=g.drill_id, grade=g.grade, metric_value=g.metric_value)
+        for g in request.grades
+    ]
     result = program_service.complete_step(
         program_id=program_id,
         step_id=step_id,

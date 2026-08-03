@@ -215,3 +215,51 @@ def test_day_detail_requires_auth(client):
         "/api/v1/activity/2026-06-15/", headers={"Authorization": "Bearer invalid-token"}
     )
     assert resp.status_code == 401
+
+
+def test_day_detail_carries_feel_and_the_derived_grade(client, test_user, db_session, auth_headers):
+    """The day sheet reads `feel` and `grade`, not `successful_reps`.
+
+    That column carried a rough/ok/dialed ordinal and was labelled `good`, so three
+    dialed blocks rendered as "9 good" next to a permanent "0 bad". The grade is
+    re-derived here from the drill's current thresholds, same as everywhere else.
+    """
+    user_id = test_user["user_id"]
+    day = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
+    session = _completed_session(db_session, user_id, day)
+    drill = _drill(db_session)
+    drill.metric = {"type": "make_rate", "reps": 10, "grade_at": {"dialed": 0.8, "ok": 0.5}}
+    db_session.flush()
+
+    run = _drill_run(db_session, session.id, drill.id, day)
+    run.metric_value = 8
+    run.metric_type = "make_rate"
+    db_session.flush()
+
+    resp = client.get("/api/v1/activity/2026-06-15/?tz=UTC", headers=auth_headers)
+
+    assert resp.status_code == 200
+    payload = resp.json()["sessions"][0]["drill_runs"][0]
+    assert payload["metric_value"] == 8
+    assert payload["metric_type"] == "make_rate"
+    assert payload["grade"] == "dialed"
+
+
+def test_day_detail_survives_a_run_whose_drill_was_deleted(client, test_user, db_session, auth_headers):
+    """`drill_id` is nullable so deleting a drill does not delete the sessions the
+    golfer actually practised. The day sheet has to render those runs, not 500 on them."""
+    user_id = test_user["user_id"]
+    day = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
+    session = _completed_session(db_session, user_id, day)
+    drill = _drill(db_session)
+    _drill_run(db_session, session.id, drill.id, day)
+
+    db_session.delete(drill)
+    db_session.flush()
+
+    resp = client.get("/api/v1/activity/2026-06-15/?tz=UTC", headers=auth_headers)
+
+    assert resp.status_code == 200
+    payload = resp.json()["sessions"][0]["drill_runs"][0]
+    assert payload["drill_id"] is None
+    assert payload["drill_title"] == "Unknown Drill"

@@ -17,13 +17,20 @@ class ActivityCount(BaseModel):
 
 class ActivityDrillRun(BaseModel):
     id: UUID
-    drill_id: UUID
+    # Nulled rather than cascaded when a drill is deleted, so the run survives it.
+    drill_id: UUID | None = None
     drill_title: str
+    # FROZEN. This column held a feel ordinal, never a rep count; `feel` replaces it.
+    # Still sent because builds shipped before that split read it.
     successful_reps: int
     failed_reps: int
     skipped: bool
     started_at: datetime
     completed_at: datetime | None
+    feel: int | None = None
+    metric_value: float | None = None
+    metric_type: str | None = None
+    grade: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -38,6 +45,10 @@ class ActivityDrillRun(BaseModel):
             skipped=dto.skipped,
             started_at=dto.started_at,
             completed_at=dto.completed_at,
+            feel=dto.feel,
+            metric_value=dto.metric_value,
+            metric_type=dto.metric_type,
+            grade=dto.grade,
         )
 
 

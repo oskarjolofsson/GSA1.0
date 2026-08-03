@@ -1,6 +1,5 @@
 from uuid import UUID
 from dataclasses import dataclass, field
-from datetime import datetime
 
 
 @dataclass
@@ -41,17 +40,6 @@ class UpdateIssueDTO:
 
 
 @dataclass
-class SimplifiedIssueProgressDTO:
-    """Progress tracking for an analysis issue."""
-    completed_sessions: int
-    total_successful_reps: int
-    overall_success_rate: float | None
-    recent_session_success_rates: float | None       # Success rates for the most recent sessions, used for trend analysis
-    delta: float | None
-    last_completed_at: datetime | None = None
-
-
-@dataclass
 class IssueResponseDTO:
     id: UUID
     title: str
@@ -68,7 +56,6 @@ class IssueResponseDTO:
     analysis_issue_id: str | None = None
     analysis_id: str | None = None
     confidence: float | None = None
-    progress: SimplifiedIssueProgressDTO | None = None
     program_status: str | None = None  # 'active' | 'completed' | None
     source: str = "catalog"  # 'catalog' (admin) | 'custom' (user-authored)
     goals: list[str] = field(default_factory=list)

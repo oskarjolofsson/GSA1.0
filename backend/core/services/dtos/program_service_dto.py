@@ -5,9 +5,22 @@ from datetime import datetime
 
 @dataclass(frozen=True)
 class DrillGradeDTO:
-    """How a single drill block felt, fed back into the spaced-repetition state."""
+    """How a single drill block went, fed back into the spaced-repetition state.
+
+    Two ways to fill this in, and a client sends exactly one of them:
+
+      grade         a feel block. The golfer tapped rough/ok/dialed, and there is nothing
+                    to derive -- their word is the measurement.
+      metric_value  a scored block. The raw number in the drill's own units (8 putts made,
+                    4.2 feet). The server grades it against the drill's current thresholds.
+
+    A scored drill never sends `grade`. `grade_at` is admin-editable content, so a build
+    that shipped before a threshold was retuned would otherwise keep grading on numbers
+    nobody can see any more.
+    """
     drill_id: UUID
-    grade: str  # 'rough' | 'ok' | 'dialed'
+    grade: str | None = None  # 'rough' | 'ok' | 'dialed'
+    metric_value: float | None = None
 
 
 @dataclass(frozen=True)

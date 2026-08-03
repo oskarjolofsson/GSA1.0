@@ -233,6 +233,8 @@ def create_drill(
             task=request.task,
             success_signal=request.success_signal,
             fault_indicator=request.fault_indicator,
+            area=request.area,
+            metric=request.metric,
             db_session=db,
         )
     )
@@ -245,9 +247,15 @@ def update_drill(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_admin),
 ):
-    """Partial update; omitted fields are left untouched."""
+    """Partial update; omitted fields are left untouched.
+
+    `exclude_unset` is load-bearing now that `area` and `metric` are nullable. They are
+    the only fields that can be *cleared*, so the service distinguishes "sent as null"
+    from "not sent" — dumping unset keys as None would silently strip a drill's metric
+    on any patch that only touched its title.
+    """
     return AdminDrillSchema.from_domain(
-        service.update_drill(drill_id, request.model_dump(exclude_unset=False), db)
+        service.update_drill(drill_id, request.model_dump(exclude_unset=True), db)
     )
 
 
@@ -260,8 +268,9 @@ def drill_delete_impact(
     """
     What deleting this drill would touch.
 
-    `drill_runs` is the one that cannot be confirmed past: practice_drill_runs has
-    ON DELETE NO ACTION, so the database refuses the delete outright.
+    `drill_runs` no longer blocks: practice_drill_runs is ON DELETE SET NULL, so those
+    sessions survive and keep counting toward the streak. They just stop naming the drill,
+    which is why the count is still worth showing before confirming.
     """
     return _impact_response(service.drill_delete_impact(drill_id, db))
 

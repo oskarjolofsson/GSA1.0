@@ -78,6 +78,9 @@ class AdminDrillSchema(BaseModel):
     fault_indicator: str
     user_id: UUID | None
     created_at: str | None = None
+    # NULL = suits any area. NULL metric = feel-only.
+    area: str | None = None
+    metric: dict | None = None
     issues: list[AdminIssueRefSchema] = []
     issue_count: int = 0
 
@@ -91,6 +94,8 @@ class AdminDrillSchema(BaseModel):
             fault_indicator=dto.fault_indicator,
             user_id=dto.user_id,
             created_at=dto.created_at,
+            area=dto.area,
+            metric=dto.metric,
             issues=[AdminIssueRefSchema(id=i.id, title=i.title) for i in dto.issues],
             issue_count=len(dto.issues),
         )
@@ -158,6 +163,11 @@ class UpdateAdminDrillRequest(BaseModel):
     task: str | None = None
     success_signal: str | None = None
     fault_indicator: str | None = None
+    # Nullable *and* clearable, unlike the text fields above: sending null means "this
+    # drill suits any area" / "this drill is feel-only", which is why the endpoint dumps
+    # with exclude_unset and the service checks for the key rather than the value.
+    area: str | None = None
+    metric: dict | None = None
 
 
 class CreateAdminDrillRequest(BaseModel):
@@ -165,6 +175,8 @@ class CreateAdminDrillRequest(BaseModel):
     task: str
     success_signal: str
     fault_indicator: str
+    area: str | None = None
+    metric: dict | None = None
 
 
 class DeleteImpactResponse(BaseModel):

@@ -323,6 +323,19 @@ def normalize_area_strict(value: str | None) -> str:
     return key
 
 
+def normalize_area_optional(value: str | None) -> str | None:
+    """Validated area where absent means *no* area, rather than the default one.
+
+    Issues live somewhere on the course, so `normalize_area_strict` defaults a missing
+    area to FULL_SWING. A drill does not have to: mirror work and tempo drills belong to
+    every area, and defaulting them into full swing would quietly hide them from the
+    short-game library the moment Slice C starts filtering by area.
+    """
+    if value is None or str(value).strip() == "":
+        return None
+    return normalize_area_strict(value)
+
+
 def normalize_kind_strict(value: str | None) -> str:
     """Validated kind, defaulting when absent. Raises on an unknown value."""
     if value is None or str(value).strip() == "":

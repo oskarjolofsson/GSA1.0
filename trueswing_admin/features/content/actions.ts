@@ -26,8 +26,10 @@ import type {
   AdminDrill,
   AdminIssue,
   ComposeIssueBody,
+  CreateDrillBody,
   DeleteImpact,
   TaxonomyKind,
+  UpdateDrillBody,
   UpdateIssueBody,
 } from "@/lib/content/types";
 
@@ -129,12 +131,7 @@ export async function deleteIssueAction(
   });
 }
 
-export async function createDrillAction(body: {
-  title: string;
-  task: string;
-  success_signal: string;
-  fault_indicator: string;
-}): Promise<ActionResult> {
+export async function createDrillAction(body: CreateDrillBody): Promise<ActionResult> {
   return withToken({ ok: false, reason: "Your session expired." }, async (token) => {
     const result = await createDrill(body, token);
     if (result.status === "ok") {
@@ -147,12 +144,7 @@ export async function createDrillAction(body: {
 
 export async function updateDrillAction(
   drillId: string,
-  body: {
-    title?: string;
-    task?: string;
-    success_signal?: string;
-    fault_indicator?: string;
-  },
+  body: UpdateDrillBody,
 ): Promise<ActionResult> {
   return withToken({ ok: false, reason: "Your session expired." }, async (token) => {
     const result = await updateDrill(drillId, body, token);

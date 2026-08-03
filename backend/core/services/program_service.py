@@ -4,6 +4,7 @@ from core.infrastructure.db.repositories import drills as drill_repo
 from core.infrastructure.db.repositories import analysis_issues as analysis_issue_repo
 from core.infrastructure.db.repositories import issues as issue_repo
 from core.services import exceptions
+from core.services import drill_metrics
 from core.services.dtos.program_service_dto import (
     ProgramDTO,
     ProgramStepDTO,
@@ -319,15 +320,39 @@ def _apply_grades(program_id: UUID, grades: list[DrillGradeDTO], session: Sessio
     state_by_drill = {state.drill_id: state for state in states}
     now = datetime.now(tz=timezone.utc)
 
+    # One query for every scored drill in the batch rather than one per grade. A session is
+    # only NUM_DRILLS_PER_RANGE drills today, but this runs on the completion path and the
+    # N+1 would be invisible until a session got longer.
+    scored_ids = [g.drill_id for g in grades if g.metric_value is not None]
+    metric_by_drill = {
+        d.id: d.metric for d in drill_repo.get_drills_by_ids(scored_ids, session)
+    } if scored_ids else {}
+
     for grade in grades:
         state = state_by_drill.get(grade.drill_id)
-        if state is None or grade.grade not in GRADE_STRENGTH_DELTA:
+        if state is None:
             continue
-        state.strength = _next_strength(state.strength, grade.grade)
+        resolved = _resolve_grade(grade, metric_by_drill)
+        if resolved not in GRADE_STRENGTH_DELTA:
+            continue
+        state.strength = _next_strength(state.strength, resolved)
         state.last_seen_at = now
         state.times_seen = (state.times_seen or 0) + 1
-        state.last_grade = grade.grade
+        state.last_grade = resolved
         repo.update_drill_state(state, session)
+
+
+def _resolve_grade(grade: DrillGradeDTO, metric_by_drill: dict) -> str | None:
+    """A feel block reports its own grade; a scored block reports a number we grade here.
+
+    Scored wins if somehow both arrive: the number is the measurement, the tap is an
+    opinion about it.
+    """
+    if grade.metric_value is not None:
+        return drill_metrics.grade_for(
+            metric_by_drill.get(grade.drill_id), grade.metric_value
+        )
+    return grade.grade
 
 
 def _next_strength(strength: int, grade: str) -> int:

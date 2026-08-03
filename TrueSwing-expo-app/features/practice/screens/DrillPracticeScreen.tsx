@@ -11,8 +11,9 @@ import DrillInstructionsOverlay from "../components/DrillInstructionsOverlay";
 import ActiveBlockGlow from "../components/ActiveBlockGlow";
 import { ClipboardList, Play } from "lucide-react-native";
 import { MotiText } from "moti";
-import { FEEL_LABEL, type BlockFeel } from "../utils/blockFeel";
 import type { ProgramContext } from "features/programs/types";
+import BlockRating, { type BlockResult } from "../components/BlockRating";
+import { asMetric, isRenderable, promptFor } from "../utils/drillMetric";
 
 type Props = ScreenProps & {
   issue: Issue;
@@ -21,8 +22,6 @@ type Props = ScreenProps & {
 }
 
 type BlockPhase = "ready" | "active" | "rating";
-
-const FEEL_ORDER: BlockFeel[] = ["rough", "ok", "dialed"];
 
 // OnNext in this case is to go to the result screen
 export default function DrillPracticeScreen({ issue, session, onNext, programContext }: Props) {
@@ -53,13 +52,19 @@ export default function DrillPracticeScreen({ issue, session, onNext, programCon
 
   const onOpenInstructions = () => setInstructionsVisible(true);
 
-  const handleRate = (feel: BlockFeel | null) => {
+  const handleComplete = (result: BlockResult) => {
     if (disabled) return;
-    props.completeBlock(feel);
+    props.completeBlock(result);
   };
 
+  // A scored drill asks for a number ("How many did you make"); a feel drill asks how the
+  // block felt. Unknown metric types fall through to the feel wording too, matching the
+  // picker BlockRating falls back to.
+  const metric = asMetric(props.activeDrill?.metric);
+  const ratingPrompt = isRenderable(metric) ? promptFor(metric) : "How did that block feel?";
+
   return (
-    <View className="flex-1 bg-slate-950">
+    <View className="flex-1 bg-ink">
       {/* Not while the How-To modal is open: a native Modal detaches this view tree,
           which freezes the Reanimated loop. Remounting on close restarts it cleanly. */}
       {phase === "active" && !isInstructionsVisible && <ActiveBlockGlow />}
@@ -69,13 +74,13 @@ export default function DrillPracticeScreen({ issue, session, onNext, programCon
         <View className="px-4 pt-12">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-3">
-              <Text className="text-[11px] font-semibold uppercase tracking-[2.5px] text-slate-500">
+              <Text className="text-[11px] font-semibold uppercase tracking-[2.5px] text-sand-dim">
                 Drill {props.drillNumber} of {props.totalDrills}
               </Text>
 
               <Text
                 numberOfLines={2}
-                className="mt-2 text-[30px] font-display-bold leading-[36px] text-white"
+                className="mt-2 text-[30px] font-display-bold leading-[36px] text-sand"
               >
                 {props.activeDrill?.title}
               </Text>
@@ -83,10 +88,10 @@ export default function DrillPracticeScreen({ issue, session, onNext, programCon
 
             <Pressable
               onPress={onOpenInstructions}
-              className="flex-row items-center gap-2 rounded-2xl border border-white/10 bg-slate-900 px-3.5 py-3 active:bg-slate-800"
+              className="flex-row items-center gap-2 rounded-2xl border border-white/10 bg-ink-raised px-3.5 py-3 active:bg-white/10"
             >
-              <ClipboardList size={17} color="#cbd5e1" />
-              <Text className="text-sm font-semibold text-slate-200">
+              <ClipboardList size={17} color="#EADFC8" />
+              <Text className="text-sm font-semibold text-sand">
                 How To
               </Text>
             </Pressable>
@@ -97,13 +102,13 @@ export default function DrillPracticeScreen({ issue, session, onNext, programCon
         <View className="flex-1 items-center justify-center px-2">
           {phase === "ready" && (
             <>
-              <Text className="text-sm uppercase tracking-[2px] text-slate-500">
+              <Text className="text-sm uppercase tracking-[2px] text-sand-dim">
                 Your focus
               </Text>
-              <Text className="mt-4 text-center text-2xl font-display-bold leading-8 text-white">
+              <Text className="mt-4 text-center text-2xl font-display-bold leading-8 text-sand">
                 {props.activeDrill?.success_signal ?? props.activeDrill?.task}
               </Text>
-              <Text className="mt-5 text-center text-sm leading-5 text-slate-400">
+              <Text className="mt-5 text-center text-sm leading-5 text-sand-dim">
                 Hit about 10 balls with total focus. Tap start when you’re ready to begin the block.
               </Text>
             </>
@@ -111,18 +116,18 @@ export default function DrillPracticeScreen({ issue, session, onNext, programCon
 
           {phase === "active" && (
             <>
-              <Text className="text-sm uppercase tracking-[2px] text-slate-500">
+              <Text className="text-sm uppercase tracking-[2px] text-sand-dim">
                 Block in progress
               </Text>
               <MotiText
                 from={{ opacity: 0.55 }}
                 animate={{ opacity: 1 }}
                 transition={{ type: "timing", duration: 1400, loop: true, repeatReverse: true }}
-                className="mt-4 text-center text-2xl font-display-bold leading-8 text-white"
+                className="mt-4 text-center text-2xl font-display-bold leading-8 text-sand"
               >
                 Eyes on the ball.
               </MotiText>
-              <Text className="mt-5 text-center text-sm leading-5 text-slate-400">
+              <Text className="mt-5 text-center text-sm leading-5 text-sand-dim">
                 Work through your block. Tap done when you’ve hit about 10 balls.
               </Text>
             </>
@@ -130,17 +135,17 @@ export default function DrillPracticeScreen({ issue, session, onNext, programCon
 
           {phase === "rating" && (
             <>
-              <Text className="text-sm uppercase tracking-[2px] text-slate-500">
+              <Text className="text-sm uppercase tracking-[2px] text-sand-dim">
                 Optional
               </Text>
-              <Text className="mt-4 text-center text-2xl font-display-bold leading-8 text-white">
-                How did that block feel?
+              <Text className="mt-4 text-center text-2xl font-display-bold leading-8 text-sand">
+                {ratingPrompt}
               </Text>
             </>
           )}
 
           {!props.practiceReady && (
-            <Text className="mt-6 text-center text-sm text-amber-300">
+            <Text className="mt-6 text-center text-sm text-gold">
               Practice is not ready yet
             </Text>
           )}
@@ -152,11 +157,11 @@ export default function DrillPracticeScreen({ issue, session, onNext, programCon
             <Pressable
               disabled={disabled}
               onPress={() => setPhase("active")}
-              className={`flex-row items-center justify-center gap-3 rounded-3xl h-20 ${disabled ? "bg-emerald-500/40" : "bg-emerald-500 active:bg-emerald-600"
+              className={`flex-row items-center justify-center gap-3 rounded-3xl h-20 ${disabled ? "bg-gold/30" : "bg-gold active:bg-gold-deep"
                 }`}
             >
-              <Play size={26} color="white" fill="white" />
-              <Text className="text-xl font-bold text-white">Start block</Text>
+              <Play size={26} color="#0A0F1A" fill="#0A0F1A" />
+              <Text className="text-xl font-sans-bold text-ink">Start block</Text>
             </Pressable>
           )}
 
@@ -164,41 +169,22 @@ export default function DrillPracticeScreen({ issue, session, onNext, programCon
             <Pressable
               disabled={disabled}
               onPress={() => setPhase("rating")}
-              className={`items-center justify-center rounded-3xl h-20 ${disabled ? "bg-white/20" : "bg-white active:opacity-80"
+              className={`items-center justify-center rounded-3xl h-20 ${disabled ? "bg-sand/20" : "bg-sand active:opacity-80"
                 }`}
             >
-              <Text className="text-xl font-bold text-slate-950">Done with block</Text>
+              <Text className="text-xl font-sans-bold text-ink">Done with block</Text>
             </Pressable>
           )}
 
           {phase === "rating" && (
-            <View>
-              <View className="flex-row gap-3">
-                {FEEL_ORDER.map((feel) => (
-                  <Pressable
-                    key={feel}
-                    disabled={disabled}
-                    onPress={() => handleRate(feel)}
-                    className={`flex-1 items-center justify-center rounded-3xl h-24 border border-white/10 ${disabled ? "bg-white/5" : "bg-slate-900 active:bg-slate-800"
-                      }`}
-                  >
-                    <Text className="text-lg font-bold text-white">
-                      {FEEL_LABEL[feel]}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Pressable
-                disabled={disabled}
-                onPress={() => handleRate(null)}
-                className="mt-3 items-center justify-center py-3 active:opacity-70"
-              >
-                <Text className="text-base font-medium text-slate-400">
-                  Skip rating
-                </Text>
-              </Pressable>
-            </View>
+            <BlockRating
+              // Remount per drill so a counted selection never carries into the next
+              // block — two putting drills in a row would otherwise open pre-filled.
+              key={props.activeDrill?.id}
+              metric={props.activeDrill?.metric}
+              disabled={disabled}
+              onComplete={handleComplete}
+            />
           )}
         </View>
       </View>

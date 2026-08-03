@@ -1,6 +1,5 @@
 from pydantic import BaseModel, ConfigDict
 from uuid import UUID
-from datetime import datetime
 
 
 class CreateIssueRequest(BaseModel):
@@ -23,16 +22,6 @@ class CreateIssueResponse(BaseModel):
     issue_id: UUID
 
 
-class IssueProgress(BaseModel):
-    """Progress tracking for an analysis issue."""
-    completed_sessions: int
-    total_successful_reps: int
-    overall_success_rate: float | None
-    recent_session_success_rates: float | None
-    delta: float | None
-    last_completed_at: str | None = None
-
-
 class GetIssue(BaseModel):
     id: UUID
     title: str
@@ -49,7 +38,6 @@ class GetIssue(BaseModel):
     analysis_issue_id: str | None = None
     analysis_id: str | None = None
     confidence: float | None = None
-    progress: IssueProgress | None = None
     program_status: str | None = None  # 'active' | 'completed' | None
     source: str = "catalog"  # 'catalog' (admin) | 'custom' (user-authored)
     goals: list[str] = []
@@ -59,25 +47,7 @@ class GetIssue(BaseModel):
     
     @classmethod
     def from_domain(cls, dto) -> "GetIssue":
-        """Convert IssueResponseDTO to GetIssue schema.
-        
-        Progress data is already included in the DTO if available.
-        """
-        progress = None
-        
-        # Convert progress DTO to schema model if present
-        if dto.progress:
-            progress = IssueProgress(
-                completed_sessions=dto.progress.completed_sessions,
-                total_successful_reps=dto.progress.total_successful_reps,
-                overall_success_rate=dto.progress.overall_success_rate,
-                recent_session_success_rates=dto.progress.recent_session_success_rates,
-                delta=dto.progress.delta,
-                last_completed_at=dto.progress.last_completed_at.isoformat()
-                if isinstance(dto.progress.last_completed_at, datetime)
-                else dto.progress.last_completed_at,
-            )
-        
+        """Convert IssueResponseDTO to GetIssue schema."""
         return cls(
             id=dto.id,
             title=dto.title,
@@ -94,7 +64,6 @@ class GetIssue(BaseModel):
             analysis_issue_id=dto.analysis_issue_id,
             analysis_id=dto.analysis_id,
             confidence=dto.confidence,
-            progress=progress,
             program_status=getattr(dto, "program_status", None),
             source=getattr(dto, "source", "catalog"),
             goals=dto.goals,
