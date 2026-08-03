@@ -27,5 +27,9 @@ class DrillResponseDTO:
     success_signal: str
     fault_indicator: str
     created_at: datetime
+    # Which part of the game this trains (NULL = any), and how it is scored
+    # (NULL = feel-only). The client branches its rating UI on `metric`.
+    area: str | None = None
+    metric: dict | None = None
 
 

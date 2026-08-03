@@ -92,7 +92,7 @@ export default function DrillInstructionsOverlay({ visible, drill, onClose }: Dr
         >
             <Animated.View
                 style={{ opacity: backdropOpacity }}
-                className="flex-1 bg-slate-950"
+                className="flex-1 bg-ink"
             >
                 <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
                     <Animated.View
@@ -102,8 +102,8 @@ export default function DrillInstructionsOverlay({ visible, drill, onClose }: Dr
                         }}
                         className="flex-1"
                     >
-                        <View className="flex-row items-center justify-between border-b border-white/10 bg-slate-950 px-5 py-4">
-                            <Text className="text-[11px] font-semibold uppercase tracking-[2.2px] text-slate-400">
+                        <View className="flex-row items-center justify-between border-b border-white/10 bg-ink px-5 py-4">
+                            <Text className="text-[11px] font-semibold uppercase tracking-[2.2px] text-sand-dim">
                                 Practice drill
                             </Text>
 
@@ -113,7 +113,7 @@ export default function DrillInstructionsOverlay({ visible, drill, onClose }: Dr
                                 accessibilityRole="button"
                                 accessibilityLabel="Close instructions"
                             >
-                                <Text className="text-xs font-semibold uppercase tracking-[1.6px] text-slate-200">
+                                <Text className="text-xs font-semibold uppercase tracking-[1.6px] text-sand">
                                     Close
                                 </Text>
                             </Pressable>
@@ -134,20 +134,20 @@ export default function DrillInstructionsOverlay({ visible, drill, onClose }: Dr
                                     steps.map((step, index) => (
                                         <View
                                             key={`${drill?.id ?? 'step'}-${index}`}
-                                            className="flex-row items-start gap-4 rounded-2xl border border-white/10 bg-slate-950/60 p-4"
+                                            className="flex-row items-start gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4"
                                         >
                                             <View className="mt-0.5 h-9 w-9 items-center justify-center rounded-full bg-white/10">
                                                 <Text className="text-xl font-bold text-white">{index + 1}</Text>
                                             </View>
 
-                                            <Text className="flex-1 text-xl leading-8 text-slate-100">
+                                            <Text className="flex-1 text-xl leading-8 text-sand">
                                                 {step}
                                             </Text>
                                         </View>
                                     ))
                                 ) : (
-                                    <View className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
-                                        <Text className="text-base leading-6 text-slate-200">
+                                    <View className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                                        <Text className="text-base leading-6 text-sand">
                                             Error displaying instructions. Please try again later.
                                         </Text>
                                     </View>
@@ -155,11 +155,11 @@ export default function DrillInstructionsOverlay({ visible, drill, onClose }: Dr
                             </View>
 {/* 
                             <View className="mt-6 gap-3 px-5">
-                                <View className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                                    <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-emerald-300">
+                                <View className="rounded-2xl border border-gold/30 bg-gold/10 p-4">
+                                    <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-gold">
                                         Success signal
                                     </Text>
-                                    <Text className="mt-2 text-base leading-6 text-emerald-100">
+                                    <Text className="mt-2 text-base leading-6 text-sand">
                                         {drill?.success_signal || 'Your movement should feel smooth and controlled.'}
                                     </Text>
                                 </View>
@@ -175,14 +175,14 @@ export default function DrillInstructionsOverlay({ visible, drill, onClose }: Dr
                             </View> */}
                         </View>
 
-                        <View className="border-t border-white/10 bg-slate-950 px-5 py-4">
+                        <View className="border-t border-white/10 bg-ink px-5 py-4">
                             <Pressable
                                 onPress={onClose}
-                                className="items-center rounded-2xl bg-white py-4 active:bg-slate-100"
+                                className="items-center rounded-2xl bg-gold py-4 active:bg-gold-deep"
                                 accessibilityRole="button"
                                 accessibilityLabel="Start practice"
                             >
-                                <Text className="text-lg font-bold text-slate-900">Start practice</Text>
+                                <Text className="text-lg font-sans-bold text-ink">Start practice</Text>
                             </Pressable>
                         </View>
                     </Animated.View>

@@ -40,9 +40,24 @@ export type Program = Omit<Schemas['ProgramResponse'], 'status' | 'steps'> & {
   steps: ProgramStep[];
 };
 
-export type DrillGrade = Omit<Schemas['DrillGrade'], 'grade'> & {
-  grade: DrillGradeValue;
-};
+/**
+ * How one drill block went. Exactly one of the two shapes, never both.
+ *
+ * A feel drill reports `grade` — the golfer's rough/ok/dialed tap IS the measurement.
+ * A scored drill reports `metric_value`, the raw number, and the server grades it against
+ * the drill's current thresholds. The union is what stops a caller sending a grade it
+ * computed itself from a metric: `grade_at` is admin-editable, so this build's idea of
+ * "dialed" goes stale the moment a drill is retuned.
+ */
+export type DrillGrade =
+  | (Omit<Schemas['DrillGrade'], 'grade' | 'metric_value'> & {
+      grade: DrillGradeValue;
+      metric_value?: never;
+    })
+  | (Omit<Schemas['DrillGrade'], 'grade' | 'metric_value'> & {
+      grade?: never;
+      metric_value: number;
+    });
 
 // `grades` has a server-side default ([]), so the client may omit it even
 // though OpenAPI marks it required; override to optional and use the app's

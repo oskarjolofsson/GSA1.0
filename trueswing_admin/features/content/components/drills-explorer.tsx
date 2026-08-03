@@ -3,9 +3,24 @@
 import { useEffect, useState, useTransition } from "react";
 
 import DeleteImpactDialog from "@/features/content/components/delete-impact-dialog";
+import DrillMetricFields from "@/features/content/components/drill-metric-fields";
 import Pagination from "@/features/content/components/pagination";
+import {
+  emptyMetricDraft,
+  metricDraftFrom,
+  metricFromDraft,
+  validateMetricDraft,
+  type MetricDraft,
+} from "@/features/content/drill-metric-payload";
 import type { PageInfo } from "@/features/shared/paginate";
-import type { AdminDrill, AdminDrillPage, DeleteImpact } from "@/lib/content/types";
+import type {
+  AdminDrill,
+  AdminDrillPage,
+  CreateDrillBody,
+  DeleteImpact,
+  Taxonomy,
+  UpdateDrillBody,
+} from "@/lib/content/types";
 
 type ActionResult = { ok: boolean; reason?: string };
 
@@ -23,6 +38,7 @@ const FIELDS = [
 export default function DrillsExplorer({
   page,
   pageInfo,
+  taxonomy,
   searchAction,
   createAction,
   updateAction,
@@ -31,14 +47,11 @@ export default function DrillsExplorer({
 }: {
   page: AdminDrillPage;
   pageInfo: PageInfo;
+  /** Null when the taxonomy fetch failed. The area picker degrades to "Any area". */
+  taxonomy: Taxonomy | null;
   searchAction: (q: string) => Promise<{ ok: boolean; matches: AdminDrill[] }>;
-  createAction: (body: {
-    title: string;
-    task: string;
-    success_signal: string;
-    fault_indicator: string;
-  }) => Promise<ActionResult>;
-  updateAction: (id: string, body: Record<string, string>) => Promise<ActionResult>;
+  createAction: (body: CreateDrillBody) => Promise<ActionResult>;
+  updateAction: (id: string, body: UpdateDrillBody) => Promise<ActionResult>;
   deleteAction: (id: string, confirmImpact: boolean) => Promise<ActionResult>;
   impactAction: (id: string) => Promise<DeleteImpact | null>;
 }) {
@@ -69,6 +82,7 @@ export default function DrillsExplorer({
   if (creating) {
     return (
       <DrillForm
+        taxonomy={taxonomy}
         onCancel={() => setCreating(false)}
         onSave={createAction}
         onSaved={() => setCreating(false)}
@@ -80,6 +94,7 @@ export default function DrillsExplorer({
     return (
       <DrillDetail
         drill={selected}
+        taxonomy={taxonomy}
         onBack={() => setSelected(null)}
         onDeleted={(id) => {
           setRemoved((prev) => new Set(prev).add(id));
@@ -153,6 +168,19 @@ export default function DrillsExplorer({
                       <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
                         {drill.task}
                       </span>
+                      {/* Which drills are scored is the thing this screen now exists to
+                          answer — without it, finding the four putting drills that carry
+                          a metric means opening every row. */}
+                      {(drill.area || drill.metric) && (
+                        <span className="mt-1 block text-xs text-zinc-400">
+                          {[
+                            drill.area,
+                            (drill.metric as { type?: string } | null)?.type,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      )}
                     </span>
                     <span
                       className={`shrink-0 text-xs ${
@@ -180,17 +208,14 @@ export default function DrillsExplorer({
 }
 
 function DrillForm({
+  taxonomy,
   onCancel,
   onSave,
   onSaved,
 }: {
+  taxonomy: Taxonomy | null;
   onCancel: () => void;
-  onSave: (body: {
-    title: string;
-    task: string;
-    success_signal: string;
-    fault_indicator: string;
-  }) => Promise<ActionResult>;
+  onSave: (body: CreateDrillBody) => Promise<ActionResult>;
   onSaved: () => void;
 }) {
   const [values, setValues] = useState({
@@ -199,10 +224,14 @@ function DrillForm({
     success_signal: "",
     fault_indicator: "",
   });
+  const [area, setArea] = useState("");
+  const [metric, setMetric] = useState<MetricDraft>(emptyMetricDraft);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
 
-  const incomplete = Object.values(values).some((v) => !v.trim());
+  // A blank area is legal — it means "any area" — so only the text fields gate the save.
+  const metricProblem = validateMetricDraft(metric);
+  const incomplete = Object.values(values).some((v) => !v.trim()) || Boolean(metricProblem);
 
   return (
     <div className="flex min-h-[60vh] flex-col">
@@ -231,13 +260,31 @@ function DrillForm({
             />
           </label>
         ))}
+
+        <DrillMetricFields
+          taxonomy={taxonomy}
+          area={area}
+          onAreaChange={setArea}
+          metric={metric}
+          onMetricChange={setMetric}
+          disabled={pending}
+        />
+
+        {metricProblem && (
+          <p className="text-sm text-amber-600 dark:text-amber-400">{metricProblem}</p>
+        )}
+
         <button
           type="button"
           disabled={pending || incomplete}
           onClick={() => {
             setError(undefined);
             startTransition(async () => {
-              const res = await onSave(values);
+              const res = await onSave({
+                ...values,
+                area: area || null,
+                metric: metricFromDraft(metric),
+              });
               if (res.ok) onSaved();
               else setError(res.reason);
             });
@@ -253,6 +300,7 @@ function DrillForm({
 
 function DrillDetail({
   drill,
+  taxonomy,
   onBack,
   onDeleted,
   updateAction,
@@ -260,9 +308,10 @@ function DrillDetail({
   impactAction,
 }: {
   drill: AdminDrill;
+  taxonomy: Taxonomy | null;
   onBack: () => void;
   onDeleted: (id: string) => void;
-  updateAction: (id: string, body: Record<string, string>) => Promise<ActionResult>;
+  updateAction: (id: string, body: UpdateDrillBody) => Promise<ActionResult>;
   deleteAction: (id: string, confirmImpact: boolean) => Promise<ActionResult>;
   impactAction: (id: string) => Promise<DeleteImpact | null>;
 }) {
@@ -272,6 +321,9 @@ function DrillDetail({
     success_signal: drill.success_signal,
     fault_indicator: drill.fault_indicator,
   });
+  const [area, setArea] = useState(drill.area ?? "");
+  const [metric, setMetric] = useState<MetricDraft>(() => metricDraftFrom(drill.metric));
+  const metricProblem = validateMetricDraft(metric);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
   const [saved, setSaved] = useState(false);
@@ -337,14 +389,40 @@ function DrillDetail({
             />
           </label>
         ))}
+
+        <DrillMetricFields
+          taxonomy={taxonomy}
+          area={area}
+          onAreaChange={(next) => {
+            setSaved(false);
+            setArea(next);
+          }}
+          metric={metric}
+          onMetricChange={(next) => {
+            setSaved(false);
+            setMetric(next);
+          }}
+          disabled={pending}
+        />
+
+        {metricProblem && (
+          <p className="text-sm text-amber-600 dark:text-amber-400">{metricProblem}</p>
+        )}
+
         <div className="flex items-center gap-3">
           <button
             type="button"
-            disabled={pending}
+            disabled={pending || Boolean(metricProblem)}
             onClick={() => {
               setError(undefined);
               startTransition(async () => {
-                const res = await updateAction(drill.id, values);
+                const res = await updateAction(drill.id, {
+                  ...values,
+                  // Always sent, never omitted: null is how this form says "no area" and
+                  // "feel only", and the API distinguishes that from an absent key.
+                  area: area || null,
+                  metric: metricFromDraft(metric),
+                });
                 if (res.ok) setSaved(true);
                 else setError(res.reason);
               });

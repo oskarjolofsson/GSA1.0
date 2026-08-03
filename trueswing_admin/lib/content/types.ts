@@ -18,6 +18,18 @@ export type AdminDrill = components["schemas"]["AdminDrillSchema"];
 /** One page of drills (`AdminDrillPageResponse`). */
 export type AdminDrillPage = components["schemas"]["AdminDrillPageResponse"];
 
+/** Body for creating a drill. `area`/`metric` null = any area / feel-only. */
+export type CreateDrillBody = components["schemas"]["CreateAdminDrillRequest"];
+
+/**
+ * Body for a partial drill edit. Omit a field to keep it.
+ *
+ * `area` and `metric` are the two that can be *cleared*: sending null un-scopes or
+ * un-scores the drill, which the API tells apart from an absent key. So a caller that
+ * means "leave it alone" has to omit them, not send null.
+ */
+export type UpdateDrillBody = components["schemas"]["UpdateAdminDrillRequest"];
+
 /** Body for the composite create: issue + tags + new drills + existing links. */
 export type ComposeIssueBody = components["schemas"]["ComposeIssueRequest"];
 

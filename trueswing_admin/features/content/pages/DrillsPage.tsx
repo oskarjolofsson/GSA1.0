@@ -2,6 +2,8 @@ import { FetchResultView } from "@/components/fetch-result";
 import { paginate, parsePage } from "@/features/shared/paginate";
 import { requireSessionToken } from "@/lib/auth/require-session";
 import { getDrillsPage } from "@/lib/content/get-drills-page";
+import { getTaxonomy } from "@/lib/content/get-taxonomy";
+import type { Taxonomy } from "@/lib/content/types";
 import {
   createDrillAction,
   deleteDrillAction,
@@ -31,7 +33,14 @@ export default async function DrillsPage({
 
   const token = await requireSessionToken();
   const offset = (requestedPage - 1) * PAGE_SIZE;
-  const result = await getDrillsPage(token, { limit: PAGE_SIZE, offset });
+  // Same pairing as IssuesPage: the area picker renders from the taxonomy, and a failed
+  // taxonomy fetch degrades the picker rather than failing the whole screen.
+  const [result, taxonomyResult] = await Promise.all([
+    getDrillsPage(token, { limit: PAGE_SIZE, offset }),
+    getTaxonomy(token),
+  ]);
+  const taxonomy: Taxonomy | null =
+    taxonomyResult.status === "ok" ? taxonomyResult.data : null;
 
   return (
     <FetchResultView
@@ -49,6 +58,7 @@ export default async function DrillsPage({
             limit: PAGE_SIZE,
             itemsOnPage: page.items.length,
           })}
+          taxonomy={taxonomy}
           searchAction={searchDrillsAction}
           createAction={createDrillAction}
           updateAction={updateDrillAction}

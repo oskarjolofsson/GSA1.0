@@ -268,6 +268,11 @@ export interface paths {
         /**
          * Update Drill
          * @description Partial update; omitted fields are left untouched.
+         *
+         *     `exclude_unset` is load-bearing now that `area` and `metric` are nullable. They are
+         *     the only fields that can be *cleared*, so the service distinguishes "sent as null"
+         *     from "not sent" — dumping unset keys as None would silently strip a drill's metric
+         *     on any patch that only touched its title.
          */
         patch: operations["update_drill_api_v1_admin_content_drills__drill_id___patch"];
         trace?: never;
@@ -283,8 +288,9 @@ export interface paths {
          * Drill Delete Impact
          * @description What deleting this drill would touch.
          *
-         *     `drill_runs` is the one that cannot be confirmed past: practice_drill_runs has
-         *     ON DELETE NO ACTION, so the database refuses the delete outright.
+         *     `drill_runs` no longer blocks: practice_drill_runs is ON DELETE SET NULL, so those
+         *     sessions survive and keep counting toward the streak. They just stop naming the drill,
+         *     which is why the count is still worth showing before confirming.
          */
         get: operations["drill_delete_impact_api_v1_admin_content_drills__drill_id__impact__get"];
         put?: never;
@@ -1687,8 +1693,9 @@ export interface paths {
         /**
          * Complete Step
          * @description Mark a program step completed, optionally linking the practice session that
-         *     fulfilled it and passing per-drill block-feel grades (rough/ok/dialed). Grades
-         *     update the spaced-repetition state that schedules future range sessions.
+         *     fulfilled it and passing per-drill results. Each drill reports either a block-feel
+         *     grade (rough/ok/dialed) or a raw metric_value the server grades itself. Both routes
+         *     move the spaced-repetition state that schedules future range sessions.
          */
         post: operations["complete_step_api_v1_programs__program_id__steps__step_id__complete__post"];
         delete?: never;
@@ -1781,11 +1788,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
-            /**
-             * Drill Id
-             * Format: uuid
-             */
-            drill_id: string;
+            /** Drill Id */
+            drill_id?: string | null;
             /** Drill Title */
             drill_title: string;
             /** Successful Reps */
@@ -1801,6 +1805,14 @@ export interface components {
             started_at: string;
             /** Completed At */
             completed_at: string | null;
+            /** Feel */
+            feel?: number | null;
+            /** Metric Value */
+            metric_value?: number | null;
+            /** Metric Type */
+            metric_type?: string | null;
+            /** Grade */
+            grade?: string | null;
         };
         /** ActivitySession */
         ActivitySession: {
@@ -1853,6 +1865,12 @@ export interface components {
             user_id: string | null;
             /** Created At */
             created_at?: string | null;
+            /** Area */
+            area?: string | null;
+            /** Metric */
+            metric?: {
+                [key: string]: unknown;
+            } | null;
             /**
              * Issues
              * @default []
@@ -2188,6 +2206,12 @@ export interface components {
             success_signal: string;
             /** Fault Indicator */
             fault_indicator: string;
+            /** Area */
+            area?: string | null;
+            /** Metric */
+            metric?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** CreateAnalysisRequest */
         CreateAnalysisRequest: {
@@ -2454,7 +2478,15 @@ export interface components {
             /** Layman Desc */
             layman_desc?: string | null;
         };
-        /** DrillGrade */
+        /**
+         * DrillGrade
+         * @description How one drill block went. Send exactly one of `grade` or `metric_value`.
+         *
+         *     A feel drill sends `grade` -- the golfer's tap is the measurement. A scored drill sends
+         *     `metric_value`, the raw number, and the server grades it against the drill's current
+         *     thresholds. Clients never compute a grade from a metric: `grade_at` is admin-editable,
+         *     so a build that shipped before a retune would grade on numbers nobody can see any more.
+         */
         DrillGrade: {
             /**
              * Drill Id
@@ -2462,7 +2494,9 @@ export interface components {
              */
             drill_id: string;
             /** Grade */
-            grade: string;
+            grade?: string | null;
+            /** Metric Value */
+            metric_value?: number | null;
         };
         /** FeedbackDraftResponse */
         FeedbackDraftResponse: {
@@ -2567,6 +2601,12 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            /** Area */
+            area?: string | null;
+            /** Metric */
+            metric?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** GetFeedback */
         GetFeedback: {
@@ -2628,7 +2668,6 @@ export interface components {
             analysis_id?: string | null;
             /** Confidence */
             confidence?: number | null;
-            progress?: components["schemas"]["IssueProgress"] | null;
             /** Program Status */
             program_status?: string | null;
             /**
@@ -2723,24 +2762,6 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /**
-         * IssueProgress
-         * @description Progress tracking for an analysis issue.
-         */
-        IssueProgress: {
-            /** Completed Sessions */
-            completed_sessions: number;
-            /** Total Successful Reps */
-            total_successful_reps: number;
-            /** Overall Success Rate */
-            overall_success_rate: number | null;
-            /** Recent Session Success Rates */
-            recent_session_success_rates: number | null;
-            /** Delta */
-            delta: number | null;
-            /** Last Completed At */
-            last_completed_at?: string | null;
-        };
         /** IssueSwingTimelineItem */
         IssueSwingTimelineItem: {
             /**
@@ -2778,14 +2799,14 @@ export interface components {
              * Format: uuid
              */
             session_id: string;
-            /**
-             * Drill Id
-             * Format: uuid
-             */
-            drill_id: string;
+            /** Drill Id */
+            drill_id: string | null;
             /** Status */
             status: string;
-            /** Successful Reps */
+            /**
+             * Successful Reps
+             * @default 0
+             */
             successful_reps: number;
             /** Failed Reps */
             failed_reps: number;
@@ -2798,6 +2819,14 @@ export interface components {
             started_at: string;
             /** Completed At */
             completed_at: string | null;
+            /** Feel */
+            feel?: number | null;
+            /** Metric Value */
+            metric_value?: number | null;
+            /** Metric Type */
+            metric_type?: string | null;
+            /** Grade */
+            grade?: string | null;
         };
         /** PracticeSessionResponse */
         PracticeSessionResponse: {
@@ -3088,6 +3117,12 @@ export interface components {
             success_signal?: string | null;
             /** Fault Indicator */
             fault_indicator?: string | null;
+            /** Area */
+            area?: string | null;
+            /** Metric */
+            metric?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * UpdateAdminIssueRequest

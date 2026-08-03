@@ -127,10 +127,34 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     );
 }
 
+/**
+ * How the blocks in a session went, in one clause.
+ *
+ * This used to read `N good · M bad` from `successful_reps` / `failed_reps`. Neither
+ * ever held a rep count: `successful_reps` carried the rough/ok/dialed ordinal, so a
+ * session of three dialed blocks displayed as "9 good", and `failed_reps` was always 0
+ * — a permanent "0 bad" next to it. Read `feel` and `grade`, which mean what they say.
+ *
+ * Returns "" when nothing was rated, so the row falls back to just the drill count
+ * rather than printing a row of zeroes.
+ */
+function summariseRuns(runs: DaySession["drill_runs"]): string {
+    const dialed = runs.filter((r) => r.grade === "dialed" || r.feel === 3).length;
+    const ok = runs.filter((r) => r.grade === "ok" || r.feel === 2).length;
+    const rough = runs.filter((r) => r.grade === "rough" || r.feel === 1).length;
+
+    return [
+        dialed ? `${dialed} dialed` : null,
+        ok ? `${ok} ok` : null,
+        rough ? `${rough} rough` : null,
+    ]
+        .filter(Boolean)
+        .join(" · ");
+}
+
 function SessionRow({ session }: { session: DaySession }) {
-    const good = session.drill_runs.reduce((n, r) => n + r.successful_reps, 0);
-    const bad = session.drill_runs.reduce((n, r) => n + r.failed_reps, 0);
     const drillCount = session.drill_runs.length;
+    const summary = summariseRuns(session.drill_runs);
 
     return (
         <View className="flex-row items-center gap-3 rounded-2xl border border-white/10 bg-ink p-4">
@@ -142,7 +166,8 @@ function SessionRow({ session }: { session: DaySession }) {
                     Practice session
                 </Text>
                 <Text className="mt-0.5 font-sans text-sm text-sand-dim">
-                    {drillCount} {drillCount === 1 ? "drill" : "drills"} · {good} good · {bad} bad
+                    {drillCount} {drillCount === 1 ? "drill" : "drills"}
+                    {summary ? ` · ${summary}` : ""}
                 </Text>
             </View>
         </View>

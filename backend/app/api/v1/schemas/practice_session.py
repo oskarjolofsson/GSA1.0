@@ -41,13 +41,26 @@ class PracticeDrillRun(BaseModel):
     id: UUID
     drill_title: str
     session_id: UUID
-    drill_id: UUID
+    # Nullable: a run outlives the drill it practised, so history survives a catalog
+    # cleanup instead of blocking it.
+    drill_id: UUID | None
     status: str
-    successful_reps: int
+    # FROZEN. Carried the block-feel ordinal before `feel` existed. Still sent because
+    # builds in the wild read it; nothing new should. Defaulted so a current client can
+    # omit it -- this schema doubles as the completion request body.
+    successful_reps: int = 0
     failed_reps: int
     skipped: bool
     started_at: datetime
     completed_at: datetime | None
+    # How the block went. `feel` for a tapped rough/ok/dialed (1-3), `metric_value` for a
+    # counted score in the drill's own units, `metric_type` for how to read that number.
+    # `grade` is what the value was worth, derived server-side -- the client never owns
+    # the thresholds.
+    feel: int | None = None
+    metric_value: float | None = None
+    metric_type: str | None = None
+    grade: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -65,6 +78,10 @@ class PracticeDrillRun(BaseModel):
             skipped=dto.skipped,
             started_at=dto.started_at,
             completed_at=dto.completed_at,
+            feel=dto.feel,
+            metric_value=dto.metric_value,
+            metric_type=dto.metric_type,
+            grade=dto.grade,
         )
 
 

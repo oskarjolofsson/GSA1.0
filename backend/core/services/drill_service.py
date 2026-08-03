@@ -115,4 +115,6 @@ def from_drill_to_response_dto(drill: Drill) -> DrillResponseDTO:
         success_signal=drill.success_signal,
         fault_indicator=drill.fault_indicator,
         created_at=drill.created_at,
+        area=drill.area,
+        metric=drill.metric,
     )

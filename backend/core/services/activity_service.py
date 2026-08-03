@@ -15,7 +15,7 @@ from uuid import UUID
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from core.services import exceptions
+from core.services import drill_metrics, exceptions
 from core.infrastructure.db.repositories import practice_sessions as practice_repo
 from core.infrastructure.db.repositories import analysis as analysis_repo
 from core.infrastructure.db.repositories import drills as drill_repo
@@ -89,9 +89,12 @@ def _build_session_dtos(
     session_ids = [s.id for s in sessions]
     drill_runs = practice_repo.get_practice_drill_runs_by_session_ids(session_ids, session)
 
-    drill_ids = {run.drill_id for run in drill_runs}
+    # `drill_id` is nullable — a deleted drill nulls it rather than taking the run
+    # with it — so the lookup skips None and the title falls back below.
+    drill_ids = {run.drill_id for run in drill_runs if run.drill_id is not None}
     drills = drill_repo.get_drills_by_ids(list(drill_ids), session)
     drill_id_to_title = {drill.id: drill.title for drill in drills}
+    drill_id_to_metric = {drill.id: drill.metric for drill in drills}
 
     runs_by_session: dict[UUID, list[ActivityDrillRunDTO]] = {}
     for run in drill_runs:
@@ -105,6 +108,14 @@ def _build_session_dtos(
                 skipped=run.skipped,
                 started_at=run.started_at,
                 completed_at=run.completed_at,
+                feel=run.feel,
+                metric_value=float(run.metric_value) if run.metric_value is not None else None,
+                metric_type=run.metric_type,
+                # Re-derived on every read, not stored: retuning a drill's thresholds
+                # in the admin re-grades the history it should have graded all along.
+                grade=drill_metrics.grade_for(
+                    drill_id_to_metric.get(run.drill_id), run.metric_value
+                ),
             )
         )
 

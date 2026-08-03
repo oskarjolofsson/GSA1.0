@@ -6,7 +6,8 @@ import type { Issue } from 'features/issues/types';
 import type { Drill } from 'features/drill/types/Drill';
 import type { DrillRun } from 'features/drill/types/DrillRun';
 import type { PracticeSession } from '../types/Session';
-import { feelToOrdinal, type BlockFeel } from '../utils/blockFeel';
+import { feelToOrdinal } from '../utils/blockFeel';
+import type { BlockResult } from '../components/BlockRating';
 import { completeStep } from 'features/programs/services/programService';
 import type { ProgramContext, DrillGrade } from 'features/programs/types';
 
@@ -16,7 +17,7 @@ interface UsePracticeDrillsReturn {
     totalDrills: number;
     remainingDrillsCount: number;
     practiceReady: boolean;
-    completeBlock: (feel: BlockFeel | null) => void;
+    completeBlock: (result: BlockResult) => void;
     loading: boolean;
     error: string | null;
 }
@@ -165,22 +166,37 @@ export function usePracticeScreenState(
     }, [allDrills, currentDrillIndex, endDrill, endSession, session, startDrill, onSessionCompleted, programContext]);
 
     // Show-up loop: a drill is one focused block. The user hits a block of balls
-    // heads-down, then taps once to log how it felt (or skips the rating). No
-    // per-shot grading. The optional feel is stored in `successful_reps` as a small
-    // ordinal for now (0 = no rating); Phase 2 moves it to a dedicated `feel` column.
-    const completeBlock = useCallback((feel: BlockFeel | null) => {
+    // heads-down, then records it once -- a rough/ok/dialed tap for a feel drill, or the
+    // number they scored for a metric drill. Never both, and skipping is always allowed.
+    //
+    // A scored block reports `metric_value` and NO grade. The server grades it against the
+    // drill's current thresholds, because `grade_at` is admin-editable content and this
+    // build would otherwise keep judging against numbers that have since changed.
+    const completeBlock = useCallback((result: BlockResult) => {
         if (!session || !currentDrillRun) return;
         if (lastCompletedRunIdRef.current === currentDrillRun.id) return;
 
+        const { feel, metricValue } = result;
         lastCompletedRunIdRef.current = currentDrillRun.id;
-        // In a program run, record the feel as a grade for this drill (skip-rating
-        // omits it, leaving the drill's strength unchanged).
-        if (programContext && feel) {
-            gradesRef.current.push({ drill_id: currentDrillRun.drill_id, grade: feel });
+
+        // In a program run, report the block back as a grade so it moves the drill's
+        // strength. Skipping pushes nothing, which leaves that strength unchanged.
+        if (programContext && currentDrillRun.drill_id) {
+            if (metricValue !== null) {
+                gradesRef.current.push({
+                    drill_id: currentDrillRun.drill_id,
+                    metric_value: metricValue,
+                });
+            } else if (feel) {
+                gradesRef.current.push({ drill_id: currentDrillRun.drill_id, grade: feel });
+            }
         }
+
         const completedRun: DrillRun = {
             ...currentDrillRun,
-            successful_reps: feelToOrdinal(feel),
+            feel: feel ? feelToOrdinal(feel) : null,
+            metric_value: metricValue,
+            successful_reps: 0,
             failed_reps: 0,
         };
         void moveToNextDrill(completedRun);
