@@ -151,7 +151,7 @@ class TestCreateCustomIssue:
         assert created.area == "FULL_SWING"
 
         # It's a real issue row owned by the user and can seed a program directly.
-        program = ps.generate_program_from_issue(test_user["user_id"], created.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, issue_id=created.id)
         assert program.status == "active"
         assert program.issue_id == created.id
         assert program.analysis_issue_id is None
@@ -214,7 +214,7 @@ class TestCustomIssueVisibility:
             drills=[DraftDrillDTO(title="Pump", task="t", success_signal="s", fault_indicator="f")],
             db_session=db_session,
         )
-        ps.generate_program_from_issue(test_user["user_id"], created.id, db_session)
+        ps.generate_program(test_user["user_id"], db_session, issue_id=created.id)
 
         dtos = issues_service.get_issues_by_user_id(test_user["user_id"], db_session)
         match = [d for d in dtos if str(d.id) == str(created.id)]
@@ -234,7 +234,7 @@ class TestCustomIssueVisibility:
             drills=[DraftDrillDTO(title="Step", task="t", success_signal="s", fault_indicator="f")],
             db_session=db_session,
         )
-        ps.generate_program_from_issue(test_user["user_id"], created.id, db_session)
+        ps.generate_program(test_user["user_id"], db_session, issue_id=created.id)
 
         todays = issues_service.get_todays_issue(test_user["user_id"], db_session)
         assert todays is not None and str(todays.id) == str(created.id)
@@ -280,7 +280,7 @@ class TestBrowseStartShowsOnHome:
         db_session.flush()
 
         # Start a plan the way LibraryScreen does.
-        program = ps.generate_program_from_issue(uid, issue.id, db_session)
+        program = ps.generate_program(uid, db_session, issue_id=issue.id)
         assert program.status == "active"
 
         # It must appear on home as the active focus.
@@ -309,7 +309,7 @@ class TestRemoveFocus:
         db_session.flush()
         db_session.add(models.IssueDrill(issue_id=issue.id, drill_id=drill.id))
         db_session.flush()
-        ps.generate_program_from_issue(uid, issue.id, db_session)
+        ps.generate_program(uid, db_session, issue_id=issue.id)
 
         ps.remove_focus_for_issue(uid, issue.id, db_session)
 
@@ -333,7 +333,7 @@ class TestRemoveFocus:
             drills=[DraftDrillDTO(title="D", task="t", success_signal="s", fault_indicator="f")],
             db_session=db_session,
         )
-        ps.generate_program_from_issue(uid, created.id, db_session)
+        ps.generate_program(uid, db_session, issue_id=created.id)
 
         ps.remove_focus_for_issue(uid, created.id, db_session)
 

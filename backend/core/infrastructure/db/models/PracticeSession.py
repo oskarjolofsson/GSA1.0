@@ -52,9 +52,12 @@ class PracticeSession(Base):
     # Program linkage (nullable: ad-hoc practice outside a program is still allowed).
     session_type: Mapped[str | None] = mapped_column(
         Text,
-        # 'retest' is a frozen legacy value: historical sessions carry it, nothing
-        # writes it any more. It stays legal so those rows keep validating.
-        CheckConstraint("session_type IN ('range','play','retest')"),
+        # 'range' is practice; 'play' is a round on the course. A round is only ever
+        # recorded here -- no program schedules one, because playing serves every open
+        # program at once. NULL means ad-hoc practice outside any program.
+        #
+        # 'retest' was retired in 20260805000100 and its rows backfilled to 'range'.
+        CheckConstraint("session_type IN ('range','play')"),
     )
 
     # Which part of the game this session was, stamped from the practised issue at start.

@@ -47,55 +47,69 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 # =========== PUBLIC API ============
 
-def generate_program_for_issue(user_id: UUID, analysis_issue_id: UUID, session: Session) -> ProgramDTO:
-    """AI path: create an active program from an analysis issue. Idempotent:
-    returns the existing active program for this analysis issue if there is one.
-    Keeps analysis_issue_id as provenance and seeds the program from the
-    underlying issue's drills. Steps are scheduled on demand, not pre-generated."""
-    existing = repo.get_active_program_for_issue(user_id, analysis_issue_id, session)
+def generate_program(
+    user_id: UUID,
+    session: Session,
+    issue_id: UUID | None = None,
+    analysis_issue_id: UUID | None = None,
+) -> ProgramDTO:
+    """Start grooving an issue, from either entry point. Idempotent.
+
+    Two callers reach this: the AI path passes `analysis_issue_id` (a fault diagnosed from
+    a swing video) and the coach/browse path passes `issue_id` (something picked out of the
+    library). They used to be separate functions that disagreed about what a duplicate
+    means -- the AI one returned the existing program, the browse one raised 409 -- so the
+    same user action succeeded or failed depending on which screen it started from.
+
+    One rule now: asking for a program you already have returns it. That is what both
+    callers in the app want, and it matches the partial unique index
+    programs_one_active_per_issue, which makes "one active program per issue" a fact of the
+    schema rather than a convention.
+
+    Idempotency is keyed on the issue, not the analysis issue. Two analyses can diagnose
+    the same fault, and the index does not care which one sent you.
+    """
+    if analysis_issue_id is not None:
+        analysis_issue = analysis_issue_repo.get_analysis_issue_by_id(analysis_issue_id, session)
+        if not analysis_issue:
+            raise exceptions.NotFoundException("AnalysisIssue", str(analysis_issue_id))
+
+        # An analysis issue is owned through its analysis: it exists only inside one
+        # golfer's video, so there is no shared-catalog case here.
+        if analysis_issue.analysis is None or str(analysis_issue.analysis.user_id) != str(user_id):
+            raise exceptions.ForbiddenException("You do not have access to this analysis issue.")
+
+        resolved_issue_id = analysis_issue.issue_id
+        title = analysis_issue.issue.title if analysis_issue.issue else "your swing issue"
+    elif issue_id is not None:
+        issue = issue_repo.get_issue_by_id(issue_id, session)
+        if not issue:
+            raise exceptions.NotFoundException("Issue", str(issue_id))
+
+        # Catalog issues (user_id NULL) are usable by anyone; a custom issue is private to
+        # its author.
+        if issue.user_id is not None and str(issue.user_id) != str(user_id):
+            raise exceptions.ForbiddenException("You do not have access to this issue.")
+
+        resolved_issue_id = issue_id
+        title = issue.title
+    else:
+        raise exceptions.ValidationException(
+            "Provide either analysis_issue_id or issue_id."
+        )
+
+    # Checked after the ownership gates above, so asking about someone else's issue is
+    # refused rather than answered.
+    existing = repo.get_active_program_for_issue_id(user_id, resolved_issue_id, session)
     if existing:
         return _program_to_dto(existing, session)
 
-    analysis_issue = analysis_issue_repo.get_analysis_issue_by_id(analysis_issue_id, session)
-    if not analysis_issue:
-        raise exceptions.NotFoundException("AnalysisIssue", str(analysis_issue_id))
-
-    if analysis_issue.analysis is None or str(analysis_issue.analysis.user_id) != str(user_id):
-        raise exceptions.ForbiddenException("You do not have access to this analysis issue.")
-
-    issue_title = analysis_issue.issue.title if analysis_issue.issue else "your swing issue"
     return _seed_program(
         user_id=user_id,
-        issue_id=analysis_issue.issue_id,
-        title=f"Fix {issue_title}",
+        issue_id=resolved_issue_id,
+        title=f"Fix {title}",
         session=session,
         source_analysis_issue_id=analysis_issue_id,
-    )
-
-
-def generate_program_from_issue(user_id: UUID, issue_id: UUID, session: Session) -> ProgramDTO:
-    """Coach/browse path: create an active program directly from an issue with no
-    source analysis. The issue must be a global catalog issue (user_id NULL) or one
-    the user authored. Idempotent on the issue for this user."""
-    existing = repo.get_active_program_for_issue_id(user_id, issue_id, session)
-    if existing:
-        raise exceptions.ConflictException("You already have an active program for this issue.")
-
-    issue = issue_repo.get_issue_by_id(issue_id, session)
-    if not issue:
-        raise exceptions.NotFoundException("Issue", str(issue_id))
-
-    # Catalog issues (user_id NULL) are usable by anyone; a custom issue is private
-    # to its author.
-    if issue.user_id is not None and str(issue.user_id) != str(user_id):
-        raise exceptions.ForbiddenException("You do not have access to this issue.")
-
-    return _seed_program(
-        user_id=user_id,
-        issue_id=issue_id,
-        title=f"Fix {issue.title}",
-        session=session,
-        source_analysis_issue_id=None,
     )
 
 
