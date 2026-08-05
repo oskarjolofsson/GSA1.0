@@ -71,6 +71,12 @@ export const routes = {
     drillRunsComplete: `${BASE}/practice/drill-runs/complete/`,
   },
 
+  taxonomy: {
+    // Areas, goals and area-scoped misses with their golfer-facing labels. The
+    // library renders whatever this returns — no vocabulary lives in the app.
+    root: `${BASE}/taxonomy/`,
+  },
+
   users: {
     byId: (userId: string) => `${BASE}/users/${userId}/`,
   },

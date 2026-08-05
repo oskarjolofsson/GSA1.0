@@ -16,8 +16,9 @@ import type { Taxonomy, TaxonomyTerm } from "@/lib/content/types";
 
 /**
  * `kind` is the one vocabulary still defined in code. It is a two-value structural flag
- * (a fault is diagnosable and gets a retest, a skill is not) that changes how the program
- * engine behaves — not content anyone authors, so a lookup table would be ceremony.
+ * deciding which branch of the library an issue appears under (a fault is listed under
+ * its misses, a skill under its goals) -- not content anyone authors, so a lookup table
+ * would be ceremony.
  */
 const KIND_LABELS: Record<string, string> = {
   fault: "Fault",

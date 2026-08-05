@@ -52,7 +52,8 @@ export async function getActiveProgramByIssue(issueId: string): Promise<Program 
 
 /**
  * Create (or fetch the existing) active program for an AI-analysed issue. Keeps
- * the analysis_issue_id provenance (history + AI-retest linkage). Premium-gated.
+ * the analysis_issue_id provenance (links the program back to its source analysis).
+ * Premium-gated.
  */
 export async function generateProgram(analysisIssueId: string): Promise<Program> {
     const program = await apiClient.post<Program>(routes.programs.generate, {

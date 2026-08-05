@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Drill } from 'features/drill/types/Drill';
-import { parseInstructionSteps } from 'features/practice/utils/parseInstructionSteps';
+import { parseInstructionSteps } from 'features/shared/utils/parseInstructionSteps';
 
 type DrillInstructionsOverlayProps = {
     visible: boolean;

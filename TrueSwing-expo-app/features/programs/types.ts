@@ -6,20 +6,22 @@ import type { Schemas } from 'lib/api/types';
 // with the app's unions/shapes so consumers keep their ergonomics. Regenerate
 // the schema with `npm run gen:api-types`.
 
+// 'retest' is frozen: the program engine no longer schedules it, but historical
+// sessions and steps read back with it, so it stays in the union.
 export type SessionType = 'range' | 'play' | 'retest';
 export type DrillGradeValue = 'rough' | 'ok' | 'dialed';
 
 // Prescription shape varies by session_type; the backend serializes it as an
 // untyped object, so this stays hand-written.
-//   range:  { drill_ids, num_blocks, cue }
-//   play:   { holes, focus }
-//   retest: { instruction }
+//   range: { drill_ids, num_blocks, cue }
+//   play:  { holes, focus }
 export interface Prescription {
   drill_ids?: string[];
   num_blocks?: number;
   cue?: string | null;
   holes?: number;
   focus?: string;
+  // Only ever present on historical 'retest' steps; nothing writes it.
   instruction?: string;
 }
 

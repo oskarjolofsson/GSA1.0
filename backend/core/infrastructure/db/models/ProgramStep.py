@@ -32,14 +32,15 @@ class ProgramStep(Base):
 
     session_type: Mapped[str] = mapped_column(
         Text,
+        # 'retest' is a frozen legacy value: historical steps carry it, nothing
+        # schedules it any more. It stays legal so those rows keep validating.
         CheckConstraint("session_type IN ('range','play','retest')"),
         nullable=False,
     )
 
     # Shape of `prescription` by session_type:
-    #   range:  {"drill_ids": [...], "num_blocks": int, "cue": str | null}
-    #   play:   {"holes": int, "focus": str}
-    #   retest: {"instruction": str}
+    #   range: {"drill_ids": [...], "num_blocks": int, "cue": str | null}
+    #   play:  {"holes": int, "focus": str}
     prescription: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,

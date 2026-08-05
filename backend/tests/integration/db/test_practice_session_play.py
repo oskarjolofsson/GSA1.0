@@ -29,7 +29,9 @@ def test_start_defaults_when_not_provided(db_session, test_user):
 
 
 def test_start_persists_retest_type(db_session, test_user):
-    """A re-test session logs with session_type='retest' (earns a square, same path)."""
+    """'retest' is a frozen legacy value: the engine no longer schedules it, but the
+    CHECK constraint still accepts it so historical rows keep validating. This proves
+    the value still stores -- it is the guarantee behind not writing a migration."""
     dto = svc.record_practice_session_start(
         user_id=test_user["user_id"],
         analysis_issue_id=None,
@@ -51,4 +53,4 @@ def test_completed_play_session_counts_toward_activity(db_session, test_user):
     svc.record_practice_session_completion(dto.id, db_session)
 
     counts = repo.get_completed_session_counts_by_day(test_user["user_id"], "UTC", db_session)
-    assert sum(c for _, c in counts) >= 1
+    assert sum(count for _day, _area, count in counts) >= 1

@@ -21,7 +21,6 @@ type PrescriptionCardProps = {
     onNext: () => void;
     onStart: () => void;
     onPlay: () => void;
-    onRetest: () => void;
     onOpenHistory: () => void;
     onShowInfo: () => void;
     onRemove: () => void;
@@ -30,8 +29,8 @@ type PrescriptionCardProps = {
 };
 
 // Derives the card's session line, detail, button label, and whether Start is
-// enabled from the program state. Range is startable this phase; play/retest are
-// shown but gated ("Coming soon") until Phases 4/5.
+// enabled from the program state. Range starts a practice session; play opens the
+// log modal instead, since the round happens away from the app.
 function deriveCardState(
     issue: Issue | null,
     program: Program | null,
@@ -71,8 +70,6 @@ function deriveCardState(
         }
         case "play":
             return { ...base, sessionLine: `Play ${p?.holes ?? 9} holes`, detail: p?.focus ?? null, buttonLabel: "Log round", startable: hasIssue && !loading };
-        case "retest":
-            return { ...base, sessionLine: "Re-test your swing", detail: p?.instruction ?? null, buttonLabel: "Re-test", startable: hasIssue && !loading };
         default:
             return { ...base, detail: "Your plan is up to date.", buttonLabel: "Start session" };
     }
@@ -97,7 +94,6 @@ export default function PrescriptionCard({
     onNext,
     onStart,
     onPlay,
-    onRetest,
     onOpenHistory,
     onShowInfo,
     onRemove,
@@ -134,9 +130,8 @@ export default function PrescriptionCard({
     const handleStart = useCallback(() => {
         impactHaptic();
         if (nextStep?.session_type === "play") onPlay();
-        else if (nextStep?.session_type === "retest") onRetest();
         else onStart();
-    }, [nextStep?.session_type, onPlay, onRetest, onStart]);
+    }, [nextStep?.session_type, onPlay, onStart]);
 
     // Horizontal swipe over the issue text cycles issues. activeOffsetX keeps
     // small/vertical movement as taps so it never steals the chevrons.

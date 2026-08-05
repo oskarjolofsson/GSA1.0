@@ -27,9 +27,9 @@ from datetime import datetime, timezone
 STRENGTH_MAX = 5
 GROOVED_THRESHOLD = 3          # strength >= this => the drill is "grooved"
 NUM_DRILLS_PER_RANGE = 2       # how many drills fill a range session
-RETEST_CADENCE = 6             # insert a retest after this many work sessions
 
-# The repeating work rhythm; a retest is interleaved by RETEST_CADENCE.
+# The repeating work rhythm. Nothing interrupts it -- the program ends by grooving
+# every drill, not by passing a checkpoint.
 WORK_CYCLE: list[str] = ["range", "range", "play"]
 
 # Lightweight spaced repetition: how a grade moves a drill's strength.
@@ -37,10 +37,6 @@ GRADE_STRENGTH_DELTA: dict[str, int] = {"rough": -1, "ok": 0, "dialed": 1}
 
 PLAY_HOLES_DEFAULT = 9
 PLAY_FOCUS_DEFAULT = "Hold one swing thought on every full shot."
-RETEST_INSTRUCTION = "Film one swing of this issue so you can compare it to where you started."
-# Custom (coach/browse) issues have no source analysis to re-run, so the retest is
-# a pure self-comparison of the golfer's own footage with no AI reference read.
-RETEST_INSTRUCTION_SELF = "Film one swing of this issue and compare it side by side with your first clip."
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -256,19 +252,8 @@ def _schedule_next_step(program_id: UUID, session: Session) -> models.ProgramSte
             "num_blocks": len(drill_ids),
             "cue": None,
         }
-    elif session_type == "play":
+    else:  # play
         prescription = {"holes": PLAY_HOLES_DEFAULT, "focus": PLAY_FOCUS_DEFAULT}
-    else:  # retest
-        # A program with no source analysis (coach/browse seeded) can't be
-        # AI-re-analyzed, so its retest is a pure self-comparison of the golfer's
-        # own footage.
-        program = repo.get_program_by_id(program_id, session)
-        instruction = (
-            RETEST_INSTRUCTION
-            if program is not None and program.analysis_issue_id is not None
-            else RETEST_INSTRUCTION_SELF
-        )
-        prescription = {"instruction": instruction}
 
     step = models.ProgramStep(
         program_id=program_id,
@@ -281,20 +266,13 @@ def _schedule_next_step(program_id: UUID, session: Session) -> models.ProgramSte
 
 
 def _decide_next_type(completed_steps: list[models.ProgramStep]) -> str:
-    """`WORK_CYCLE` repeats forever; a retest is inserted after every
-    `RETEST_CADENCE` work sessions. Work = range or play."""
-    work_steps = [s for s in completed_steps if s.session_type in ("range", "play")]
+    """`WORK_CYCLE` repeats forever. Every step is work, so the position in the
+    cycle is just how many steps are already done.
 
-    work_since_retest = 0
-    for step in reversed(completed_steps):
-        if step.session_type == "retest":
-            break
-        work_since_retest += 1
-
-    if work_since_retest >= RETEST_CADENCE:
-        return "retest"
-
-    return WORK_CYCLE[len(work_steps) % len(WORK_CYCLE)]
+    Historical programs may hold completed `retest` steps, which no longer exist as
+    a type. They still count as a position here, so an old program resumes at the
+    next slot rather than replaying one it already did."""
+    return WORK_CYCLE[len(completed_steps) % len(WORK_CYCLE)]
 
 
 def _pick_due_drills(states: list[models.ProgramDrillState], count: int) -> list[UUID]:

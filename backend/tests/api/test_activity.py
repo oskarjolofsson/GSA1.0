@@ -87,22 +87,36 @@ def test_counts_happy_path_sorted(client, test_user, db_session, auth_headers):
 
     assert resp.status_code == 200
     data = resp.json()
+    # Two sessions on the 15th share a bucket (same day, both unattributed); the
+    # analysis on the 17th is its own row, attributed to full swing.
     assert data == [
-        {"occurred_on": "2026-06-15", "count": 2},
-        {"occurred_on": "2026-06-17", "count": 1},
+        {"occurred_on": "2026-06-15", "area": None, "count": 2},
+        {"occurred_on": "2026-06-17", "area": "FULL_SWING", "count": 1},
     ]
 
 
-def test_counts_session_and_analysis_same_day_sum(client, test_user, db_session, auth_headers):
+def test_counts_session_and_analysis_same_day_split_by_area(
+    client, test_user, db_session, auth_headers
+):
+    """One day, two areas, two rows.
+
+    This used to be a single row of count 2. Splitting by area is the point of the
+    change — a client that only wants "did anything happen" sums the rows for a date.
+    """
     user_id = test_user["user_id"]
     day = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
-    _completed_session(db_session, user_id, day)
-    _analysis(db_session, user_id, day.replace(hour=14))
+    _completed_session(db_session, user_id, day)          # no issue -> unattributed
+    _analysis(db_session, user_id, day.replace(hour=14))  # a filmed swing -> full swing
 
     resp = client.get("/api/v1/activity/?tz=UTC", headers=auth_headers)
 
     assert resp.status_code == 200
-    assert resp.json() == [{"occurred_on": "2026-06-15", "count": 2}]
+    data = resp.json()
+    assert data == [
+        {"occurred_on": "2026-06-15", "area": "FULL_SWING", "count": 1},
+        {"occurred_on": "2026-06-15", "area": None, "count": 1},
+    ]
+    assert sum(row["count"] for row in data) == 2
 
 
 def test_counts_excludes_non_completed(client, test_user, db_session, auth_headers):
@@ -126,8 +140,8 @@ def test_counts_tz_boundary_flips_day(client, test_user, db_session, auth_header
     utc = client.get("/api/v1/activity/?tz=UTC", headers=auth_headers).json()
     sto = client.get("/api/v1/activity/?tz=Europe/Stockholm", headers=auth_headers).json()
 
-    assert utc == [{"occurred_on": "2026-06-15", "count": 1}]
-    assert sto == [{"occurred_on": "2026-06-16", "count": 1}]
+    assert utc == [{"occurred_on": "2026-06-15", "area": None, "count": 1}]
+    assert sto == [{"occurred_on": "2026-06-16", "area": None, "count": 1}]
 
 
 def test_counts_default_tz_is_utc(client, test_user, db_session, auth_headers):
@@ -137,7 +151,7 @@ def test_counts_default_tz_is_utc(client, test_user, db_session, auth_headers):
     resp = client.get("/api/v1/activity/", headers=auth_headers)
 
     assert resp.status_code == 200
-    assert resp.json() == [{"occurred_on": "2026-06-15", "count": 1}]
+    assert resp.json() == [{"occurred_on": "2026-06-15", "area": None, "count": 1}]
 
 
 def test_counts_invalid_tz_returns_422(client, test_user, db_session, auth_headers):
@@ -263,3 +277,138 @@ def test_day_detail_survives_a_run_whose_drill_was_deleted(client, test_user, db
     payload = resp.json()["sessions"][0]["drill_runs"][0]
     assert payload["drill_id"] is None
     assert payload["drill_title"] == "Unknown Drill"
+
+
+# =========== AREA GROUPING + DATE RANGE (C3) ===========
+
+def _session_with_area(db, user_id, completed_at, area):
+    """A completed session attributed to an area, as C2 stamps it at start."""
+    s = _completed_session(db, user_id, completed_at)
+    s.area = area
+    db.flush()
+    return s
+
+
+def test_counts_split_one_day_across_areas(client, test_user, db_session, auth_headers):
+    """The whole point: a day of putting and a day of range are not the same square."""
+    user_id = test_user["user_id"]
+    day = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
+    _session_with_area(db_session, user_id, day, "PUTTING")
+    _session_with_area(db_session, user_id, day.replace(hour=15), "PUTTING")
+    _session_with_area(db_session, user_id, day.replace(hour=17), "BUNKER")
+
+    data = client.get("/api/v1/activity/?tz=UTC", headers=auth_headers).json()
+
+    assert data == [
+        {"occurred_on": "2026-06-15", "area": "BUNKER", "count": 1},
+        {"occurred_on": "2026-06-15", "area": "PUTTING", "count": 2},
+    ]
+
+
+def test_unattributed_sorts_last_and_is_not_dropped(client, test_user, db_session, auth_headers):
+    """A session with no issue behind it is real work. It gets its own bucket at the end
+    of the day's rows, so the graph can render it as a distinct segment."""
+    user_id = test_user["user_id"]
+    day = datetime(2026, 6, 15, 12, 0, tzinfo=timezone.utc)
+    _session_with_area(db_session, user_id, day, "PUTTING")
+    _completed_session(db_session, user_id, day.replace(hour=16))  # no area
+
+    data = client.get("/api/v1/activity/?tz=UTC", headers=auth_headers).json()
+
+    assert [row["area"] for row in data] == ["PUTTING", None]
+
+
+def test_range_is_inclusive_at_both_ends(client, test_user, db_session, auth_headers):
+    """`to_date` includes the whole day, not up to its midnight.
+
+    The bug this guards: a half-open window built from the raw date would exclude a
+    session completed at 14:00 on the last day the caller asked for.
+    """
+    user_id = test_user["user_id"]
+    for day in (14, 15, 16, 17):
+        _session_with_area(
+            db_session, user_id, datetime(2026, 6, day, 14, 0, tzinfo=timezone.utc), "PUTTING"
+        )
+
+    data = client.get(
+        "/api/v1/activity/?tz=UTC&from_date=2026-06-15&to_date=2026-06-16",
+        headers=auth_headers,
+    ).json()
+
+    assert [row["occurred_on"] for row in data] == ["2026-06-15", "2026-06-16"]
+
+
+def test_range_bounds_are_independently_optional(client, test_user, db_session, auth_headers):
+    user_id = test_user["user_id"]
+    for day in (14, 15, 16):
+        _session_with_area(
+            db_session, user_id, datetime(2026, 6, day, 14, 0, tzinfo=timezone.utc), "PUTTING"
+        )
+
+    only_from = client.get(
+        "/api/v1/activity/?tz=UTC&from_date=2026-06-15", headers=auth_headers
+    ).json()
+    only_to = client.get(
+        "/api/v1/activity/?tz=UTC&to_date=2026-06-15", headers=auth_headers
+    ).json()
+
+    assert [row["occurred_on"] for row in only_from] == ["2026-06-15", "2026-06-16"]
+    assert [row["occurred_on"] for row in only_to] == ["2026-06-14", "2026-06-15"]
+
+
+def test_range_respects_the_timezone(client, test_user, db_session, auth_headers):
+    """22:30 UTC on the 15th is 00:30 on the 16th in Stockholm, so a Stockholm range
+    starting on the 16th includes it and a UTC one does not."""
+    user_id = test_user["user_id"]
+    _session_with_area(
+        db_session, user_id, datetime(2026, 6, 15, 22, 30, tzinfo=timezone.utc), "PUTTING"
+    )
+
+    sto = client.get(
+        "/api/v1/activity/?tz=Europe/Stockholm&from_date=2026-06-16", headers=auth_headers
+    ).json()
+    utc = client.get(
+        "/api/v1/activity/?tz=UTC&from_date=2026-06-16", headers=auth_headers
+    ).json()
+
+    assert [row["occurred_on"] for row in sto] == ["2026-06-16"]
+    assert utc == []
+
+
+def test_inverted_range_is_422_not_an_empty_graph(client, test_user, db_session, auth_headers):
+    """Silently returning [] would read as "you did no practice", which the caller has no
+    way to tell apart from a range it got backwards."""
+    resp = client.get(
+        "/api/v1/activity/?from_date=2026-06-17&to_date=2026-06-15", headers=auth_headers
+    )
+
+    assert resp.status_code == 422
+    assert "2026-06-17" in resp.text
+
+
+def test_range_covers_analyses_too(client, test_user, db_session, auth_headers):
+    """Both halves of the union are bounded, not just the practice half."""
+    user_id = test_user["user_id"]
+    _analysis(db_session, user_id, datetime(2026, 6, 14, 12, 0, tzinfo=timezone.utc))
+    _analysis(db_session, user_id, datetime(2026, 6, 16, 12, 0, tzinfo=timezone.utc))
+
+    data = client.get(
+        "/api/v1/activity/?tz=UTC&from_date=2026-06-16", headers=auth_headers
+    ).json()
+
+    assert data == [{"occurred_on": "2026-06-16", "area": "FULL_SWING", "count": 1}]
+
+
+def test_a_single_day_range_works(client, test_user, db_session, auth_headers):
+    user_id = test_user["user_id"]
+    for day in (15, 16):
+        _session_with_area(
+            db_session, user_id, datetime(2026, 6, day, 14, 0, tzinfo=timezone.utc), "CHIPPING"
+        )
+
+    data = client.get(
+        "/api/v1/activity/?tz=UTC&from_date=2026-06-15&to_date=2026-06-15",
+        headers=auth_headers,
+    ).json()
+
+    assert data == [{"occurred_on": "2026-06-15", "area": "CHIPPING", "count": 1}]

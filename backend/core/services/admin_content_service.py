@@ -422,9 +422,21 @@ def coverage(db_session: Session) -> CoverageDTO:
         n for (area, miss, goal), n in counts.items() if miss is None or goal is None
     )
 
+    # Reachability is asymmetric by kind. A 'fault' issue is reachable through its
+    # misses with no goal tag at all, but a 'skill' issue is listed only under its
+    # goals -- with none it falls out of the library tree entirely and can be found
+    # only by search. That is invisible from the grid, so count it directly.
+    goalless_skills = db_session.execute(
+        select(func.count())
+        .select_from(models.Issue)
+        .outerjoin(models.IssueGoal, models.IssueGoal.issue_id == models.Issue.id)
+        .where(models.Issue.kind == "skill", models.IssueGoal.issue_id.is_(None))
+    ).scalar_one()
+
     return CoverageDTO(
         cells=cells,
         unmapped_drills=drill_repo.get_unmapped_drills_count(db_session),
         issues_with_no_drills=issue_repo.get_issues_with_no_drills_count(db_session),
         untagged_issues=untagged,
+        goalless_skill_issues=goalless_skills,
     )

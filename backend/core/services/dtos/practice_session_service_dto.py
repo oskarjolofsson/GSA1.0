@@ -17,6 +17,9 @@ class PracticeSessionResponseDTO:
     status: str
     started_at: datetime
     completed_at: datetime | None
+    # Which part of the game, stamped from the practised issue at start. NULL =
+    # unattributed: free practice, or a build older than the column.
+    area: str | None = None
 
 
 @dataclass(frozen=True)

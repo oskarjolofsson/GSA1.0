@@ -4,15 +4,20 @@ from datetime import date, datetime
 
 
 class ActivityCount(BaseModel):
-    """One contribution-graph square."""
+    """One day-and-area bucket on the contribution graph.
+
+    A day yields one row per area, so a client that ignores `area` must sum the rows for
+    a date rather than assume one row per day. `area` is null for unattributed activity.
+    """
     occurred_on: date
+    area: str | None = None
     count: int
 
     model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_domain(cls, dto) -> "ActivityCount":
-        return cls(occurred_on=dto.occurred_on, count=dto.count)
+        return cls(occurred_on=dto.occurred_on, area=dto.area, count=dto.count)
 
 
 class ActivityDrillRun(BaseModel):

@@ -46,7 +46,9 @@ class Issue(Base):
     )
 
     # fault = a swing flaw to fix; skill = a non-fault focus (e.g. clubhead speed).
-    # Drives program semantics (skill focuses have no retest).
+    # Authoring metadata only: it decides which branch of the library an issue appears
+    # under (fault -> listed under its misses, skill -> listed under its goals). No
+    # program behaviour reads it.
     kind: Mapped[str] = mapped_column(
         Text,
         CheckConstraint("kind IN ('fault','skill')"),

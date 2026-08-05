@@ -108,3 +108,8 @@ class CoverageDTO:
     # cell, so without this count they stay invisible in the very tool meant to surface
     # gaps — which is what the old inner joins did to them silently.
     untagged_issues: int = 0
+
+    # Skill issues with no goal tag. A fault is reachable via its misses, but a skill is
+    # listed only under its goals, so a goal-less one is search-only. Peer of the count
+    # above, tracking the other way content can drop out of the library.
+    goalless_skill_issues: int = 0

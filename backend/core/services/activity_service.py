@@ -15,7 +15,7 @@ from uuid import UUID
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from core.services import drill_metrics, exceptions
+from core.services import drill_metrics, exceptions, taxonomy
 from core.infrastructure.db.repositories import practice_sessions as practice_repo
 from core.infrastructure.db.repositories import analysis as analysis_repo
 from core.infrastructure.db.repositories import drills as drill_repo
@@ -38,21 +38,75 @@ def _resolve_tz(tz: str) -> ZoneInfo:
         raise exceptions.ValidationException(f"Invalid timezone: {tz!r}")
 
 
-def get_activity_counts(user_id: UUID, tz: str, session: Session) -> list[ActivityCountDTO]:
+def get_activity_counts(
+    user_id: UUID,
+    tz: str,
+    session: Session,
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[ActivityCountDTO]:
     """
-    Return per-day activity counts for the contribution graph, summing completed
-    practice sessions and completed successful analyses, grouped by calendar day
-    in the given timezone. Sorted ascending by date.
+    Per-day, per-area activity counts for the contribution graph: completed practice
+    sessions plus completed successful analyses, grouped by calendar day in `tz`.
+
+    One row per (day, area) rather than per day, so the graph can stack a bunker session
+    against a range session. Sorted by date, then area with unattributed last.
+
+    `from_date`/`to_date` are inclusive calendar days in `tz`. Both optional -- omitting
+    them returns everything, which is what the query did before it could be bounded.
     """
-    _resolve_tz(tz)  # validate; the GROUP BY runs in Postgres using the same name
+    tzinfo = _resolve_tz(tz)
+    start_utc, end_utc = _resolve_window(from_date, to_date, tzinfo)
 
-    counts: dict[date, int] = {}
-    for day, count in practice_repo.get_completed_session_counts_by_day(user_id, tz, session):
-        counts[day] = counts.get(day, 0) + count
-    for day, count in analysis_repo.get_activity_counts_by_day(user_id, tz, session):
-        counts[day] = counts.get(day, 0) + count
+    counts: dict[tuple[date, str | None], int] = {}
+    for day, area, count in practice_repo.get_completed_session_counts_by_day(
+        user_id, tz, session, start_utc, end_utc
+    ):
+        counts[(day, area)] = counts.get((day, area), 0) + count
 
-    return [ActivityCountDTO(occurred_on=day, count=counts[day]) for day in sorted(counts)]
+    # An analysis is a filmed swing, so it is full-swing activity by definition. Read
+    # from taxonomy rather than written as a literal -- it is the same default an issue
+    # created without an area gets, and it belongs in one place.
+    for day, count in analysis_repo.get_activity_counts_by_day(
+        user_id, tz, session, start_utc, end_utc
+    ):
+        key = (day, taxonomy.DEFAULT_AREA)
+        counts[key] = counts.get(key, 0) + count
+
+    return [
+        ActivityCountDTO(occurred_on=day, area=area, count=counts[(day, area)])
+        for day, area in sorted(counts, key=lambda k: (k[0], k[1] is None, k[1] or ""))
+    ]
+
+
+def _resolve_window(
+    from_date: date | None, to_date: date | None, tzinfo: ZoneInfo
+) -> tuple[datetime | None, datetime | None]:
+    """Turn an inclusive local date range into a half-open UTC window.
+
+    Half-open so the end day is included whole: `to_date` becomes midnight on the day
+    after it, and the query uses `<`. Without that, a session completed at 14:00 on the
+    last requested day would fall outside its own range.
+
+    An inverted range is refused rather than silently returning nothing -- an empty graph
+    looks like "you did no practice", which is a lie the caller would have no way to spot.
+    """
+    if from_date is not None and to_date is not None and from_date > to_date:
+        raise exceptions.ValidationException(
+            f"from_date {from_date} is after to_date {to_date}."
+        )
+
+    start_utc = (
+        datetime.combine(from_date, datetime.min.time(), tzinfo=tzinfo)
+        if from_date is not None
+        else None
+    )
+    end_utc = (
+        datetime.combine(to_date, datetime.min.time(), tzinfo=tzinfo) + timedelta(days=1)
+        if to_date is not None
+        else None
+    )
+    return start_utc, end_utc
 
 
 def get_day_detail(user_id: UUID, target_date: date, tz: str, session: Session) -> ActivityDayDetailDTO:
