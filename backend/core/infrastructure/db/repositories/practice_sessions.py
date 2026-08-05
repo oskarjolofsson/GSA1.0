@@ -9,21 +9,41 @@ from datetime import datetime, date
 # ---------------- ACTIVITY (contribution graph) ----------------
 
 def get_completed_session_counts_by_day(
-    user_id: UUID, tz: str, session: Session
-) -> list[tuple[date, int]]:
+    user_id: UUID,
+    tz: str,
+    session: Session,
+    start_utc: datetime | None = None,
+    end_utc: datetime | None = None,
+) -> list[tuple[date, str | None, int]]:
     """
-    Count completed practice sessions per calendar day for a user, grouping by
-    the calendar day of `completed_at` interpreted in the given IANA timezone.
+    Count completed practice sessions per calendar day AND area, grouping by the
+    calendar day of `completed_at` interpreted in the given IANA timezone.
+
+    The area comes back NULL for free practice and for anything a pre-C2 build created.
+    That is a real bucket the caller renders as unattributed, not a row to drop -- the
+    session happened and still earns its square.
+
+    `start_utc`/`end_utc` bound the scan as a half-open range. Applied to the raw column
+    rather than to the grouped local day so the window stays sargable against
+    (user_id, completed_at).
     """
     local_day = func.date(func.timezone(tz, PracticeSession.completed_at))
     stmt = (
-        select(local_day.label("occurred_on"), func.count().label("count"))
+        select(
+            local_day.label("occurred_on"),
+            PracticeSession.area.label("area"),
+            func.count().label("count"),
+        )
         .where(PracticeSession.user_id == user_id)
         .where(PracticeSession.status == "completed")
         .where(PracticeSession.completed_at.isnot(None))
-        .group_by(local_day)
+        .group_by(local_day, PracticeSession.area)
     )
-    return [(row.occurred_on, row.count) for row in session.execute(stmt).all()]
+    if start_utc is not None:
+        stmt = stmt.where(PracticeSession.completed_at >= start_utc)
+    if end_utc is not None:
+        stmt = stmt.where(PracticeSession.completed_at < end_utc)
+    return [(row.occurred_on, row.area, row.count) for row in session.execute(stmt).all()]
 
 
 def get_completed_sessions_in_range(

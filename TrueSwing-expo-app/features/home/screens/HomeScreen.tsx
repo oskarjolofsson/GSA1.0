@@ -24,8 +24,7 @@ import useTodaysIssue from "features/home/hooks/useTodaysIssue";
 import { useProgramForIssue } from "features/programs/hooks/useProgramForIssue";
 import { deriveActivityStats } from "features/home/utils/activityStats";
 import type { Issue } from "features/issues/types";
-import type { LogSessionArgs, SkipStepArgs } from "features/home/homeFlow";
-import { setRetestIntent } from "features/programs/retestIntent";
+import type { LogSessionArgs } from "features/home/homeFlow";
 import { removeFocus } from "features/programs/services/programService";
 import analysisService from "features/analysis/services/analysisService";
 
@@ -34,7 +33,6 @@ type HomeScreenProps = {
     onOpenProfile: () => void;
     onStartPractice: (issue: Issue) => void;
     onLogSession: (args: LogSessionArgs) => Promise<boolean>;
-    onSkipStep: (args: SkipStepArgs) => Promise<boolean>;
     onOpenHistory: (issue: Issue) => void;
 };
 
@@ -47,7 +45,6 @@ export default function HomeScreen({
     onOpenProfile,
     onStartPractice,
     onLogSession,
-    onSkipStep,
     onOpenHistory,
 }: HomeScreenProps) {
     const insets = useSafeAreaInsets();
@@ -69,8 +66,9 @@ export default function HomeScreen({
         null
     );
 
-    // Session-log modal (play round or re-test confirm). null when closed.
-    const [sessionMode, setSessionMode] = useState<"play" | "retest" | null>(null);
+    // Whether the play-round log modal is open. A round is the only session the
+    // golfer logs rather than practises.
+    const [logOpen, setLogOpen] = useState(false);
     const [logging, setLogging] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
 
@@ -136,62 +134,27 @@ export default function HomeScreen({
 
     const handleConfirmSession = useCallback(
         async (notes: string) => {
-            if (!selectedIssue?.id || !program || !nextStep || !sessionMode) return;
+            if (!selectedIssue?.id || !program || !nextStep) return;
 
-            // Re-test for an AI issue: don't credit on tap. Record the intent and
-            // send the player to the camera; it completes only when an upload
-            // finishes. A CUSTOM issue has no analysis to re-run, so its retest is a
-            // self-compare — logged like a play session below (no upload).
-            if (sessionMode === "retest" && selectedIssue.analysis_issue_id) {
-                setRetestIntent({
-                    analysisIssueId: selectedIssue.analysis_issue_id,
-                    programId: program.id,
-                    stepId: nextStep.id,
-                });
-                setSessionMode(null);
-                router.push("/(tabs)/upload");
-                return;
-            }
-
-            // Play (or custom self-compare retest): log + advance now (no upload).
+            // Log + advance now: a round happens away from the app, so there is
+            // nothing to upload and the square is earned on confirm.
             setLogging(true);
             const ok = await onLogSession({
                 analysisIssueId: selectedIssue.analysis_issue_id ?? null,
+                issueId: selectedIssue.id,
                 programId: program.id,
                 stepId: nextStep.id,
-                sessionType: sessionMode,
+                sessionType: "play",
                 notes,
             });
             setLogging(false);
             if (ok) {
-                setSessionMode(null);
+                setLogOpen(false);
                 refetchProgram();
             }
         },
-        [selectedIssue, program, nextStep, sessionMode, onLogSession, refetchProgram, router]
+        [selectedIssue, program, nextStep, onLogSession, refetchProgram]
     );
-
-    const handleSkipRetest = useCallback(() => {
-        if (!program || !nextStep) return;
-        Alert.alert(
-            "Skip this re-test?",
-            "Your plan moves on, but you won't earn a square for it.",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Skip",
-                    style: "destructive",
-                    onPress: async () => {
-                        const ok = await onSkipStep({ programId: program.id, stepId: nextStep.id });
-                        if (ok) {
-                            setSessionMode(null);
-                            refetchProgram();
-                        }
-                    },
-                },
-            ]
-        );
-    }, [program, nextStep, onSkipStep, refetchProgram]);
 
     const handleRemoveIssue = useCallback(() => {
         if (!selectedIssue) return;
@@ -327,8 +290,7 @@ export default function HomeScreen({
                     onPrev={() => cycleIssue(-1)}
                     onNext={() => cycleIssue(1)}
                     onStart={() => selectedIssue && onStartPractice(selectedIssue)}
-                    onPlay={() => setSessionMode("play")}
-                    onRetest={() => setSessionMode("retest")}
+                    onPlay={() => setLogOpen(true)}
                     onOpenHistory={() => selectedIssue && onOpenHistory(selectedIssue)}
                     onShowInfo={() => setInfoOpen(true)}
                     onRemove={handleRemoveIssue}
@@ -356,20 +318,14 @@ export default function HomeScreen({
             />
 
             <SessionLogModal
-                visible={sessionMode !== null}
-                title={sessionMode === "retest" ? "Re-test your swing" : "Log your round"}
-                body={
-                    sessionMode === "retest"
-                        ? nextStep?.prescription.instruction ?? "Film a fresh swing so you can compare it to where you started."
-                        : nextStep?.prescription.focus ?? null
-                }
-                showNotes={sessionMode === "play"}
-                confirmLabel={sessionMode === "retest" ? "Film now" : "I played it"}
+                visible={logOpen}
+                title="Log your round"
+                body={nextStep?.prescription.focus ?? null}
+                showNotes
+                confirmLabel="I played it"
                 submitting={logging}
                 onConfirm={handleConfirmSession}
-                onClose={() => setSessionMode(null)}
-                onSkip={sessionMode === "retest" ? handleSkipRetest : undefined}
-                skipLabel="Skip this re-test"
+                onClose={() => setLogOpen(false)}
             />
         </View>
     );

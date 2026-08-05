@@ -36,7 +36,7 @@ class ProgramStepDTO:
     id: UUID
     program_id: UUID
     order_index: int
-    session_type: str  # 'range' | 'play' | 'retest'
+    session_type: str  # 'range' | 'play' ('retest' frozen: read back only)
     prescription: dict
     status: str  # 'pending' | 'completed' | 'skipped'
     practice_session_id: UUID | None

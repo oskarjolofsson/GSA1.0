@@ -5,7 +5,12 @@ from datetime import datetime
 
 class StartPracticeSessionRequest(BaseModel):
     analysis_issue_id: UUID | None = None
-    session_type: str | None = None  # 'range' | 'play' | 'retest'
+    # What the golfer chose to work on. Optional: free practice has no issue, and builds
+    # older than this field do not send it -- those sessions land unattributed rather
+    # than being refused. It is how a library-started session gets an area at all, since
+    # those issues have no AnalysisIssue to resolve through.
+    issue_id: UUID | None = None
+    session_type: str | None = None  # 'range' | 'play' ('retest' frozen: read back only)
     notes: str | None = None
 
 
@@ -16,6 +21,8 @@ class PracticeSessionResponse(BaseModel):
     status: str
     started_at: datetime
     completed_at: datetime | None
+    # NULL = unattributed. The graph renders those; it never drops them.
+    area: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -29,6 +36,7 @@ class PracticeSessionResponse(BaseModel):
             status=dto.status,
             started_at=dto.started_at,
             completed_at=dto.completed_at,
+            area=dto.area,
         )
 
 

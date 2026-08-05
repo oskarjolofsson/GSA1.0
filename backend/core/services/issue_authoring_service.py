@@ -38,9 +38,17 @@ from core.services.taxonomy import (
 )
 
 # Tokens too generic to be useful for dedup matching.
+#
+# The second line is domain noise: a word that appears in most issues in its part of the
+# game carries no signal about which issue this is. `swing`, `golf`, `ball` and `club`
+# were enough while the catalog was all full swing. `putt`, `chip`, `pitch`, `bunker` and
+# `green` join them now that four more areas are being authored -- without them, every
+# putting issue would look like every other putting issue to the dedup check.
 _STOPWORDS = {
     "the", "and", "your", "you", "with", "for", "that", "this", "from", "into",
     "swing", "golf", "issue", "drill", "ball", "club", "when", "have", "get",
+    "putt", "putts", "putting", "chip", "chips", "chipping", "pitch", "pitches",
+    "pitching", "bunker", "bunkers", "green", "greens",
 }
 
 

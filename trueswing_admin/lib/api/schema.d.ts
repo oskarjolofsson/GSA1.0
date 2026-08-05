@@ -1292,7 +1292,13 @@ export interface paths {
          * Start Practice Session
          * @description Start a new practice session for the current user.
          *
+         *     The session is stamped with the practised issue's area, so the contribution graph
+         *     can colour it. Sending neither id leaves it unattributed, which is a real state for
+         *     free practice -- never an error, because the session still happened.
+         *
          *     Arguments (JSON body):
+         *         issue_id (UUID, optional): The issue being practised. Preferred: it is the only
+         *             one that works for library-started issues, which have no AnalysisIssue.
          *         analysis_issue_id (UUID, optional): Link to a specific analysis issue
          *
          *     Returns:
@@ -1536,10 +1542,21 @@ export interface paths {
         };
         /**
          * Get Activity
-         * @description Per-day activity counts for the contribution graph.
+         * @description Per-day, per-area activity counts for the contribution graph.
          *
-         *     Sums completed practice sessions and completed successful analyses, grouped
-         *     by calendar day in `tz`. A count >= 1 lights that day's square.
+         *     Sums completed practice sessions and completed successful analyses, grouped by
+         *     calendar day in `tz` AND by area, so the graph can stack a bunker session against a
+         *     range session. A day with two areas returns two rows; a client that only wants the
+         *     old "did anything happen" answer sums them.
+         *
+         *     `area` is null for unattributed activity: free practice with no issue behind it, and
+         *     anything created before sessions carried an area.
+         *
+         *     `from_date`/`to_date` bound the range, both inclusive and both optional. Omitting
+         *     them returns the user's whole history, which is what this endpoint did before it
+         *     could be bounded. `from_date` after `to_date` is a 422 rather than an empty list --
+         *     an empty graph reads as "you did no practice", which the caller cannot tell from a
+         *     range it got backwards.
          */
         get: operations["get_activity_api_v1_activity__get"];
         put?: never;
@@ -1758,7 +1775,10 @@ export interface components {
         };
         /**
          * ActivityCount
-         * @description One contribution-graph square.
+         * @description One day-and-area bucket on the contribution graph.
+         *
+         *     A day yields one row per area, so a client that ignores `area` must sum the rows for
+         *     a date rather than assume one row per day. `area` is null for unattributed activity.
          */
         ActivityCount: {
             /**
@@ -1766,6 +1786,8 @@ export interface components {
              * Format: date
              */
             occurred_on: string;
+            /** Area */
+            area?: string | null;
             /** Count */
             count: number;
         };
@@ -2851,6 +2873,8 @@ export interface components {
             started_at: string;
             /** Completed At */
             completed_at: string | null;
+            /** Area */
+            area?: string | null;
         };
         /** ProfileMatchResponse */
         ProfileMatchResponse: {
@@ -2954,6 +2978,8 @@ export interface components {
         StartPracticeSessionRequest: {
             /** Analysis Issue Id */
             analysis_issue_id?: string | null;
+            /** Issue Id */
+            issue_id?: string | null;
             /** Session Type */
             session_type?: string | null;
             /** Notes */
@@ -5846,6 +5872,10 @@ export interface operations {
             query?: {
                 /** @description IANA timezone name for day grouping, e.g. Europe/Stockholm */
                 tz?: string;
+                /** @description Inclusive first calendar day in `tz`. */
+                from_date?: string | null;
+                /** @description Inclusive last calendar day in `tz`. */
+                to_date?: string | null;
             };
             header: {
                 authorization: string;

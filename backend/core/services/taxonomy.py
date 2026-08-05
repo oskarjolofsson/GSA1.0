@@ -45,8 +45,8 @@ from dataclasses import dataclass
 from core.services.exceptions import ValidationException
 
 # Not table-driven. `kind` distinguishes a diagnosable fault from a non-fault training
-# focus, which changes how the program engine behaves (a skill focus has no retest). That
-# is code, not content.
+# focus, which decides which branch of the library an issue appears under. It is a
+# structural flag, not vocabulary anyone authors.
 ALLOWED_KINDS = ("fault", "skill")
 DEFAULT_KIND = "fault"
 

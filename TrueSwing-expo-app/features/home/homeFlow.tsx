@@ -10,7 +10,6 @@ import { startPracticeSession, endPracticeSession } from "features/practice/serv
 import type { PracticeSession } from "features/practice/types";
 import { useRequirePremium } from "features/billing/hooks/useRequirePremium";
 import { getActiveProgramByIssue, generateProgram, generateProgramFromIssue, getNextStep, completeStep } from "features/programs/services/programService";
-import { clearRetestIntent } from "features/programs/retestIntent";
 import type { ProgramContext } from "features/programs/types";
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from "expo-router";
@@ -20,17 +19,12 @@ import React from "react";
 
 export type LogSessionArgs = {
     analysisIssueId: string | null;  // null for custom (coach/browse) issues
+    issueId: string;                 // always known, and what the session's area comes from
     programId: string;
     stepId: string;
-    sessionType: "play" | "retest";
+    sessionType: "play";
     notes: string;
 };
-
-export type SkipStepArgs = {
-    programId: string;
-    stepId: string;
-};
-
 
 export default function HomeFlow() {
     const { currentScreen, goToHome, goToAnalysis, goToPractice, goToHistory } = useHomeFlowSequence();
@@ -49,8 +43,6 @@ export default function HomeFlow() {
             setSelectedSession(null);
             setProgramContext(null);
             setHistoryIssue(null);
-            // Bailing back to home discards an unconsumed re-test intent.
-            clearRetestIntent();
             analysisController.refetch();
         }, [analysisController.refetch, goToHome])
     )
@@ -83,14 +75,18 @@ export default function HomeFlow() {
 
             const step = await getNextStep(program.id);
             if (!step) return;
+            // The only non-range step is a play round, which is logged from the home
+            // card rather than started here.
             if (step.session_type !== "range") {
-                const what = step.session_type === "play" ? "to play a round" : "a re-test";
-                Alert.alert("Open it from home", `Your next session for this issue is ${what}. Head to your home plan to do it.`);
+                Alert.alert("Open it from home", "Your next session for this issue is to play a round. Head to your home plan to do it.");
                 return;
             }
 
             setSelectedIssue(issue);
-            const session = await startPracticeSession(issue.analysis_issue_id ?? null);
+            const session = await startPracticeSession({
+                issueId: issue.id,
+                analysisIssueId: issue.analysis_issue_id ?? null,
+            });
             setSelectedSession(session);
             setProgramContext({
                 programId: program.id,
@@ -110,15 +106,16 @@ export default function HomeFlow() {
         }
     }, [requirePremium, goToPractice]);
 
-    // Log a no-activity program session (play round or re-test): create a completed
-    // session of the given type (earns the streak square), then advance the program.
-    // Returns success so the caller can close the modal + refetch (and, for retest,
-    // route to the upload tab).
-    const logProgramSession = React.useCallback(async ({ analysisIssueId, programId, stepId, sessionType, notes }: LogSessionArgs) => {
+    // Log a no-activity program session (a play round): create a completed session
+    // of that type (earns the streak square), then advance the program. Returns
+    // success so the caller can close the modal and refetch.
+    const logProgramSession = React.useCallback(async ({ analysisIssueId, issueId, programId, stepId, sessionType, notes }: LogSessionArgs) => {
         if (!requirePremium()) return false;
         try {
-            const session = await startPracticeSession(analysisIssueId, {
-                session_type: sessionType,
+            const session = await startPracticeSession({
+                issueId,
+                analysisIssueId,
+                sessionType,
                 notes: notes || null,
             });
             await endPracticeSession(session.id);
@@ -130,18 +127,6 @@ export default function HomeFlow() {
         }
     }, [requirePremium]);
 
-    // Deliberately skip a step (e.g. a re-test) without doing it: advance the
-    // program, no session, no streak square.
-    const skipStep = React.useCallback(async ({ programId, stepId }: SkipStepArgs) => {
-        try {
-            await completeStep(programId, stepId, {});
-            return true;
-        } catch (error) {
-            console.error("Failed to skip step:", error);
-            return false;
-        }
-    }, []);
-
     return (
         <HomeAnalysisProvider value={analysisController}>
             <View style={{ flex: 1 }}>
@@ -151,7 +136,6 @@ export default function HomeFlow() {
                         onOpenProfile={() => router.push("/(tabs)/profile")}
                         onStartPractice={startProgramSession}
                         onLogSession={logProgramSession}
-                        onSkipStep={skipStep}
                         onOpenHistory={openHistory}
                     />
                 )}

@@ -157,54 +157,6 @@ class TestCreateCustomIssue:
         assert program.analysis_issue_id is None
         assert program.total_drills == 1
 
-    def test_custom_program_retest_is_self_compare(self, db_session, test_user):
-        """Intent: a retest step tells the golfer to re-film their swing. For an
-        AI-diagnosed issue we can re-run the analysis and show an AI read as a
-        reference. A CUSTOM issue (coach/browse) has no source video analysis, so
-        its retest must degrade to a plain self-comparison ("film it and compare to
-        your first clip") with no AI-read framing. This test proves that branch.
-
-        Why the loop / fast-forward: the program schedules ONE step at a time, and
-        a retest only appears after RETEST_CADENCE (6) work sessions. Rather than
-        actually completing 6 sessions, we shortcut by inserting 6 already-completed
-        "range" steps straight into the DB. That puts the scheduler in the state
-        "6 work sessions done since the last retest", so the very next call to the
-        internal scheduler (`_schedule_next_step`, called directly — this is a
-        white-box test of that function) is forced to produce a retest.
-
-        The two assertions:
-          1. session_type == "retest"  -> we did reach a retest step.
-          2. prescription["instruction"] == RETEST_INSTRUCTION_SELF  -> because the
-             program's analysis_issue_id is None (custom), it used the self-compare
-             copy, NOT the AI-reference copy (RETEST_INSTRUCTION).
-
-        If this is the failing test, print `retest.prescription` and check whether
-        analysis_issue_id on the program is actually None — the instruction is chosen
-        off that field inside program_service._schedule_next_step."""
-        from core.infrastructure.db.models.ProgramStep import ProgramStep
-
-        created = ias.create_custom_issue(
-            user_id=test_user["user_id"],
-            issue=DraftIssueDTO(title="Sway off ball", description="hips slide"),
-            drills=[DraftDrillDTO(title="Wall drill", task="t", success_signal="s", fault_indicator="f")],
-            db_session=db_session,
-        )
-        program = ps.generate_program_from_issue(test_user["user_id"], created.id, db_session)
-
-        # Fast-forward: inject RETEST_CADENCE completed work steps so the scheduler's
-        # next decision is a retest (see docstring for why we don't play them out).
-        for i in range(ps.RETEST_CADENCE):
-            db_session.add(ProgramStep(
-                program_id=program.id, order_index=i, session_type="range",
-                prescription={}, status="completed",
-            ))
-        db_session.flush()
-
-        retest = ps._schedule_next_step(program.id, db_session)
-        assert retest.session_type == "retest"
-        # Custom (no source analysis) => self-compare instruction, not the AI-read one.
-        assert retest.prescription["instruction"] == ps.RETEST_INSTRUCTION_SELF
-
     def test_empty_title_rejected(self, db_session, test_user):
         """Intent: guard against junk. A custom issue with a blank/whitespace title
         is meaningless (it names the focus), so create_custom_issue must reject it

@@ -51,6 +51,20 @@ describe("deriveActivityStats — rolling window", () => {
         expect(week[4]).toMatchObject({ done: true, level: 1 });
         expect(week[5]).toMatchObject({ done: false, level: 0 });
     });
+
+    it("sums a day that comes back split across areas", () => {
+        // /activity/ returns one row per (day, area), so a day of putting plus a day of
+        // range arrives as two rows. This screen does not care which area — it asks
+        // whether the day happened — so the rows have to add up, not overwrite.
+        const counts: ActivityCount[] = [
+            { occurred_on: day(0), area: "PUTTING", count: 1 },
+            { occurred_on: day(0), area: "FULL_SWING", count: 1 },
+            { occurred_on: day(-1), area: null, count: 1 },
+        ];
+        const { week } = deriveActivityStats(counts, NOW);
+        expect(week[6]).toMatchObject({ done: true, level: 2 });
+        expect(week[5]).toMatchObject({ done: true, level: 1 });
+    });
 });
 
 describe("deriveActivityStats — streak", () => {

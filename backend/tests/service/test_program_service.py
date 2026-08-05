@@ -28,27 +28,24 @@ def test_decide_next_type_starts_with_range_range_play():
     assert _run_schedule(3) == ["range", "range", "play"]
 
 
-def test_decide_next_type_inserts_retest_after_cadence_work_sessions():
-    seq = _run_schedule(2 * (ps.RETEST_CADENCE + 1))
-    # First retest lands right after RETEST_CADENCE work sessions.
-    assert seq[ps.RETEST_CADENCE] == "retest"
-    assert "retest" not in seq[: ps.RETEST_CADENCE]
+def test_decide_next_type_never_schedules_a_retest():
+    """Retest was removed from the engine. This is the inverted form of the old
+    cadence test: run well past the old cadence of 6 and prove nothing interrupts."""
+    seq = _run_schedule(60)
+    assert "retest" not in seq
 
 
-def test_decide_next_type_resets_counter_after_retest():
-    seq = _run_schedule(20)
-    retest_positions = [i for i, t in enumerate(seq) if t == "retest"]
-    # At least two retests, and they are spaced by exactly RETEST_CADENCE work
-    # sessions (i.e. RETEST_CADENCE + 1 slots apart).
-    assert len(retest_positions) >= 2
-    assert retest_positions[1] - retest_positions[0] == ps.RETEST_CADENCE + 1
+def test_decide_next_type_is_only_the_work_cycle():
+    """No step type exists outside WORK_CYCLE any more."""
+    seq = _run_schedule(60)
+    assert set(seq) == set(ps.WORK_CYCLE)
 
 
-def test_decide_next_type_work_cycle_repeats():
-    seq = _run_schedule(20)
-    work_only = [t for t in seq if t != "retest"]
-    # The work rhythm is WORK_CYCLE repeated.
-    for i, t in enumerate(work_only):
+def test_decide_next_type_work_cycle_repeats_unbroken():
+    seq = _run_schedule(60)
+    # Every slot is WORK_CYCLE at its own index -- no offset accumulates, which is
+    # what an inserted step would have caused.
+    for i, t in enumerate(seq):
         assert t == ps.WORK_CYCLE[i % len(ps.WORK_CYCLE)]
 
 

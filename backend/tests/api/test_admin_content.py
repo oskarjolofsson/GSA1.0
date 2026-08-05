@@ -395,6 +395,25 @@ class TestCoverage:
         after = client.get(f"{BASE}/coverage/", headers=auth_headers).json()
         assert after["untagged_issues"] == before["untagged_issues"] + 1
 
+    def test_goalless_skill_issues_are_counted(self, client, auth_headers, db_session):
+        """A skill issue with no goal tag is reachable only by search, so it needs a count.
+
+        The library lists a fault under its misses and a skill under its goals. That
+        asymmetry means an untagged fault still shows up somewhere while an untagged
+        skill falls out of the tree entirely — and no coverage cell can reveal it.
+        """
+        from core.infrastructure.db import models
+
+        before = client.get(f"{BASE}/coverage/", headers=auth_headers).json()
+
+        db_session.add(
+            models.Issue(title="Clubhead speed", description="no goals", kind="skill")
+        )
+        db_session.flush()
+
+        after = client.get(f"{BASE}/coverage/", headers=auth_headers).json()
+        assert after["goalless_skill_issues"] == before["goalless_skill_issues"] + 1
+
     def test_includes_catalog_health_counts(self, client, auth_headers):
         data = client.get(f"{BASE}/coverage/", headers=auth_headers).json()
 

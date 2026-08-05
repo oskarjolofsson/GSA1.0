@@ -33,7 +33,7 @@ export function useSessionActions(): UseSessionActionsReturn {
             setLoading(true);
             setError(null);
             if (!analysisIssueId) throw new Error("You dont have access to these drills. Please try again later");
-            const newSession = await startPracticeSessionRequest(analysisIssueId);
+            const newSession = await startPracticeSessionRequest({ analysisIssueId });
             setSession(newSession);
             return newSession;
         } catch (err) {

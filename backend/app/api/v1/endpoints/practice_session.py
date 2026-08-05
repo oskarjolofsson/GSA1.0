@@ -37,7 +37,13 @@ def start_practice_session(
     """
     Start a new practice session for the current user.
 
+    The session is stamped with the practised issue's area, so the contribution graph
+    can colour it. Sending neither id leaves it unattributed, which is a real state for
+    free practice -- never an error, because the session still happened.
+
     Arguments (JSON body):
+        issue_id (UUID, optional): The issue being practised. Preferred: it is the only
+            one that works for library-started issues, which have no AnalysisIssue.
         analysis_issue_id (UUID, optional): Link to a specific analysis issue
 
     Returns:
@@ -46,6 +52,7 @@ def start_practice_session(
     result = service_start_session(
         user_id=current_user["user_id"],
         analysis_issue_id=request.analysis_issue_id,
+        issue_id=request.issue_id,
         session=db,
         session_type=request.session_type,
         notes=request.notes,

@@ -5,8 +5,15 @@ from datetime import date, datetime
 
 @dataclass(frozen=True)
 class ActivityCountDTO:
-    """One contribution-graph square: a day and how many activities it had."""
+    """One day-and-area bucket on the contribution graph.
+
+    A day now yields one row per area rather than one row total, so the graph can stack
+    a bunker session against a range session instead of showing an undifferentiated
+    square. `area` is None for unattributed activity -- free practice, and anything a
+    build older than the column created. Rendered as its own segment, never dropped.
+    """
     occurred_on: date
+    area: str | None
     count: int
 
 

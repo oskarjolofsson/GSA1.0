@@ -1,6 +1,8 @@
 from core.infrastructure.db import models
 from core.infrastructure.db.repositories import practice_sessions as repo
 from core.infrastructure.db.repositories import drills as drill_repo
+from core.infrastructure.db.repositories import analysis_issues as analysis_issue_repo
+from core.infrastructure.db.repositories import issues as issue_repo
 from core.services import exceptions
 from core.services import drill_metrics
 from core.services.dtos.practice_session_service_dto import (
@@ -22,17 +24,55 @@ def record_practice_session_start(
     session: Session,
     session_type: str | None = None,
     notes: str | None = None,
+    issue_id: UUID | None = None,
 ) -> PracticeSessionResponseDTO:
-    """Create a new practice session for the user."""
+    """Create a new practice session for the user.
+
+    `issue_id` is what the golfer chose to work on. It is optional because free practice
+    has no issue behind it, and because builds shipped before this parameter existed do
+    not send it -- those sessions land unattributed rather than being refused.
+    """
     new_session = models.PracticeSession(
         user_id=user_id,
         analysis_issue_id=analysis_issue_id,
         status="in_progress",
         session_type=session_type,
         notes=notes,
+        area=_resolve_session_area(issue_id, analysis_issue_id, session),
     )
     created_session = repo.create_practice_session(new_session, session)
     return _session_to_response_dto(created_session)
+
+
+def _resolve_session_area(
+    issue_id: UUID | None, analysis_issue_id: UUID | None, session: Session
+) -> str | None:
+    """Which part of the game this session is, read from the issue being practised.
+
+    Whatever `issues.area` says right now is what gets stamped -- nothing here knows the
+    names of any areas, so adding a sixth one needs no change to this function.
+
+    Two sources, in order of how directly they name the issue:
+
+      1. `issue_id`, sent by the client. Covers every path, including the library ones
+         that have no AnalysisIssue at all.
+      2. `analysis_issue_id`, for older builds that only send that. Resolves through to
+         the same issue.
+
+    Returns None when neither is available or the row has gone. That is unattributed, not
+    an error: the session is real work the golfer did and must still earn its square.
+    """
+    if issue_id is not None:
+        issue = issue_repo.get_issue_by_id(issue_id, session)
+        if issue is not None:
+            return issue.area
+
+    if analysis_issue_id is not None:
+        analysis_issue = analysis_issue_repo.get_analysis_issue_by_id(analysis_issue_id, session)
+        if analysis_issue is not None and analysis_issue.issue is not None:
+            return analysis_issue.issue.area
+
+    return None
     
     
 def record_practice_session_completion(session_id: UUID, session: Session) -> PracticeSessionResponseDTO:
@@ -165,6 +205,7 @@ def _session_to_response_dto(session: models.PracticeSession) -> PracticeSession
         status=session.status,
         started_at=session.started_at,
         completed_at=session.completed_at,
+        area=session.area,
     )
 
 

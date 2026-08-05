@@ -13,6 +13,7 @@ module.exports = {
         'sand-dim': '#8A8676',
         gold: '#E4C892',
         'gold-deep': '#D2B271',
+        danger: '#E0776B',
         'grid-low': '#39705A',
         'grid-high': '#6FA98A',
       },

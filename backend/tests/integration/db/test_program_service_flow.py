@@ -225,6 +225,9 @@ class TestAdaptiveLoop:
         grooved = [d.id for d in drills if d.id != rough_id and states[d.id].strength >= ps.GROOVED_THRESHOLD]
         assert grooved, states
 
-        # Realized cadence: first three work sessions, retest after RETEST_CADENCE.
+        # Realized cadence: WORK_CYCLE repeating, never interrupted. Retest was
+        # removed from the engine, so it must not appear at any point.
         assert realized_types[:3] == ["range", "range", "play"]
-        assert realized_types[ps.RETEST_CADENCE] == "retest"
+        assert "retest" not in realized_types
+        for i, t in enumerate(realized_types):
+            assert t == ps.WORK_CYCLE[i % len(ps.WORK_CYCLE)]

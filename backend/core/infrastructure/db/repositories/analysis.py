@@ -6,11 +6,21 @@ from ..models.Analysis import Analysis
 
 
 def get_activity_counts_by_day(
-    user_id: UUID, tz: str, session: Session
+    user_id: UUID,
+    tz: str,
+    session: Session,
+    start_utc: datetime | None = None,
+    end_utc: datetime | None = None,
 ) -> list[tuple[date, int]]:
     """
     Count completed successful analyses per calendar day for a user, grouping by
     the calendar day of `created_at` interpreted in the given IANA timezone.
+
+    No area grouping: an analysis is a filmed swing, so the caller attributes all of
+    them to one area rather than this query knowing which.
+
+    `start_utc`/`end_utc` bound the scan as a half-open range, sargable against
+    (user_id, created_at).
     """
     local_day = func.date(func.timezone(tz, Analysis.created_at))
     stmt = (
@@ -20,6 +30,10 @@ def get_activity_counts_by_day(
         .where(Analysis.success == True)
         .group_by(local_day)
     )
+    if start_utc is not None:
+        stmt = stmt.where(Analysis.created_at >= start_utc)
+    if end_utc is not None:
+        stmt = stmt.where(Analysis.created_at < end_utc)
     return [(row.occurred_on, row.count) for row in session.execute(stmt).all()]
 
 

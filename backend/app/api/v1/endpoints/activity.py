@@ -18,17 +18,32 @@ router = APIRouter()
 @router.get("/", response_model=list[ActivityCount])
 def get_activity(
     tz: str = Query("UTC", description="IANA timezone name for day grouping, e.g. Europe/Stockholm"),
+    from_date: date | None = Query(None, description="Inclusive first calendar day in `tz`."),
+    to_date: date | None = Query(None, description="Inclusive last calendar day in `tz`."),
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Per-day activity counts for the contribution graph.
+    Per-day, per-area activity counts for the contribution graph.
 
-    Sums completed practice sessions and completed successful analyses, grouped
-    by calendar day in `tz`. A count >= 1 lights that day's square.
+    Sums completed practice sessions and completed successful analyses, grouped by
+    calendar day in `tz` AND by area, so the graph can stack a bunker session against a
+    range session. A day with two areas returns two rows; a client that only wants the
+    old "did anything happen" answer sums them.
+
+    `area` is null for unattributed activity: free practice with no issue behind it, and
+    anything created before sessions carried an area.
+
+    `from_date`/`to_date` bound the range, both inclusive and both optional. Omitting
+    them returns the user's whole history, which is what this endpoint did before it
+    could be bounded. `from_date` after `to_date` is a 422 rather than an empty list --
+    an empty graph reads as "you did no practice", which the caller cannot tell from a
+    range it got backwards.
     """
     user_id = UUID(current_user["user_id"])
-    counts = service_get_activity_counts(user_id=user_id, tz=tz, session=db)
+    counts = service_get_activity_counts(
+        user_id=user_id, tz=tz, session=db, from_date=from_date, to_date=to_date
+    )
     return [ActivityCount.from_domain(c) for c in counts]
 
 

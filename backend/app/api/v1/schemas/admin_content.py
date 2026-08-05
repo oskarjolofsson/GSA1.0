@@ -216,3 +216,7 @@ class CoverageResponse(BaseModel):
     # Issues with no miss or no goal. They match no cell, so the grid alone would hide
     # them — the exact failure the inner joins used to cause.
     untagged_issues: int = 0
+
+    # Skill issues with no goal. A skill appears in the library only under its goals, so
+    # with none it is reachable by search alone — a gap the grid cannot show.
+    goalless_skill_issues: int = 0

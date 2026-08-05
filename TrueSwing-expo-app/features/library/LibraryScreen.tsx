@@ -1,20 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronLeft } from "lucide-react-native";
 
-import LoadingState from "features/shared/components/LoadingState";
-import ErrorState from "features/shared/components/ErrorState";
-import { getIssueCatalog, type CatalogIssue } from "features/issues/services/issueAuthoringService";
 import { generateProgramFromIssue } from "features/programs/services/programService";
+import type { CatalogIssue } from "features/issues/services/issueAuthoringService";
 import { getErrorMessage } from "lib/errors";
 
-import { GOALS, type GoalKey } from "./constants/Goals";
-import { missLabel, type MissKey } from "./constants/Misses";
+import { useLibraryState } from "./hooks/useLibraryState";
 import SearchBar from "./components/SearchBar";
-import GoalGrid from "./components/GoalGrid";
+import AreaGrid from "./components/AreaGrid";
+import AreaEmptyState from "./components/AreaEmptyState";
 import MissList from "./components/MissList";
-import IssueCard from "./components/IssueCard";
+import CandidateList from "./components/CandidateList";
+import IssueSheet from "./components/IssueSheet";
+import SkeletonRows from "./components/SkeletonRows";
+import InlineRetry from "./components/InlineRetry";
 
 type Props = {
     onCancel: () => void;
@@ -23,191 +24,168 @@ type Props = {
     onFilmSwing?: () => void;
 };
 
-type LibraryView = "goals" | "misses" | "candidates";
-type CandidateFilter = { type: "miss"; miss: MissKey } | { type: "skill"; issueId: string };
-
-/** Browse the practice library by GOAL -> MISS -> plain-language focus, or search.
- *  The AI/coach paths already diagnose from video/notes; this is the manual path. */
+/** Browse the practice library by AREA -> (miss | goal) -> plain-language focus,
+ *  or search. The AI and coach paths already diagnose from video or notes; this
+ *  is the manual path. Layout only -- state lives in useLibraryState. */
 export default function LibraryScreen({ onCancel, onDone, onFilmSwing }: Props) {
     const insets = useSafeAreaInsets();
-    const [issues, setIssues] = useState<CatalogIssue[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const lib = useLibraryState();
     const [startingId, setStartingId] = useState<string | null>(null);
-    const [expandedId, setExpandedId] = useState<string | null>(null);
-    const [query, setQuery] = useState("");
+    // The focus whose sheet is open. Holding the issue itself (not an id) keeps the
+    // sheet rendering its own content while it animates out after a filter change.
+    const [openIssue, setOpenIssue] = useState<CatalogIssue | null>(null);
+    const [startError, setStartError] = useState<string | null>(null);
 
-    const [view, setView] = useState<LibraryView>("goals");
-    const [goal, setGoal] = useState<GoalKey | null>(null);
-    const [filter, setFilter] = useState<CandidateFilter | null>(null);
-
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            setIssues(await getIssueCatalog());
-        } catch (err) {
-            setError(getErrorMessage(err));
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => { load(); }, [load]);
-
-    const start = useCallback(async (issue: CatalogIssue) => {
-        setStartingId(issue.id);
-        setError(null);
-        try {
-            await generateProgramFromIssue(issue.id);
-            onDone();
-        } catch (err) {
-            setError(getErrorMessage(err));
-        } finally {
-            setStartingId(null);
-        }
-    }, [onDone]);
-
-    // How many startable focuses sit under each goal (drives the grid's empty state).
-    const countByGoal = useMemo(() => {
-        const counts: Record<string, number> = {};
-        for (const g of GOALS) counts[g.key] = issues.filter((i) => i.goals?.includes(g.key)).length;
-        return counts;
-    }, [issues]);
-
-    const forGoal = useMemo(
-        () => (goal ? issues.filter((i) => i.goals?.includes(goal)) : []),
-        [issues, goal]
+    const start = useCallback(
+        async (issue: CatalogIssue) => {
+            setStartingId(issue.id);
+            setStartError(null);
+            try {
+                await generateProgramFromIssue(issue.id);
+                setOpenIssue(null);
+                onDone();
+            } catch (err) {
+                // Leave the sheet open on failure -- the error renders behind it
+                // otherwise, and the golfer sees a dismissed sheet and no explanation.
+                setStartError(getErrorMessage(err));
+            } finally {
+                setStartingId(null);
+            }
+        },
+        [onDone]
     );
-    const faultIssues = useMemo(() => forGoal.filter((i) => i.kind !== "skill"), [forGoal]);
-    const skillFocuses = useMemo(() => forGoal.filter((i) => i.kind === "skill"), [forGoal]);
-    // The misses present among this goal's fault issues.
-    const missesForGoal = useMemo(() => {
-        const set = new Set<string>();
-        for (const i of faultIssues) for (const m of i.misses ?? []) set.add(m);
-        return Array.from(set);
-    }, [faultIssues]);
-
-    // Candidate cards shown at the leaf, or a flat search result set when searching.
-    const candidates = useMemo(() => {
-        const q = query.trim().toLowerCase();
-        if (q) {
-            return issues.filter((i) =>
-                `${i.layman_title ?? ""} ${i.title} ${i.layman_desc ?? ""} ${i.description ?? ""}`
-                    .toLowerCase()
-                    .includes(q)
-            );
-        }
-        if (view !== "candidates" || !filter) return [];
-        if (filter.type === "skill") return issues.filter((i) => i.id === filter.issueId);
-        return faultIssues.filter((i) => i.misses?.includes(filter.miss));
-    }, [query, view, filter, issues, faultIssues]);
 
     const goBack = useCallback(() => {
-        if (query) { setQuery(""); return; }
-        if (view === "candidates") { setView("misses"); setFilter(null); setExpandedId(null); return; }
-        if (view === "misses") { setView("goals"); setGoal(null); return; }
-        onCancel();
-    }, [query, view, onCancel]);
+        setOpenIssue(null);
+        if (!lib.goBack()) onCancel();
+    }, [lib, onCancel]);
 
-    if (loading) return <LoadingState title="Loading the library" subtitle="Fetching the library…" />;
-    if (error && issues.length === 0) {
-        return <ErrorState title="Couldn't load the library" message={error} buttonText="Retry" onRetry={load} />;
-    }
-
-    const searching = query.trim().length > 0;
+    const searching = lib.query.trim().length > 0;
+    const eyebrow = lib.area ? lib.area.golfer_label : "The library";
     const heading = searching
         ? "Search"
-        : view === "goals"
-          ? "What do you want to fix?"
-          : view === "misses"
-            ? GOALS.find((g) => g.key === goal)?.label ?? "Pick your miss"
-            : filter?.type === "miss"
-              ? missLabel(filter.miss)
-              : "Your focus";
+        : lib.view === "areas"
+          ? "Where do you\nlose shots?"
+          : lib.view === "focus"
+            ? "What brings\nyou here?"
+            : (lib.filter?.label ?? "Your focus");
 
     return (
-        <View className="flex-1 bg-[#050816]" style={{ paddingTop: insets.top }}>
-            <ScrollView contentContainerStyle={{ padding: 20 }} keyboardShouldPersistTaps="handled">
-                <Pressable onPress={goBack} className="mb-4 flex-row items-center active:opacity-70">
-                    <ChevronLeft size={20} color="#94a3b8" />
-                    <Text className="ml-1 text-slate-400">Back</Text>
+        <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
+            <ScrollView
+                contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 }}
+                keyboardShouldPersistTaps="handled"
+            >
+                <Pressable
+                    onPress={goBack}
+                    accessibilityRole="button"
+                    className="min-h-[44px] flex-row items-center active:opacity-70"
+                >
+                    <ChevronLeft size={16} color="#8A8676" />
+                    <Text className="ml-1 text-[13px] text-sand-dim">Back</Text>
                 </Pressable>
 
-                <Text className="text-3xl font-bold text-white">{heading}</Text>
-                <Text className="mt-2 mb-6 leading-6 text-slate-400">
-                    Pick what you want to work on. Tap a focus to see its drills, then start a plan.
-                </Text>
+                <Text className="mt-4 text-[10px] uppercase tracking-[2.6px] text-gold">{eyebrow}</Text>
+                <Text className="mt-3 font-display text-[29px] leading-[33px] text-sand">{heading}</Text>
+                {lib.view === "areas" && !searching ? (
+                    <Text className="mt-3 text-[13px] leading-[21px] text-sand-dim">
+                        Pick the part of your game you want to work on.
+                    </Text>
+                ) : null}
 
-                <SearchBar value={query} onChange={setQuery} />
+                {/* Search is flat over focus points and bypasses the hierarchy, so it
+                    stays available at every level. */}
+                <SearchBar value={lib.query} onChange={lib.setQuery} />
 
-                {searching ? (
-                    <CandidateList
-                        candidates={candidates}
-                        expandedId={expandedId}
-                        startingId={startingId}
-                        onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
-                        onStart={start}
-                        emptyText="No focuses match your search."
-                    />
-                ) : view === "goals" ? (
-                    <GoalGrid
-                        countByGoal={countByGoal}
-                        onSelect={(g) => { setGoal(g); setView("misses"); }}
-                    />
-                ) : view === "misses" ? (
-                    <MissList
-                        misses={missesForGoal}
-                        skillFocuses={skillFocuses}
-                        onSelectMiss={(m) => { setFilter({ type: "miss", miss: m }); setView("candidates"); }}
-                        onSelectSkill={(i) => { setFilter({ type: "skill", issueId: i.id }); setView("candidates"); }}
-                        onFilmSwing={onFilmSwing}
-                    />
-                ) : (
-                    <CandidateList
-                        candidates={candidates}
-                        expandedId={expandedId}
-                        startingId={startingId}
-                        onToggle={(id) => setExpandedId(expandedId === id ? null : id)}
-                        onStart={start}
-                        emptyText="No focuses here yet."
-                    />
-                )}
+                <Body
+                    lib={lib}
+                    searching={searching}
+                    onOpen={(issue) => {
+                        setStartError(null);
+                        setOpenIssue(issue);
+                    }}
+                    onBackToAreas={goBack}
+                    onFilmSwing={onFilmSwing}
+                />
             </ScrollView>
+
+            {/* Outside the ScrollView: a Modal is its own layer, and nesting it inside a
+                scroll container makes its scrim mis-measure on Android. */}
+            <IssueSheet
+                issue={openIssue}
+                areaLabel={lib.area?.golfer_label ?? "Full swing"}
+                starting={startingId === openIssue?.id}
+                error={startError}
+                onClose={() => setOpenIssue(null)}
+                onStart={() => openIssue && start(openIssue)}
+            />
         </View>
     );
 }
 
-function CandidateList({
-    candidates,
-    expandedId,
-    startingId,
-    onToggle,
-    onStart,
-    emptyText,
+function Body({
+    lib,
+    searching,
+    onOpen,
+    onBackToAreas,
+    onFilmSwing,
 }: {
-    candidates: CatalogIssue[];
-    expandedId: string | null;
-    startingId: string | null;
-    onToggle: (id: string) => void;
-    onStart: (issue: CatalogIssue) => void;
-    emptyText: string;
+    lib: ReturnType<typeof useLibraryState>;
+    searching: boolean;
+    onOpen: (issue: CatalogIssue) => void;
+    onBackToAreas: () => void;
+    onFilmSwing?: () => void;
 }) {
-    if (candidates.length === 0) {
-        return <Text className="leading-6 text-slate-500">{emptyText}</Text>;
-    }
-    return (
-        <>
-            {candidates.map((issue) => (
-                <IssueCard
-                    key={issue.id}
-                    issue={issue}
-                    expanded={expandedId === issue.id}
-                    starting={startingId === issue.id}
-                    onToggle={() => onToggle(issue.id)}
-                    onStart={() => onStart(issue)}
-                />
-            ))}
-        </>
+    const leaf = (emptyText: string) => (
+        <CandidateList
+            candidates={lib.candidates}
+            emptyText={emptyText}
+            onOpen={onOpen}
+        />
     );
+
+    if (searching) {
+        if (lib.catalogStatus === "loading") return <SkeletonRows count={3} />;
+        if (lib.catalogStatus === "error") {
+            return <InlineRetry message={lib.catalogError} onRetry={lib.retryCatalog} />;
+        }
+        return leaf("No focus points match your search.");
+    }
+
+    if (lib.view === "areas") {
+        // The landing renders from the taxonomy alone: a dead issue catalog must
+        // not hide five working areas behind a full-screen error.
+        if (lib.taxonomyStatus === "loading") return <SkeletonRows />;
+        if (lib.taxonomyStatus === "error") {
+            return <InlineRetry message={lib.taxonomyError} onRetry={lib.retryTaxonomy} />;
+        }
+        return <AreaGrid areas={lib.areas} onSelect={lib.openArea} />;
+    }
+
+    if (lib.view === "focus") {
+        if (lib.catalogStatus === "loading") return <SkeletonRows count={4} />;
+        if (lib.catalogStatus === "error") {
+            return <InlineRetry message={lib.catalogError} onRetry={lib.retryCatalog} />;
+        }
+        const fork = lib.fork;
+        if (!fork || (fork.misses.length === 0 && fork.goals.length === 0)) {
+            return <AreaEmptyState areaLabel={lib.area?.golfer_label ?? "This"} onBack={onBackToAreas} />;
+        }
+        return (
+            <MissList
+                fork={fork}
+                areaKey={lib.area?.key ?? ""}
+                onSelectMiss={(miss) =>
+                    lib.openFilter({ type: "miss", miss: miss.key, label: miss.golfer_label })
+                }
+                onSelectGoal={(goal) =>
+                    lib.openFilter({ type: "goal", goal: goal.key, label: goal.golfer_label })
+                }
+                onFilmSwing={onFilmSwing}
+            />
+        );
+    }
+
+    return leaf("No focus points here yet.");
 }
+
