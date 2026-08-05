@@ -6,23 +6,19 @@ import type { Schemas } from 'lib/api/types';
 // with the app's unions/shapes so consumers keep their ergonomics. Regenerate
 // the schema with `npm run gen:api-types`.
 
-// 'retest' is frozen: the program engine no longer schedules it, but historical
-// sessions and steps read back with it, so it stays in the union.
-export type SessionType = 'range' | 'play' | 'retest';
+// 'range' is the only type a program step can have — 'play' left the engine when
+// rounds became a user-level activity, and 'retest' was backfilled away entirely.
+// 'play' stays in the union because practice sessions still use it for a round.
+export type SessionType = 'range' | 'play';
 export type DrillGradeValue = 'rough' | 'ok' | 'dialed';
 
-// Prescription shape varies by session_type; the backend serializes it as an
-// untyped object, so this stays hand-written.
+// The backend serializes prescription as an untyped object, so this stays
+// hand-written. Only one shape exists now:
 //   range: { drill_ids, num_blocks, cue }
-//   play:  { holes, focus }
 export interface Prescription {
   drill_ids?: string[];
   num_blocks?: number;
   cue?: string | null;
-  holes?: number;
-  focus?: string;
-  // Only ever present on historical 'retest' steps; nothing writes it.
-  instruction?: string;
 }
 
 export type StepDrill = Schemas['StepDrillResponse'];
@@ -41,6 +37,34 @@ export type Program = Omit<Schemas['ProgramResponse'], 'status' | 'steps'> & {
   status: 'active' | 'completed' | 'abandoned';
   steps: ProgramStep[];
 };
+
+/**
+ * One program as GET /programs/ returns it: no step history, but the next
+ * session resolved inline so the home screen renders from a single request.
+ *
+ * HAND-WRITTEN ON PURPOSE, FOR NOW. `Schemas['ProgramSummaryResponse']` does not
+ * exist until someone runs `npm run gen:api-types` against a backend serving the
+ * new endpoint. Swap the structural fields over to the generated type once it
+ * does — that is what makes a renamed field fail at compile time instead of at
+ * runtime.
+ */
+export interface ProgramSummary {
+  id: string;
+  user_id: string;
+  analysis_issue_id: string | null;
+  issue_id: string | null;
+  title: string;
+  status: 'active' | 'completed' | 'abandoned';
+  created_at: string;
+  grooved_count: number;
+  total_drills: number;
+  /** Taxonomy area key, e.g. 'PUTTING'. Frozen at creation, so it can lag the
+   *  issue if an admin re-files it — see the column comment on Program.area. */
+  area: string | null;
+  /** Which of the two per-area slots this program holds (0 or 1). */
+  slot: number;
+  next_step: ProgramStep | null;
+}
 
 /**
  * How one drill block went. Exactly one of the two shapes, never both.

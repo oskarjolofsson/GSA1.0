@@ -24,7 +24,7 @@ export default function StreakPanel({ streakDays, week, onDayPress }: StreakPane
             </Text>
 
             <View className="mt-2 flex-row items-baseline">
-                <Text className="font-display-black text-[68px] leading-none text-sand">
+                <Text className="font-display-black text-[48px] leading-none text-sand">
                     {displayStreak}
                 </Text>
                 <Text className="ml-2 font-display text-[30px] text-sand">
