@@ -54,6 +54,9 @@ export const routes = {
 
   programs: {
     generate: `${BASE}/programs/generate/`,
+    // Every open program with its next session inline. One call fills the home
+    // screen whatever the golfer has running.
+    list: `${BASE}/programs/`,
     active: (issueId: string) => `${BASE}/programs/active/?issue_id=${issueId}`,
     byIssue: (issueId: string) => `${BASE}/programs/by-issue/${issueId}/`,
     nextStep: (programId: string) => `${BASE}/programs/${programId}/next-step/`,

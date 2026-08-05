@@ -1,332 +1,303 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, Pressable, Alert } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
-import { useRouter } from "expo-router";
-import { MotiView, MotiImage } from "moti";
-import { useReducedMotion } from "react-native-reanimated";
-import { HOME_ANIM, CARD_SPRING } from "features/home/animations";
+import React, { useCallback, useState } from 'react';
+import { View, Text, ScrollView, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
-import StreakPanel from "features/home/components/StreakPanel";
-import PrescriptionCard from "features/home/components/PrescriptionCard";
-import SessionLogModal from "features/home/components/SessionLogModal";
-import IssueInfoModal from "features/home/components/IssueInfoModal";
-import ArchiveEntry from "features/home/components/ArchiveEntry";
-import HomeWelcome from "features/home/components/HomeWelcome";
-import DayDetailModal from "features/home/components/DayDetailModal";
-import Avatar from "features/shared/components/Avatar";
-import LoadingState from "features/shared/components/LoadingState";
-import ErrorState from "features/shared/components/ErrorState";
-import { useAuth } from "features/auth/AuthProvider";
-import { useHomeAnalysis } from "features/home/context/HomeAnalysisContext";
-import useActivity from "features/home/hooks/useActivity";
-import useTodaysIssue from "features/home/hooks/useTodaysIssue";
-import { useProgramForIssue } from "features/programs/hooks/useProgramForIssue";
-import { deriveActivityStats } from "features/home/utils/activityStats";
-import type { Issue } from "features/issues/types";
-import type { LogSessionArgs } from "features/home/homeFlow";
-import { removeFocus } from "features/programs/services/programService";
-import analysisService from "features/analysis/services/analysisService";
+import HomeHero from 'features/home/components/HomeHero';
+import AreaTabs from 'features/home/components/AreaTabs';
+import HomeAreaBody from 'features/home/components/HomeAreaBody';
+import StartableList from 'features/home/components/StartableList';
+import LogRoundRow from 'features/home/components/LogRoundRow';
+import StreakPanel from 'features/home/components/StreakPanel';
+import SessionLogModal from 'features/home/components/SessionLogModal';
+import DayDetailModal from 'features/home/components/DayDetailModal';
+import ArchiveEntry from 'features/home/components/ArchiveEntry';
+import LoadingState from 'features/shared/components/LoadingState';
+import ErrorState from 'features/shared/components/ErrorState';
+
+import { useAuth } from 'features/auth/AuthProvider';
+import useHomeData from 'features/home/hooks/useHomeData';
+import { pickHeroImage } from 'features/home/config/heroImages';
+import IssueInfoModal from 'features/home/components/IssueInfoModal';
+import { removeFocus } from 'features/programs/services/programService';
+import analysisService from 'features/analysis/services/analysisService';
+import type { Issue } from 'features/issues/types';
+
+/** A tier-2 boundary: the .13 rule with real air either side. The only heavy
+ *  mark on the screen, which is what makes the page resolve into blocks before
+ *  a word is read. */
+function Section({ children }: { children: React.ReactNode }) {
+  return <View className="mt-9 border-t border-white/[.13] pt-7">{children}</View>;
+}
 
 type HomeScreenProps = {
-    onOpenArchive: () => void;
-    onOpenProfile: () => void;
-    onStartPractice: (issue: Issue) => void;
-    onLogSession: (args: LogSessionArgs) => Promise<boolean>;
-    onOpenHistory: (issue: Issue) => void;
+  selectedArea: string | null;
+  onSelectArea: (areaKey: string) => void;
+  onOpenArchive: () => void;
+  onOpenProfile: () => void;
+  onStartPractice: (issue: Issue) => Promise<void> | void;
+  onLogRound: (notes: string) => Promise<boolean>;
+  onOpenHistory: (issue: Issue) => void;
 };
 
-// Single-screen, no scroll. Two depth layers:
-//   FIELD (flat deep navy)  -> streak + week strip (live, from /activity)
-//   CARD  (raised surface)  -> prescription + start button + "Your swings"
-// A user with no activity yet gets the full-screen HomeWelcome instead.
+/**
+ * Home: a photograph, the parts of the game, and what the golfer has open in the
+ * one they picked.
+ *
+ *   hero (360px, full bleed)
+ *   area tabs
+ *   ── programs, separated by AIR not rules ──
+ *   ─────────────── tier-2 rule ──────────────
+ *   round row
+ *   ─────────────── tier-2 rule ──────────────
+ *   could also work on
+ *   ─────────────── tier-2 rule ──────────────
+ *   streak
+ *
+ * SEPARATION HAS EXACTLY THREE TIERS. Between two programs: no rule, 34px of air
+ * — they are peers of the same kind, and a line would say "different kind of
+ * thing", which is false. Between items in a list: a .07 hairline. Between
+ * sections: a .13 rule with 36/28px either side, the only heavy mark on the
+ * screen, so the page resolves into blocks before a word is read.
+ *
+ * NO OVERSCROLL. The hero runs full bleed to the top of the screen, so an iOS
+ * rubber-band would drag ink in above the photograph and pull the greeting off
+ * its composition.
+ */
 export default function HomeScreen({
-    onOpenArchive,
-    onOpenProfile,
-    onStartPractice,
-    onLogSession,
-    onOpenHistory,
+  selectedArea,
+  onSelectArea,
+  onOpenArchive,
+  onOpenProfile,
+  onStartPractice,
+  onLogRound,
+  onOpenHistory,
 }: HomeScreenProps) {
-    const insets = useSafeAreaInsets();
-    const router = useRouter();
-    const reduceMotion = useReducedMotion();
-    const { user } = useAuth();
-    const { counts, loading, error, refetch } = useActivity();
-    const { allAnalyses, setActiveAnalysisIndex } = useHomeAnalysis();
-    const {
-        issues,
-        defaultIssueId,
-        loading: issuesLoading,
-        refetch: refetchIssues,
-    } = useTodaysIssue();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const { user } = useAuth();
 
-    // The day whose detail popup is open, or null when closed. `hasActivity`
-    // lets the modal skip the network call for an empty day.
-    const [selectedDay, setSelectedDay] = useState<{ date: string; hasActivity: boolean } | null>(
-        null
-    );
+  const {
+    areas,
+    issues,
+    programs,
+    countByArea,
+    resolvedArea,
+    areaTerm,
+    areaPrograms,
+    startable,
+    stats,
+    greeting,
+    hasAnything,
+    firstLoad,
+    activityError,
+    counts,
+    refetchActivity,
+    refetchIssues,
+    refetchPrograms,
+  } = useHomeData(selectedArea, user?.name);
 
-    // Whether the play-round log modal is open. A round is the only session the
-    // golfer logs rather than practises.
-    const [logOpen, setLogOpen] = useState(false);
-    const [logging, setLogging] = useState(false);
-    const [infoOpen, setInfoOpen] = useState(false);
+  // Picked once per mount: stable while the golfer is here, different when they
+  // come back. Lazy initialiser so it is not re-rolled on every render.
+  const [heroImage] = useState(() => pickHeroImage());
 
-    // The issue currently shown on the card. null until resolved -> defaults to
-    // the server's choice; the user can then cycle with the switcher.
-    const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<{ date: string; hasActivity: boolean } | null>(
+    null
+  );
+  const [logOpen, setLogOpen] = useState(false);
+  const [logging, setLogging] = useState(false);
+  const [startingId, setStartingId] = useState<string | null>(null);
+  // The issue whose detail sheet is open. That sheet carries what the old home
+  // card's info button, history link and remove action used to.
+  const [infoIssue, setInfoIssue] = useState<Issue | null>(null);
 
-    // Refresh activity + issues whenever the home tab regains focus.
-    useFocusEffect(
-        useCallback(() => {
-            refetch();
-            refetchIssues();
-        }, [refetch, refetchIssues])
-    );
+  const handleStart = useCallback(
+    async (issue: Issue) => {
+      if (startingId) return; // double-submit guard
+      setStartingId(issue.id ?? null);
+      try {
+        await onStartPractice(issue);
+      } finally {
+        setStartingId(null);
+      }
+    },
+    [onStartPractice, startingId]
+  );
 
-    // Once issues load (or change), default the selection to the server choice.
-    const resolvedSelectedId =
-        selectedIssueId && issues.some((i) => i.id === selectedIssueId)
-            ? selectedIssueId
-            : defaultIssueId;
-    const selectedIndex = Math.max(
-        issues.findIndex((i) => i.id === resolvedSelectedId),
-        0
-    );
-    const selectedIssue = issues[selectedIndex] ?? null;
+  const handleStartProgram = useCallback(
+    (issueId: string | null) => {
+      const issue = issues.find((i) => i.id === issueId);
+      if (!issue) {
+        Alert.alert('Not in your plan', "This focus isn't available anymore.");
+        return;
+      }
+      handleStart(issue);
+    },
+    [issues, handleStart]
+  );
 
-    // The active program (if any) + next scheduled session for the selected issue.
-    const {
-        program,
-        nextStep,
-        loading: programLoading,
-        refetch: refetchProgram,
-    } = useProgramForIssue(selectedIssue?.id);
-
-    // Refresh the program when returning to home (e.g. after a session).
-    useFocusEffect(
-        useCallback(() => {
-            refetchProgram();
-        }, [refetchProgram])
-    );
-
-    const cycleIssue = useCallback(
-        (step: number) => {
-            if (issues.length === 0) return;
-            const next = (selectedIndex + step + issues.length) % issues.length;
-            setSelectedIssueId(issues[next].id);
-        },
-        [issues, selectedIndex]
-    );
-
-    // Tapping an analysis in the day popup: jump the reel to that analysis,
-    // close the popup, and open the archive. Falls back to the top if the
-    // analysis isn't in the loaded list.
-    const handleOpenAnalysis = useCallback(
-        (analysisId: string) => {
-            const index = allAnalyses.findIndex((a) => a.analysis_id === analysisId);
-            if (index >= 0) setActiveAnalysisIndex(index);
-            setSelectedDay(null);
-            onOpenArchive();
-        },
-        [allAnalyses, setActiveAnalysisIndex, onOpenArchive]
-    );
-
-    const handleConfirmSession = useCallback(
-        async (notes: string) => {
-            if (!selectedIssue?.id || !program || !nextStep) return;
-
-            // Log + advance now: a round happens away from the app, so there is
-            // nothing to upload and the square is earned on confirm.
-            setLogging(true);
-            const ok = await onLogSession({
-                analysisIssueId: selectedIssue.analysis_issue_id ?? null,
-                issueId: selectedIssue.id,
-                programId: program.id,
-                stepId: nextStep.id,
-                sessionType: "play",
-                notes,
-            });
-            setLogging(false);
-            if (ok) {
-                setLogOpen(false);
-                refetchProgram();
+  const handleRemoveIssue = useCallback(() => {
+    const issue = infoIssue;
+    if (!issue?.id) return;
+    Alert.alert('Remove this issue?', "It'll disappear from your plan.", [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // An analysis-diagnosed issue is dismissed through its
+            // analysis link; a browse or coach focus is removed by
+            // deleting the program (or the custom issue itself).
+            if (issue.analysis_issue_id) {
+              await analysisService.dismissAnalysisIssue(issue.analysis_issue_id);
+            } else {
+              await removeFocus(issue.id!);
             }
+            setInfoIssue(null);
+            refetchIssues();
+            refetchPrograms();
+          } catch (err) {
+            console.error('Failed to remove issue:', err);
+            Alert.alert("Couldn't remove that", 'Please try again.');
+          }
         },
-        [selectedIssue, program, nextStep, onLogSession, refetchProgram]
-    );
+      },
+    ]);
+  }, [infoIssue, refetchIssues, refetchPrograms]);
 
-    const handleRemoveIssue = useCallback(() => {
-        if (!selectedIssue) return;
-        Alert.alert(
-            "Remove this issue?",
-            "It'll disappear from your plan.",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Remove",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            // Analysis-diagnosed issue: dismiss the analysis link.
-                            // Browse/coach focus (no analysis): remove program (browse)
-                            // or delete the custom issue (coach) via removeFocus.
-                            if (selectedIssue.analysis_issue_id) {
-                                await analysisService.dismissAnalysisIssue(selectedIssue.analysis_issue_id);
-                            } else {
-                                await removeFocus(selectedIssue.id);
-                            }
-                            setInfoOpen(false);
-                            setSelectedIssueId(null);
-                            refetchIssues();
-                            refetchProgram();
-                        } catch (err) {
-                            console.error("Failed to remove issue:", err);
-                        }
-                    },
-                },
-            ]
-        );
-    }, [selectedIssue, refetchIssues, refetchProgram]);
+  const handleConfirmRound = useCallback(
+    async (notes: string) => {
+      setLogging(true);
+      const ok = await onLogRound(notes);
+      setLogging(false);
+      if (ok) {
+        setLogOpen(false);
+        refetchActivity();
+      }
+    },
+    [onLogRound, refetchActivity]
+  );
 
-    const stats = useMemo(() => deriveActivityStats(counts), [counts]);
-    const hasData = counts.length > 0;
-    // Any active analysis OR program — issues comes from get_issues_by_user_id, which
-    // includes analysis-linked, custom, and program-linked (browse) catalog issues.
-    const hasFocus = !!defaultIssueId || issues.length > 0;
+  if (firstLoad && !activityError) {
+    return <LoadingState title="Loading your week" subtitle="" />;
+  }
 
-    // First load: wait for BOTH activity and issues before deciding welcome-vs-home,
-    // so we don't flash the welcome for a user who actually has a focus.
-    if (((loading && !hasData) || (issuesLoading && issues.length === 0)) && !error) {
-        return <LoadingState title="Loading your week" subtitle="" />;
-    }
-
-    // Fetch failed and we have nothing to show. Distinct from "no activity yet"
-    // so we never tell a returning user to make their first analysis.
-    if (error && !hasData) {
-        const offline = error.includes("connect");
-        return (
-            <ErrorState
-                title={offline ? "No connection" : "Couldn't load your activity"}
-                message={
-                    offline
-                        ? "Check your internet connection and try again."
-                        : "Something went wrong loading your week."
-                }
-                onRetry={refetch}
-            />
-        );
-    }
-
-    // Genuinely nothing yet: no logged activity AND no active focus -> first-run
-    // welcome. A user with a focus (analysis, coach, or browse) skips this.
-    if (!stats.hasActivity && !hasFocus) {
-        return <HomeWelcome onStart={() => router.push("/(tabs)/upload")} />;
-    }
-
+  if (activityError && counts.length === 0 && programs.length === 0) {
+    const offline = activityError.includes('connect');
     return (
-        <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
-            {/* Header: TrueSwing logo (left) + profile avatar (right). */}
-            <View className="flex-row items-center justify-between px-6 pt-4">
-                <MotiImage
-                    source={require("../../../assets/true_swing_logo2.png")}
-                    style={{ width: 130, height: 45, marginTop: 10 }}
-                    accessibilityRole="image"
-                    accessibilityLabel="TrueSwing"
-                    from={{ opacity: reduceMotion ? 1 : 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ type: "timing", duration: reduceMotion ? 0 : HOME_ANIM.logoFade }}
-                />
-                <Pressable
-                    onPress={onOpenProfile}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel="Open profile"
-                >
-                    <Avatar
-                        photoURL={user?.photoURL}
-                        name={user?.name}
-                        email={user?.email}
-                        size={50}
-                    />
-                </Pressable>
-            </View>
-
-            {/* Streak + week strip anchored to the top of the field. */}
-            <View className="flex-1 justify-center px-6 gap-2">
-                <StreakPanel
-                    streakDays={stats.streakDays}
-                    week={stats.week}
-                    onDayPress={(date, hasActivity) => setSelectedDay({ date, hasActivity })}
-                />
-
-                <Text className="text-[8px] text-sand/40 text-center">
-                    Each square is a day you practiced. Fill the week, keep the streak alive!
-                </Text>
-            </View>
-
-            {/* Raised action card — full-bleed sheet, slides up on open. */}
-            <MotiView
-                className="rounded-t-3xl border border-white/10 border-b-0 bg-ink-raised px-5 pt-5"
-                from={{ opacity: reduceMotion ? 1 : 0, translateY: reduceMotion ? 0 : 28 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ ...CARD_SPRING, delay: reduceMotion ? 0 : HOME_ANIM.cardDelay }}
-                style={{
-                    paddingBottom: insets.bottom + 20,
-                    shadowColor: "#000",
-                    shadowOpacity: 0.45,
-                    shadowRadius: 28,
-                    shadowOffset: { width: 0, height: 16 },
-                    elevation: 16,
-                }}
-            >
-                <PrescriptionCard
-                    issue={selectedIssue}
-                    index={selectedIndex}
-                    total={issues.length}
-                    loading={issuesLoading || programLoading}
-                    program={program}
-                    nextStep={nextStep}
-                    onPrev={() => cycleIssue(-1)}
-                    onNext={() => cycleIssue(1)}
-                    onStart={() => selectedIssue && onStartPractice(selectedIssue)}
-                    onPlay={() => setLogOpen(true)}
-                    onOpenHistory={() => selectedIssue && onOpenHistory(selectedIssue)}
-                    onShowInfo={() => setInfoOpen(true)}
-                    onRemove={handleRemoveIssue}
-                    isFocus={!!selectedIssue && selectedIssue.id === defaultIssueId}
-                    hasActiveProgram={issues.some((i) => i.program_status === "active")}
-                />
-
-                <View className="my-4 h-px bg-sand/10" />
-
-                <ArchiveEntry onPress={onOpenArchive} />
-            </MotiView>
-
-            <DayDetailModal
-                date={selectedDay?.date ?? null}
-                hasActivity={selectedDay?.hasActivity ?? false}
-                onClose={() => setSelectedDay(null)}
-                onOpenAnalysis={handleOpenAnalysis}
-            />
-
-            <IssueInfoModal
-                visible={infoOpen}
-                issue={selectedIssue}
-                onClose={() => setInfoOpen(false)}
-                onRemove={handleRemoveIssue}
-            />
-
-            <SessionLogModal
-                visible={logOpen}
-                title="Log your round"
-                body={nextStep?.prescription.focus ?? null}
-                showNotes
-                confirmLabel="I played it"
-                submitting={logging}
-                onConfirm={handleConfirmSession}
-                onClose={() => setLogOpen(false)}
-            />
-        </View>
+      <ErrorState
+        title={offline ? 'No connection' : "Couldn't load your home"}
+        message={
+          offline
+            ? 'Check your internet connection and try again.'
+            : 'Something went wrong loading your week.'
+        }
+        onRetry={refetchActivity}
+      />
     );
+  }
+
+  return (
+    <View className="flex-1 bg-ink">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        alwaysBounceVertical={false}
+        overScrollMode="never"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+        <HomeHero
+          image={heroImage}
+          title={greeting.title}
+          subtitle={greeting.subtitle}
+          photoURL={user?.photoURL}
+          name={user?.name}
+          email={user?.email}
+          onOpenProfile={onOpenProfile}
+        />
+
+        <View className="px-6">
+          {areas.length > 0 ? (
+            <AreaTabs
+              areas={areas}
+              selectedKey={resolvedArea}
+              countByArea={countByArea}
+              onSelect={onSelectArea}
+            />
+          ) : null}
+
+          <View className="pt-8">
+            <HomeAreaBody
+              hasAnything={hasAnything}
+              area={areaTerm}
+              programs={areaPrograms}
+              hasStartable={startable.length > 0}
+              startingIssueId={startingId}
+              onStartProgram={handleStartProgram}
+              onOpenInfo={(issueId) => setInfoIssue(issues.find((i) => i.id === issueId) ?? null)}
+              onBrowse={() => router.push('/(tabs)/upload')}
+            />
+          </View>
+
+          <Section>
+            <LogRoundRow onPress={() => setLogOpen(true)} />
+          </Section>
+
+          {startable.length > 0 ? (
+            <Section>
+              <StartableList issues={startable} startingId={startingId} onStart={handleStart} />
+            </Section>
+          ) : null}
+
+          <Section>
+            <StreakPanel
+              streakDays={stats.streakDays}
+              week={stats.week}
+              onDayPress={(date, hasActivity) => setSelectedDay({ date, hasActivity })}
+            />
+            <Text className="mt-3 text-center text-[11px] text-sand/40">
+              Each square is a day you practised.
+            </Text>
+          </Section>
+
+          <Section>
+            <ArchiveEntry onPress={onOpenArchive} />
+          </Section>
+        </View>
+      </ScrollView>
+
+      <DayDetailModal
+        date={selectedDay?.date ?? null}
+        hasActivity={selectedDay?.hasActivity ?? false}
+        onClose={() => setSelectedDay(null)}
+        onOpenAnalysis={() => {
+          setSelectedDay(null);
+          onOpenArchive();
+        }}
+      />
+
+      <IssueInfoModal
+        visible={infoIssue !== null}
+        issue={infoIssue}
+        onClose={() => setInfoIssue(null)}
+        onRemove={handleRemoveIssue}
+        onOpenHistory={() => {
+          const issue = infoIssue;
+          setInfoIssue(null);
+          if (issue) onOpenHistory(issue);
+        }}
+      />
+
+      <SessionLogModal
+        visible={logOpen}
+        title="Log your round"
+        body="Nine or eighteen — whatever you played counts."
+        showNotes
+        confirmLabel="I played it"
+        submitting={logging}
+        onConfirm={handleConfirmRound}
+        onClose={() => setLogOpen(false)}
+      />
+    </View>
+  );
 }
