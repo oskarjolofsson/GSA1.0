@@ -57,7 +57,7 @@ class TestGenerate:
         """
         
         analysis_issue, drills = seeded
-        program = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
 
         assert program.status == "active"
         assert program.total_drills == 3
@@ -69,23 +69,23 @@ class TestGenerate:
     def test_generate_is_idempotent(self, db_session, test_user, seeded):
         
         analysis_issue, _ = seeded
-        p1 = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
-        p2 = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        p1 = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
+        p2 = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
         assert p1.id == p2.id
         assert len(repo.get_active_programs_by_user(test_user["user_id"], db_session)) == 1
 
     def test_generate_rejects_non_owner(self, db_session, test_user, seeded):
         analysis_issue, _ = seeded
         with pytest.raises(exceptions.ForbiddenException):
-            ps.generate_program_for_issue(uuid.uuid4(), analysis_issue.id, db_session)
+            ps.generate_program(uuid.uuid4(), db_session, analysis_issue_id=analysis_issue.id)
 
     def test_generate_missing_issue_raises_not_found(self, db_session, test_user):
         with pytest.raises(exceptions.NotFoundException):
-            ps.generate_program_for_issue(test_user["user_id"], uuid.uuid4(), db_session)
+            ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=uuid.uuid4())
 
     def test_generate_with_zero_drills(self, db_session, test_user):
         analysis_issue, _ = _seed_analysis_issue(db_session, test_user["user_id"], num_drills=0)
-        program = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
         assert program.total_drills == 0
         # First range step is still schedulable, just with no drills.
         step = ps.get_next_step(program.id, test_user["user_id"], db_session)
@@ -98,7 +98,7 @@ class TestGenerate:
 class TestNextStep:
     def test_first_step_is_range_with_two_drills(self, db_session, test_user, seeded):
         analysis_issue, drills = seeded
-        program = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
         step = ps.get_next_step(program.id, test_user["user_id"], db_session)
         assert step.session_type == "range"
         assert step.prescription["num_blocks"] == ps.NUM_DRILLS_PER_RANGE
@@ -112,7 +112,7 @@ class TestNextStep:
 
     def test_next_step_is_idempotent_until_completed(self, db_session, test_user, seeded):
         analysis_issue, _ = seeded
-        program = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
         s1 = ps.get_next_step(program.id, test_user["user_id"], db_session)
         s2 = ps.get_next_step(program.id, test_user["user_id"], db_session)
         assert s1.id == s2.id
@@ -123,7 +123,7 @@ class TestNextStep:
 class TestSingleDrillIssue:
     def test_range_step_has_exactly_the_one_drill(self, db_session, test_user):
         analysis_issue, drills = _seed_analysis_issue(db_session, test_user["user_id"], num_drills=1)
-        program = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
         assert program.total_drills == 1
 
         step = ps.get_next_step(program.id, test_user["user_id"], db_session)
@@ -134,7 +134,7 @@ class TestSingleDrillIssue:
 
     def test_single_drill_grooves_over_repeated_sessions(self, db_session, test_user):
         analysis_issue, drills = _seed_analysis_issue(db_session, test_user["user_id"], num_drills=1)
-        program = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
         only = drills[0].id
 
         for _ in range(10):
@@ -156,7 +156,7 @@ class TestSingleDrillIssue:
 class TestCompleteStep:
     def test_complete_applies_grades_and_advances(self, db_session, test_user, seeded):
         analysis_issue, _ = seeded
-        program = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
         step = ps.get_next_step(program.id, test_user["user_id"], db_session)
         graded_id = uuid.UUID(step.prescription["drill_ids"][0])
 
@@ -180,13 +180,13 @@ class TestCompleteStep:
 
     def test_complete_unknown_step_raises_not_found(self, db_session, test_user, seeded):
         analysis_issue, _ = seeded
-        program = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
         with pytest.raises(exceptions.NotFoundException):
             ps.complete_step(program.id, uuid.uuid4(), test_user["user_id"], grades=[], practice_session_id=None, session=db_session)
 
     def test_complete_non_owner_raises_forbidden(self, db_session, test_user, seeded):
         analysis_issue, _ = seeded
-        program = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
         step = ps.get_next_step(program.id, test_user["user_id"], db_session)
         with pytest.raises(exceptions.ForbiddenException):
             ps.complete_step(program.id, step.id, uuid.uuid4(), grades=[], practice_session_id=None, session=db_session)
@@ -197,7 +197,7 @@ class TestCompleteStep:
 class TestAdaptiveLoop:
     def test_rough_drill_persists_and_dialed_drills_groove(self, db_session, test_user, seeded):
         analysis_issue, drills = seeded
-        program = ps.generate_program_for_issue(test_user["user_id"], analysis_issue.id, db_session)
+        program = ps.generate_program(test_user["user_id"], db_session, analysis_issue_id=analysis_issue.id)
         rough_id = drills[0].id
 
         rough_appearances = 0

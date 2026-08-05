@@ -31,26 +31,21 @@ def generate_program(
     Generate (or return the existing) active program.
 
     Accepts either analysis_issue_id (AI path) or issue_id (coach/browse path).
-    Idempotent: re-calling with the same issue returns the active program rather
-    than creating a duplicate.
+    Idempotent from both: re-calling for an issue you are already grooving returns that
+    program rather than creating a duplicate or refusing.
     """
-    if request.analysis_issue_id is not None:
-        result = program_service.generate_program_for_issue(
-            user_id=current_user["user_id"],
-            analysis_issue_id=request.analysis_issue_id,
-            session=db,
-        )
-    elif request.issue_id is not None:
-        result = program_service.generate_program_from_issue(
-            user_id=current_user["user_id"],
-            issue_id=request.issue_id,
-            session=db,
-        )
-    else:
+    if request.analysis_issue_id is None and request.issue_id is None:
         raise HTTPException(
             status_code=422,
             detail="Provide either analysis_issue_id or issue_id.",
         )
+
+    result = program_service.generate_program(
+        user_id=current_user["user_id"],
+        session=db,
+        analysis_issue_id=request.analysis_issue_id,
+        issue_id=request.issue_id,
+    )
     return ProgramResponse.from_domain(result)
 
 

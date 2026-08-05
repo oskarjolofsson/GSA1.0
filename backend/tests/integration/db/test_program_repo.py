@@ -77,7 +77,7 @@ class TestProgramSteps:
             db_session,
         )
         s1 = repo.create_step(
-            ProgramStep(program_id=program.id, order_index=1, session_type="play", prescription={}, status="pending"),
+            ProgramStep(program_id=program.id, order_index=1, session_type="range", prescription={}, status="pending"),
             db_session,
         )
         assert repo.get_pending_step(program.id, db_session).id == s1.id
@@ -91,7 +91,7 @@ class TestProgramSteps:
         Tests that get_pending_step returns None
         """
         step = repo.create_step(
-            ProgramStep(program_id=program.id, order_index=0, session_type="play", prescription={}, status="pending"),
+            ProgramStep(program_id=program.id, order_index=0, session_type="range", prescription={}, status="pending"),
             db_session,
         )
         step.status = "completed"

@@ -171,7 +171,7 @@ def persist_issue_with_drills(
     `strict_tags` picks the validator. Lenient drops unknown values, which suits
     AI-generated input; strict raises 422 so an admin never sees a tag silently
     vanish. Does NOT start a program — callers use
-    program_service.generate_program_from_issue(issue_id) for that.
+    program_service.generate_program(user_id, session, issue_id=...) for that.
     """
     from core.services.exceptions import ValidationException
 

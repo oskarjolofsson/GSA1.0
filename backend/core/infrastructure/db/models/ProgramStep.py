@@ -32,9 +32,13 @@ class ProgramStep(Base):
 
     session_type: Mapped[str] = mapped_column(
         Text,
-        # 'retest' is a frozen legacy value: historical steps carry it, nothing
-        # schedules it any more. It stays legal so those rows keep validating.
-        CheckConstraint("session_type IN ('range','play','retest')"),
+        # Practice is the only kind of step there is. 'play' left in 20260805000000 and
+        # 'retest' in 20260805000100; both were backfilled before the constraint narrowed.
+        #
+        # Still called 'range' rather than 'practice' because the shipped app writes and
+        # branches on that string. The rename ships with the app change that makes it
+        # visible to the golfer.
+        CheckConstraint("session_type = 'range'"),
         nullable=False,
     )
 
