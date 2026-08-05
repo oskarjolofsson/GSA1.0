@@ -19,7 +19,15 @@ import type { ImageSourcePropType } from 'react-native';
  * the avatar lands. The scrim in HomeHero fades the base into `ink`, so the
  * bottom of the picture is free to be busy.
  */
-export const HERO_IMAGES: ImageSourcePropType[] = [require('../../../assets/hero/klittor.jpg')];
+export const HERO_IMAGES: ImageSourcePropType[] = [
+  require('../../../assets/hero/klittor.webp'),
+  require('../../../assets/hero/hero3.webp'),
+  require('../../../assets/hero/hero4.webp'),
+  require('../../../assets/hero/hero5.webp'),
+  require('../../../assets/hero/hero6.webp'),
+  require('../../../assets/hero/hero7.webp'),
+  require('../../../assets/hero/hero8.webp')
+];
 
 /**
  * One of `HERO_IMAGES`, picked uniformly at random.
