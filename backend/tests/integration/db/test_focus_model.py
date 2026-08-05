@@ -7,6 +7,7 @@ from core.infrastructure.db.models.IssueDrill import IssueDrill
 from core.infrastructure.db.models.Analysis import Analysis
 from core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from core.infrastructure.db.models.Program import Program
+from core.infrastructure.db.models.ProgramStep import ProgramStep
 from core.infrastructure.db.repositories.issues import create_issue
 from core.infrastructure.db.repositories.drills import create_drill
 from core.infrastructure.db.repositories.analysis import create_analysis
@@ -60,16 +61,83 @@ def test_program_graduates_when_all_drills_grooved(db_session, test_user):
     assert refreshed.status == "completed"
 
 
-# ---------------- cap = 1 active program ----------------
+# ---------------- cap = 2 active programs per area ----------------
 
-def test_second_active_program_is_blocked(db_session, test_user):
+def test_two_active_programs_in_one_area_are_allowed(db_session, test_user):
+    """The old model allowed exactly one focus. Working two things in an area at once is
+    the point of this change, so it must succeed and the two must take separate slots."""
     user_id = test_user["user_id"]
     _, ai_a = _seed_issue(db_session, user_id, "Issue A", 0.9, num_drills=2)
     _, ai_b = _seed_issue(db_session, user_id, "Issue B", 0.8, num_drills=2)
 
-    ps.generate_program_for_issue(user_id, ai_a.id, db_session)  # active focus
+    p_a = ps.generate_program_for_issue(user_id, ai_a.id, db_session)
+    p_b = ps.generate_program_for_issue(user_id, ai_b.id, db_session)
+
+    assert {p_a.slot, p_b.slot} == {0, 1}
+    assert p_a.area == p_b.area == "FULL_SWING"
+
+
+def test_third_active_program_in_one_area_is_blocked(db_session, test_user):
+    """Two per area, not unlimited: opening a program has to keep meaning "I am
+    committing to this"."""
+    user_id = test_user["user_id"]
+    _, ai_a = _seed_issue(db_session, user_id, "Issue A", 0.9, num_drills=2)
+    _, ai_b = _seed_issue(db_session, user_id, "Issue B", 0.8, num_drills=2)
+    _, ai_c = _seed_issue(db_session, user_id, "Issue C", 0.7, num_drills=2)
+
+    ps.generate_program_for_issue(user_id, ai_a.id, db_session)
+    ps.generate_program_for_issue(user_id, ai_b.id, db_session)
     with pytest.raises(exceptions.ConflictException):
-        ps.generate_program_for_issue(user_id, ai_b.id, db_session)
+        ps.generate_program_for_issue(user_id, ai_c.id, db_session)
+
+
+def test_areas_are_capped_independently(db_session, test_user):
+    """A full slate of full-swing work must not block putting. This is the whole reason
+    the cap is per-area rather than global."""
+    user_id = test_user["user_id"]
+    _, ai_a = _seed_issue(db_session, user_id, "Swing A", 0.9, num_drills=2)
+    _, ai_b = _seed_issue(db_session, user_id, "Swing B", 0.8, num_drills=2)
+    putt_issue, ai_p = _seed_issue(db_session, user_id, "Putting", 0.7, num_drills=2)
+    putt_issue.area = "PUTTING"
+    db_session.flush()
+
+    ps.generate_program_for_issue(user_id, ai_a.id, db_session)
+    ps.generate_program_for_issue(user_id, ai_b.id, db_session)
+    putting = ps.generate_program_for_issue(user_id, ai_p.id, db_session)
+
+    assert putting.area == "PUTTING"
+    assert putting.slot == 0  # its own area's slots are untouched by the full-swing pair
+
+
+def test_completing_a_program_frees_its_slot(db_session, test_user):
+    """The cap counts active programs only. Finishing one has to make room immediately,
+    or a golfer who works steadily eventually locks themselves out of an area."""
+    user_id = test_user["user_id"]
+    _, ai_a = _seed_issue(db_session, user_id, "Issue A", 0.9, num_drills=2)
+    _, ai_b = _seed_issue(db_session, user_id, "Issue B", 0.8, num_drills=2)
+    _, ai_c = _seed_issue(db_session, user_id, "Issue C", 0.7, num_drills=2)
+
+    p_a = ps.generate_program_for_issue(user_id, ai_a.id, db_session)
+    ps.generate_program_for_issue(user_id, ai_b.id, db_session)
+
+    program_a = programs_repo.get_program_by_id(p_a.id, db_session)
+    program_a.status = "completed"
+    db_session.flush()
+
+    p_c = ps.generate_program_for_issue(user_id, ai_c.id, db_session)
+    assert p_c.slot == p_a.slot  # reuses the freed slot rather than inventing a third
+
+
+def test_second_program_on_the_same_issue_is_refused(db_session, test_user):
+    """Two programs on one issue would groove identical drill sets against separate
+    counters with nothing to make them diverge. The AI path returns the existing one."""
+    user_id = test_user["user_id"]
+    _, ai = _seed_issue(db_session, user_id, "Issue A", 0.9, num_drills=2)
+
+    first = ps.generate_program_for_issue(user_id, ai.id, db_session)
+    second = ps.generate_program_for_issue(user_id, ai.id, db_session)
+    assert first.id == second.id
+    assert len(programs_repo.get_active_programs_by_user(user_id, db_session)) == 1
 
 
 def test_generate_still_idempotent_for_same_issue(db_session, test_user):
@@ -78,6 +146,52 @@ def test_generate_still_idempotent_for_same_issue(db_session, test_user):
     p1 = ps.generate_program_for_issue(user_id, ai.id, db_session)
     p2 = ps.generate_program_for_issue(user_id, ai.id, db_session)  # not blocked
     assert p1.id == p2.id
+
+
+def test_slot_race_reports_a_retry_not_a_false_full_house(db_session, test_user, monkeypatch):
+    """When the unique index refuses an insert, the golfer must not be told they already
+    have two focuses -- they may have none. That claim is only true when _allocate_slot
+    itself found no free slot.
+
+    Simulates the race by handing back a slot that is already taken, which is exactly the
+    state a concurrent request leaves behind between the read and the insert.
+    """
+    user_id = test_user["user_id"]
+    _, ai_a = _seed_issue(db_session, user_id, "Issue A", 0.9, num_drills=2)
+    _, ai_b = _seed_issue(db_session, user_id, "Issue B", 0.8, num_drills=2)
+
+    ps.generate_program_for_issue(user_id, ai_a.id, db_session)  # takes slot 0
+
+    monkeypatch.setattr(ps, "_allocate_slot", lambda *a, **k: 0)  # collide on purpose
+    with pytest.raises(exceptions.ConflictException) as err:
+        ps.generate_program_for_issue(user_id, ai_b.id, db_session)
+
+    message = str(err.value).lower()
+    assert "try again" in message
+    assert "already working two" not in message
+
+
+# ---------------- reads must not write ----------------
+
+def _count_steps(db_session):
+    return db_session.query(ProgramStep).count()
+
+
+def test_get_next_step_does_not_write(db_session, test_user):
+    """get_next_step used to schedule a step when it found none, which made a plain read
+    insert rows. The list endpoint reads every active program on each Home render, so
+    that turned one pull-to-refresh into a write per program and could collide on
+    idx_program_steps_unique_order -- a 500 on a refresh with two devices open.
+    """
+    user_id = test_user["user_id"]
+    _, ai = _seed_issue(db_session, user_id, "Issue A", 0.9, num_drills=2)
+    program = ps.generate_program_for_issue(user_id, ai.id, db_session)
+
+    before = _count_steps(db_session)
+    for _ in range(5):
+        step = ps.get_next_step(program.id, user_id, db_session)
+        assert step is not None  # seeding scheduled it, so reads always find one
+    assert _count_steps(db_session) == before
 
 
 # ---------------- focus selection / ordering ----------------
@@ -91,6 +205,29 @@ def test_todays_issue_is_active_program_issue(db_session, test_user):
     todays = issues_service.get_todays_issue(user_id, db_session)
     assert todays.title == "Focus"
     assert todays.program_status == "active"
+
+
+def test_todays_issue_picks_among_several_active_programs(db_session, test_user):
+    """REGRESSION. get_todays_issue returns issues[0] of the focus-ordered list, which
+    was written when a golfer could hold exactly one program. With several active it must
+    still return one of THEM (highest confidence), not fall through to unstarted work and
+    not blow up. It is a tiebreaker, not a practice diet -- see the function's docstring.
+    """
+    user_id = test_user["user_id"]
+    _seed_issue(db_session, user_id, "Unstarted but confident", 0.99)
+    _, ai_low = _seed_issue(db_session, user_id, "Active low", 0.30, num_drills=1)
+    _, ai_high = _seed_issue(db_session, user_id, "Active high", 0.60, num_drills=1)
+
+    ps.generate_program_for_issue(user_id, ai_low.id, db_session)
+    ps.generate_program_for_issue(user_id, ai_high.id, db_session)
+
+    todays = issues_service.get_todays_issue(user_id, db_session)
+    assert todays.program_status == "active"
+    assert todays.title == "Active high"
+
+    # Both active issues group ahead of the unstarted one, despite its higher confidence.
+    ordered = issues_service.get_issues_by_user_id(user_id, db_session)
+    assert [i.title for i in ordered[:2]] == ["Active high", "Active low"]
 
 
 def test_completed_issues_sink_below_not_started(db_session, test_user):

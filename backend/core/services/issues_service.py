@@ -96,10 +96,13 @@ def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueRespo
     """Get all issues created by a specific user with analysis_issue and
     program-status data.
 
-    Focus model (one program at a time): each issue is annotated with its program
-    status, then ordered active → not-started → completed; within a group by
-    confidence then recency. So the home opens on the current focus (the active
-    program, or the highest-priority not-started issue), and finished issues sink.
+    Each issue is annotated with its program status, then ordered
+    active → not-started → completed; within a group by confidence then recency. So work
+    the golfer has committed to floats to the top and finished issues sink.
+
+    A golfer may hold several active programs at once (up to two per area), so the first
+    group is now a set rather than a single focus. The ordering still holds -- it just
+    ranks the active issues among themselves by confidence instead of naming one winner.
     """
     issues: list[Issue] = repo_get_issues_by_user_id(user_id, db_session)
     dtos = _batch_fetch_analysis_issues(user_id, issues, db_session)
@@ -144,16 +147,29 @@ def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueRespo
 
 
 def get_todays_issue(user_id: UUID, db_session: Session) -> IssueResponseDTO | None:
-    """The user's current focus issue: the active program's issue, else the
-    highest-priority not-started issue, else the top completed one. This is just
-    the first element of the focus-ordered list. None when the user has no issues.
+    """One issue to point the golfer at: the first element of the focus-ordered list.
+
+    That is the highest-confidence issue with an active program, else the
+    highest-priority not-started one, else the top completed one. None when the golfer
+    has no issues at all.
+
+    With several programs open this picks one of them by confidence, which is a
+    tiebreaker rather than a considered answer to "what should I practise today". A real
+    answer would weigh how long since each area was touched and where the golfer actually
+    loses shots; that is the practice-diet work and it does not exist yet. Until it does,
+    treat this as a suggestion and not a schedule -- callers wanting the full slate should
+    read GET /programs/.
     """
     issues = get_issues_by_user_id(user_id, db_session)
     return issues[0] if issues else None
 
 
 def _program_group(issue: IssueResponseDTO) -> int:
-    """Focus ordering group: active (0) → not-started (1) → completed (2)."""
+    """Ordering group: active (0) → not-started (1) → completed (2).
+
+    Unchanged by multi-program: several issues can now share group 0, and they are ranked
+    among themselves by confidence in the caller's sort.
+    """
     if issue.program_status == "active":
         return 0
     if issue.program_status == "completed":

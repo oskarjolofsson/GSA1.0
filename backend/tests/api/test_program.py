@@ -54,6 +54,129 @@ def _generate(client, headers, issue_id):
     )
 
 
+def _seed_analysis_issue(db_session, test_user, title, area="FULL_SWING", num_drills=2):
+    """A second seeded issue, so multi-program cases have something to open."""
+    issue = Issue(title=title, description="d", area=area)
+    db_session.add(issue)
+    db_session.flush()
+    for i in range(num_drills):
+        drill = Drill(title=f"{title} drill {i}", task="t", success_signal="s", fault_indicator="f")
+        db_session.add(drill)
+        db_session.flush()
+        db_session.add(IssueDrill(issue_id=issue.id, drill_id=drill.id))
+    analysis = Analysis(user_id=test_user["user_id"], model_version="v1.0")
+    db_session.add(analysis)
+    db_session.flush()
+    ai = AnalysisIssue(analysis_id=analysis.id, issue_id=issue.id, confidence=0.8)
+    db_session.add(ai)
+    db_session.flush()
+    return ai.id
+
+
+# ---------------- GET /programs/ (everything the golfer has open) ----------------
+
+def test_list_programs_is_empty_for_a_new_golfer(client, auth_headers):
+    """An empty slate is a normal state, not an error -- a first-run golfer hits this."""
+    resp = client.get("/api/v1/programs/", headers=auth_headers)
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_list_programs_returns_every_open_program_with_its_next_step(
+    client, premium, auth_headers, db_session, test_user, analysis_issue_id
+):
+    """One request has to render the whole slate. Before this endpoint existed a client
+    had to fetch each program's next step separately, which is a round trip per program
+    on every Home render."""
+    putting = _seed_analysis_issue(db_session, test_user, "Lag putting", area="PUTTING")
+    _generate(client, auth_headers, analysis_issue_id)
+    _generate(client, auth_headers, putting)
+
+    resp = client.get("/api/v1/programs/", headers=auth_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 2
+
+    by_area = {p["area"]: p for p in data}
+    assert set(by_area) == {"FULL_SWING", "PUTTING"}
+    for program in data:
+        assert program["status"] == "active"
+        assert program["slot"] == 0  # one per area here, so each takes the first slot
+        assert program["next_step"] is not None
+        assert program["next_step"]["session_type"] == "range"
+        assert program["next_step"]["status"] == "pending"
+
+
+def test_list_programs_never_schedules_a_play_step(
+    client, premium, auth_headers, analysis_issue_id
+):
+    """Playing a round is one activity serving every open program at once, so it is not a
+    step inside any of them. Several programs must never mean several 'go play' prompts."""
+    _generate(client, auth_headers, analysis_issue_id)
+    data = client.get("/api/v1/programs/", headers=auth_headers).json()
+    assert all(p["next_step"]["session_type"] != "play" for p in data)
+
+
+def test_list_programs_is_scoped_to_the_caller(
+    client, premium, auth_headers, analysis_issue_id, disposable_auth_headers
+):
+    """The route takes no ids from the client, so the only thing that can leak is the
+    scoping itself."""
+    _generate(client, auth_headers, analysis_issue_id)
+    resp = client.get("/api/v1/programs/", headers=disposable_auth_headers)
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_third_program_in_an_area_is_a_clean_409(
+    client, premium, auth_headers, db_session, test_user, analysis_issue_id
+):
+    """Hitting the cap is an expected outcome, so it has to arrive as a 409 the client can
+    show, not a 500 from an IntegrityError leaking out of the unique index. The message
+    must name the area -- a golfer with work across four areas cannot act on
+    "you already have two focuses"."""
+    second = _seed_analysis_issue(db_session, test_user, "Second swing fault")
+    third = _seed_analysis_issue(db_session, test_user, "Third swing fault")
+
+    assert _generate(client, auth_headers, analysis_issue_id).status_code == 201
+    assert _generate(client, auth_headers, second).status_code == 201
+
+    resp = _generate(client, auth_headers, third)
+    assert resp.status_code == 409
+    assert "full swing" in resp.json()["detail"].lower()
+
+
+def test_cap_does_not_block_a_different_area(
+    client, premium, auth_headers, db_session, test_user, analysis_issue_id
+):
+    """A full slate of full-swing work must leave putting open -- the entire reason the
+    cap is per-area."""
+    second = _seed_analysis_issue(db_session, test_user, "Second swing fault")
+    putting = _seed_analysis_issue(db_session, test_user, "Lag putting", area="PUTTING")
+
+    _generate(client, auth_headers, analysis_issue_id)
+    _generate(client, auth_headers, second)
+
+    resp = _generate(client, auth_headers, putting)
+    assert resp.status_code == 201
+    assert resp.json()["area"] == "PUTTING"
+
+
+def test_list_programs_does_not_write(
+    client, premium, auth_headers, db_session, analysis_issue_id
+):
+    """Reading Home must not mutate anything. get_next_step used to schedule a step when
+    it found none, so embedding next_step here would have inserted a row per program on
+    every pull-to-refresh."""
+    from core.infrastructure.db.models.ProgramStep import ProgramStep
+
+    _generate(client, auth_headers, analysis_issue_id)
+    before = db_session.query(ProgramStep).count()
+    for _ in range(3):
+        assert client.get("/api/v1/programs/", headers=auth_headers).status_code == 200
+    assert db_session.query(ProgramStep).count() == before
+
+
 def test_generate_creates_program(client, premium, auth_headers, analysis_issue_id):
     """
     Creates an analysis issue with 3 drills
@@ -66,7 +189,15 @@ def test_generate_creates_program(client, premium, auth_headers, analysis_issue_
     assert data["status"] == "active"
     assert data["total_drills"] == 3
     assert data["grooved_count"] == 0
-    assert data["steps"] == []
+    assert data["area"] == "FULL_SWING"
+    assert data["slot"] == 0
+
+    # Seeding schedules the first session up front. It used to arrive empty and get a
+    # step created lazily by the first next-step read, which made a GET write rows --
+    # untenable once the list endpoint reads every program on each Home render.
+    assert len(data["steps"]) == 1
+    assert data["steps"][0]["status"] == "pending"
+    assert data["steps"][0]["session_type"] == "range"
 
 
 def test_generate_is_idempotent(client, premium, auth_headers, analysis_issue_id):

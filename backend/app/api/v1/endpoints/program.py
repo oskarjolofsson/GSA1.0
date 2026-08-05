@@ -10,6 +10,7 @@ from app.api.v1.schemas.program import (
     GenerateProgramRequest,
     CompleteStepRequest,
     ProgramResponse,
+    ProgramSummaryResponse,
     ProgramStepResponse,
     StepAdvanceResponse,
 )
@@ -45,14 +46,31 @@ def generate_program(
             issue_id=request.issue_id,
             session=db,
         )
-        print("Should have generated program for issue_id:", request.issue_id)
-        
     else:
         raise HTTPException(
             status_code=422,
             detail="Provide either analysis_issue_id or issue_id.",
         )
     return ProgramResponse.from_domain(result)
+
+
+@router.get("/", response_model=list[ProgramSummaryResponse])
+def list_programs(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Every program the golfer currently has open, each with its next session inline.
+
+    A golfer may hold up to two active programs per area of the game, so this replaces
+    the old single-focus view. Scoped entirely by the authenticated user -- this route
+    takes no ids from the client, so there is nothing to tamper with.
+    """
+    results = program_service.list_active_programs(
+        user_id=current_user["user_id"],
+        session=db,
+    )
+    return [ProgramSummaryResponse.from_domain(r) for r in results]
 
 
 @router.get("/active/", response_model=ProgramResponse | None)
@@ -63,9 +81,12 @@ def get_active_program(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Get the current user's active program for the given analysis_issue_id or
-    issue_id, or their most recent active program if neither is specified.
-    Returns null if none.
+    Get the current user's active program for the given analysis_issue_id or issue_id.
+    Returns null if there is none.
+
+    One of the two ids is required. Asking for "the" active program without saying which
+    stopped being a meaningful question once a golfer could hold several; use GET
+    /programs/ for the whole set.
     """
     result = program_service.get_active_program(
         user_id=current_user["user_id"],

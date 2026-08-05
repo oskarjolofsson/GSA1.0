@@ -72,6 +72,9 @@ class ProgramResponse(BaseModel):
     created_at: datetime
     grooved_count: int
     total_drills: int
+    # Which part of the game, and which of the two per-area slots this program holds.
+    area: str | None = None
+    slot: int = 0
     steps: list[ProgramStepResponse]
 
     model_config = ConfigDict(from_attributes=True)
@@ -88,7 +91,51 @@ class ProgramResponse(BaseModel):
             created_at=dto.created_at,
             grooved_count=dto.grooved_count,
             total_drills=dto.total_drills,
+            area=dto.area,
+            slot=dto.slot,
             steps=[ProgramStepResponse.from_domain(s) for s in dto.steps],
+        )
+
+
+class ProgramSummaryResponse(BaseModel):
+    """One program as it appears in the list of everything the golfer has open.
+
+    Carries `next_step` inline so rendering the whole slate is a single request, and omits
+    `steps` because nothing displays a program's full history there -- sending it would
+    grow the payload with every session completed.
+    """
+    id: UUID
+    user_id: UUID
+    analysis_issue_id: UUID | None
+    issue_id: UUID | None
+    title: str
+    status: str
+    created_at: datetime
+    grooved_count: int
+    total_drills: int
+    area: str | None = None
+    slot: int = 0
+    next_step: ProgramStepResponse | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def from_domain(cls, dto) -> "ProgramSummaryResponse":
+        return cls(
+            id=dto.id,
+            user_id=dto.user_id,
+            analysis_issue_id=dto.analysis_issue_id,
+            issue_id=dto.issue_id,
+            title=dto.title,
+            status=dto.status,
+            created_at=dto.created_at,
+            grooved_count=dto.grooved_count,
+            total_drills=dto.total_drills,
+            area=dto.area,
+            slot=dto.slot,
+            next_step=(
+                ProgramStepResponse.from_domain(dto.next_step) if dto.next_step else None
+            ),
         )
 
 
