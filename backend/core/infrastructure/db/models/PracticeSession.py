@@ -57,17 +57,13 @@ class PracticeSession(Base):
         CheckConstraint("session_type IN ('range','play','retest')"),
     )
 
-    program_step_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("program_steps.id", ondelete="SET NULL"),
-    )
-
     # Which part of the game this session was, stamped from the practised issue at start.
     #
-    # Stored rather than joined because there is nothing to join through: program_step_id
-    # above is never written by any code, and analysis_issue_id is NULL for every session
-    # started from the library. It is also a fact about a day that already happened, so it
-    # must not move when an admin re-files the issue.
+    # Stored rather than joined because there is nothing to join through: there used to be
+    # a program_step_id column here, but no code ever wrote it (it was dropped in
+    # 20260805000000), and analysis_issue_id is NULL for every session started from the
+    # library. It is also a fact about a day that already happened, so it must not move
+    # when an admin re-files the issue.
     #
     # NULL = unattributed: free practice with no issue, and anything from a build older
     # than this column. The graph shows those; it never drops them.

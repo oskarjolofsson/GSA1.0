@@ -38,9 +38,13 @@ class ProgramStep(Base):
         nullable=False,
     )
 
-    # Shape of `prescription` by session_type:
+    # Shape of `prescription`:
     #   range: {"drill_ids": [...], "num_blocks": int, "cue": str | null}
-    #   play:  {"holes": int, "focus": str}
+    #
+    # 'play' prescriptions ({"holes": int, "focus": str}) no longer exist. Playing a round
+    # is one activity that serves every open program at once, so it was never a step inside
+    # a single program -- it is a practice_sessions row with session_type = 'play'. The
+    # rows were deleted in 20260805000000.
     prescription: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,

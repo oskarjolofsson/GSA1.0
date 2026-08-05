@@ -2,51 +2,81 @@ from datetime import datetime, timezone, timedelta
 from types import SimpleNamespace
 from uuid import uuid4
 
+import pytest
+
 from core.services import program_service as ps
+from core.services import exceptions
 from core.services.dtos.program_service_dto import DrillGradeDTO
 
 
-# ---------------- _decide_next_type (scheduler cadence) ----------------
+# ---------------- _allocate_slot (two-programs-per-area cap) ----------------
+#
+# The partial unique index programs_one_active_per_area_slot is what actually enforces the
+# cap; these cover the half that produces a message the golfer can act on. The index's own
+# behaviour is exercised in tests/integration/db.
 
-def _step(session_type):
-    return SimpleNamespace(session_type=session_type)
+class _FakeRepo:
+    """Stands in for the programs repo so slot logic can be tested without building
+    real programs, drill states and issues for every case."""
 
+    def __init__(self, slots):
+        self._programs = [SimpleNamespace(slot=s) for s in slots]
 
-def _run_schedule(n):
-    """Simulate n consecutive scheduling decisions, appending each as a completed
-    step so the next decision sees the realized history."""
-    history = []
-    seq = []
-    for _ in range(n):
-        t = ps._decide_next_type(history)
-        seq.append(t)
-        history.append(_step(t))
-    return seq
-
-
-def test_decide_next_type_starts_with_range_range_play():
-    assert _run_schedule(3) == ["range", "range", "play"]
+    def get_active_programs_by_area(self, user_id, area, session):
+        return self._programs
 
 
-def test_decide_next_type_never_schedules_a_retest():
-    """Retest was removed from the engine. This is the inverted form of the old
-    cadence test: run well past the old cadence of 6 and prove nothing interrupts."""
-    seq = _run_schedule(60)
-    assert "retest" not in seq
+class _FakeSession:
+    """session.get(TaxonomyArea, key) is only touched on the failure path, to build the
+    error message."""
+
+    def get(self, model, key):
+        return SimpleNamespace(golfer_label="Putting")
 
 
-def test_decide_next_type_is_only_the_work_cycle():
-    """No step type exists outside WORK_CYCLE any more."""
-    seq = _run_schedule(60)
-    assert set(seq) == set(ps.WORK_CYCLE)
+def _allocate(monkeypatch, slots):
+    monkeypatch.setattr(ps, "repo", _FakeRepo(slots))
+    return ps._allocate_slot(uuid4(), "PUTTING", _FakeSession())
 
 
-def test_decide_next_type_work_cycle_repeats_unbroken():
-    seq = _run_schedule(60)
-    # Every slot is WORK_CYCLE at its own index -- no offset accumulates, which is
-    # what an inserted step would have caused.
-    for i, t in enumerate(seq):
-        assert t == ps.WORK_CYCLE[i % len(ps.WORK_CYCLE)]
+def test_allocate_slot_takes_zero_when_area_is_empty(monkeypatch):
+    assert _allocate(monkeypatch, []) == 0
+
+
+def test_allocate_slot_takes_one_when_zero_is_held(monkeypatch):
+    assert _allocate(monkeypatch, [0]) == 1
+
+
+def test_allocate_slot_fills_the_gap_rather_than_appending(monkeypatch):
+    """Holding only slot 1 (its neighbour completed) must reuse 0, not invent a slot 2 --
+    the CHECK constraint only permits 0 and 1."""
+    assert _allocate(monkeypatch, [1]) == 0
+
+
+def test_allocate_slot_raises_when_both_slots_are_held(monkeypatch):
+    with pytest.raises(exceptions.ConflictException):
+        _allocate(monkeypatch, [0, 1])
+
+
+def test_allocate_slot_message_names_the_area_in_golfer_language(monkeypatch):
+    """The refusal has to say which area is full: a golfer with programs across four
+    areas cannot act on "you already have two focuses"."""
+    with pytest.raises(exceptions.ConflictException) as err:
+        _allocate(monkeypatch, [0, 1])
+    assert "putting" in str(err.value).lower()
+
+
+def test_allocate_slot_survives_a_missing_taxonomy_row(monkeypatch):
+    """Building the error message must never throw a second exception over the first."""
+
+    class _EmptySession:
+        def get(self, model, key):
+            return None
+
+    monkeypatch.setattr(ps, "repo", _FakeRepo([0, 1]))
+    with pytest.raises(exceptions.ConflictException) as err:
+        ps._allocate_slot(uuid4(), "FULL_SWING", _EmptySession())
+    assert "full swing" in str(err.value).lower()
 
 
 # ---------------- _pick_due_drills (spaced-repetition selection) ----------------

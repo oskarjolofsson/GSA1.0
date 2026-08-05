@@ -14,8 +14,12 @@ from core.services.dtos.program_service_dto import (
 )
 
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from uuid import UUID
 from datetime import datetime, timezone
+import logging
+
+log = logging.getLogger(__name__)
 
 
 # =========== TUNING CONSTANTS ============
@@ -28,15 +32,15 @@ STRENGTH_MAX = 5
 GROOVED_THRESHOLD = 3          # strength >= this => the drill is "grooved"
 NUM_DRILLS_PER_RANGE = 2       # how many drills fill a range session
 
-# The repeating work rhythm. Nothing interrupts it -- the program ends by grooving
-# every drill, not by passing a checkpoint.
-WORK_CYCLE: list[str] = ["range", "range", "play"]
-
 # Lightweight spaced repetition: how a grade moves a drill's strength.
 GRADE_STRENGTH_DELTA: dict[str, int] = {"rough": -1, "ok": 0, "dialed": 1}
 
-PLAY_HOLES_DEFAULT = 9
-PLAY_FOCUS_DEFAULT = "Hold one swing thought on every full shot."
+# How many programs a golfer may hold in one area at once. Two, because one focus per area
+# was too tight once the whole game was in the catalog, and unlimited turns "start a
+# program" into a free action that stops meaning "I am committing to this". Enforced by the
+# partial unique index programs_one_active_per_area_slot -- this constant only names the
+# slot count that index implies.
+SLOTS_PER_AREA = 2
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -128,12 +132,29 @@ def _seed_program(
     session: Session,
     source_analysis_issue_id: UUID | None,
 ) -> ProgramDTO:
-    """Shared seeding for every entry point (AI, coach, browse): enforce one active
-    program, create the program over `issue_id`, and seed one spaced-repetition
-    state per linked drill."""
-    # One active program at a time: block starting a new focus while another is live.
-    if repo.get_active_programs_by_user(user_id, session):
-        raise exceptions.ConflictException("Finish your current focus first.")
+    """Shared seeding for every entry point (AI, coach, browse): claim a slot in the
+    issue's area, create the program, seed one spaced-repetition state per linked drill,
+    and schedule the first step.
+
+    The first step is created here rather than lazily on read, so that `get_next_step`
+    can stay a pure read (see its docstring)."""
+    issue = issue_repo.get_issue_by_id(issue_id, session)
+    if not issue:
+        raise exceptions.NotFoundException("Issue", str(issue_id))
+
+    # Area is half of the uniqueness key that caps programs per area, and a NULL would opt
+    # this program out of the cap entirely -- NULLs never collide in a unique index, so one
+    # golfer could stack unlimited area-less programs.
+    #
+    # issues.area is NOT NULL DEFAULT 'FULL_SWING', so this cannot fire today and has no
+    # test: it is here to fail loudly rather than silently uncap the golfer if that column
+    # is ever relaxed.
+    if issue.area is None:
+        raise exceptions.ValidationException(
+            "This focus has no area assigned yet, so it can't be started."
+        )
+
+    slot = _allocate_slot(user_id, issue.area, session)
 
     drills = drill_repo.get_drills_by_issue_id(issue_id, session)
 
@@ -143,8 +164,32 @@ def _seed_program(
         issue_id=issue_id,
         title=title,
         status="active",
+        area=issue.area,
+        slot=slot,
     )
-    repo.create_program(program, session)
+    try:
+        repo.create_program(program, session)
+    except IntegrityError:
+        # Something took this slot (or this issue) between _allocate_slot's read and this
+        # insert. The index is the authority and it just refused us.
+        #
+        # Deliberately NOT reported as "you already have two focuses here": we do not know
+        # that, and the golfer may well have zero. In practice this means a double-submit
+        # got past the client, so it is logged at warning -- that log line is the only way
+        # to find out the client-side guard has broken.
+        session.rollback()
+        log.warning(
+            "program slot race: insert lost to a concurrent request",
+            extra={
+                "user_id": str(user_id),
+                "issue_id": str(issue_id),
+                "area": issue.area,
+                "slot": slot,
+            },
+        )
+        raise exceptions.ConflictException(
+            "Couldn't start that focus just now. Try again."
+        )
 
     states = [
         models.ProgramDrillState(program_id=program.id, drill_id=drill.id, strength=0)
@@ -153,7 +198,53 @@ def _seed_program(
     if states:
         repo.create_drill_states(states, session)
 
+    _schedule_next_step(program.id, session)
+
+    log.info(
+        "program seeded",
+        extra={
+            "user_id": str(user_id),
+            "program_id": str(program.id),
+            "issue_id": str(issue_id),
+            "area": issue.area,
+            "slot": slot,
+            "drill_count": len(states),
+        },
+    )
     return _program_to_dto(program, session)
+
+
+def _allocate_slot(user_id: UUID, area: str, session: Session) -> int:
+    """Pick the free slot (0 or 1) for this golfer in this area.
+
+    The partial unique index programs_one_active_per_area_slot is what actually enforces
+    the cap. This function exists to fail with a sentence the golfer can act on, before
+    Postgres fails with an IntegrityError they cannot. `_seed_program` still handles the
+    race where both agree a slot is free.
+    """
+    taken = {p.slot for p in repo.get_active_programs_by_area(user_id, area, session)}
+    free = sorted(set(range(SLOTS_PER_AREA)) - taken)
+    if not free:
+        log.info(
+            "program slots full",
+            extra={"user_id": str(user_id), "area": area},
+        )
+        raise exceptions.ConflictException(
+            f"You're already working two {_area_label(area, session)} focuses. "
+            "Finish one before starting another."
+        )
+    return free[0]
+
+
+def _area_label(area: str, session: Session) -> str:
+    """Golfer-facing name for an area, for error messages only.
+
+    Looked up on the failure path rather than carried around, so the ordinary case never
+    pays for it. Falls back to the raw key if the row is missing — a clumsy message beats
+    a second exception thrown while building the first one's text.
+    """
+    row = session.get(models.TaxonomyArea, area)
+    return row.golfer_label.lower() if row else area.replace("_", " ").lower()
 
 
 def get_active_program(
@@ -162,15 +253,76 @@ def get_active_program(
     session: Session,
     issue_id: UUID | None = None,
 ) -> ProgramDTO | None:
+    """The active program for one issue.
+
+    An id is required. This used to fall back to "the most recent active program" when
+    given neither, which was a sensible answer only while a golfer could hold exactly one.
+    With up to two programs per area it would silently pick one of ten. Callers that want
+    the whole set use `list_active_programs`.
+    """
     if analysis_issue_id is not None:
         program = repo.get_active_program_for_issue(user_id, analysis_issue_id, session)
     elif issue_id is not None:
         program = repo.get_active_program_for_issue_id(user_id, issue_id, session)
     else:
-        active = repo.get_active_programs_by_user(user_id, session)
-        program = active[0] if active else None
+        raise exceptions.ValidationException(
+            "Provide either analysis_issue_id or issue_id."
+        )
 
     return _program_to_dto(program, session) if program else None
+
+
+def list_active_programs(user_id: UUID, session: Session) -> list[ProgramDTO]:
+    """Every active program for the golfer, each with its pending step resolved.
+
+    This backs Home, so it runs on every app foreground and pull-to-refresh, and the
+    number of programs is something the golfer controls. Building it by calling
+    `_program_to_dto` per program would issue two queries each plus one more for the step
+    -- around thirty for a full slate. Everything is batched instead, so the cost is four
+    queries whether the golfer has one program or ten. Same reasoning as the batched drill
+    lookup in `_apply_grades`.
+    """
+    programs = repo.get_active_programs_by_user(user_id, session)
+    if not programs:
+        return []
+
+    program_ids = [p.id for p in programs]
+
+    states_by_program: dict[UUID, list[models.ProgramDrillState]] = {}
+    for state in repo.get_drill_states_by_program_ids(program_ids, session):
+        states_by_program.setdefault(state.program_id, []).append(state)
+
+    # get_pending_steps_by_program_ids orders by order_index, and an active program holds
+    # at most one pending step, so first-wins is both stable and correct.
+    step_by_program: dict[UUID, models.ProgramStep] = {}
+    for step in repo.get_pending_steps_by_program_ids(program_ids, session):
+        step_by_program.setdefault(step.program_id, step)
+
+    title_map = _drill_title_map(list(step_by_program.values()), session)
+
+    dtos: list[ProgramDTO] = []
+    for program in programs:
+        states = states_by_program.get(program.id, [])
+        grooved = sum(1 for s in states if s.strength >= GROOVED_THRESHOLD)
+        step = step_by_program.get(program.id)
+        dtos.append(
+            ProgramDTO(
+                id=program.id,
+                user_id=program.user_id,
+                analysis_issue_id=program.analysis_issue_id,
+                issue_id=program.issue_id,
+                title=program.title,
+                status=program.status,
+                created_at=program.created_at,
+                grooved_count=grooved,
+                total_drills=len(states),
+                area=program.area,
+                slot=program.slot,
+                steps=[],
+                next_step=_step_to_dto(step, title_map) if step else None,
+            )
+        )
+    return dtos
 
 
 def get_program(program_id: UUID, user_id: UUID, session: Session) -> ProgramDTO:
@@ -180,14 +332,23 @@ def get_program(program_id: UUID, user_id: UUID, session: Session) -> ProgramDTO
 
 
 def get_next_step(program_id: UUID, user_id: UUID, session: Session) -> ProgramStepDTO | None:
-    """Return the pending step, scheduling (and persisting) one if none exists."""
+    """Return the pending step, or None if the program has none.
+
+    A pure read. It used to schedule a step when it found none, which made a GET write to
+    the database: the list endpoint reads every active program on each Home render, so one
+    pull-to-refresh could insert a row per program, and two devices refreshing at once
+    could collide on idx_program_steps_unique_order and surface as a 500 on what the
+    client believes is a plain read.
+
+    Steps are scheduled on the write paths that earn them instead — `_seed_program`
+    creates the first, `complete_step` creates each successor — so an active program
+    always has exactly one pending step and None here is real information.
+    """
     program = repo.get_program_by_id(program_id, session)
     _verify_owner(program, program_id, user_id)
 
     pending = repo.get_pending_step(program_id, session)
-    if pending is None:
-        pending = _schedule_next_step(program_id, session)
-    return _step_to_dto_resolved(pending, session)
+    return _step_to_dto_resolved(pending, session) if pending else None
 
 
 def complete_step(
@@ -219,11 +380,21 @@ def complete_step(
 
     grooved_count, total_drills = _groove_progress(program_id, session)
 
-    # Graduate: once every drill is grooved, the program is done — it sinks and the
-    # next issue becomes the focus (one program at a time).
+    # Graduate: once every drill is grooved the program is done. It sinks out of the
+    # active set and frees its slot, so the golfer can start something new in this area.
     if total_drills > 0 and grooved_count == total_drills and program.status == "active":
         program.status = "completed"
         repo.update_program(program, session)
+        log.info(
+            "program completed: every drill grooved",
+            extra={
+                "user_id": str(user_id),
+                "program_id": str(program_id),
+                "area": program.area,
+                "slot": program.slot,
+                "total_drills": total_drills,
+            },
+        )
 
     title_map = _drill_title_map([step, next_step], session)
     return StepAdvanceDTO(
@@ -238,41 +409,33 @@ def complete_step(
 # =========== SCHEDULING ============
 
 def _schedule_next_step(program_id: UUID, session: Session) -> models.ProgramStep:
-    """Decide the next session type from history, pick drills by strength, persist
-    a pending step."""
-    completed = repo.get_completed_steps(program_id, session)
-    order_index = len(completed)
-    session_type = _decide_next_type(completed)
+    """Pick the drills that feel roughest and persist a pending step for them.
 
-    if session_type == "range":
-        states = repo.get_drill_states_by_program_id(program_id, session)
-        drill_ids = _pick_due_drills(states, NUM_DRILLS_PER_RANGE)
-        prescription = {
-            "drill_ids": [str(d) for d in drill_ids],
-            "num_blocks": len(drill_ids),
-            "cue": None,
-        }
-    else:  # play
-        prescription = {"holes": PLAY_HOLES_DEFAULT, "focus": PLAY_FOCUS_DEFAULT}
+    Every step is practice now. There used to be a repeating range/range/play cycle that
+    sent the golfer to the course every third session, but playing a round is one activity
+    that serves every open program at once -- with several programs running it produced
+    several simultaneous "go play 9 holes" prompts for the same round. Rounds live in
+    practice_sessions with session_type = 'play' and are not scheduled by any program.
+
+    The type stays the string 'range' in this PR; renaming it to 'practice' is a separate
+    change so this one does not also move vocabulary.
+    """
+    completed = repo.get_completed_steps(program_id, session)
+    states = repo.get_drill_states_by_program_id(program_id, session)
+    drill_ids = _pick_due_drills(states, NUM_DRILLS_PER_RANGE)
 
     step = models.ProgramStep(
         program_id=program_id,
-        order_index=order_index,
-        session_type=session_type,
-        prescription=prescription,
+        order_index=len(completed),
+        session_type="range",
+        prescription={
+            "drill_ids": [str(d) for d in drill_ids],
+            "num_blocks": len(drill_ids),
+            "cue": None,
+        },
         status="pending",
     )
     return repo.create_step(step, session)
-
-
-def _decide_next_type(completed_steps: list[models.ProgramStep]) -> str:
-    """`WORK_CYCLE` repeats forever. Every step is work, so the position in the
-    cycle is just how many steps are already done.
-
-    Historical programs may hold completed `retest` steps, which no longer exist as
-    a type. They still count as a position here, so an old program resumes at the
-    next slot rather than replaying one it already did."""
-    return WORK_CYCLE[len(completed_steps) % len(WORK_CYCLE)]
 
 
 def _pick_due_drills(states: list[models.ProgramDrillState], count: int) -> list[UUID]:
@@ -381,6 +544,8 @@ def _program_to_dto(program: models.Program, session: Session) -> ProgramDTO:
         created_at=program.created_at,
         grooved_count=grooved_count,
         total_drills=total_drills,
+        area=program.area,
+        slot=program.slot,
         steps=[_step_to_dto(s, title_map) for s in program.steps],
     )
 

@@ -36,7 +36,9 @@ class ProgramStepDTO:
     id: UUID
     program_id: UUID
     order_index: int
-    session_type: str  # 'range' | 'play' ('retest' frozen: read back only)
+    # 'range' is the only type the engine schedules. 'play'/'retest' remain legal in the
+    # CHECK constraint so historical rows read back, but nothing creates them any more.
+    session_type: str
     prescription: dict
     status: str  # 'pending' | 'completed' | 'skipped'
     practice_session_id: UUID | None
@@ -55,7 +57,14 @@ class ProgramDTO:
     # Open-ended program: progress is grooved-drill count, not an X/N step bar.
     grooved_count: int
     total_drills: int
+    # Which part of the game, frozen at creation (see Program.area), and which of the two
+    # per-area slots this program holds.
+    area: str | None = None
+    slot: int = 0
     steps: list[ProgramStepDTO] = field(default_factory=list)
+    # Populated only by the list endpoint, which resolves every program's pending step in
+    # one batched pass so rendering Home costs a fixed number of queries.
+    next_step: ProgramStepDTO | None = None
 
 
 @dataclass(frozen=True)

@@ -225,9 +225,13 @@ class TestAdaptiveLoop:
         grooved = [d.id for d in drills if d.id != rough_id and states[d.id].strength >= ps.GROOVED_THRESHOLD]
         assert grooved, states
 
-        # Realized cadence: WORK_CYCLE repeating, never interrupted. Retest was
-        # removed from the engine, so it must not appear at any point.
-        assert realized_types[:3] == ["range", "range", "play"]
+        # Realized cadence: practice, every time, never interrupted.
+        #
+        # This used to assert a range/range/play cycle. Playing a round left the program
+        # engine entirely: it is one activity that serves every open program at once, so
+        # scheduling it per-program produced a separate "go play 9 holes" prompt for each
+        # focus the golfer had running. Rounds are practice_sessions with
+        # session_type = 'play' and nothing here schedules them.
+        assert set(realized_types) == {"range"}
+        assert "play" not in realized_types
         assert "retest" not in realized_types
-        for i, t in enumerate(realized_types):
-            assert t == ps.WORK_CYCLE[i % len(ps.WORK_CYCLE)]
