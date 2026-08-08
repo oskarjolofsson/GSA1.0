@@ -24,3 +24,37 @@
 
 - **Skill-focus program semantics.** A `kind='skill'` focus has no fault to retest;
   confirm `program_service` runs it as a fixed-length protocol before wiring the first one.
+
+## Practice (features/practice)
+
+- **Error reporting service (P2).** The app has no crash/error reporting — every
+  failure ends at `console.error`, which nobody reads in production. The CEO review of
+  the practice execution UX (2026-08-08) found four error paths in that feature alone,
+  three of them silent: a failed `completeStep` congratulated the golfer while their
+  plan never advanced, and a failed `endDrill`/`endSession`/`startDrill` trapped them on
+  a permanent spinner. That branch makes those visible to the *golfer*; they stay
+  invisible to us. Add Sentry (or equivalent) with the Expo integration so a broken plan
+  advance surfaces without someone emailing in. Needs a native rebuild.
+  - Effort: M (human) -> S (CC). Depends on nothing.
+
+- **Device-level E2E framework (P3).** No E2E framework exists anywhere in the app —
+  testing is `jest-expo` + RNTL only. The eng review of the practice execution UX
+  (2026-08-08) found a bug that lives *between* components: `useScreenSequence` holds
+  `currentIndex` in local state, so swapping the session prop would have left the golfer
+  staring at the complete screen after tapping Continue. Every unit test would have
+  passed. That specific case is now covered by a `homeFlow` integration test with mocked
+  services (the chosen approach), but the general class of between-components bug is not.
+  Evaluate Maestro (YAML flows against a simulator) or Detox.
+  - Revisit when a second between-components bug reaches a user, or before any release
+    process that needs a smoke suite.
+  - Cons: spends an innovation token; CI simulator management and flake handling become
+    ours. Effort: L (human) -> M (CC).
+
+- **Orphan practice sessions (P3).** A golfer who backgrounds the app or navigates away
+  mid-session leaves a practice session open server-side. `homeFlow.tsx:47-59` resets
+  `selectedSession` on refocus, so the app forgets the session; the server does not.
+  First thing to check is whether an open session skews the contribution graph or the
+  program schedule — that determines whether the fix is a client-side end-on-blur, a
+  server-side sweep, or nothing at all.
+  - Effort: S (human) -> S (CC), after an investigation of unknown size.
+  - Surfaced by the CEO review of practice execution UX (2026-08-08).
