@@ -7,8 +7,8 @@ export type ActivityLevel = 0 | 1 | 2;
 
 export const ACTIVITY_COLORS: Record<ActivityLevel, string> = {
     0: "#1A2435",
-    1: "#5E9B7E",
-    2: "#7FBE9B",
+    1: "#EADFC8",
+    2: "#E4C892",
 };
 
 // Today's cell: same footprint as the rest, dashed sand outline, no fill.
