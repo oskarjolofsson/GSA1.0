@@ -4,6 +4,7 @@ import { ChevronRight, Camera } from "lucide-react-native";
 
 import type { AreaFork } from "../utils/libraryFork";
 import type { TaxonomyMiss, TaxonomyTerm } from "../services/taxonomyService";
+import StaggerRow from "./StaggerRow";
 
 type Props = {
     fork: AreaFork;
@@ -26,19 +27,25 @@ export default function MissList({ fork, areaKey, onSelectMiss, onSelectGoal, on
     // chosen area through the upload flow first.
     const showFilm = Boolean(onFilmSwing) && areaKey === "FULL_SWING";
 
+    // One index across the whole view rather than one per branch, so the two
+    // branches read as a single list arriving top to bottom instead of two lists
+    // racing each other.
+    let row = 0;
+
     return (
         <View>
 
             {fork.goals.length > 0 ? (
                 <Branch label="Nothing's broken" question="Get better at:">
                     {fork.goals.map((goal, index) => (
-                        <ForkRow
-                            key={goal.key}
-                            title={goal.golfer_label}
-                            subtitle={goal.blurb}
-                            last={index === fork.goals.length - 1}
-                            onPress={() => onSelectGoal(goal)}
-                        />
+                        <StaggerRow key={goal.key} index={row++}>
+                            <ForkRow
+                                title={goal.golfer_label}
+                                subtitle={goal.blurb}
+                                last={index === fork.goals.length - 1}
+                                onPress={() => onSelectGoal(goal)}
+                            />
+                        </StaggerRow>
                     ))}
                 </Branch>
             ) : null}
@@ -50,28 +57,31 @@ export default function MissList({ fork, areaKey, onSelectMiss, onSelectGoal, on
             {fork.misses.length > 0 ? (
                 <Branch label="Something's going wrong" question="Technical issues:">
                     {fork.misses.map((miss, index) => (
-                        <ForkRow
-                            key={miss.key}
-                            title={miss.golfer_label}
-                            subtitle={miss.blurb}
-                            last={index === fork.misses.length - 1}
-                            onPress={() => onSelectMiss(miss)}
-                        />
+                        <StaggerRow key={miss.key} index={row++}>
+                            <ForkRow
+                                title={miss.golfer_label}
+                                subtitle={miss.blurb}
+                                last={index === fork.misses.length - 1}
+                                onPress={() => onSelectMiss(miss)}
+                            />
+                        </StaggerRow>
                     ))}
                 </Branch>
             ) : null}
 
             {showFilm ? (
-                <Pressable
-                    onPress={onFilmSwing}
-                    accessibilityRole="button"
-                    className="mt-7 min-h-[44px] flex-row items-center border-t border-white/[.07] pt-5 active:opacity-70"
-                >
-                    <Camera size={16} color="#8A8676" />
-                    <Text className="ml-3 flex-1 text-[13px] leading-[19px] text-sand-dim">
-                        Not sure? Film your swing and let the AI find it
-                    </Text>
-                </Pressable>
+                <StaggerRow index={row++}>
+                    <Pressable
+                        onPress={onFilmSwing}
+                        accessibilityRole="button"
+                        className="mt-7 min-h-[44px] flex-row items-center border-t border-white/[.07] pt-5 active:opacity-70"
+                    >
+                        <Camera size={16} color="#8A8676" />
+                        <Text className="ml-3 flex-1 text-[13px] leading-[19px] text-sand-dim">
+                            Not sure? Film your swing and let the AI find it
+                        </Text>
+                    </Pressable>
+                </StaggerRow>
             ) : null}
         </View>
     );

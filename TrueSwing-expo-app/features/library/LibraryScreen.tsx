@@ -1,13 +1,14 @@
 import { useCallback, useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, Search } from "lucide-react-native";
 
 import { generateProgramFromIssue } from "features/programs/services/programService";
 import type { CatalogIssue } from "features/issues/services/issueAuthoringService";
 import { getErrorMessage } from "lib/errors";
 
 import { useLibraryState } from "./hooks/useLibraryState";
+import useAreaStats from "./hooks/useAreaStats";
 import SearchBar from "./components/SearchBar";
 import AreaGrid from "./components/AreaGrid";
 import AreaEmptyState from "./components/AreaEmptyState";
@@ -30,7 +31,12 @@ type Props = {
 export default function LibraryScreen({ onCancel, onDone, onFilmSwing }: Props) {
     const insets = useSafeAreaInsets();
     const lib = useLibraryState();
+    const statsByArea = useAreaStats();
     const [startingId, setStartingId] = useState<string | null>(null);
+    // Search is collapsed to an icon on the landing, where five self-evident rows
+    // mean nobody searches and the bar was costing a row above the fold. Every
+    // deeper view keeps it inline -- those lists are long enough to earn it.
+    const [searchOpen, setSearchOpen] = useState(false);
     // The focus whose sheet is open. Holding the issue itself (not an id) keeps the
     // sheet rendering its own content while it animates out after a filter change.
     const [openIssue, setOpenIssue] = useState<CatalogIssue | null>(null);
@@ -57,10 +63,19 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing }: Props) 
 
     const goBack = useCallback(() => {
         setOpenIssue(null);
+        // Collapsing the search bar is a step back in its own right: leaving it
+        // open on the landing would undo the thing the icon exists for.
+        if (searchOpen && !lib.query) {
+            setSearchOpen(false);
+            return;
+        }
         if (!lib.goBack()) onCancel();
-    }, [lib, onCancel]);
+    }, [lib, onCancel, searchOpen]);
 
     const searching = lib.query.trim().length > 0;
+    const onLanding = lib.view === "areas" && !searching;
+    const showSearchIcon = onLanding && !searchOpen;
+    const showSearchBar = !onLanding || searchOpen;
     const eyebrow = lib.area ? lib.area.golfer_label : "The library";
     const heading = searching
         ? "Search"
@@ -76,37 +91,55 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing }: Props) 
                 contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 }}
                 keyboardShouldPersistTaps="handled"
             >
-                <Pressable
-                    onPress={goBack}
-                    accessibilityRole="button"
-                    className="min-h-[44px] flex-row items-center active:opacity-70"
-                >
-                    <ChevronLeft size={16} color="#8A8676" />
-                    <Text className="ml-1 text-[13px] text-sand-dim">Back</Text>
-                </Pressable>
+                <View className="min-h-[44px] flex-row items-center justify-between">
+                    <Pressable
+                        onPress={goBack}
+                        accessibilityRole="button"
+                        className="min-h-[44px] flex-row items-center pr-3 active:opacity-70"
+                    >
+                        <ChevronLeft size={16} color="#8A8676" />
+                        <Text className="ml-1 text-[13px] text-sand-dim">Back</Text>
+                    </Pressable>
+
+                    {showSearchIcon ? (
+                        <Pressable
+                            onPress={() => setSearchOpen(true)}
+                            accessibilityRole="button"
+                            accessibilityLabel="Search focus points"
+                            hitSlop={8}
+                            className="-mr-2 h-[44px] w-[44px] items-center justify-center active:opacity-70"
+                        >
+                            <Search size={19} color="#8A8676" />
+                        </Pressable>
+                    ) : null}
+                </View>
 
                 <Text className="mt-4 text-[10px] uppercase tracking-[2.6px] text-gold">{eyebrow}</Text>
                 <Text className="mt-3 font-display text-[29px] leading-[33px] text-sand">{heading}</Text>
-                {lib.view === "areas" && !searching ? (
-                    <Text className="mt-3 text-[13px] leading-[21px] text-sand-dim">
-                        Pick the part of your game you want to work on.
-                    </Text>
-                ) : null}
 
                 {/* Search is flat over focus points and bypasses the hierarchy, so it
-                    stays available at every level. */}
-                <SearchBar value={lib.query} onChange={lib.setQuery} />
+                    stays reachable at every level -- behind an icon on the landing,
+                    inline everywhere else. */}
+                {showSearchBar ? (
+                    <SearchBar value={lib.query} onChange={lib.setQuery} autoFocus={searchOpen} />
+                ) : null}
 
-                <Body
-                    lib={lib}
-                    searching={searching}
-                    onOpen={(issue) => {
-                        setStartError(null);
-                        setOpenIssue(issue);
-                    }}
-                    onBackToAreas={goBack}
-                    onFilmSwing={onFilmSwing}
-                />
+                {/* Keyed so the row stagger replays on every move through the
+                    hierarchy. Library navigation is state, not a remount, so without
+                    this the entrance would only ever play once per visit. */}
+                <View key={`${lib.view}:${lib.area?.key ?? ""}:${lib.filter?.label ?? ""}:${searching}`}>
+                    <Body
+                        lib={lib}
+                        statsByArea={statsByArea}
+                        searching={searching}
+                        onOpen={(issue) => {
+                            setStartError(null);
+                            setOpenIssue(issue);
+                        }}
+                        onBackToAreas={goBack}
+                        onFilmSwing={onFilmSwing}
+                    />
+                </View>
             </ScrollView>
 
             {/* Outside the ScrollView: a Modal is its own layer, and nesting it inside a
@@ -125,12 +158,14 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing }: Props) 
 
 function Body({
     lib,
+    statsByArea,
     searching,
     onOpen,
     onBackToAreas,
     onFilmSwing,
 }: {
     lib: ReturnType<typeof useLibraryState>;
+    statsByArea: ReturnType<typeof useAreaStats>;
     searching: boolean;
     onOpen: (issue: CatalogIssue) => void;
     onBackToAreas: () => void;
@@ -159,7 +194,7 @@ function Body({
         if (lib.taxonomyStatus === "error") {
             return <InlineRetry message={lib.taxonomyError} onRetry={lib.retryTaxonomy} />;
         }
-        return <AreaGrid areas={lib.areas} onSelect={lib.openArea} />;
+        return <AreaGrid areas={lib.areas} statsByArea={statsByArea} onSelect={lib.openArea} />;
     }
 
     if (lib.view === "focus") {

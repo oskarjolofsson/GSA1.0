@@ -2,6 +2,7 @@ import { View, Text } from "react-native";
 
 import type { CatalogIssue } from "features/issues/services/issueAuthoringService";
 import IssueRow from "./IssueRow";
+import StaggerRow from "./StaggerRow";
 
 type Props = {
     candidates: CatalogIssue[];
@@ -21,8 +22,10 @@ export default function CandidateList({ candidates, emptyText, onOpen }: Props) 
     }
     return (
         <View className="mt-7">
-            {candidates.map((issue) => (
-                <IssueRow key={issue.id} issue={issue} onOpen={() => onOpen(issue)} />
+            {candidates.map((issue, index) => (
+                <StaggerRow key={issue.id} index={index}>
+                    <IssueRow issue={issue} onOpen={() => onOpen(issue)} />
+                </StaggerRow>
             ))}
         </View>
     );
