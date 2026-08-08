@@ -109,6 +109,22 @@ A list of things done in order gets a **rail**: a hairline spine down the left w
 gold-stroked node per item, filled when that item is open. The rail says "sequence" so no label
 has to, and it lets a long list collapse to titles without losing the sense that they connect.
 
+**A set is not a sequence, and it must not borrow the sequence treatment.** Added in the
+practice-execution review (2026-08-08), because the rail rule above was about to be applied to
+something that is not ordered. A drill's `task` is a sequence — do this, then this — and gets
+the rail. A drill's `success_signal` is a **set**: "each ball carries close to its target
+distance", "swing length scales with the distance", "the distances ladder cleanly" are all
+true at once, in no order. Numbering them, or running a spine down them, tells the golfer to
+work through them in turn, which is a lie about the content.
+
+A set gets a **gold-stroked mark per item** — the rail's node without the spine — at 9px,
+decorative, `accessibilityElementsHidden`, with the group carrying one
+`accessibilityRole="list"` label. The mark holds the left edge when an item wraps to three
+lines, which pure air does not, and admin-authored strings have no length limit.
+
+Deciding between them is a content question, not a layout preference: **can the golfer do
+item 2 before item 1?** If yes it is a set. If no it is a sequence.
+
 ## States
 
 Every screen specifies loading, empty, and error. Empty states are screens, not a `<Text>`:
@@ -130,3 +146,45 @@ rather than hiding working content behind a full-screen error for the other.
 |---|---|---|
 | B2 — drill rating | `~/.gstack/projects/oskarjolofsson-GSA1.0/designs/drill-metric-rating-20260802/` | D3 two-column grid + D4 proximity stepper |
 | C5 — library | `~/.gstack/projects/oskarjolofsson-GSA1.0/designs/library-area-first-20260804/design-board-v2.html` | A2 rules + gold icon slot |
+| Upload flow | `~/.gstack/projects/oskarjolofsson-GSA1.0/designs/upload-flow-rebrand-20260808/design-board.html` | Framing corners, trim header, hairline prompts, progress rail |
+| Practice execution | `~/.gstack/projects/oskarjolofsson-GSA1.0/designs/practice-brief-20260808/design-board-v3.html` | B gold marks for the focus set, U1 numbered pair for up-next, V3 progress delta |
+
+## Progress and waiting
+
+**Never show a percentage you cannot compute.** The upload flow shipped a 35-second
+client-side timer styled as a progress ring for months; it reached 100% while nothing had
+finished, and only then asked the server anything. Split the wait by whether a denominator
+exists:
+
+- **Real denominator** (bytes over a network, items in a known list) — show the number.
+  `expo-file-system`'s `createUploadTask` gives byte-accurate progress; `fetch` gives none,
+  which is the only reason the timer existed.
+- **No denominator** (an LLM working, a job with a coarse status) — show the *stage* on a
+  rail and an elapsed estimate labelled as an estimate. `Analysis.status` is
+  `awaiting_upload | processing | completed | failed` with nothing in between, so
+  "Analysing / usually about 40 seconds" is the whole truth available.
+
+One moving element is enough to say "working". A pulsing node on the active rail step does
+it without implying precision.
+
+**A number the golfer cannot explain is not progress.** `grooved_count / total_drills` shipped
+on the home screen as a bare `4/7` with nothing anywhere in the app saying what moves it. The
+practice-execution review (2026-08-08) read the scheduler and found the rule:
+`GROOVED_THRESHOLD = 3`, strength starts at 0, and `GRADE_STRENGTH_DELTA` is
+`{rough: -1, ok: 0, dialed: +1}` (`backend/core/services/program_service.py:31-36`). So **a
+drill fills in after three "Very good" blocks, and an "OK" block moves nothing.**
+
+Two rules follow:
+
+- **Show the movement, not just the total.** When the count changes, mark the newly filled
+  segment in `gold` and name what moved: `+1 · Gate Drill filled in`. Derived by capturing
+  `grooved_count` at session start and diffing against the `StepAdvance` response — no extra
+  request. Use the same verb as the picture: segments *fill*, so drills *fill in*. "Locked in"
+  was rejected for saying something the bar does not show.
+- **Never caption a grade in a way the scheduler contradicts.** `gradeCaption` said "Solid for
+  this drill" for an `ok` block that moves strength by exactly zero. A golfer could practise
+  ten OK sessions, watch `2/7` never budge, and have no way to find out why. Captions name the
+  consequence: "counts toward this drill" / "no change" / "sets this drill back".
+
+The general rule: if a screen shows a derived number, some screen the golfer can reach has to
+say what changes it.

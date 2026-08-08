@@ -10,9 +10,9 @@ interface Props {
   textColor?: string;
 }
 
-// Inlined formatter — must run inside the worklet, so kept self-contained instead of
-// importing fmtSec from features/upload/components/theme.ts (the new worklets plugin
-// won't auto-workletize cross-file helpers reliably).
+// Inlined formatter — must run inside the worklet, so kept self-contained rather than
+// imported from a shared helper (the new worklets plugin won't auto-workletize
+// cross-file helpers reliably).
 function formatSpan(ms: number): string {
   'worklet';
   const s = Math.max(0, ms / 1000);

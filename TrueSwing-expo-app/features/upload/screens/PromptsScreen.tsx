@@ -1,293 +1,165 @@
 import {
-    View,
-    Text,
-    ScrollView,
-    Pressable,
-    TextInput,
-    KeyboardAvoidingView,
-    Platform,
-} from "react-native";
-import { useEffect, useState, type ReactNode } from "react";
-import type { ScreenProps } from "features/shared/types";
-import type { UsePromptReturn } from "../hooks/usePrompt";
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
+import { useEffect, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import type { ScreenProps } from 'features/shared/types';
+import InlineRetry from 'features/library/components/InlineRetry';
+
+import type { UsePromptReturn } from '../hooks/usePrompt';
+import { useUploadMisses } from '../hooks/useUploadMisses';
+import { Chip, FieldGroup, Section, MissRow } from '../components/PromptControls';
 
 type Props = ScreenProps & {
-    prompt: UsePromptReturn;
-    onDeleteCache: () => void;
+  prompt: UsePromptReturn;
+  onDeleteCache: () => void;
 };
 
-type ChipProps = {
-    label: string;
-    selected: boolean;
-    onPress: () => void;
-    disabled?: boolean;
-    activeColorClass?: string;
-};
+/** The shot the golfer was trying to hit. Deliberately app-local: the backend
+ *  taxonomy has no height or shape axis — it covers areas, goals and misses — so
+ *  there is nothing to read these from. If a shot-shape vocabulary is ever added
+ *  server-side, these two lists are what it replaces. */
+const HEIGHTS = ['Low', 'Mid', 'High'];
+const SHAPES = ['Straight', 'Fade', 'Draw'];
 
-type SectionCardProps = {
-    title: string;
-    titleColorClass?: string;
-    containerClassName?: string;
-    children: ReactNode;
-};
+/**
+ * Shot details. One scroll separated by hairlines and air — no cards, per
+ * DESIGN.md. The misses come from the taxonomy so the vocabulary matches what the
+ * analysis was trained on; the old hardcoded list offered "Shank" and "Toe",
+ * neither of which the backend has ever known about.
+ */
+export default function PromptScreen({ onBack, onNext, prompt }: Props) {
+  const { prompt: promptData, setDesiredShot, setMiss, setExtra } = prompt;
+  const { misses, status, error, retry } = useUploadMisses();
 
-type FieldGroupProps = {
-    label: string;
-    children: ReactNode;
-};
+  const [height, setHeight] = useState<string | null>(null);
+  const [shape, setShape] = useState<string | null>(null);
+  const [selectedMisses, setSelectedMisses] = useState<string[]>([]);
 
-const Chip = ({
-    label,
-    selected,
-    onPress,
-    disabled = false,
-    activeColorClass = "bg-blue-600 border-blue-500",
-}: ChipProps) => (
-    <Pressable
-        onPress={disabled ? undefined : onPress}
-        className={`mr-2 mb-2 rounded-2xl border px-4 py-3 ${disabled
-                ? "border-white/5 bg-white/5 opacity-40"
-                : selected
-                    ? activeColorClass
-                    : "border-white/10 bg-white/5"
-            }`}
-    >
-        <Text
-            className={`text-sm font-semibold ${disabled ? "text-gray-500" : selected ? "text-white" : "text-gray-200"
-                }`}
-        >
-            {label}
-        </Text>
-    </Pressable>
-);
+  useEffect(() => {
+    setDesiredShot([height, shape].filter(Boolean).join(', '));
+  }, [height, shape, setDesiredShot]);
 
-const SectionCard = ({
-    title,
-    titleColorClass = "text-white",
-    containerClassName = "",
-    children,
-}: SectionCardProps) => (
-    <View
-        className={`mb-6 rounded-3xl border bg-white/5 p-5 ${containerClassName}`}
-    >
-        <Text className={`text-xl font-semibold ${titleColorClass}`}>{title}</Text>
-        <View className="mt-5">{children}</View>
-    </View>
-);
+  // The golfer-facing labels go to the prompt, not the keys: the analysis reads
+  // prose, and "I slice it" carries more than "SLICE".
+  useEffect(() => {
+    const labels = misses.filter((m) => selectedMisses.includes(m.key)).map((m) => m.golfer_label);
+    setMiss(labels.join(', '));
+  }, [selectedMisses, misses, setMiss]);
 
-const FieldGroup = ({ label, children }: FieldGroupProps) => (
-    <View className="mt-5 first:mt-0">
-        <Text className="text-xs font-semibold uppercase tracking-widest text-gray-400">
-            {label}
-        </Text>
-        <View className="mt-3 flex-row flex-wrap">{children}</View>
-    </View>
-);
-
-export default function PromptScreen({ onBack, onNext, prompt, onDeleteCache }: Props) {
-    const { prompt: promptData, setDesiredShot, setMiss, setExtra } = prompt;
-
-    const [dHeight, setDHeight] = useState<string | null>(() => {
-        const parts = promptData.desired_shot.split(", ");
-        return parts.find((p) => ["Low", "Mid", "High"].includes(p)) || null;
-    });
-    const [dShape, setDShape] = useState<string | null>(() => {
-        const parts = promptData.desired_shot.split(", ");
-        return parts.find((p) => ["Straight", "Fade", "Draw"].includes(p)) || null;
-    });
-
-    const [mStrike, setMStrike] = useState<string | null>(() => {
-        const parts = promptData.miss.split(", ");
-        return parts.find((p) => ["Thin/Top", "Thick/Duff", "Shank", "Toe"].includes(p)) || null;
-    });
-    const [mHeight, setMHeight] = useState<string | null>(() => {
-        const parts = promptData.miss.split(", ");
-        return parts.find((p) => ["Too High", "Too Low"].includes(p)) || null;
-    });
-    const [mShape, setMShape] = useState<string | null>(() => {
-        const parts = promptData.miss.split(", ");
-        return parts.find((p) => ["Slice/Fade", "Draw/Hook"].includes(p)) || null;
-    });
-    const [mInconsistent, setMInconsistent] = useState(promptData.miss.includes("Inconsistent"));
-
-    useEffect(() => {
-        const desired = [dHeight, dShape].filter(Boolean).join(", ");
-        setDesiredShot(desired);
-    }, [dHeight, dShape, setDesiredShot]);
-
-    useEffect(() => {
-        if (mInconsistent) {
-            setMiss("Inconsistent");
-            return;
-        }
-
-        const missParts = [mStrike, mHeight, mShape].filter(Boolean);
-        setMiss(missParts.join(", "));
-    }, [mStrike, mHeight, mShape, mInconsistent, setMiss]);
-
-    const handleInconsistentToggle = () => {
-        const nextValue = !mInconsistent;
-        setMInconsistent(nextValue);
-
-        if (nextValue) {
-            setMStrike(null);
-            setMHeight(null);
-            setMShape(null);
-        }
-    };
-
-    const renderChipGroup = (
-        options: string[],
-        selectedValue: string | null,
-        onSelect: (value: string | null) => void,
-        disabled = false,
-        activeColorClass = "bg-blue-600 border-blue-500"
-    ) =>
-        options.map((option) => (
-            <Chip
-                key={option}
-                label={option}
-                selected={selectedValue === option}
-                disabled={disabled}
-                activeColorClass={activeColorClass}
-                onPress={() => onSelect(selectedValue === option ? null : option)}
-            />
-        ));
-
-    return (
-        <KeyboardAvoidingView
-            className="flex-1 bg-[#0B0D12]"
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-            {/* Sticky header */}
-            <View className="border-b border-white/10 bg-[#0B0D12]/95 px-4 pb-4 pt-14">
-                <Text className="text-3xl font-bold tracking-tight text-white">
-                    Shot Details
-                </Text>
-            </View>
-
-            {/* <View className="">
-                <Pressable onPress={() => {console.log("Debug: Clear AI Consent"); onDeleteCache();}} className="absolute top-4 right-4 z-50 rounded-full bg-red-600 px-3 py-1">
-                    <Text className="text-sm text-gray-400 mt-2 mb-4 px-4">
-                        Delete cache, debug
-                    </Text>
-                </Pressable>
-            </View> */}
-
-            <ScrollView
-                className="flex-1"
-                contentContainerStyle={{
-                    paddingHorizontal: 16,
-                    paddingTop: 18,
-                    paddingBottom: 130,
-                }}
-                showsVerticalScrollIndicator={false}
-            >
-                <SectionCard
-                    title="Desired Shot"
-                    titleColorClass="text-emerald-400"
-                    containerClassName="border-emerald-500/20 bg-emerald-500/5"
-                >
-                    <FieldGroup label="Height">
-                        {renderChipGroup(
-                            ["Low", "Mid", "High"],
-                            dHeight,
-                            setDHeight,
-                            false,
-                            "bg-emerald-600 border-emerald-500"
-                        )}
-                    </FieldGroup>
-
-                    <FieldGroup label="Shape">
-                        {renderChipGroup(
-                            ["Straight", "Fade", "Draw"],
-                            dShape,
-                            setDShape,
-                            false,
-                            "bg-emerald-600 border-emerald-500"
-                        )}
-                    </FieldGroup>
-                </SectionCard>
-
-                <SectionCard
-                    title="Typical Miss"
-                    titleColorClass="text-rose-400"
-                    containerClassName="border-rose-500/20 bg-rose-500/5"
-                >
-                    <FieldGroup label="Pattern">
-                        <Chip
-                            label="Inconsistent"
-                            selected={mInconsistent}
-                            onPress={handleInconsistentToggle}
-                            activeColorClass="bg-rose-600 border-rose-500"
-                        />
-                    </FieldGroup>
-
-                    <FieldGroup label="Strike">
-                        {renderChipGroup(
-                            ["Thin/Top", "Thick/Duff", "Shank", "Toe"],
-                            mStrike,
-                            setMStrike,
-                            mInconsistent,
-                            "bg-rose-600 border-rose-500"
-                        )}
-                    </FieldGroup>
-
-                    <FieldGroup label="Height">
-                        {renderChipGroup(
-                            ["Too High", "Too Low"],
-                            mHeight,
-                            setMHeight,
-                            mInconsistent,
-                            "bg-rose-600 border-rose-500"
-                        )}
-                    </FieldGroup>
-
-                    <FieldGroup label="Shape">
-                        {renderChipGroup(
-                            ["Slice/Fade", "Draw/Hook"],
-                            mShape,
-                            setMShape,
-                            mInconsistent,
-                            "bg-rose-600 border-rose-500"
-                        )}
-                    </FieldGroup>
-                </SectionCard>
-
-                <SectionCard
-                    title="Additional Notes"
-                    containerClassName="border-white/10 bg-white/5"
-                >
-                    <TextInput
-                        className="min-h-[130px] rounded-2xl border border-white/10 bg-white/5 p-4 text-white"
-                        placeholder="Add details..."
-                        placeholderTextColor="#6B7280"
-                        multiline
-                        textAlignVertical="top"
-                        value={promptData.extra}
-                        onChangeText={setExtra}
-                    />
-                </SectionCard>
-            </ScrollView>
-
-            {/* Sticky footer */}
-            <View className="absolute bottom-0 left-0 right-0 border-t border-white/10 bg-[#0B0D12]/95 px-4 pt-3 pb-8">
-                <View className="flex-row">
-                    <Pressable
-                        className="mr-1.5 flex-1 items-center rounded-2xl bg-white/5 py-4"
-                        onPress={onBack}
-                    >
-                        <Text className="text-base font-semibold text-white">Go Back</Text>
-                    </Pressable>
-
-                    <Pressable
-                        className="ml-1.5 flex-1 items-center rounded-2xl bg-blue-600 py-4"
-                        onPress={onNext}
-                    >
-                        <Text className="text-base font-semibold text-white">Start Analysis</Text>
-                    </Pressable>
-                </View>
-            </View>
-        </KeyboardAvoidingView>
+  const toggleMiss = (key: string) =>
+    setSelectedMisses((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
     );
+
+  return (
+    <KeyboardAvoidingView
+      className="flex-1 bg-ink"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView className="flex-1" edges={['top']}>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
+          <Text className="text-[11px] font-semibold uppercase tracking-[2.5px] text-sand-dim">
+            Step 3 of 3
+          </Text>
+          <Text className="mt-3 font-display text-[28px] leading-[34px] text-sand">
+            Shot details
+          </Text>
+          <Text className="mt-2 text-[13px] leading-[19px] text-sand-dim">
+            Tell us what you were going for. Both are optional.
+          </Text>
+
+          <View className="mt-10">
+            <Section eyebrow="The shot you wanted" first>
+              <FieldGroup label="Height">
+                {HEIGHTS.map((option) => (
+                  <Chip
+                    key={option}
+                    label={option}
+                    selected={height === option}
+                    onPress={() => setHeight(height === option ? null : option)}
+                  />
+                ))}
+              </FieldGroup>
+
+              <FieldGroup label="Shape">
+                {SHAPES.map((option) => (
+                  <Chip
+                    key={option}
+                    label={option}
+                    selected={shape === option}
+                    onPress={() => setShape(shape === option ? null : option)}
+                  />
+                ))}
+              </FieldGroup>
+            </Section>
+
+            <Section eyebrow="Your typical miss">
+              {/* Independent fetches fail independently: the shape chips above
+                                render regardless, so a dead taxonomy costs this section only. */}
+              {status === 'loading' && misses.length === 0 ? (
+                <ActivityIndicator color="#8A8676" />
+              ) : status === 'error' ? (
+                <InlineRetry message={error ?? "Couldn't load the miss list."} onRetry={retry} />
+              ) : misses.length === 0 ? (
+                <Text className="text-[13px] leading-[19px] text-sand-dim">
+                  Nothing here yet. Describe the miss below instead.
+                </Text>
+              ) : (
+                misses.map((miss, index) => (
+                  <MissRow
+                    key={miss.key}
+                    title={miss.golfer_label}
+                    blurb={miss.blurb}
+                    selected={selectedMisses.includes(miss.key)}
+                    last={index === misses.length - 1}
+                    onPress={() => toggleMiss(miss.key)}
+                  />
+                ))
+              )}
+            </Section>
+
+            <Section eyebrow="Anything else">
+              <TextInput
+                className="min-h-[88px] border-b border-sand/[.13] pb-3 text-[15px] text-sand"
+                placeholder="Conditions, club, what you were working on"
+                placeholderTextColor="#8A8676"
+                multiline
+                textAlignVertical="top"
+                value={promptData.extra}
+                onChangeText={setExtra}
+              />
+            </Section>
+          </View>
+        </ScrollView>
+
+        <View className="flex-row items-center justify-between border-t border-sand/[.13] px-6 pb-4 pt-4">
+          <Pressable
+            onPress={onBack}
+            accessibilityRole="button"
+            className="min-h-[44px] justify-center pr-4 active:opacity-70">
+            <Text className="text-[15px] text-sand-dim">Back</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={onNext}
+            accessibilityRole="button"
+            className="min-h-[44px] justify-center rounded-full border border-gold px-7 active:opacity-70">
+            <Text className="font-sans-medium text-[15px] text-gold">Start analysis</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
+  );
 }
