@@ -58,3 +58,18 @@
   server-side sweep, or nothing at all.
   - Effort: S (human) -> S (CC), after an investigation of unknown size.
   - Surfaced by the CEO review of practice execution UX (2026-08-08).
+
+## Tooling
+
+- **Guard against test files under `app/` (P3).** expo-router's route context regex
+  (`node_modules/expo-router/_ctx.ios.js`) excludes only `+api`, `+html` and
+  `+middleware`. Anything else under `app/` becomes a route — so a `*.test.tsx` there
+  is registered as a shipped screen and pulls RNTL and the jest globals into the
+  production bundle. All 22 current tests live under `features/` or `lib/`, so the repo
+  is compliant by convention, not by enforcement. Add a CI step:
+  `find app -name '*.test.*' -o -name '*.spec.*' | grep . && exit 1` (or the equivalent
+  ESLint rule).
+  - Surfaced by the eng review of the tabless-drawer change (2026-08-09): that plan's
+    task T9 originally specified `app/(app)/add-focus/upload.test.tsx`. It was moved to
+    `features/` instead, which is evidence the convention is not obvious to a reader.
+  - Effort: S (human) -> S (CC). Depends on nothing.

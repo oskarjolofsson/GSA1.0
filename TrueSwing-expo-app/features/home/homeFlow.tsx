@@ -19,8 +19,9 @@ import {
   getNextStep,
 } from 'features/programs/services/programService';
 import type { ProgramContext, StepAdvance } from 'features/programs/types';
-import { useFocusEffect } from '@react-navigation/native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import type { DrawerNavigationProp } from '@react-navigation/drawer';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View, Alert } from 'react-native';
 import { ApiError } from 'lib/errors';
 import React from 'react';
@@ -29,6 +30,7 @@ export default function HomeFlow() {
   const { currentScreen, goToHome, goToAnalysis, goToPractice, goToHistory } =
     useHomeFlowSequence();
   const router = useRouter();
+  const navigation = useNavigation<DrawerNavigationProp<Record<string, undefined>>>();
   const { requirePremium } = useRequirePremium();
   const analysisController = useHomeAnalysisController();
   const [selectedIssue, setSelectedIssue] = React.useState<Issue | null>(null);
@@ -43,6 +45,35 @@ export default function HomeFlow() {
   // single session, which is the most common journey in the app. This component
   // does not unmount, so the selection survives.
   const [selectedArea, setSelectedArea] = React.useState<string | null>(null);
+
+  // LAND ON THE AREA THE GOLFER JUST ADDED A FOCUS TO.
+  //
+  // `exitToHome` dismisses back to this screen with `?area=` when the flow it
+  // came from knew which part of the game the new focus belongs to (the library
+  // and coach paths do; upload cannot, because one analysis can return issues
+  // across several areas). Without this a golfer adds a putting focus, lands on
+  // home, and is still looking at Full swing — which reads as the app forgetting
+  // what they just did.
+  const { area: areaParam } = useLocalSearchParams<{ area?: string }>();
+  React.useEffect(() => {
+    if (areaParam) setSelectedArea(areaParam);
+  }, [areaParam]);
+
+  // THE DRAWER IS ONLY REACHABLE FROM HOME.
+  //
+  // Practice, Analysis and History all render on THIS route — they are screens of
+  // this flow, not routes of their own — so without this the edge-swipe stays live
+  // during a live practice session, and a golfer reaching to scroll a drill gets
+  // the "start a focus" panel over their session instead. The tab bar could never
+  // do that: leaving practice took a deliberate tap.
+  //
+  // Gating the gesture rather than splitting the four screens into routes is the
+  // cheap half of that fix. Splitting them would mean moving the state this file
+  // owns (see `selectedArea` above), which is a much larger change for the same
+  // protection.
+  React.useEffect(() => {
+    navigation.setOptions({ swipeEnabled: currentScreen === 'Home' });
+  }, [navigation, currentScreen]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -213,7 +244,8 @@ export default function HomeFlow() {
             selectedArea={selectedArea}
             onSelectArea={setSelectedArea}
             onOpenArchive={goToAnalysis}
-            onOpenProfile={() => router.push('/(tabs)/profile')}
+            onOpenProfile={() => router.push('/profile')}
+            onAddFocus={() => navigation.openDrawer()}
             onStartPractice={startProgramSession}
             onLogRound={logRound}
             onOpenHistory={openHistory}

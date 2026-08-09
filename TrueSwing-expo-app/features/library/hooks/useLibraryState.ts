@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getIssueCatalog, type CatalogIssue } from "features/issues/services/issueAuthoringService";
 import { getErrorMessage } from "lib/errors";
@@ -25,7 +25,7 @@ type FetchStatus = "loading" | "ready" | "error";
 
 /** State, both fetches and the derived lists for the library. Extracted from the
  *  screen so the screen stays layout only (and under the ~200 line cap). */
-export function useLibraryState() {
+export function useLibraryState(initialAreaKey?: string) {
     const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
     const [taxonomyStatus, setTaxonomyStatus] = useState<FetchStatus>("loading");
     const [taxonomyError, setTaxonomyError] = useState<string | null>(null);
@@ -83,6 +83,27 @@ export function useLibraryState() {
     const areas = useMemo(() => taxonomy?.areas ?? [], [taxonomy]);
     const goals = useMemo(() => taxonomy?.goals ?? [], [taxonomy]);
     const missesByArea = useMemo(() => taxonomy?.misses_by_area ?? {}, [taxonomy]);
+
+    // OPENING STRAIGHT INTO ONE AREA. Home's empty-area action says "Find bunker
+    // work"; landing on the five-area grid would make the golfer pick bunker again
+    // right after they told us. Applied ONCE, after the taxonomy resolves the key
+    // to a term -- `openArea` needs the term, not the key.
+    //
+    // The ref is what makes `goBack` still work: without it this would re-fire on
+    // the next render and the golfer could never reach the landing.
+    const initialAreaApplied = useRef(false);
+    useEffect(() => {
+        if (initialAreaApplied.current || !initialAreaKey || areas.length === 0) return;
+        const term = areas.find((a) => a.key === initialAreaKey);
+        // An unknown key is not an error worth surfacing: the areas are
+        // admin-editable, so one can disappear between the home screen reading it
+        // and the library opening. Falling through to the landing is the honest
+        // degrade -- every area is one tap away from there.
+        initialAreaApplied.current = true;
+        if (!term) return;
+        setArea(term);
+        setView("focus");
+    }, [areas, initialAreaKey]);
 
     const fork = useMemo(
         () => (area ? buildAreaFork(area.key, issues, missesByArea[area.key] ?? [], goals) : null),

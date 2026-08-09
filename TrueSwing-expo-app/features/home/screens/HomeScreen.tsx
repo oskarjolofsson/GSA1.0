@@ -35,6 +35,8 @@ type HomeScreenProps = {
   onSelectArea: (areaKey: string) => void;
   onOpenArchive: () => void;
   onOpenProfile: () => void;
+  /** Opens the focus drawer. The `+` in the hero is the only visible way in. */
+  onAddFocus: () => void;
   onStartPractice: (issue: Issue) => Promise<void> | void;
   onLogRound: (notes: string) => Promise<boolean>;
   onOpenHistory: (issue: Issue) => void;
@@ -69,6 +71,7 @@ export default function HomeScreen({
   onSelectArea,
   onOpenArchive,
   onOpenProfile,
+  onAddFocus,
   onStartPractice,
   onLogRound,
   onOpenHistory,
@@ -214,6 +217,7 @@ export default function HomeScreen({
           name={user?.name}
           email={user?.email}
           onOpenProfile={onOpenProfile}
+          onAddFocus={onAddFocus}
         />
 
         <View className="px-6">
@@ -235,7 +239,9 @@ export default function HomeScreen({
               startingIssueId={startingId}
               onStartProgram={handleStartProgram}
               onOpenInfo={(issueId) => setInfoIssue(issues.find((i) => i.id === issueId) ?? null)}
-              onBrowse={() => router.push('/(tabs)/upload')}
+              onBrowse={(areaKey) =>
+                router.push(areaKey ? `/add-focus/browse?area=${areaKey}` : '/add-focus/browse')
+              }
             />
           </View>
 

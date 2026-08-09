@@ -20,7 +20,7 @@ export default function SignInFlow() {
     const { currentScreen, goToLanding, goToEmailSignIn } = useSignInFlowSequence();
 
     if (!loading && session) {
-        return <Redirect href="/(app)/(tabs)" />;
+        return <Redirect href="/" />;
     }
 
     const handleGoogleSignIn = async () => {

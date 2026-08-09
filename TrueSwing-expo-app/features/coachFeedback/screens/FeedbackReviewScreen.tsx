@@ -12,7 +12,7 @@ import type { DraftDrill } from "features/issues/services/issueAuthoringService"
 type Props = {
     cf: ReturnType<typeof useCoachFeedback>;
     onBack: () => void;
-    onDone: () => void;
+    onDone: (areaKey?: string) => void;
 };
 
 function FieldLabel({ label, aiGuessed }: { label: string; aiGuessed: boolean }) {

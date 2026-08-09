@@ -110,7 +110,7 @@ export default function UploadFlow({ onCancel }: { onCancel: () => void }) {
           // on a stale flow rather than the camera.
           onNext={() => {
             resetFlow();
-            router.push('/(tabs)');
+            router.push('/');
           }}
           upload={upload}
         />

@@ -20,17 +20,21 @@ import InlineRetry from "./components/InlineRetry";
 
 type Props = {
     onCancel: () => void;
-    onDone: () => void;
+    /** Carries the started focus's area so home can open that tab. */
+    onDone: (areaKey?: string) => void;
     /** Hand off to the AI/film path when the golfer can't self-identify. */
     onFilmSwing?: () => void;
+    /** Open straight into this area instead of the landing grid. Set when the
+     *  golfer arrived from home's "Find bunker work", which already named it. */
+    initialAreaKey?: string;
 };
 
 /** Browse the practice library by AREA -> (miss | goal) -> plain-language focus,
  *  or search. The AI and coach paths already diagnose from video or notes; this
  *  is the manual path. Layout only -- state lives in useLibraryState. */
-export default function LibraryScreen({ onCancel, onDone, onFilmSwing }: Props) {
+export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAreaKey }: Props) {
     const insets = useSafeAreaInsets();
-    const lib = useLibraryState();
+    const lib = useLibraryState(initialAreaKey);
     const statsByArea = useAreaStats();
     const [startingId, setStartingId] = useState<string | null>(null);
     // Search is collapsed to an icon on the landing, where five self-evident rows
@@ -49,7 +53,9 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing }: Props) 
             try {
                 await generateProgramFromIssue(issue.id);
                 setOpenIssue(null);
-                onDone();
+                // The issue's own area, not `lib.area` — a search result can come
+                // from an area the golfer never navigated into.
+                onDone(issue.area);
             } catch (err) {
                 // Leave the sheet open on failure -- the error renders behind it
                 // otherwise, and the golfer sees a dismissed sheet and no explanation.

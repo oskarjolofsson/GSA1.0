@@ -73,12 +73,12 @@ export function useCoachFeedback() {
     // "Use this existing focus instead": skip creating a custom issue and start a
     // program straight from the matched catalog issue (same as the browse path).
     const useSimilarIssue = useCallback(
-        async (similar: CatalogIssue, onDone: () => void) => {
+        async (similar: CatalogIssue, onDone: (areaKey?: string) => void) => {
             setSubmitting(true);
             setError(null);
             try {
                 await generateProgramFromIssue(similar.id);
-                onDone();
+                onDone(similar.area);
             } catch (err) {
                 setError(getErrorMessage(err));
             } finally {
@@ -90,14 +90,16 @@ export function useCoachFeedback() {
 
     // "Create mine": persist the edited draft as a custom issue, then start it.
     const confirm = useCallback(
-        async (onDone: () => void) => {
+        async (onDone: (areaKey?: string) => void) => {
             if (!draft) return;
             setSubmitting(true);
             setError(null);
             try {
                 const created = await createCustomIssue(draft.issue, draft.drills);
                 await generateProgramFromIssue(created.id);
-                onDone();
+                // Hand the area up so home opens on the tab holding what was
+                // just created, rather than whatever tab was last open.
+                onDone(created.area);
             } catch (err) {
                 setError(getErrorMessage(err));
             } finally {
