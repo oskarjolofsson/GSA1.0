@@ -1,3 +1,9 @@
+// UNREACHABLE AS OF 2026-08-09. Its only entry point was `LogRoundRow` on home,
+// which the home-simplification change deleted: that row held two of the screen's
+// three permitted gold appearances while pointing at the least important action,
+// and freeing them is what paid for "Start practice". The capability behind it
+// still works (`session_type='play'`), so this file is kept rather than deleted
+// until the question in TODOS.md ("Played a round has no entry point") is settled.
 import { useEffect, useState } from "react";
 import {
     Modal,

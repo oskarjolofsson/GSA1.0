@@ -1,3 +1,9 @@
+// UNREACHABLE AS OF 2026-08-09. Its only entry point was tapping a square in the
+// home contribution grid. That grid went read-only when it widened to 28 days:
+// squares land at ~18px against DESIGN.md's 44px touch floor, with 2px gaps, so any
+// hitSlop large enough to fix it would overlap neighbours and open the wrong day.
+// Kept rather than deleted until the question in TODOS.md ("DayDetailModal has no
+// entry point") is settled.
 import React from "react";
 import { Modal, View, Text, Pressable, ScrollView, ActivityIndicator, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

@@ -106,3 +106,75 @@ describe("deriveActivityStats — hasActivity", () => {
         expect(deriveActivityStats([{ occurred_on: day(-10), count: 1 }], NOW).hasActivity).toBe(true);
     });
 });
+
+describe("deriveActivityStats — month grid", () => {
+    // The layout is the part that is easy to get subtly wrong, and wrong here means
+    // a golfer reads someone else's fortnight as their own. Two rows of fourteen,
+    // newest fortnight FIRST, chronological within each row.
+    //
+    //   index  0..13   day -13 .. day 0    (today is the LAST cell of row one)
+    //   index 14..27   day -27 .. day -14
+
+    it("returns 28 cells", () => {
+        expect(deriveActivityStats([], NOW).month).toHaveLength(28);
+    });
+
+    it("puts today at the end of the first row, not the end of the grid", () => {
+        const { month } = deriveActivityStats([], NOW);
+
+        expect(month[13].date).toBe(day(0));
+        expect(month[13].isToday).toBe(true);
+        // The last cell overall is a fortnight ago, because the newest row is on top.
+        expect(month[27].date).toBe(day(-14));
+        expect(month.filter((c) => c.isToday)).toHaveLength(1);
+    });
+
+    it("runs oldest to newest within each row", () => {
+        const { month } = deriveActivityStats([], NOW);
+
+        expect(month[0].date).toBe(day(-13));
+        expect(month[13].date).toBe(day(0));
+        expect(month[14].date).toBe(day(-27));
+        expect(month[27].date).toBe(day(-14));
+    });
+
+    it("covers every one of the last 28 days exactly once", () => {
+        const { month } = deriveActivityStats([], NOW);
+        const expected = new Set(Array.from({ length: 28 }, (_, i) => day(-i)));
+
+        expect(new Set(month.map((c) => c.date))).toEqual(expected);
+    });
+
+    it("lights the right cells and leaves the rest empty", () => {
+        const counts: ActivityCount[] = [
+            { occurred_on: day(-2), count: 1 },
+            { occurred_on: day(-20), count: 3 },
+        ];
+        const { month } = deriveActivityStats(counts, NOW);
+
+        expect(month.find((c) => c.date === day(-2))?.level).toBe(1);
+        expect(month.find((c) => c.date === day(-20))?.level).toBe(2);
+        expect(month.filter((c) => c.done)).toHaveLength(2);
+    });
+
+    it("ignores activity older than the window", () => {
+        const counts: ActivityCount[] = [{ occurred_on: day(-40), count: 5 }];
+        const { month } = deriveActivityStats(counts, NOW);
+
+        expect(month.every((c) => !c.done)).toBe(true);
+        // ...but it still counts as having ever practised, which drives the
+        // first-run copy rather than the grid.
+        expect(deriveActivityStats(counts, NOW).hasActivity).toBe(true);
+    });
+
+    it("still spans 28 days across a month boundary", () => {
+        // 2026-03-05: the window reaches back into February, and 2026 is not a leap
+        // year, so a naive day-of-month walk would land wrong.
+        const march = new Date(2026, 2, 5, 12, 0, 0);
+        const { month } = deriveActivityStats([], march);
+
+        expect(month[13].date).toBe("2026-03-05");
+        expect(month[14].date).toBe("2026-02-06");
+        expect(new Set(month.map((c) => c.date)).size).toBe(28);
+    });
+});

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, Alert } from 'react-native';
+import { View, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -7,10 +7,7 @@ import HomeHero from 'features/home/components/HomeHero';
 import AreaTabs from 'features/home/components/AreaTabs';
 import HomeAreaBody from 'features/home/components/HomeAreaBody';
 import StartableList from 'features/home/components/StartableList';
-import LogRoundRow from 'features/home/components/LogRoundRow';
 import StreakPanel from 'features/home/components/StreakPanel';
-import SessionLogModal from 'features/home/components/SessionLogModal';
-import DayDetailModal from 'features/home/components/DayDetailModal';
 import ArchiveEntry from 'features/home/components/ArchiveEntry';
 import LoadingState from 'features/shared/components/LoadingState';
 import ErrorState from 'features/shared/components/ErrorState';
@@ -30,6 +27,28 @@ function Section({ children }: { children: React.ReactNode }) {
   return <View className="mt-9 border-t border-white/[.13] pt-7">{children}</View>;
 }
 
+/**
+ * A separator between peers inside the secondary block.
+ *
+ * Home used to give four sections their own tier-2 rule, which handed each of
+ * them the same claim on attention as the one thing the golfer came to do. Now a
+ * single tier-2 rule marks where the primary block ends, and everything after it
+ * separates with .07 hairlines and tighter air: "still here, not the point".
+ *
+ * `first` drops the rule for whichever item opens the block — the tier-2 rule
+ * above it is already the boundary, and a hairline immediately under it would
+ * read as a double line.
+ *
+ * DIMMING IS DONE WITH THE TOKEN, NOT AN OPACITY LAYER. A first pass wrapped
+ * these in ~60% opacity and they read as disabled rather than secondary — a
+ * golfer should still be able to use them, just not be pulled toward them. The
+ * components inside carry `text-sand-dim` themselves.
+ */
+function Quiet({ children, first = false }: { children: React.ReactNode; first?: boolean }) {
+  if (first) return <View>{children}</View>;
+  return <View className="mt-7 border-t border-white/[.07] pt-6">{children}</View>;
+}
+
 type HomeScreenProps = {
   selectedArea: string | null;
   onSelectArea: (areaKey: string) => void;
@@ -38,7 +57,6 @@ type HomeScreenProps = {
   /** Opens the focus drawer. The `+` in the hero is the only visible way in. */
   onAddFocus: () => void;
   onStartPractice: (issue: Issue) => Promise<void> | void;
-  onLogRound: (notes: string) => Promise<boolean>;
   onOpenHistory: (issue: Issue) => void;
 };
 
@@ -49,18 +67,30 @@ type HomeScreenProps = {
  *   hero (360px, full bleed)
  *   area tabs
  *   ── programs, separated by AIR not rules ──
- *   ─────────────── tier-2 rule ──────────────
- *   round row
- *   ─────────────── tier-2 rule ──────────────
- *   could also work on
- *   ─────────────── tier-2 rule ──────────────
- *   streak
+ *   each ending in a gold "Start practice" button
+ *   ─────────── the ONE tier-2 rule ───────────
+ *   could also work on          ┐
+ *   ┈┈┈┈┈┈┈┈ hairline ┈┈┈┈┈┈┈┈  │ everything here is
+ *   streak                      │ secondary: sand-dim,
+ *   ┈┈┈┈┈┈┈┈ hairline ┈┈┈┈┈┈┈┈  │ hairlines, no gold
+ *   your swings                 ┘
+ *
+ * ONE THING WINS, AND IT IS STARTING A SESSION. A usability test (2026-08-09)
+ * found a golfer who picked an area fine and then could not work out how to
+ * practise: the action was 13px underlined text, the smallest type on a screen
+ * whose largest was a 48px streak count, and all three of the screen's permitted
+ * gold appearances sat on a "Played a round?" row. The hierarchy was inverted and
+ * she read it correctly. Everything below the Start button now recedes.
  *
  * SEPARATION HAS EXACTLY THREE TIERS. Between two programs: no rule, 34px of air
  * — they are peers of the same kind, and a line would say "different kind of
- * thing", which is false. Between items in a list: a .07 hairline. Between
- * sections: a .13 rule with 36/28px either side, the only heavy mark on the
- * screen, so the page resolves into blocks before a word is read.
+ * thing", which is false. Between items in the secondary block: a .07 hairline.
+ * Between the primary block and that secondary one: a single .13 rule. It is used
+ * ONCE, where the boundary is real; four of them gave four sections the same claim
+ * on attention as the one thing the golfer came to do.
+ *
+ * AN AREA WITH NOTHING OPEN SHOWS NOTHING ELSE. No suggestions, no streak, no
+ * archive — see `showSecondary` below and `AreaEmptyCard`.
  *
  * NO OVERSCROLL. The hero runs full bleed to the top of the screen, so an iOS
  * rubber-band would drag ink in above the photograph and pull the greeting off
@@ -73,7 +103,6 @@ export default function HomeScreen({
   onOpenProfile,
   onAddFocus,
   onStartPractice,
-  onLogRound,
   onOpenHistory,
 }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
@@ -104,15 +133,15 @@ export default function HomeScreen({
   // come back. Lazy initialiser so it is not re-rolled on every render.
   const [heroImage] = useState(() => pickHeroImage());
 
-  const [selectedDay, setSelectedDay] = useState<{ date: string; hasActivity: boolean } | null>(
-    null
-  );
-  const [logOpen, setLogOpen] = useState(false);
-  const [logging, setLogging] = useState(false);
   const [startingId, setStartingId] = useState<string | null>(null);
+
   // The issue whose detail sheet is open. That sheet carries what the old home
   // card's info button, history link and remove action used to.
   const [infoIssue, setInfoIssue] = useState<Issue | null>(null);
+
+  // Streak and archive only appear once the golfer has something going in this
+  // area. See the render below — a bare area gets the invitation and nothing else.
+  const showSecondary = hasAnything && areaPrograms.length > 0;
 
   const handleStart = useCallback(
     async (issue: Issue) => {
@@ -168,19 +197,6 @@ export default function HomeScreen({
       },
     ]);
   }, [infoIssue, refetchIssues, refetchPrograms]);
-
-  const handleConfirmRound = useCallback(
-    async (notes: string) => {
-      setLogging(true);
-      const ok = await onLogRound(notes);
-      setLogging(false);
-      if (ok) {
-        setLogOpen(false);
-        refetchActivity();
-      }
-    },
-    [onLogRound, refetchActivity]
-  );
 
   if (firstLoad && !activityError) {
     return <LoadingState title="Loading your week" subtitle="" />;
@@ -245,42 +261,37 @@ export default function HomeScreen({
             />
           </View>
 
-          <Section>
-            <LogRoundRow onPress={() => setLogOpen(true)} />
-          </Section>
+          {/* ONE TIER-2 RULE ON THE SCREEN, AND IT SITS HERE: the boundary between
+              what the golfer came to do and everything else. That is exactly the
+              job DESIGN.md gives the .13 rule ("different kind of thing starts
+              here"). Inside the block below, items are peers of one kind, so they
+              separate with .07 hairlines instead.
 
-          {startable.length > 0 ? (
+              NOTHING BELOW THE INVITATION WHEN AN AREA IS BARE. A golfer with
+              nothing going in this part of the game gets one instruction and one
+              control; a streak and an archive underneath would be two more things
+              to read that cannot help them yet. */}
+          {startable.length > 0 || showSecondary ? (
             <Section>
-              <StartableList issues={startable} startingId={startingId} onStart={handleStart} />
+              {startable.length > 0 ? (
+                <StartableList issues={startable} startingId={startingId} onStart={handleStart} />
+              ) : null}
+
+              {showSecondary ? (
+                <>
+                  <Quiet first={startable.length === 0}>
+                    <StreakPanel streakDays={stats.streakDays} month={stats.month} />
+                  </Quiet>
+
+                  <Quiet>
+                    <ArchiveEntry onPress={onOpenArchive} />
+                  </Quiet>
+                </>
+              ) : null}
             </Section>
           ) : null}
-
-          <Section>
-            <StreakPanel
-              streakDays={stats.streakDays}
-              week={stats.week}
-              onDayPress={(date, hasActivity) => setSelectedDay({ date, hasActivity })}
-            />
-            <Text className="mt-3 text-center text-[11px] text-sand/40">
-              Each square is a day you practised.
-            </Text>
-          </Section>
-
-          <Section>
-            <ArchiveEntry onPress={onOpenArchive} />
-          </Section>
         </View>
       </ScrollView>
-
-      <DayDetailModal
-        date={selectedDay?.date ?? null}
-        hasActivity={selectedDay?.hasActivity ?? false}
-        onClose={() => setSelectedDay(null)}
-        onOpenAnalysis={() => {
-          setSelectedDay(null);
-          onOpenArchive();
-        }}
-      />
 
       <IssueInfoModal
         visible={infoIssue !== null}
@@ -294,16 +305,6 @@ export default function HomeScreen({
         }}
       />
 
-      <SessionLogModal
-        visible={logOpen}
-        title="Log your round"
-        body="Nine or eighteen — whatever you played counts."
-        showNotes
-        confirmLabel="I played it"
-        submitting={logging}
-        onConfirm={handleConfirmRound}
-        onClose={() => setLogOpen(false)}
-      />
     </View>
   );
 }

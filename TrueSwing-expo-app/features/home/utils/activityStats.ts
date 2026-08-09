@@ -16,9 +16,32 @@ export type DayCell = {
 
 export type ActivityStats = {
     week: DayCell[]; // 7 cells, oldest -> today (today rightmost)
+    /**
+     * 28 cells for the home grid, laid out as TWO ROWS OF FOURTEEN — a fortnight
+     * per row, newest fortnight first. Read row-major:
+     *
+     *   index  0..13   days -13 .. today   (today is index 13, the last cell)
+     *   index 14..27   days -27 .. -14
+     *
+     * NEWEST ON TOP, not the GitHub convention of oldest-first. On a phone the
+     * top row sits closest to the section heading, so "how am I doing lately"
+     * is answered before the eye has to travel.
+     *
+     * FOURTEEN COLUMNS, NOT SEVEN, so the squares halve to ~18px and a month
+     * costs two rows instead of four. The price is that columns no longer line
+     * up by weekday — this is a rolling 28-day window ending today, not a
+     * calendar. That is why the weekday letters were dropped: they belonged to a
+     * 7-column grid, and repeating S M T W T F S twice would be noise on an
+     * element that is deliberately receding.
+     */
+    month: DayCell[];
     streakDays: number;
     hasActivity: boolean; // any activity ever (drives the welcome empty state)
 };
+
+/** Two rows of fourteen. Changing this changes the grid's column count too. */
+export const MONTH_DAYS = 28;
+const FORTNIGHT = 14;
 
 const WEEKDAY_INITIALS = ["S", "M", "T", "W", "T", "F", "S"]; // index = Date.getDay()
 
@@ -72,7 +95,30 @@ export function deriveActivityStats(counts: ActivityCount[], now: Date = new Dat
         cursor = addDays(cursor, -1);
     }
 
-    return { week, streakDays, hasActivity: counts.length > 0 };
+    // The 28-day grid. Built fortnight by fortnight so the newest one lands in
+    // the first row: within a fortnight days still run oldest -> newest, so the
+    // very last cell of the FIRST row is today.
+    const month: DayCell[] = [];
+    for (let row = 0; row < MONTH_DAYS / FORTNIGHT; row++) {
+        const newestOffset = row * FORTNIGHT; // 0 for the top row, 14 for the next
+        for (let i = FORTNIGHT - 1; i >= 0; i--) {
+            month.push(cellFor(addDays(now, -(newestOffset + i)), byDay, now));
+        }
+    }
+
+    return { week, month, streakDays, hasActivity: counts.length > 0 };
+}
+
+function cellFor(date: Date, byDay: Map<string, number>, now: Date): DayCell {
+    const key = localDateString(date);
+    const count = byDay.get(key) ?? 0;
+    return {
+        date: key,
+        letter: WEEKDAY_INITIALS[date.getDay()],
+        level: countToLevel(count),
+        isToday: key === localDateString(now),
+        done: count >= 1,
+    };
 }
 
 function addDays(date: Date, days: number): Date {
