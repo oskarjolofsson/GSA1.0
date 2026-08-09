@@ -59,6 +59,31 @@
   - Effort: S (human) -> S (CC), after an investigation of unknown size.
   - Surfaced by the CEO review of practice execution UX (2026-08-08).
 
+## Home screen (features/home)
+
+- **"Played a round" has no entry point (P2).** The home-screen simplification
+  (2026-08-09) removed `LogRoundRow` because it was the loudest thing on a screen where
+  the golfer could not find the Start button — it held two of the screen's three gold
+  appearances. The capability itself still works: a round is a `practice_sessions` row
+  with `session_type='play'`, the backend records it, and the contribution graph renders
+  it as its own unattributed segment. Nothing can create one now.
+  - Decide: is logging a round worth an entry point at all? If yes, the natural home is
+    inside the practice flow's completion screen or the focus drawer, NOT competing with
+    Start practice on home.
+  - Surfaced by the design review of the home simplification (2026-08-09), which noted
+    the row was removed as clutter but is actually a working feature, not an unbuilt one.
+  - Effort: S (human) -> S (CC). Depends on the home simplification landing.
+
+- **`DayDetailModal` has no entry point (P3).** The month grid went read-only in the same
+  change: at 14 columns a square is ~18px against a 44px touch floor, with 2px gaps, so
+  hitSlop would overlap into wrong-day taps. Tapping a day used to open that day's
+  sessions and analyses (`HomeScreen.tsx` `onDayPress` -> `DayDetailModal`).
+  - Options considered: move day detail behind the "Streak" section header as a full
+    scrollable list (rejected as scope for now), or delete it.
+  - "Your swings" (`ArchiveEntry`) still covers looking back at analyses, so the gap is
+    per-day session detail specifically.
+  - Effort: S (human) -> S (CC) to delete; M -> S to rehome as a list.
+
 ## Tooling
 
 - **Guard against test files under `app/` (P3).** expo-router's route context regex

@@ -30,9 +30,18 @@ const PROGRAM_GAP = 34;
  *
  *   nothing anywhere       -> the first-run copy
  *   programs in this area  -> one ProgramRow each, separated by air
- *   no programs, but this  -> nothing here; StartableList below carries it
- *     area has suggestions
- *   neither                -> the library invitation for this area
+ *   no programs, but this  -> the same "choose a focus" invitation, top aligned,
+ *     area has suggestions     with StartableList rendering directly beneath it
+ *   neither                -> the invitation, centred, and nothing else on screen
+ *
+ * THE LAST TWO USED TO BE ONE BRANCH THAT RENDERED NOTHING. An area with
+ * suggestions but no programs returned `null` and let StartableList speak for
+ * itself, on the reasoning that "nothing here" above two startable things is a
+ * contradiction. The 2026-08-09 usability test showed the opposite problem: with no
+ * heading at all, a golfer had nothing telling her those rows were the thing to
+ * pick. The headline is the same in both states because it is true in both — the
+ * difference is only whether there is a list under it, which is also why the
+ * centred layout is off in that case.
  *
  * Split out of HomeScreen because that file was past the 200-line cap in
  * features/CLAUDE.md, and because this branching is the part most likely to be
@@ -71,10 +80,12 @@ export default function HomeAreaBody({
     );
   }
 
-  // Nothing open here, but there is diagnosed work waiting: the suggestions
-  // section below is the whole answer, so an empty card on top of it would be
-  // a contradiction ("nothing here" directly above two things).
-  if (hasStartable) return null;
+  // Nothing open here, but there is diagnosed work waiting. Same invitation,
+  // top aligned: the suggestions render immediately below and are exactly the
+  // focuses the headline is telling the golfer to choose.
+  if (hasStartable) {
+    return <AreaEmptyCard area={area} onBrowse={() => onBrowse(area?.key)} compact />;
+  }
 
   return <AreaEmptyCard area={area} onBrowse={() => onBrowse(area?.key)} />;
 }

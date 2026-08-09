@@ -6,10 +6,7 @@ import SwingHistoryScreen from 'features/progress/screens/SwingHistoryScreen';
 import useHomeAnalysisController from 'features/home/hooks/useHomeAnalysisController';
 import { HomeAnalysisProvider } from 'features/home/context/HomeAnalysisContext';
 import type { Issue } from 'features/issues/types';
-import {
-  startPracticeSession,
-  endPracticeSession,
-} from 'features/practice/services/sessionService';
+import { startPracticeSession } from 'features/practice/services/sessionService';
 import type { PracticeSession } from 'features/practice/types';
 import { useRequirePremium } from 'features/billing/hooks/useRequirePremium';
 import {
@@ -207,35 +204,6 @@ export default function HomeFlow() {
     [selectedIssue, requirePremium]
   );
 
-  // Log a round the golfer played away from the app.
-  //
-  // NOT tied to a program, and it completes no step. A round used to be a step
-  // inside one program, which meant someone carrying three focuses was prompted
-  // to go and play three times for the same round. Playing serves every open
-  // focus at once, so it is now a plain practice session with session_type
-  // 'play' and no issue: `area` is left null, which the backend records as
-  // unattributed and the contribution graph renders as its own segment.
-  const logRound = React.useCallback(
-    async (notes: string) => {
-      if (!requirePremium()) return false;
-      try {
-        const session = await startPracticeSession({
-          issueId: null,
-          analysisIssueId: null,
-          sessionType: 'play',
-          notes: notes || null,
-        });
-        await endPracticeSession(session.id);
-        return true;
-      } catch (error) {
-        console.error('Failed to log round:', error);
-        Alert.alert("Couldn't log that round", 'Please try again.');
-        return false;
-      }
-    },
-    [requirePremium]
-  );
-
   return (
     <HomeAnalysisProvider value={analysisController}>
       <View style={{ flex: 1 }}>
@@ -247,7 +215,6 @@ export default function HomeFlow() {
             onOpenProfile={() => router.push('/profile')}
             onAddFocus={() => navigation.openDrawer()}
             onStartPractice={startProgramSession}
-            onLogRound={logRound}
             onOpenHistory={openHistory}
           />
         )}
