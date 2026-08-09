@@ -18,7 +18,7 @@ import {
   generateProgramFromIssue,
   getNextStep,
 } from 'features/programs/services/programService';
-import type { ProgramContext } from 'features/programs/types';
+import type { ProgramContext, StepAdvance } from 'features/programs/types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { View, Alert } from 'react-native';
@@ -101,6 +101,9 @@ export default function HomeFlow() {
           programId: program.id,
           stepId: step.id,
           drillIds: step.prescription.drill_ids ?? [],
+          // Captured before any block is logged. The completion screen diffs this against
+          // the count StepAdvance returns to say what actually moved.
+          groovedBefore: program.grooved_count,
         });
         goToPractice();
       } catch (error) {
@@ -123,6 +126,54 @@ export default function HomeFlow() {
       }
     },
     [requirePremium, goToPractice]
+  );
+
+  // Continue straight into the next session of the same focus, without going home.
+  //
+  // WHY THIS LIVES HERE AND NOT IN THE PRACTICE FLOW. Starting a session has two rules
+  // attached that have nothing to do with practice: the premium gate, and the 409 the
+  // server raises when the golfer already holds two programs in this area. Both are
+  // already handled in startProgramSession above, and a second copy inside
+  // features/practice is how the two would drift.
+  //
+  // Returns whether a new session actually started. The caller navigates only on true --
+  // handing down a new session does NOT by itself move the screen, because
+  // useScreenSequence keeps currentIndex in local state inside the flow.
+  const continueProgramSession = React.useCallback(
+    async (advance: StepAdvance): Promise<boolean> => {
+      const issue = selectedIssue;
+      const nextStep = advance.next_step;
+      if (!issue?.id || !nextStep) return false;
+      if (!requirePremium()) return false;
+
+      try {
+        const session = await startPracticeSession({
+          issueId: issue.id,
+          analysisIssueId: issue.analysis_issue_id ?? null,
+        });
+        setSelectedSession(session);
+        setProgramContext({
+          programId: advance.completed_step.program_id,
+          stepId: nextStep.id,
+          drillIds: nextStep.prescription.drill_ids ?? [],
+          // The count after the step we just finished is the baseline for the next one.
+          groovedBefore: advance.grooved_count,
+        });
+        return true;
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 409) {
+          Alert.alert(
+            'That area is full',
+            error.message || 'Finish one focus in this area before starting another.'
+          );
+        } else {
+          console.error('Failed to continue program session:', error);
+          Alert.alert("Couldn't start the next session", 'Please try again.');
+        }
+        return false;
+      }
+    },
+    [selectedIssue, requirePremium]
   );
 
   // Log a round the golfer played away from the app.
@@ -177,6 +228,7 @@ export default function HomeFlow() {
             selectedIssue={selectedIssue as Issue}
             selectedSession={selectedSession}
             programContext={programContext}
+            onRequestContinue={continueProgramSession}
           />
         )}
         {currentScreen === 'History' && historyIssue && (

@@ -87,7 +87,7 @@ export default function SelectVideoScreen({
   // and the back button looked broken.
   const handleCaptured = (uri: string) => {
     setVideoUri(uri);
-    onNext();
+    onNext?.();
   };
 
   useEffect(() => {

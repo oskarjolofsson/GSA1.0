@@ -103,4 +103,11 @@ export interface ProgramContext {
   programId: string;
   stepId: string;
   drillIds: string[];
+  /**
+   * `grooved_count` as it stood when this session started, so the completion screen can
+   * show what moved instead of only a total. `StepAdvance` returns the count after, and
+   * the difference is the honest "+1 · Gate Drill filled in". Captured here because by
+   * the time the session ends the before-value is gone.
+   */
+  groovedBefore: number;
 }
