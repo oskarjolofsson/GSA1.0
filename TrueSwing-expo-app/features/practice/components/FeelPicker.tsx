@@ -1,12 +1,12 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { FEEL_LABEL, type BlockFeel } from '../utils/blockFeel';
+import { GRADE_LABEL, type BlockFeel } from '../utils/blockFeel';
 
 const FEEL_ORDER: BlockFeel[] = ['rough', 'ok', 'dialed'];
 
 type Props = {
-    onPick: (feel: BlockFeel) => void;
-    disabled?: boolean;
+  onPick: (feel: BlockFeel) => void;
+  disabled?: boolean;
 };
 
 /**
@@ -19,22 +19,21 @@ type Props = {
  * a screen they cannot finish. This always completes.
  */
 export default function FeelPicker({ onPick, disabled = false }: Props) {
-    return (
-        <View className="flex-row gap-3">
-            {FEEL_ORDER.map((feel) => (
-                <Pressable
-                    key={feel}
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled }}
-                    disabled={disabled}
-                    onPress={() => onPick(feel)}
-                    className={`h-24 flex-1 items-center justify-center rounded-3xl border border-white/10 ${
-                        disabled ? 'bg-white/5' : 'bg-ink-raised active:bg-white/10'
-                    }`}
-                >
-                    <Text className="text-lg font-sans-bold text-sand">{FEEL_LABEL[feel]}</Text>
-                </Pressable>
-            ))}
-        </View>
-    );
+  return (
+    <View className="flex-row gap-3">
+      {FEEL_ORDER.map((feel) => (
+        <Pressable
+          key={feel}
+          accessibilityRole="button"
+          accessibilityState={{ disabled }}
+          disabled={disabled}
+          onPress={() => onPick(feel)}
+          className={`h-24 flex-1 items-center justify-center rounded-3xl border border-white/10 ${
+            disabled ? 'bg-white/5' : 'bg-ink-raised active:bg-white/10'
+          }`}>
+          <Text className="font-sans-bold text-lg text-sand">{GRADE_LABEL[feel]}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
 }

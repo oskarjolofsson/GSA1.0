@@ -10,7 +10,12 @@ import { UploadProps } from '../hooks/useUpload';
 import AnalysisComplete from '../components/AnalysisComplete';
 import ProgressRail, { type RailStep } from '../components/ProgressRail';
 
+// Both callbacks are narrowed back to required: this screen hands them to
+// AnalysisComplete's two buttons and to the failure state's retry, so there is no
+// meaningful render without them.
 type ProgressScreenProps = ScreenProps & {
+  onNext: () => void;
+  onBack: () => void;
   upload: UploadProps;
 };
 

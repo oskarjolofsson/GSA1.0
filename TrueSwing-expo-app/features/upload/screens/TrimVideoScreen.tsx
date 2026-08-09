@@ -27,7 +27,7 @@ export default function TrimScreen({
     if (range) {
       trimVideo(range.startMs, range.endMs);
     }
-    onNext();
+    onNext?.();
   };
 
   return (
@@ -59,7 +59,7 @@ export default function TrimScreen({
             <Pressable
               onPress={() => {
                 setVideoUri(null);
-                onBack();
+                onBack?.();
               }}
               accessibilityRole="button"
               className="min-h-[44px] justify-center pr-4 active:opacity-70">
