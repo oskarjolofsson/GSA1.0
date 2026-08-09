@@ -16,7 +16,9 @@ type Props = {
   startingIssueId: string | null;
   onStartProgram: (issueId: string | null) => void;
   onOpenInfo: (issueId: string | null) => void;
-  onBrowse: () => void;
+  /** Opens the library. Carries the area key when there is one, so "Find bunker
+   *  work" lands on bunkers rather than the five-area grid. */
+  onBrowse: (areaKey?: string) => void;
 };
 
 /** Vertical air between two programs. No rule: they are peers of the same kind,
@@ -46,8 +48,10 @@ export default function HomeAreaBody({
   onOpenInfo,
   onBrowse,
 }: Props) {
+  // Nothing anywhere, so there is no area to scope to: the library opens on its
+  // landing grid, which is the right answer for a golfer with no history.
   if (!hasAnything) {
-    return <HomeEmptyBody onStart={onBrowse} />;
+    return <HomeEmptyBody onStart={() => onBrowse()} />;
   }
 
   if (programs.length > 0) {
@@ -72,5 +76,5 @@ export default function HomeAreaBody({
   // a contradiction ("nothing here" directly above two things).
   if (hasStartable) return null;
 
-  return <AreaEmptyCard area={area} onBrowse={onBrowse} />;
+  return <AreaEmptyCard area={area} onBrowse={() => onBrowse(area?.key)} />;
 }

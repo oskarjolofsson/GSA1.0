@@ -82,6 +82,50 @@ sunlight. 11px passed review once and should not again.
 - **Reserved slots over re-layouts.** When art is coming but not ready (area icons), ship the
   empty slot sized correctly rather than adding it later.
 
+## Navigation chrome
+
+**There is no bottom bar.** Home is the app. The tab bar was deleted in the
+tabless-drawer change (2026-08-09) because it gave three destinations equal weight
+when only one of them is the product — a golfer opened the app to practise, not to
+choose between practising, uploading and reading their own email address.
+
+**The hero's two corners are the whole navigation.**
+
+```
+┌──────────────────────────────┐
+│ photo                        │
+│ (+)                  (avatar)│   42px ring, cream, matched pair
+│                              │
+│  Hello, Oskar                │
+│  Two areas on the go         │
+└──────────────────────────────┘
+
+  (+)      opens the focus drawer   accessibilityLabel "Add a focus"
+  (avatar) opens profile            accessibilityLabel "Open profile"
+```
+
+They are drawn as **peers**: same diameter, same cream stroke, same hitSlop. Not a
+primary and a secondary — one is "add something", the other is "that's me", and
+neither outranks the other.
+
+**Corner controls are cream, never gold.** Gold is capped at three appearances per
+screen and the drawer spends all three on its row icons; both surfaces are visible
+at once when the drawer is open, so a gold `+` would be a fourth. It would also
+break the pair. This is the general rule: **gold is for content, not chrome.**
+
+**Chrome on a photograph is ringed, not bare.** `heroImages.ts` rotates, so a bare
+stroke that reads fine on today's crops disappears on the next bright one. The ring
+gives the glyph a body on any image. A bare glyph is only safe on ink.
+
+**The focus drawer holds entry points, nothing else.** Three hairline rows, no
+cards, no promoted hero — see `features/addFocus/AddFocusDrawer.tsx`. It is not a
+settings menu and not a list of what the golfer already has open; that lives on
+home under the area tabs.
+
+**New surfaces get a route, not drawer content, whenever anything gates on focus.**
+`useRequirePremiumEntry` fires on route focus, and a drawer does not blur the screen
+behind it. A gated flow rendered inside the drawer silently skips its gate.
+
 ## Voice
 
 From the book: **Direct, Encouraging, Practical, Honest.** Values: consistency, practicality,
@@ -148,6 +192,7 @@ rather than hiding working content behind a full-screen error for the other.
 | C5 — library | `~/.gstack/projects/oskarjolofsson-GSA1.0/designs/library-area-first-20260804/design-board-v2.html` | A2 rules + gold icon slot |
 | Upload flow | `~/.gstack/projects/oskarjolofsson-GSA1.0/designs/upload-flow-rebrand-20260808/design-board.html` | Framing corners, trim header, hairline prompts, progress rail |
 | Practice execution | `~/.gstack/projects/oskarjolofsson-GSA1.0/designs/practice-brief-20260808/design-board-v3.html` | B gold marks for the focus set, U1 numbered pair for up-next, V3 progress delta |
+| Focus drawer | `~/.gstack/projects/oskarjolofsson-GSA1.0/designs/focus-drawer-20260809/design-board.html` | A hairline rows at equal priority, lucide icons at gold stroke, ringed cream `+` |
 
 ## Progress and waiting
 

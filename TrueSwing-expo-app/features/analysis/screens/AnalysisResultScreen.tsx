@@ -115,7 +115,7 @@ export default function AnalysisResultScreen({ onNext, onBack }: AnalysisResultS
     if (!allAnalyses.length) {
         return (
             <View className="flex-1 justify-center items-center">
-                <Welcome onCreateAnalysis={() => router.push("/(tabs)/upload")} />
+                <Welcome onCreateAnalysis={() => router.push("/add-focus/upload")} />
             </View>
             
         );

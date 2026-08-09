@@ -12,7 +12,8 @@ const screens: Screen[] = ["Input", "Review"];
 
 type Props = {
     onCancel: () => void; // back to the chooser
-    onDone: () => void;    // custom focus created -> go home
+    /** Custom focus created -> go home, opening the area it landed in. */
+    onDone: (areaKey?: string) => void;
 };
 
 /** Input notes -> AI-formatted editable draft -> confirm. Nothing persists until confirm. */

@@ -1,19 +1,23 @@
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Linking, Alert } from "react-native";
+import {
+    Linking,
+    Alert,
+    Pressable,
+    View,
+    Text,
+    TouchableOpacity,
+    ScrollView,
+} from "react-native";
+import { useRouter } from "expo-router";
 import { useAuth } from "features/auth/AuthProvider";
+import { exitToHome } from "features/shared/utils/exitToHome";
 import LoadingState from "features/shared/components/LoadingState";
 import ErrorState from "features/shared/components/ErrorState";
 import SubscriptionBanner from "features/billing/components/SubscriptionBanner";
 import SubscriptionCard from "features/billing/components/SubscriptionCard";
 import Avatar from "features/shared/components/Avatar";
 
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    ScrollView,
-} from "react-native";
-import { Mail, CircleHelp, ChevronRight } from "lucide-react-native";
+import { Mail, CircleHelp, ChevronRight, ChevronLeft } from "lucide-react-native";
 
 export default function ProfileScreen() {
     const profile = {
@@ -21,6 +25,7 @@ export default function ProfileScreen() {
     };
 
     const { user, loading, signOut, removeAccount } = useAuth();
+    const router = useRouter();
 
     const handleContactSupport = async () => {
         const subject = encodeURIComponent("Support request");
@@ -62,13 +67,30 @@ export default function ProfileScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-slate-950" edges={["top"]}>
+            {/* OUTSIDE THE SCROLLVIEW ON PURPOSE. This screen is the only one the
+                golfer can reach with no other way out — the tab bar that used to
+                carry them home is gone, and the stack renders no header
+                (`app/(app)/_layout.tsx` sets headerShown: false). A back control
+                that scrolls away is a back control they cannot find. */}
+            <View className="px-5 pt-2">
+                <Pressable
+                    onPress={() => exitToHome(router)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Back to home"
+                    className="min-h-[44px] flex-row items-center self-start pr-3 active:opacity-70"
+                >
+                    <ChevronLeft size={16} color="#8A8676" />
+                    <Text className="ml-1 text-[13px] text-sand-dim">Back</Text>
+                </Pressable>
+            </View>
+
             <ScrollView
                 contentContainerStyle={{ padding: 20, paddingBottom: 24 }}
                 showsVerticalScrollIndicator={false}
                 bounces={false}
                 overScrollMode="never"
             >
-                <View className="mt-4 mb-6 items-center">
+                <View className="mb-6 items-center">
                     <Text className="text-xl font-display-bold text-gray-300">Profile</Text>
                 </View>
 
