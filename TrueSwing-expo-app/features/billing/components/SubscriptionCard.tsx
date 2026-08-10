@@ -54,22 +54,21 @@ export default function SubscriptionCard() {
       : 'Subscribe to unlock swing uploads, drills and results.';
 
     return (
-      <View className="rounded-3xl border border-white/10 bg-slate-900 p-5">
-        <Text className="text-lg font-semibold text-white">Subscription</Text>
-        <Text className="mt-1 text-sm text-slate-400">{subtitle}</Text>
+      <View>
+        <Text className="font-display text-[18px] text-sand">Subscription</Text>
+        <Text className="mt-1.5 text-[13px] leading-5 text-sand-dim">{subtitle}</Text>
 
         <TouchableOpacity
-          activeOpacity={0.85}
+          activeOpacity={0.7}
           onPress={() => openPaywall('manual')}
-          className="mt-4 flex-row items-center justify-between rounded-2xl bg-indigo-500 px-4 py-4"
+          accessibilityRole="button"
+          className="mt-4 min-h-[44px] flex-row items-center justify-between border-t border-b border-[rgba(232,220,196,0.13)] py-3.5"
         >
           <View className="flex-1 pr-3">
-            <Text className="text-base font-semibold text-white">View subscription plans</Text>
-            <Text className="mt-1 text-sm text-indigo-100">
-              TrueSwing Monthly
-            </Text>
+            <Text className="text-[15px] font-semibold text-sand">View subscription plans</Text>
+            <Text className="mt-1 text-[13px] text-sand-dim">TrueSwing Monthly</Text>
           </View>
-          <ChevronRight size={20} color="#e0e7ff" />
+          <ChevronRight size={20} color="#8A8676" />
         </TouchableOpacity>
       </View>
     );
@@ -78,27 +77,28 @@ export default function SubscriptionCard() {
   const managedOnWeb = sub.provider === 'stripe';
 
   return (
-    <View className="rounded-3xl border border-white/10 bg-slate-900 p-5">
-      <Text className="text-lg font-semibold text-white">Subscription</Text>
-      <Text className="mt-1 text-sm text-slate-400">
-        Status: <Text className="text-slate-200">{sub.status}</Text>
+    <View>
+      <Text className="font-display text-[18px] text-sand">Subscription</Text>
+      <Text className="mt-1.5 text-[13px] text-sand-dim">
+        Status: <Text className="text-sand">{sub.status}</Text>
         {sub.cancel_at_period_end ? ' (cancels at period end)' : ''}
       </Text>
 
       <TouchableOpacity
-        activeOpacity={0.85}
+        activeOpacity={0.7}
         onPress={handleManage}
-        className="mt-4 flex-row items-center justify-between rounded-2xl border border-white/10 bg-slate-800 px-4 py-4"
+        accessibilityRole="button"
+        className="mt-4 min-h-[44px] flex-row items-center justify-between border-t border-b border-[rgba(232,220,196,0.13)] py-3.5"
       >
         <View className="flex-1 pr-3">
-          <Text className="text-base font-semibold text-white">Manage subscription</Text>
-          <Text className="mt-1 text-sm text-slate-400">
+          <Text className="text-[15px] font-semibold text-sand">Manage subscription</Text>
+          <Text className="mt-1 text-[13px] leading-5 text-sand-dim">
             {managedOnWeb
               ? 'Subscription was purchased on the web — manage it there'
               : `Opens your ${Platform.OS === 'ios' ? 'App Store' : 'Play Store'} settings`}
           </Text>
         </View>
-        <ChevronRight size={20} color="#94a3b8" />
+        <ChevronRight size={20} color="#8A8676" />
       </TouchableOpacity>
     </View>
   );

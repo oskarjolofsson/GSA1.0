@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, ActivityIndicator, Alert, Linking } from 'react-native';
-import { PACKAGE_TYPE } from 'react-native-purchases';
+import { useCallback, useEffect, useState } from 'react';
+import { Modal, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { X } from 'lucide-react-native';
 import type { PurchasesOffering, PurchasesPackage } from 'react-native-purchases';
 
 import { useBilling } from 'features/billing/BillingContext';
+import PaywallLegal from 'features/billing/components/PaywallLegal';
+import PaywallPrice from 'features/billing/components/PaywallPrice';
 import {
   getCurrentOffering,
   purchasePackage,
@@ -12,65 +15,74 @@ import {
 } from 'features/billing/services/purchaseService';
 import type { PaywallReason } from 'features/billing/types';
 
-const HEADLINE: Record<PaywallReason, string> = {
-  manual: 'Unlock premium',
-  gate: 'This is a premium feature',
-  '402': 'Your access has expired',
+/**
+ * Full-screen paywall.
+ *
+ * NOT a route, and cannot become one: BillingContext renders this as a sibling of
+ * {children}, which puts it outside the expo-router tree entirely. The 402 interceptor
+ * also fires from anywhere with no navigator in hand. `presentationStyle="fullScreen"`
+ * with NO `transparent` prop is the whole mechanism — RN silently downgrades to
+ * `overFullScreen` whenever `transparent` is true.
+ *
+ *   BillingProvider
+ *     |- {children}        <- the router tree lives in here
+ *     '- <PaywallModal />  <- reached only via paywall.open state
+ */
+
+// One record rather than three `reason ===` ternaries scattered through the render.
+// A golfer whose access just died mid-practice does not need a feature list, so 402
+// drops the value set and says what happened instead.
+const COPY: Record<PaywallReason, { headline: string; showValueSet: boolean; note?: string }> = {
+  manual: { headline: 'Keep practicing\nwith a plan', showValueSet: true },
+  gate: { headline: "That one's part\nof the plan", showValueSet: true },
+  '402': {
+    headline: 'Your plan\nhas ended',
+    showValueSet: false,
+    note: 'Nothing has been charged. Your focuses and history are still here.',
+  },
 };
 
-// TODO(you): paste your real hosted URLs here. Both must be functional, reachable
-// HTTPS pages — Apple clicks them during review. If you don't have your own EULA,
-// Apple's standard one is accepted:
-// https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
-const PRIVACY_POLICY_URL = 'https://trueswing.se/legal/privacy-policy';
-const TERMS_OF_USE_URL = 'https://trueswing.se/legal/terms-and-conditions';
-
-// "1 month, auto-renewing" style label. packageType is a reliable enum;
-// subscriptionPeriod is nullable, so it's only the fallback.
-function periodLabel(pkg: PurchasesPackage): string {
-  switch (pkg.packageType) {
-    case PACKAGE_TYPE.WEEKLY:
-      return '1 week, auto-renewing';
-    case PACKAGE_TYPE.MONTHLY:
-      return '1 month, auto-renewing';
-    case PACKAGE_TYPE.ANNUAL:
-      return '1 year, auto-renewing';
-    default:
-      return pkg.product.subscriptionPeriod
-        ? `${pkg.product.subscriptionPeriod}, auto-renewing`
-        : 'auto-renewing subscription';
-  }
-}
-
-async function openLink(url: string) {
-  try {
-    await Linking.openURL(url);
-  } catch {
-    Alert.alert('Error', 'Could not open the link.');
-  }
-}
+const VALUE_SET = [
+  'Film a swing, get it analysed',
+  'Drills chosen for what you actually lose shots on',
+  'A plan that adapts as you improve',
+];
 
 export default function PaywallModal() {
+  const insets = useSafeAreaInsets();
   const { paywall, closePaywall, refreshUntilPremium } = useBilling();
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadingOffering, setLoadingOffering] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // Fetch the offering each time the paywall opens.
-  useEffect(() => {
-    if (!paywall.open) return;
+  const loadOffering = useCallback(() => {
     let active = true;
     setLoadingOffering(true);
     getCurrentOffering()
-      .then((o) => active && setOffering(o))
+      .then((o) => {
+        if (!active) return;
+        setOffering(o);
+        setSelectedId(o?.availablePackages[0]?.identifier ?? null);
+      })
       .catch(() => active && setOffering(null))
       .finally(() => active && setLoadingOffering(false));
     return () => {
       active = false;
     };
-  }, [paywall.open]);
+  }, []);
 
-  const pkg: PurchasesPackage | undefined = offering?.availablePackages[0];
+  // Fetch the offering each time the paywall opens.
+  useEffect(() => {
+    if (!paywall.open) return;
+    return loadOffering();
+  }, [paywall.open, loadOffering]);
+
+  const packages = offering?.availablePackages ?? [];
+  // Never index [0] blindly: a second package added in the RevenueCat dashboard would
+  // otherwise be hidden with no error and nothing in the logs.
+  const pkg = packages.find((p) => p.identifier === selectedId) ?? packages[0];
+  const copy = COPY[paywall.reason];
 
   const handleSubscribe = async () => {
     if (!pkg) return;
@@ -82,24 +94,15 @@ export default function PaywallModal() {
         // Reconcile backend status in the background.
         void refreshUntilPremium();
       }
-    } catch (e: any) {
+    } catch (e) {
       // User-cancelled is not an error worth alerting.
-      if (!e?.userCancelled) {
+      if (!(e as { userCancelled?: boolean })?.userCancelled) {
         Alert.alert('Purchase failed', 'Something went wrong. Please try again.');
       }
     } finally {
       setBusy(false);
     }
   };
-
-  const explainRestore = () =>
-    Alert.alert(
-      'Restore purchases',
-      'Already paid but the app shows the paywall? Tap "Restore purchases" to ' +
-        're-activate your subscription. Useful after reinstalling, switching ' +
-        'phones, or signing in with a different account — your purchase lives ' +
-        'with your App Store account, not just this device.',
-    );
 
   const handleRestore = async () => {
     setBusy(true);
@@ -118,101 +121,109 @@ export default function PaywallModal() {
     }
   };
 
+  const ctaDisabled = !pkg || busy;
+
   return (
     <Modal
       visible={paywall.open}
-      transparent
+      presentationStyle="fullScreen"
       animationType="slide"
       onRequestClose={closePaywall}
     >
-      <View className="flex-1 justify-end bg-black/60">
-        <View className="rounded-t-3xl border-t border-white/10 bg-slate-950 px-6 pb-10 pt-6">
-          <Text className="text-center text-2xl font-bold text-white">
-            {HEADLINE[paywall.reason]}
-          </Text>
-          <Text className="mt-2 text-center text-base text-slate-400">
-            Subscribe to unlock swing uploads, drills and results.
-          </Text>
+      <View
+        className="flex-1 bg-ink px-6"
+        style={{ paddingTop: insets.top, paddingBottom: insets.bottom + 16 }}
+      >
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={closePaywall}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          className="-ml-3 h-11 w-11 items-center justify-center"
+        >
+          <X size={24} color="#EADFC8" />
+        </TouchableOpacity>
 
-          {loadingOffering ? (
-            <ActivityIndicator className="my-8" color="#a5b4fc" />
-          ) : pkg ? (
-            <View className="mt-6 items-center">
-              <Text className="text-lg font-semibold text-white">
-                {pkg.product.title}
-              </Text>
-              <Text className="mt-1 text-3xl font-bold text-indigo-400">
-                {pkg.product.priceString}
-              </Text>
-              <Text className="mt-1 text-sm text-slate-400">{periodLabel(pkg)}</Text>
-            </View>
-          ) : (
-            <Text className="my-8 text-center text-slate-400">
-              Plans are unavailable right now. Please try again later.
-            </Text>
-          )}
+        <View className="mt-8">
+          <Text className="text-[11px] font-semibold uppercase tracking-[2.5px] text-sand-dim">
+            TrueSwing Premium
+          </Text>
+          <Text className="mt-[18px] font-display text-[30px] leading-[36px] text-sand">
+            {copy.headline}
+          </Text>
+        </View>
 
+        {copy.showValueSet ? (
+          <View className="mt-8" accessibilityRole="list">
+            {VALUE_SET.map((item) => (
+              <View key={item} className="mb-3.5 flex-row">
+                {/* Gold-stroked mark, not a numbered rail: these are true at once, in no
+                    order, so a spine would tell the golfer to work through them in turn. */}
+                <View
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                  className="mr-3 mt-[7px] h-[9px] w-[9px] rounded-full border border-gold"
+                />
+                <Text className="flex-1 text-[15px] leading-[22px] text-sand">{item}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {copy.note ? (
+          <Text className="mt-5 text-[15px] leading-[22px] text-sand-dim">{copy.note}</Text>
+        ) : null}
+
+        <View className="flex-1" />
+
+        <PaywallPrice
+          packages={packages}
+          selected={pkg}
+          loading={loadingOffering}
+          onSelect={setSelectedId}
+          onRetry={loadOffering}
+        />
+
+        {pkg || loadingOffering ? (
           <TouchableOpacity
             activeOpacity={0.85}
-            disabled={!pkg || busy}
+            disabled={ctaDisabled}
             onPress={handleSubscribe}
-            className={`mt-6 rounded-2xl py-4 ${!pkg || busy ? 'bg-indigo-500/40' : 'bg-indigo-500'}`}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: ctaDisabled }}
+            className={`mt-7 h-14 items-center justify-center rounded-2xl ${ctaDisabled ? 'bg-gold/30' : 'bg-gold'}`}
           >
             {busy ? (
-              <ActivityIndicator color="#ffffff" />
+              <ActivityIndicator color="#0A0F1A" />
             ) : (
-              <Text className="text-center text-base font-semibold text-white">
+              <Text
+                className={`text-[15px] font-semibold ${ctaDisabled ? 'text-ink/50' : 'text-ink'}`}
+              >
                 Subscribe
               </Text>
             )}
           </TouchableOpacity>
+        ) : null}
 
-          {pkg ? (
-            <>
-              <Text className="mt-4 text-center text-xs leading-5 text-slate-500">
-                Payment is charged to your Apple ID account at confirmation. The
-                subscription renews automatically for the same price and period
-                unless cancelled at least 24 hours before the end of the current
-                period. Manage or cancel anytime in your App Store account settings.
-              </Text>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          disabled={busy}
+          onPress={handleRestore}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: busy }}
+          className="mt-6 min-h-[44px] justify-center"
+        >
+          <Text className="text-[13px] font-medium text-sand">Restore purchases</Text>
+          {/* This used to be a 20px "?" button opening an Alert, because a bottom sheet
+              had no room for the sentence. Full screen does. */}
+          <Text className="mt-1 text-[13px] leading-5 text-sand-dim">
+            Already paid? Restoring re-activates your subscription after a reinstall or a
+            new phone.
+          </Text>
+        </TouchableOpacity>
 
-              <View className="mt-3 flex-row items-center justify-center">
-                <TouchableOpacity activeOpacity={0.7} onPress={() => openLink(TERMS_OF_USE_URL)}>
-                  <Text className="text-xs font-medium text-slate-400 underline">
-                    Terms of Use
-                  </Text>
-                </TouchableOpacity>
-                <Text className="mx-2 text-xs text-slate-600">·</Text>
-                <TouchableOpacity activeOpacity={0.7} onPress={() => openLink(PRIVACY_POLICY_URL)}>
-                  <Text className="text-xs font-medium text-slate-400 underline">
-                    Privacy Policy
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : null}
-
-          <View className="mt-3 flex-row items-center justify-center">
-            <TouchableOpacity activeOpacity={0.7} disabled={busy} onPress={handleRestore}>
-              <Text className="text-center text-sm font-medium text-slate-400">
-                Already subscribed? Restore purchases
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={explainRestore}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              className="ml-1.5 h-5 w-5 items-center justify-center rounded-full border border-slate-500"
-            >
-              <Text className="text-xs font-bold text-slate-400">?</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity activeOpacity={0.7} disabled={busy} onPress={closePaywall} className="mt-4">
-            <Text className="text-center text-sm font-medium text-slate-500">
-              Maybe later
-            </Text>
-          </TouchableOpacity>
+        <View className="mt-6">
+          <PaywallLegal />
         </View>
       </View>
     </Modal>
