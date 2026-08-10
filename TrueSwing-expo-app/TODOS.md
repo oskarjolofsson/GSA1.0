@@ -84,6 +84,39 @@
     per-day session detail specifically.
   - Effort: S (human) -> S (CC) to delete; M -> S to rehome as a list.
 
+## Billing (features/billing)
+
+- **Strip the TEMP diagnostics from `BillingContext` (P2).** Two `console.log` calls
+  marked "TEMP DIAGNOSTIC — remove once confirmed" are still in the shipping path.
+  `BillingContext.tsx:60` logs the entire `BillingStatus` object (`JSON.stringify(next)`)
+  on every refresh, including on every app foreground past the 45s staleness window.
+  `BillingContext.tsx:103` logs `new Error().stack` on every `openPaywall` call, so a
+  stack trace is captured on a routine user-facing action. Neither was removed once the
+  cross-platform subscription and paywall behaviour they were added to confirm had been
+  confirmed.
+  - Deliberately kept out of the paywall redesign branch (eng review, 2026-08-10) to
+    keep that diff to one concern. Nothing blocks doing it standalone.
+  - Effort: XS (human) -> XS (CC). Depends on nothing.
+
+- **`refreshUntilPremium` fetches twice per attempt (P2).** `BillingContext.tsx:88-100`
+  runs up to 8 attempts and issues **two** `getBillingStatus()` calls in each one, so a
+  successful purchase can cost 16 backend round-trips over ~8 seconds. Reading the loop:
+  `:89 await refresh()` already calls `getBillingStatus()`; `:90 if (inflight.current)
+  await inflight.current` is dead, because `refresh()` awaits its own run promise and
+  nulls `inflight.current` in its `finally`; `:93 const latest = await
+  getBillingStatus()` then fetches the identical thing a second time. The comment says
+  the direct call exists "to avoid stale closure on `status`", which is a real problem —
+  `refresh()` writes to state the loop cannot read back. The fix is to have `refresh()`
+  resolve with the `BillingStatus` it fetched and let the loop await that, halving the
+  calls without reintroducing the stale read.
+  - This is the post-purchase reconciliation path, so getting the break condition wrong
+    means a golfer who has paid keeps seeing the paywall. Needs a test alongside:
+    one fetch per attempt, stops as soon as `can_access_premium`, gives up after 8,
+    keeps polling through a transient throw.
+  - Surfaced by the eng review of the paywall redesign (2026-08-10). Scoped out of that
+    branch to keep it UI-only.
+  - Effort: S (human) -> S (CC). Depends on nothing.
+
 ## Tooling
 
 - **Guard against test files under `app/` (P3).** expo-router's route context regex

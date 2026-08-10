@@ -15,25 +15,24 @@ export default function SubscriptionBanner() {
   const inTrial = status.has_free_tier;
   const remaining = daysLeft(status.free_tier_expires_at);
 
+  // A hairline row, not a bordered pill. DESIGN.md: "a stack of bordered pills is the
+  // most generic pattern in mobile design" — the brand separates with air and 1px lines.
   return (
-    <View className="mb-4 flex-row items-center justify-between rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-3">
+    <View className="mb-4 flex-row items-center justify-between border-t border-b border-[rgba(232,220,196,0.13)] py-3.5">
       <View className="flex-1 pr-3">
-        {inTrial ? (
-          <Text className="text-sm font-medium text-indigo-200">
-            {remaining} {remaining === 1 ? 'day' : 'days'} left in your free trial
-          </Text>
-        ) : (
-          <Text className="text-sm font-medium text-indigo-200">
-            Your free trial has ended
-          </Text>
-        )}
+        <Text className="text-[13px] text-sand-dim">
+          {inTrial
+            ? `${remaining} ${remaining === 1 ? 'day' : 'days'} left in your free trial`
+            : 'Your free trial has ended'}
+        </Text>
       </View>
       <TouchableOpacity
-        activeOpacity={0.85}
+        activeOpacity={0.7}
         onPress={() => openPaywall('manual')}
-        className="rounded-xl bg-indigo-500 px-4 py-2"
+        accessibilityRole="button"
+        className="min-h-[44px] justify-center pl-3"
       >
-        <Text className="text-sm font-semibold text-white">Upgrade</Text>
+        <Text className="text-[13px] font-semibold text-sand">Upgrade</Text>
       </TouchableOpacity>
     </View>
   );

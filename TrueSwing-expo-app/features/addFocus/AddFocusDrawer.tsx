@@ -69,13 +69,13 @@ const ENTRIES: Entry[] = [
     subtitle: 'Let AI find your misses',
     href: '/add-focus/upload',
   },
-  {
-    key: 'coach',
-    icon: <FileText size={17} color={GOLD} strokeWidth={2} />,
-    title: 'Coach feedback',
-    subtitle: 'Turn a lesson into a plan',
-    href: '/add-focus/coach',
-  },
+  // {
+  //   key: 'coach',
+  //   icon: <FileText size={17} color={GOLD} strokeWidth={2} />,
+  //   title: 'Coach feedback',
+  //   subtitle: 'Turn a lesson into a plan',
+  //   href: '/add-focus/coach',
+  // },
 ];
 
 export default function AddFocusDrawer({ navigation }: DrawerContentComponentProps) {
