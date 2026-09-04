@@ -2,15 +2,12 @@ import TagChip from "@/features/content/components/tag-chip";
 import type { Labels } from "@/features/content/constants";
 
 /**
- * The issue as a golfer sees it in the app's library.
+ * The issue as a golfer sees it in the app's library. Layout mirrors
+ * TrueSwing-expo-app/features/library/components/IssueCard.tsx.
  *
- * `layman_title`/`layman_desc` exist because the coach vocabulary in title and
- * description is unreadable to the target player. When they are blank the app falls
- * back to the technical wording, so this shows that fallback verbatim with a warning
- * rather than quietly substituting nicer copy — the point is to catch jargon before
- * it ships.
- *
- * Layout mirrors TrueSwing-expo-app/features/library/components/IssueCard.tsx.
+ * With `layman_title`/`layman_desc` blank this shows the technical wording verbatim,
+ * with a warning, rather than substituting nicer copy — the point is to catch jargon
+ * before it ships.
  */
 export default function GolferPreview({
   title,
@@ -27,8 +24,7 @@ export default function GolferPreview({
   laymanDesc: string;
   misses: string[];
   goals: string[];
-  // Label lookups built from the fetched taxonomy. Passed rather than imported so the
-  // words come from the database, not a second hardcoded copy.
+  // Label lookups built from the fetched taxonomy (ADR-0008).
   labels: Labels;
 }) {
   const usingFallback = !laymanTitle.trim() || !laymanDesc.trim();

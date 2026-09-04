@@ -9,13 +9,10 @@ import { setUserRole } from "@/lib/users/set-user-role";
 import type { User } from "@/lib/users/types";
 
 /**
- * Delete a user. Invoked from the client via an event handler.
+ * Delete a user.
  *
- * The backend DELETE /users/{id}/ endpoint uses get_current_user (not
- * `require_admin`) and its service checks `is_admin` for the actor, so an admin
- * can delete any user while a non-admin can only delete themselves. The
- * `withAdmin` gate here is still the client-side admin check; do not remove it.
- * On success, revalidate the users route so a fresh list is fetched next render.
+ * Gated by `withAdmin` because DELETE /users/{id}/ is only `get_current_user` — it lets
+ * a non-admin delete their own account. See ADR-0010.
  */
 export async function deleteUserAction(
   userId: string,
@@ -28,11 +25,10 @@ export async function deleteUserAction(
 }
 
 /**
- * Search users by name/email. Invoked from the client search box (debounced).
+ * Search users by name/email.
  *
- * Leans on the endpoint's own `require_admin` gate, so it only needs a session
- * token (mirrors `searchProfilesAction`). Returns `ok:false` on any failure so
- * the UI can show an error state instead of a silent empty list.
+ * `ok: false` on any failure, so the UI can show an error state rather than an empty
+ * list, which would read as "no matches".
  */
 export async function searchUsersAction(
   query: string,
@@ -49,11 +45,10 @@ export async function searchUsersAction(
 }
 
 /**
- * Change a user's role (admin only). Invoked from the user detail view.
+ * Change a user's role.
  *
- * Gated by `withAdmin` (the endpoint is `require_admin`), so a 403 from the API
- * here means the admin tried to change their OWN role, not "not an admin". That
- * case surfaces a specific message; everything else is a generic failure.
+ * Past the `withAdmin` gate a `denied` means the admin tried to change their OWN role,
+ * which the backend refuses — hence the specific message on that branch.
  */
 export async function setUserRoleAction(
   userId: string,

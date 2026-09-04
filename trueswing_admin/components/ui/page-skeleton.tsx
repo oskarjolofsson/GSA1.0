@@ -1,10 +1,6 @@
 /**
- * Instant loading placeholder for the data-fetching admin pages.
- *
- * Rendered by each route's loading.tsx, so Next paints it the moment you
- * navigate (the topbar + section sidebar stay mounted above the segment) while
- * the server component fetches. A heading bar, a few shimmer rows, and a
- * centered spinner — theme-aware zinc tones matching the real pages.
+ * Instant loading placeholder for the data-fetching admin pages, rendered from each
+ * route's loading.tsx while its server component fetches.
  */
 export default function PageSkeleton() {
   return (

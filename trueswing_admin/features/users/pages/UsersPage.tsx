@@ -13,19 +13,8 @@ import { paginate, parsePage } from "@/features/shared/paginate";
 const PAGE_SIZE = 10;
 
 /**
- * Admin users screen (server component).
- *
- *   session ─▶ getUsersPage(page) ─┬ ok     ─▶ <UsersExplorer/>
- *                                   ├ denied ─▶ "No access" notice
- *                                   └ error  ─▶ error notice
- *
- * No separate admin check: the users endpoint is `require_admin`, so its 403
- * already means "not admin" — one round-trip does both. verifyAdmin runs only at
- * sign-in (app/page.tsx). The delete Server Action leans on the same backend gate.
- *
- * Pagination is server-side: `?page=N` → offset. Prev/Next are links that change
- * the query, so each page is a fresh server fetch. Free-text search is a separate
- * server call (searchUsersAction) so it spans all users, not just this page.
+ * Admin users screen (server component). Pagination is server-side: `?page=N` becomes an
+ * offset and Prev/Next are links, so each page is a fresh fetch.
  *
  * Next 16: `searchParams` is a Promise and must be awaited.
  */

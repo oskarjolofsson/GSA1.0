@@ -12,17 +12,12 @@ const ROWS: { key: keyof DeleteImpact; label: string }[] = [
 ];
 
 /**
- * Confirmation gate for a delete that cascades into user data.
+ * Confirmation gate for a delete that cascades into user data. A `null` impact means it
+ * could not be loaded, and the dialog refuses to offer a delete it cannot describe.
  *
- *   impact === null    ─▶ couldn't load it; refuse to offer a delete we can't describe
- *   drill_runs > 0     ─▶ impossible, not just destructive (see below)
- *   blocking           ─▶ require the exact name typed before enabling
- *   nothing references ─▶ plain confirm
- *
- * `drill_runs` is special: practice_drill_runs.drill_id is ON DELETE NO ACTION, so
- * the database refuses the delete outright. Offering a confirm button there would
- * promise something that cannot happen, so the dialog explains and offers detaching
- * instead.
+ * `drill_runs > 0` is not just destructive but impossible — practice_drill_runs.drill_id
+ * is ON DELETE NO ACTION — so that branch offers detaching instead of a confirm button
+ * that would promise something that cannot happen.
  */
 export default function DeleteImpactDialog({
   name,

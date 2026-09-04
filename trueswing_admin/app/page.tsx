@@ -5,11 +5,9 @@ import NoAccess from "@/features/auth/components/no-access";
 import VerifyError from "@/features/auth/components/verify-error";
 
 /**
- * Admin gate. Middleware guarantees a session by the time we get here.
- *
- *   session token ─▶ verifyAdmin ─┬ "admin"  ─▶ redirect to dashboard
- *                                 ├ "denied" ─▶ <NoAccess/>
- *                                 └ "error"  ─▶ <VerifyError/>
+ * Admin gate, and the one place `verifyAdmin` runs — every page past it reads the admin
+ * verdict off its own data endpoint instead (ADR-0010). Middleware guarantees a session
+ * by the time we get here.
  */
 export default async function Home() {
   const token = await requireSessionToken();

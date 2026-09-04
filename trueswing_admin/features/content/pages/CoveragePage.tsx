@@ -6,11 +6,8 @@ import type { Taxonomy } from "@/lib/content/types";
 import CoverageGrid from "@/features/content/components/coverage-grid";
 
 /**
- * Content → Coverage (server component).
- *
- * Answers "what is missing from the catalog?" — which goal/miss combinations a
- * golfer could pick and find nothing to practise, plus the two catalog health
- * counts the backend has always exposed on /admin/stats/ and nothing rendered.
+ * Content → Coverage: which goal/miss combinations a golfer could pick and find nothing
+ * to practise, plus the catalog health counts.
  */
 export default async function CoveragePage() {
   const token = await requireSessionToken();
