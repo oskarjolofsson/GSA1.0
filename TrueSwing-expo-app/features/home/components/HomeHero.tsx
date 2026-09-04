@@ -24,41 +24,14 @@ type Props = {
 export const HERO_HEIGHT = 360;
 
 /**
- * The photographic header: picture, scrim, greeting, avatar.
+ * The photographic header: picture, scrim, greeting, and the app's only two chrome controls
+ * (`+` opens the focus drawer, the avatar opens the profile).
  *
- *  ┌──────────────────────────────┐
- *  │ photo (cover, 76% 48%)       │  the crop keeps the sun low-right,
- *  │ (+)                  (avatar)│  away from both corner controls
- *  │ ░ scrim ░░░░░░░░░░░░░░░░░░░░ │
- *  │  Hello, Oskar                │  greeting sits on the calm sky
- *  │  Two areas on the go…        │
- *  │ ▓▓▓ fades to ink ▓▓▓▓▓▓▓▓▓▓▓ │  base blends into the screen
- *  └──────────────────────────────┘
+ * The scrim is a gradient, which DESIGN.md otherwise forbids, and both controls are cream
+ * rather than gold. See ADR-0025.
  *
- * TWO CORNER CONTROLS, AND THEY ARE THE WHOLE NAVIGATION. The tab bar is gone, so
- * `+` (open the focus drawer) and the avatar (profile) are the only chrome in the
- * app. They are drawn as a matched pair — same 42px ring, same cream — because
- * they are peers, not a primary and a secondary.
- *
- * THE `+` IS CREAM, NOT GOLD, for two reasons. DESIGN.md caps gold at three
- * appearances per screen and the drawer spends all three on its row icons; when
- * the drawer is open both surfaces are visible at once. And a gold `+` against a
- * cream avatar breaks the pair.
- *
- * IT IS RINGED RATHER THAN A BARE GLYPH because this sits on a photograph, and
- * `heroImages.ts` rotates. A bare stroke survives today's crops and vanishes on
- * whichever bright one gets added next; the ring gives it a body on any image.
- *
- * THE SCRIM IS A GRADIENT, WHICH DESIGN.md SAYS DO NOT EXIST HERE.
- * Deliberate, and the same shape of exception as `danger`: the brand book never
- * anticipated a photograph, and without a scrim the greeting sits on open sky at
- * roughly 2:1 contrast, which fails the 4.5:1 floor and fails invisibly. It is a
- * legibility device, not decoration — never use a gradient to make something look
- * nicer. If this survives review it belongs written into DESIGN.md, or the next
- * feature re-derives it and drifts.
- *
- * No image is a normal state (an empty HERO_IMAGES list, or a remote one that
- * fails): the block renders as plain ink and the greeting is unaffected.
+ * No image is a normal state (an empty HERO_IMAGES list, or a remote one that fails): the
+ * block renders as plain ink and the greeting is unaffected.
  */
 export default function HomeHero({
   image,

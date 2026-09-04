@@ -1,16 +1,9 @@
 /**
- * Reading a drill's metric, on the client.
+ * Presentation of a drill's metric: what to call the number, what range it takes, how to
+ * step it, and a display-only grade preview.
  *
- * The server owns grading. This file owns nothing but presentation: what to call the
- * number, what range it can take, and how to step it. `grade_at` is deliberately not
- * read here — thresholds are admin-editable content, so a build that shipped before you
- * retuned a drill would grade on numbers nobody can see any more. The app posts the raw
- * value and the response tells it what that was worth.
- *
- * `metric` arrives as an untyped object from the backend (drills.metric is JSONB), so
- * every accessor below is defensive. That is not paranoia: the admin CMS can author a
- * metric type without an app release, which is the whole reason the rating UI needs a
- * default branch.
+ * `metric` is untyped JSONB from the backend, so every accessor here is defensive.
+ * See ADR-0020.
  */
 
 export type MetricType = 'make_rate' | 'proximity' | 'up_and_down';
@@ -61,9 +54,7 @@ export function repsOf(metric: DrillMetric | null): number {
 /**
  * The question above the input. Authored `label` wins; these are the fallbacks.
  *
- * The fallbacks are questions and are punctuated as questions, because `BlockRating` now
- * renders this as the prompt the golfer answers rather than as a heading. An authored
- * `label` is passed through untouched -- it may not be a question at all.
+ * An authored `label` is passed through untouched -- it may not be a question at all.
  */
 export function promptFor(metric: DrillMetric | null): string {
   if (metric?.label) return metric.label;
@@ -84,13 +75,9 @@ export const unitOf = (metric: DrillMetric | null): string => metric?.unit ?? 'f
 /**
  * What the golfer will be asked for once the block is done.
  *
- * Rendered on the pre-drill brief and NOWHERE ELSE, which is a deliberate consequence of
- * field testing: a golfer at a range does not look at their phone between shots. The brief
- * is the last screen they read before it goes in a pocket, so if they are going to be asked
- * to count something, that is the only moment they can be told.
- *
- * Returns null for a metric with no number behind it -- a feel-only drill asks how the
- * block went, which needs no warning.
+ * Rendered on the pre-drill brief only: it is the last screen read before the phone goes in
+ * a pocket, so it is the one moment a golfer can be told to count something. Returns null
+ * for a feel-only drill, which needs no warning.
  */
 export function willLogSentence(metric: DrillMetric | null): string | null {
   if (!isRenderable(metric)) return null;
@@ -107,10 +94,8 @@ export function willLogSentence(metric: DrillMetric | null): string | null {
 }
 
 /**
- * Step size for the proximity stepper.
- *
- * Tenths, because the difference between 4.2 and 4.3 feet is the kind of progress this
- * drill exists to show. Whole feet would flatten a season of improvement into four values.
+ * Step size for the proximity stepper. Tenths: whole feet would flatten a season of
+ * improvement into four values.
  */
 export const PROXIMITY_STEP = 0.1;
 
@@ -137,19 +122,8 @@ const DEFAULT_GRADE_AT = { dialed: 0.8, ok: 0.5 };
 const PROXIMITY_CEILING_DEFAULT = 10;
 
 /**
- * What the number the golfer just entered is worth, for display only.
- *
- * This mirrors `backend/core/services/drill_metrics.py`. Two copies of a rule is a real
- * cost, so be clear about why it is worth paying: without it the golfer enters a number
- * and learns nothing until the results screen, and the link between "8 out of 10" and the
- * drill the scheduler picks next stays invisible machinery.
- *
- * It is safe against the staleness the server-side-grading rule exists to prevent, because
- * `grade_at` is read off the drill this session just fetched -- not hardcoded into the
- * build. Retune a drill in the admin and the very next practice reads the new thresholds.
- *
- * It is a preview. The server still grades what gets stored and what moves `strength`; if
- * these two ever disagree, the server is right and this is the bug.
+ * What the number the golfer just entered is worth, for display only. Mirrors
+ * `backend/core/services/drill_metrics.py`; the server's answer wins. See ADR-0020.
  */
 export function gradePreview(metric: DrillMetric | null, value: number | null): string | null {
   if (!isRenderable(metric) || value === null) return null;
@@ -189,16 +163,8 @@ function normalisedScore(metric: DrillMetric, value: number): number | null {
 const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
 
 /**
- * Sentence under the input: what the number the golfer just entered is worth.
- *
- * IT NAMES THE CONSEQUENCE, NOT A COMPLIMENT. This used to read "Solid for this drill" for
- * an `ok` block. A drill fills in at strength 3, strength starts at 0, and
- * `GRADE_STRENGTH_DELTA` is `{rough: -1, ok: 0, dialed: +1}`
- * (`backend/core/services/program_service.py:31-36`) -- so an `ok` block moves the golfer
- * exactly nowhere while the screen called it solid work. Someone could practise ten OK
- * sessions, watch their `2/7` never budge, and have no way to find out why.
- *
- * Deliberately terse: a readout, not encouragement.
+ * Sentence under the input. Names the consequence for the golfer's program, not a
+ * compliment -- a readout, not encouragement. See ADR-0020.
  */
 export function gradeCaption(grade: string | null): string | null {
   switch (grade) {

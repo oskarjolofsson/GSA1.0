@@ -35,39 +35,19 @@ export default function HomeFlow() {
   const [programContext, setProgramContext] = React.useState<ProgramContext | null>(null);
   const [historyIssue, setHistoryIssue] = React.useState<Issue | null>(null);
 
-  // WHICH AREA TAB IS OPEN, AND WHY IT LIVES HERE.
-  // Each screen below is rendered conditionally, so HomeScreen unmounts the
-  // moment the golfer starts a practice session. State held there dies with it,
-  // and they would come back to the tab reset to the default — after every
-  // single session, which is the most common journey in the app. This component
-  // does not unmount, so the selection survives.
+  // Which area tab is open. Held here rather than in HomeScreen, which unmounts during a
+  // practice session. See ADR-0023.
   const [selectedArea, setSelectedArea] = React.useState<string | null>(null);
 
-  // LAND ON THE AREA THE GOLFER JUST ADDED A FOCUS TO.
-  //
-  // `exitToHome` dismisses back to this screen with `?area=` when the flow it
-  // came from knew which part of the game the new focus belongs to (the library
-  // and coach paths do; upload cannot, because one analysis can return issues
-  // across several areas). Without this a golfer adds a putting focus, lands on
-  // home, and is still looking at Full swing — which reads as the app forgetting
-  // what they just did.
+  // Land on the area the golfer just added a focus to; `exitToHome` passes `?area=` when
+  // the originating flow knew it. See ADR-0023.
   const { area: areaParam } = useLocalSearchParams<{ area?: string }>();
   React.useEffect(() => {
     if (areaParam) setSelectedArea(areaParam);
   }, [areaParam]);
 
-  // THE DRAWER IS ONLY REACHABLE FROM HOME.
-  //
-  // Practice, Analysis and History all render on THIS route — they are screens of
-  // this flow, not routes of their own — so without this the edge-swipe stays live
-  // during a live practice session, and a golfer reaching to scroll a drill gets
-  // the "start a focus" panel over their session instead. The tab bar could never
-  // do that: leaving practice took a deliberate tap.
-  //
-  // Gating the gesture rather than splitting the four screens into routes is the
-  // cheap half of that fix. Splitting them would mean moving the state this file
-  // owns (see `selectedArea` above), which is a much larger change for the same
-  // protection.
+  // The drawer's edge-swipe is only live on Home: practice renders on this same route, so
+  // an ungated gesture fires mid-session. See ADR-0023.
   React.useEffect(() => {
     navigation.setOptions({ swipeEnabled: currentScreen === 'Home' });
   }, [navigation, currentScreen]);
@@ -79,9 +59,7 @@ export default function HomeFlow() {
       setSelectedSession(null);
       setProgramContext(null);
       setHistoryIssue(null);
-      // selectedArea is deliberately NOT reset. Clearing it here would move
-      // the bug rather than fix it: the tab would survive a practice session
-      // and then die on the next tab switch.
+      // selectedArea is deliberately NOT reset here. See ADR-0023.
       analysisController.refetch();
     }, [analysisController.refetch, goToHome])
   );
@@ -94,9 +72,9 @@ export default function HomeFlow() {
     [goToHistory]
   );
 
-  // Start (or resume) the practice session for an issue. Creates the program on
-  // demand along the path that matches the issue's source: AI issues keep their
-  // analysis_issue_id provenance, coach and browse issues seed from issue_id.
+  // Start (or resume) the practice session for an issue, creating the program on demand
+  // along the path that matches the issue's source: AI issues keep their analysis_issue_id
+  // provenance, coach and browse issues seed from issue_id.
   const startProgramSession = React.useCallback(
     async (issue: Issue) => {
       if (!issue.id) {
@@ -129,17 +107,14 @@ export default function HomeFlow() {
           programId: program.id,
           stepId: step.id,
           drillIds: step.prescription.drill_ids ?? [],
-          // Captured before any block is logged. The completion screen diffs this against
-          // the count StepAdvance returns to say what actually moved.
+          // Captured before any block is logged; the completion screen diffs it against the
+          // count StepAdvance returns.
           groovedBefore: program.grooved_count,
         });
         goToPractice();
       } catch (error) {
-        // A 409 means the golfer already holds two programs in this area.
-        // The server names the area ("You're already working two putting
-        // focuses…"), so show that rather than a message this screen made
-        // up — the old hardcoded "you can only work one issue at a time"
-        // stopped being true when the cap became two per area.
+        // A 409 means this area is full. Prefer the server's message: it names the area,
+        // and the cap is server-side content this screen should not restate.
         if (error instanceof ApiError && error.status === 409) {
           Alert.alert(
             'That area is full',
@@ -157,16 +132,8 @@ export default function HomeFlow() {
   );
 
   // Continue straight into the next session of the same focus, without going home.
-  //
-  // WHY THIS LIVES HERE AND NOT IN THE PRACTICE FLOW. Starting a session has two rules
-  // attached that have nothing to do with practice: the premium gate, and the 409 the
-  // server raises when the golfer already holds two programs in this area. Both are
-  // already handled in startProgramSession above, and a second copy inside
-  // features/practice is how the two would drift.
-  //
-  // Returns whether a new session actually started. The caller navigates only on true --
-  // handing down a new session does NOT by itself move the screen, because
-  // useScreenSequence keeps currentIndex in local state inside the flow.
+  // Returns whether a session actually started; the caller navigates only on true. Lives
+  // here rather than in the practice flow -- see ADR-0023.
   const continueProgramSession = React.useCallback(
     async (advance: StepAdvance): Promise<boolean> => {
       const issue = selectedIssue;

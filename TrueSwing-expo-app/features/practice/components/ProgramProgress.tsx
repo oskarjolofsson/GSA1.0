@@ -3,16 +3,11 @@ import { Text, View } from 'react-native';
 /**
  * How far through a focus the golfer is: `4/7` over a segment hairline.
  *
- * NO WORD FOR THE READOUT, deliberately. `ProgramRow` on the home screen already settled
- * this: "PROGRESS IS A FRACTION, NOT PROSE. '2 of 6 grooved' has to be parsed as a sentence;
- * `2/6` in the serif is read in one glance." It also means nothing here needs translating,
- * which matters for a golfer whose English is a second language. Same treatment as the home
- * screen so it is read once and understood everywhere.
+ * A fraction, not prose, matching `ProgramRow` on home so it is read once and understood
+ * everywhere -- and so nothing here needs translating.
  *
- * THE NEWLY FILLED SEGMENT IS GOLD. A bare total is a number the golfer cannot explain --
- * `4/7` shipped on the home screen for months with nothing anywhere saying what moves it.
- * Marking the segment that just changed, next to a line naming which drill it was, teaches
- * the rule by showing it happen.
+ * The newly filled segment is gold. A bare total is a number the golfer cannot explain;
+ * marking what just changed, beside the drill that changed it, teaches the rule.
  */
 
 type Props = {

@@ -13,18 +13,15 @@ import {
 import { buildAreaFork, issuesForGoal, issuesForMiss, searchIssues } from "../utils/libraryFork";
 
 export type LibraryView = "areas" | "focus" | "candidates";
-/** Which branch of the fork the golfer took. `label` rides along so the leaf can
- *  title itself without re-resolving the term out of the taxonomy. The old
- *  `{ type: "skill" }` variant is gone: skill issues are now reached through
- *  their goals, so nothing could select a single one directly any more. */
+/** Which branch of the fork the golfer took. `label` rides along so the leaf can title
+ *  itself without re-resolving the term out of the taxonomy. */
 export type CandidateFilter =
     | { type: "miss"; miss: string; label: string }
     | { type: "goal"; goal: string; label: string };
 
 type FetchStatus = "loading" | "ready" | "error";
 
-/** State, both fetches and the derived lists for the library. Extracted from the
- *  screen so the screen stays layout only (and under the ~200 line cap). */
+/** Both fetches and the derived lists for the library. */
 export function useLibraryState(initialAreaKey?: string) {
     const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
     const [taxonomyStatus, setTaxonomyStatus] = useState<FetchStatus>("loading");
@@ -84,21 +81,15 @@ export function useLibraryState(initialAreaKey?: string) {
     const goals = useMemo(() => taxonomy?.goals ?? [], [taxonomy]);
     const missesByArea = useMemo(() => taxonomy?.misses_by_area ?? {}, [taxonomy]);
 
-    // OPENING STRAIGHT INTO ONE AREA. Home's empty-area action says "Find bunker
-    // work"; landing on the five-area grid would make the golfer pick bunker again
-    // right after they told us. Applied ONCE, after the taxonomy resolves the key
-    // to a term -- `openArea` needs the term, not the key.
-    //
-    // The ref is what makes `goBack` still work: without it this would re-fire on
-    // the next render and the golfer could never reach the landing.
+    // Open straight into one area when home passed a key. Applied ONCE, after the
+    // taxonomy resolves the key to a term; the ref is what keeps `goBack` working,
+    // since without it this re-fires and the landing becomes unreachable.
     const initialAreaApplied = useRef(false);
     useEffect(() => {
         if (initialAreaApplied.current || !initialAreaKey || areas.length === 0) return;
         const term = areas.find((a) => a.key === initialAreaKey);
-        // An unknown key is not an error worth surfacing: the areas are
-        // admin-editable, so one can disappear between the home screen reading it
-        // and the library opening. Falling through to the landing is the honest
-        // degrade -- every area is one tap away from there.
+        // Areas are admin-editable, so a key can go stale between home reading it and
+        // the library opening. Falling through to the landing is the honest degrade.
         initialAreaApplied.current = true;
         if (!term) return;
         setArea(term);

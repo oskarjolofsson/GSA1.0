@@ -26,7 +26,6 @@ export default function useAnalysisData(initialAnalysis: Analysis | null): UseAn
     const [activeIssue, setActiveIssue] = useState<number>(0);
     const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-    // Call hook at top level, not inside useEffect
     const videoURL = useVideoURL(initialAnalysis);
 
     useEffect(() => {
@@ -41,7 +40,6 @@ export default function useAnalysisData(initialAnalysis: Analysis | null): UseAn
             }
             
             try {
-                // Fetch issues for this analysis
                 let issues: Issue[] = [];
                 let analysisIssues: any[] = [];
                 
@@ -88,18 +86,15 @@ export default function useAnalysisData(initialAnalysis: Analysis | null): UseAn
         ? [...analysis.issues].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
         : [];
 
-    // Current issue with confidence from analysis
     const [issue, setIssue] = useState<(Issue & { confidence?: number }) | null>(null);
 
     useEffect(() => {
-        // Check if analysis failed
         if (analysis?.success === false) {
             setAnalysisError(analysis.error_message || "Analysis failed");
             setIssue(null);
             return;
         }
         
-        // Clear error if analysis is successful
         if (!loading) {
             setAnalysisError(null);
         }

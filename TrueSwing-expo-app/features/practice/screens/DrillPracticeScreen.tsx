@@ -14,19 +14,11 @@ import DrillInstructionsOverlay from '../components/DrillInstructionsOverlay';
 import type { PracticeStatus } from '../hooks/usePracticeRunner';
 
 /**
- * One drill block, in three phases: read the brief, hit the balls, record what happened.
+ * One drill block: read the brief (ready), hit the balls (active), record it (rating).
  *
- * PRESENTATIONAL. The drill queue and the run lifecycle live in `practiceFlow`, because a
- * failed plan advance has to stay retryable from the completion screen -- by which point
- * this screen has unmounted.
- *
- *   [ready] --Start drill--> [active] --Done with drill--> [rating] --Log it/Skip--> next
- *      ^                                                                              |
- *      +---------------------------- new drill id ------------------------------------+
- *
- * Status is a single union, so the old failure mode is gone by construction: `loading` and
- * `error` used to be separate booleans checked in that order, so a failure on the final drill
- * left the screen on a spinner that could never resolve.
+ * Presentational only — the queue and run lifecycle live in `practiceFlow`, because a
+ * failed plan advance must stay retryable after this screen unmounts. Status is a single
+ * union rather than separate loading/error booleans; see ADR-0022.
  */
 
 type BlockPhase = 'ready' | 'active' | 'rating';

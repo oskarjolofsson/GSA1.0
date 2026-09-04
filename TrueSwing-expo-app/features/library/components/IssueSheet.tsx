@@ -20,31 +20,21 @@ type Props = {
 };
 
 /**
- * One focus, opened from the library list.
+ * One focus, opened from the library list: description, drill rail, and a pinned start
+ * action.
  *
- * A sheet rather than an expanding row. The row version had to fit a description, a
- * drill list and a primary action inside a card inside a padded scroll view, which left
- * a 311pt reading column on a 393pt phone and pushed the next focus most of a screen
- * down. Here the content gets the full width, the action is pinned where a thumb
- * expects it, and everything else is dimmed out -- which is the actual point. Choosing
- * what to work on is the one decision this screen exists to support.
- *
- * Same RN Modal shape as `features/home/components/DayDetailModal` on purpose: scrim
- * tap to dismiss, `onRequestClose` for the Android back button, capped height so the
- * list stays visible behind it. No sheet library -- the app has one modal idiom and
- * this is it.
+ * Same RN Modal idiom as `features/home/components/DayDetailModal` -- scrim tap to dismiss,
+ * `onRequestClose` for the Android back button, capped height. The app deliberately has no
+ * sheet library.
  */
 export default function IssueSheet({ issue, areaLabel, starting, error, onClose, onStart }: Props) {
     const insets = useSafeAreaInsets();
     const drills = issue?.drills ?? [];
-    // One drill open at a time. Keyed by id rather than index so it survives the list
-    // changing, and reset per issue so a sheet never opens with someone else's drill
-    // already expanded.
+    // One drill open at a time, keyed by id rather than index so it survives list changes.
     const [openDrillId, setOpenDrillId] = useState<string | null>(null);
 
-    // Collapse when the sheet switches focus. Without this, opening a second focus
-    // whose drill happened to share an id would render it pre-expanded, and the
-    // golfer would see a sheet that had already been used.
+    // Collapse when the sheet switches focus, or a second focus sharing a drill id opens
+    // pre-expanded.
     useEffect(() => {
         setOpenDrillId(null);
     }, [issue?.id]);
@@ -57,10 +47,8 @@ export default function IssueSheet({ issue, areaLabel, starting, error, onClose,
             onRequestClose={onClose}
         >
             <View className="flex-1 justify-end">
-                {/* Scrim as an absolute SIBLING, not a parent. Wrapping the sheet in a
-                    Pressable made the scroll unusable: the press responder competes with
-                    the ScrollView's pan responder, so drags were swallowed before the
-                    list ever saw them. As a sibling it still catches taps outside. */}
+                {/* Scrim is an absolute SIBLING, not a parent: wrapping the sheet in a
+                    Pressable makes its press responder swallow the ScrollView's drags. */}
                 <Pressable
                     className="absolute inset-0 bg-black/60"
                     onPress={onClose}
@@ -68,18 +56,15 @@ export default function IssueSheet({ issue, areaLabel, starting, error, onClose,
                     accessibilityLabel="Close"
                 />
 
-                {/* `maxHeight` alone was not enough: with no flex direction the ScrollView
-                    sized itself to its content, so its viewport equalled its content and
-                    there was nothing to scroll -- the overflow was simply clipped by the
-                    parent. Being an explicit column lets the ScrollView shrink below its
-                    content height, which is what makes it scrollable. */}
+                {/* The explicit column is what lets the ScrollView shrink below its content
+                    height. With `maxHeight` alone the overflow is just clipped. */}
                 <View
                     accessibilityViewIsModal
                     className="rounded-t-[26px] border border-white/10 border-b-0 bg-ink-raised"
                     style={{ maxHeight: "88%", flexDirection: "column" }}
                 >
-                    {/* Grab handle: signals draggability by convention even though this
-                        sheet dismisses by tap and back gesture rather than by drag. */}
+                    {/* Grab handle. Decorative -- this sheet dismisses by tap and back
+                        gesture, not by drag. */}
                     <View className="items-center pt-3 pb-1">
                         <View className="h-1 w-9 rounded-full bg-sand/20" />
                     </View>
@@ -106,10 +91,8 @@ export default function IssueSheet({ issue, areaLabel, starting, error, onClose,
 
                     <ScrollView
                         className="mt-4"
-                        // flexShrink is the half that actually enables scrolling: it lets
-                        // this view become shorter than its content once the sheet hits
-                        // its 88% cap. Without it the ScrollView keeps its full content
-                        // height and the header and footer get pushed off screen instead.
+                        // Paired with the column above: without flexShrink the ScrollView
+                        // keeps its full content height and pushes header and footer off.
                         style={{ flexShrink: 1 }}
                         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
                         showsVerticalScrollIndicator={false}
@@ -120,9 +103,7 @@ export default function IssueSheet({ issue, areaLabel, starting, error, onClose,
                             </Text>
                         ) : null}
 
-                        {/* Name the list. Without this the drills read as more prose --
-                            the golfer cannot tell where the explanation ends and the
-                            work begins. The count sets expectations before they commit. */}
+                        {/* Names the list, so drills do not read as more prose. */}
                         <View className="mt-7 flex-row items-baseline justify-between border-t border-white/10 pt-5">
                             <Text className="text-[10px] uppercase tracking-[2.6px] text-sand-dim">
                                 What you&apos;ll practise
@@ -151,8 +132,7 @@ export default function IssueSheet({ issue, areaLabel, starting, error, onClose,
                         ) : null}
                     </ScrollView>
 
-                    {/* Pinned: the one decision this sheet exists for stays reachable no
-                        matter how long the drill list runs. */}
+                    {/* Pinned, so the action stays reachable however long the list runs. */}
                     <View
                         className="border-t border-white/10 px-5 pt-4"
                         style={{ paddingBottom: insets.bottom + 16 }}
@@ -189,12 +169,8 @@ export default function IssueSheet({ issue, areaLabel, starting, error, onClose,
 /**
  * One drill on the rail: title and chevron collapsed, numbered steps when open.
  *
- * Collapsed by default so a four-drill focus fits without scrolling. The golfer is
- * deciding whether to start a plan, not following instructions yet -- the detail is
- * available, not imposed.
- *
  * Steps come from the same `parseInstructionSteps` the practice overlay uses, so the
- * numbering a golfer reads here is the numbering they get mid-block.
+ * numbering read here is the numbering the golfer gets mid-block.
  */
 function DrillEntry({
     drill,
@@ -211,13 +187,12 @@ function DrillEntry({
 
     return (
         <View className="flex-row">
-            {/* The rail. One spine down the whole list with a node per drill, so the
-                drills read as a sequence without any label having to say so. */}
+            {/* One spine down the list with a node per drill: reads as a sequence. */}
             <View className="w-[9px] items-center">
                 <View
                     className="absolute top-0 w-px bg-sand/10"
-                    // A trailing line under the last node would point at nothing. Stop it
-                    // at the node instead of running it to the bottom of the row.
+                    // Stop the spine at the last node rather than running it to the row's
+                    // bottom, where it would point at nothing.
                     style={isLast ? { height: 23 } : { bottom: 0 }}
                 />
                 <View
@@ -248,9 +223,7 @@ function DrillEntry({
                 {open
                     ? steps.map((step, index) => (
                           <View key={`${drill.id}-${index}`} className="mt-3 flex-row">
-                              {/* Fraunces numerals: a coach writes steps numbered, and
-                                  a numeral holds its place when a step wraps to three
-                                  lines, where a dash would float loose. */}
+                              {/* Fraunces numeral: holds its place when a step wraps. */}
                               <Text className="w-[15px] font-display text-[12px] leading-[20px] text-gold">
                                   {index + 1}
                               </Text>

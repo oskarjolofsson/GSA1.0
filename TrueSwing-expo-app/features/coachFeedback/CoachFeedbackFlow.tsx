@@ -21,7 +21,6 @@ export default function CoachFeedbackFlow({ onCancel, onDone }: Props) {
     const { currentScreen, goTo } = useScreenSequence<Screen>({ screens });
     const cf = useCoachFeedback();
 
-    // Advance to the review step as soon as a draft exists.
     useEffect(() => {
         if (cf.draft) goTo("Review");
     }, [cf.draft, goTo]);

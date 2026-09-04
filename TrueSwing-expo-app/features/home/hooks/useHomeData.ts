@@ -12,17 +12,11 @@ import type { ProgramSummary } from 'features/programs/types';
 import type { TaxonomyTerm } from 'features/library/services/taxonomyService';
 
 /**
- * Everything the home screen renders from, and the derivations over it.
+ * Everything the home screen renders from, and the derivations over it -- notably which area
+ * is selected and which issues are still startable.
  *
- * Split out of HomeScreen so that file stays inside the 200-line cap in
- * features/CLAUDE.md, and so the two derivations that are easy to get wrong —
- * which area is selected, and which issues are still startable — sit together
- * with the reasoning for how they work.
- *
- * Three requests fire on focus: activity, issues, programs. Notably NOT
- * /issues/todays-issue/, which used to be a fourth: it returns the top of a
- * confidence-ordered list, its own docstring calls that a tiebreaker rather than
- * an answer, and the default tab can be derived from the programs already in hand.
+ * Three requests fire on focus: activity, issues, programs. Deliberately NOT
+ * /issues/todays-issue/; the default tab is derived from the programs already in hand.
  */
 export default function useHomeData(selectedArea: string | null, name?: string | null) {
   const activity = useActivity();

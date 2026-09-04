@@ -14,40 +14,14 @@ type Props = {
 };
 
 /**
- * An area with nothing started in it.
+ * An area with nothing started in it: one instruction, one control. When no suggestions
+ * follow either, `HomeScreen` hides the streak and archive so this is all there is.
  *
- *              Choose a focus to
- *              start practising.
+ * Centred, which nothing else on home is -- a single-purpose state has no column of siblings
+ * to break rank with. It does NOT generalise. `compact` turns the centring off, for when
+ * diagnosed issues render directly beneath.
  *
- *                    (+)              44px, gold stroke
- *              Find bunker work
- *
- * ONE JOB, AND THE SCREEN IS CLEARED FOR IT. When there are no suggestions either,
- * `HomeScreen` hides the streak and the archive too, so this is the only thing
- * below the area tabs. That is the point: a golfer who has nothing going in an area
- * should see one instruction and one control, not an invitation surrounded by
- * things that do not matter yet.
- *
- * CENTRED, WHICH THE REST OF THE APP IS NOT. Everything else on home is left
- * aligned against a common margin. A single-purpose state is the one place where
- * centring earns its keep — there is no column of siblings for it to break rank
- * with, and the composition reads as deliberate rather than as a left-aligned
- * screen that ran out of content. It does NOT generalise; centring the normal home
- * screen would be AI-slop pattern #4.
- *
- * `compact` turns the centring off. When diagnosed issues are waiting, they render
- * directly beneath this block (they ARE the focuses the headline names), and a
- * headline cannot be vertically centred above a list.
- *
- * THE BLURB IS GONE. `area.blurb` used to sit under the headline as a one-line
- * description of the area. It was the third thing to read on a screen whose whole
- * job is to get one tap, and the golfer already chose this area deliberately, so it
- * told them what they just told us. NOTE: home is no longer a consumer of
- * `taxonomy_areas.blurb`.
- *
- * THE `+` IS GOLD WHERE THE HERO'S IS CREAM. Not drift — DESIGN.md: "gold is for
- * content, not chrome." The hero corner is chrome. This is the content action, and
- * it is the only one on the screen, so it takes the accent.
+ * Its `+` is gold where the hero's is cream. See ADR-0025.
  */
 export default function AreaEmptyCard({ area, onBrowse, compact = false }: Props) {
   const label = area?.golfer_label ?? 'this area';

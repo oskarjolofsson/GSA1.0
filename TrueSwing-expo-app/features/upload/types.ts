@@ -1,7 +1,7 @@
 import type { Analysis } from 'features/analysis/types';
 
-// CreateAnalysisResponse is derived from the backend schema and re-exported from
-// the analysis feature; the old duplicate declaration here has been removed.
+// CreateAnalysisResponse is derived from the backend schema and re-exported from the
+// analysis feature.
 export type { CreateAnalysisResponse } from 'features/analysis/types';
 
 // Input-only shape assembled on the client before creating an analysis. Not a

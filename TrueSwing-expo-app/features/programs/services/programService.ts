@@ -3,18 +3,15 @@ import { routes } from 'lib/api/routes';
 import type { Program, ProgramStep, ProgramSummary, StepAdvance, CompleteStepBody } from '../types';
 
 // ---- 5-minute in-memory cache ----
-// Scoped to the per-issue reads used by the analysis reel (getActiveProgramByIssue
-// + getNextStep), where switching issues would otherwise refetch each time.
-// Invalidated whenever a step is completed (the program then changes).
-//
-// The home screen does NOT go through here — see listPrograms below.
+// Scoped to the per-issue reads used by the analysis reel (getActiveProgramByIssue +
+// getNextStep). Invalidated whenever a step is completed. Home does not go through it.
 
 const TTL_MS = 5 * 60 * 1000;
 
 type Entry<T> = { value: T; ts: number };
 
-// Keyed by issue_id (NOT analysis_issue_id) so it works for every source — AI,
-// coach, and browse. Every program carries an issue_id.
+// Keyed by issue_id (NOT analysis_issue_id) so it works for every source. Every program
+// carries an issue_id.
 const activeCache = new Map<string, Entry<Program | null>>(); // key: issueId
 const nextStepCache = new Map<string, Entry<ProgramStep | null>>(); // key: programId
 
@@ -29,9 +26,8 @@ export function clearProgramCache(): void {
 }
 
 /**
- * Synchronous cache peek used to seed the hook on issue switch, so a recently
- * loaded program renders instantly without a loading flash. Returns null unless
- * both the active program and (when present) its next step are fresh.
+ * Synchronous cache peek that seeds the hook on issue switch, avoiding a loading flash.
+ * Returns null unless both the active program and its next step are fresh.
  */
 export function peekProgramSession(
   issueId: string
@@ -47,12 +43,8 @@ export function peekProgramSession(
 /**
  * Every program the golfer currently has open, each with its next session inline.
  *
- * DELIBERATELY NOT CACHED, unlike everything else in this file. The cache above
- * exists to avoid refetching on each issue switch — a problem the home screen no
- * longer has, because this single call returns every area and switching between
- * them is a local filter that touches no network. Adding a third cache here would
- * only be a third thing to remember to invalidate. `usePrograms` refetches on
- * focus instead.
+ * Deliberately not cached, unlike the rest of this file: one call covers every area, so
+ * switching areas is a local filter. `usePrograms` refetches on focus.
  */
 export async function listPrograms(): Promise<ProgramSummary[]> {
   return apiClient.get<ProgramSummary[]>(routes.programs.list);
@@ -68,9 +60,8 @@ export async function getActiveProgramByIssue(issueId: string): Promise<Program 
 }
 
 /**
- * Create (or fetch the existing) active program for an AI-analysed issue. Keeps
- * the analysis_issue_id provenance (links the program back to its source analysis).
- * Premium-gated.
+ * Create (or fetch the existing) active program for an AI-analysed issue, keeping the
+ * analysis_issue_id provenance. Premium-gated.
  */
 export async function generateProgram(analysisIssueId: string): Promise<Program> {
   const program = await apiClient.post<Program>(routes.programs.generate, {
@@ -81,8 +72,8 @@ export async function generateProgram(analysisIssueId: string): Promise<Program>
 }
 
 /**
- * Create (or fetch the existing) active program directly from an issue id — the
- * coach-feedback and browse paths, which have no source analysis. Premium-gated.
+ * Create (or fetch the existing) active program from an issue id -- the coach-feedback and
+ * browse paths, which have no source analysis. Premium-gated.
  */
 export async function generateProgramFromIssue(issueId: string): Promise<Program> {
   const program = await apiClient.post<Program>(routes.programs.generate, {
@@ -93,10 +84,8 @@ export async function generateProgramFromIssue(issueId: string): Promise<Program
 }
 
 /**
- * Remove a browse/coach focus. For a coach-authored (custom) issue this deletes the
- * issue outright; for a global catalog (browse) issue it deletes the user's program(s)
- * and leaves the shared issue. Clears the program cache so the deleted focus can't be
- * resurfaced from the 5-minute cache.
+ * Remove a browse/coach focus. A coach-authored (custom) issue is deleted outright; a
+ * global catalog issue keeps the shared row and only the user's programs go.
  */
 export async function removeFocus(issueId: string): Promise<void> {
   await apiClient.delete<void>(routes.programs.byIssue(issueId));
@@ -122,7 +111,6 @@ export async function completeStep(
     routes.programs.stepComplete(programId, stepId),
     body
   );
-  // The program changed — drop caches so home reloads fresh state.
   clearProgramCache();
   return result;
 }

@@ -109,7 +109,6 @@ export function BillingProvider({ children }: PropsWithChildren) {
     setPaywall((p) => ({ ...p, open: false }));
   }, []);
 
-  // Fetch on auth, clear on sign-out.
   useEffect(() => {
     if (session) void refresh();
     else setStatus(null);
