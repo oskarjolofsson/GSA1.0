@@ -7,28 +7,16 @@ import { parseInstructionSteps } from 'features/shared/utils/parseInstructionSte
 import { asMetric, repsOf, willLogSentence } from '../utils/drillMetric';
 
 /**
- * The screen a golfer reads once, before the phone goes in their pocket.
+ * The screen a golfer reads once, before the phone goes in their pocket. There is no second
+ * chance to communicate anything, so what counts as good and what will be asked for both
+ * live here; the block screen that follows deliberately carries less.
  *
- * FIELD TESTING SET THIS LAYOUT. A golfer at a range does not look at their phone between
- * shots, so there is no second chance to communicate anything. Everything they need to hold
- * in their head has to be here: what counts as good, and what they will be asked to record.
- * The block screen that follows deliberately carries less, not more.
+ * The focus points are a SET, not a sequence -- marks, explicitly no numbers, because
+ * numbering would tell the golfer to work through them in turn. A drill's `task` IS ordered
+ * and keeps the numbered rail, in the how-to overlay.
  *
- * THE FOCUS POINTS ARE A SET, NOT A SEQUENCE. "Each ball carries close to its target",
- * "swing length scales with the distance" and "the distances ladder cleanly" are all true at
- * the same time, in no order. So they get a gold-stroked mark each -- DESIGN.md's rail node
- * without the spine -- and explicitly no numbers: numbering them would tell the golfer to
- * work through them in turn, which is a lie about the content. A drill's `task` IS ordered
- * and keeps the rail, in the how-to overlay.
- *
- *   ┌─ fixed ──────────────┐   The button is pinned because the criteria are authored in an
- *   │ eyebrow, title,      │   admin CMS with no length limit. On a 375x667 phone three
- *   │ How to               │   two-line criteria already fill the screen, so a fourth or a
- *   ├─ scrolls ────────────┤   long wrap used to push "Start drill" off the bottom -- the
- *   │ YOUR FOCUS + marks   │   same failure as the rating phase, one screen over.
- *   ├─ fixed ──────────────┤
- *   │ will-log, Start      │
- *   └──────────────────────┘
+ * Header and footer are fixed and only the focus list scrolls. Criteria are authored in an
+ * admin CMS with no length limit, and three two-line ones already fill a 375x667 phone.
  */
 
 /** Beyond four, a brief stops being something you can hold in your head. */

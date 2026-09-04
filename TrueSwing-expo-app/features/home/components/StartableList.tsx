@@ -12,22 +12,11 @@ type Props = {
 /**
  * Issues in this area that have been diagnosed but not started.
  *
- *   COULD ALSO WORK ON
- *   Early extension                   Start
- *   ──────────────────────────────────────
- *   Casting the club                  Start
+ * Home is otherwise driven entirely by GET /programs/, which returns open programs only, so
+ * without this list an AI analysis could diagnose three faults and none would appear on home.
  *
- * WHY THIS EXISTS: the home screen is otherwise driven entirely by GET /programs/,
- * which returns open programs only. Without this list an AI analysis could
- * diagnose three faults and none of them would appear anywhere on home, so the
- * loop "film a swing → get faults → start working one" would dead-end at the
- * second step.
- *
- * THE ONLY SECTION WITH A LABEL. "Played a round?" and "12 day streak" say what
- * they are; a bare list of issue names does not. Deliberately inconsistent with
- * the other sections — clarity beats consistency where they conflict.
- *
- * Renders nothing at all when empty rather than an empty heading.
+ * The only section on home carrying a label: a bare list of issue names does not say what it
+ * is, where "12 day streak" does. Renders nothing at all when empty.
  */
 export default function StartableList({ issues, startingId, onStart }: Props) {
   if (issues.length === 0) return null;
