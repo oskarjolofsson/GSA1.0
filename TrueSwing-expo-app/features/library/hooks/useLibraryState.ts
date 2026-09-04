@@ -13,18 +13,15 @@ import {
 import { buildAreaFork, issuesForGoal, issuesForMiss, searchIssues } from "../utils/libraryFork";
 
 export type LibraryView = "areas" | "focus" | "candidates";
-/** Which branch of the fork the golfer took. `label` rides along so the leaf can
- *  title itself without re-resolving the term out of the taxonomy. The old
- *  `{ type: "skill" }` variant is gone: skill issues are now reached through
- *  their goals, so nothing could select a single one directly any more. */
+/** Which branch of the fork the golfer took. `label` rides along so the leaf can title
+ *  itself without re-resolving the term out of the taxonomy. */
 export type CandidateFilter =
     | { type: "miss"; miss: string; label: string }
     | { type: "goal"; goal: string; label: string };
 
 type FetchStatus = "loading" | "ready" | "error";
 
-/** State, both fetches and the derived lists for the library. Extracted from the
- *  screen so the screen stays layout only (and under the ~200 line cap). */
+/** Both fetches and the derived lists for the library. */
 export function useLibraryState(initialAreaKey?: string) {
     const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
     const [taxonomyStatus, setTaxonomyStatus] = useState<FetchStatus>("loading");
