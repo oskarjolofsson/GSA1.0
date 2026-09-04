@@ -1,4 +1,3 @@
-// features/privacy/aiConsentStorage.ts
 import * as SecureStore from "expo-secure-store";
 
 import type { AiConsent } from "features/privacy/types";
