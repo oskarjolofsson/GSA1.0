@@ -70,14 +70,10 @@ export function isPartialDrill(drill: DraftDrill): boolean {
 }
 
 /**
- * How a blank optional field is expressed, which differs by verb.
+ * How a blank optional field is expressed: `null` on create, `""` on edit.
  *
- *   create ─▶ null  the column has never been set, so leave it NULL
- *   edit   ─▶ ""    the admin cleared a field that had text in it
- *
- * That difference is load-bearing. On PATCH the backend reads null as "this field
- * was not part of the request" and leaves the old value in place, so sending null
- * for a cleared field would report success and change nothing.
+ * Load-bearing. On PATCH the backend reads null as "field absent" and leaves the old
+ * value, so null for a cleared field would report success and change nothing.
  */
 const blankAs = (value: string, empty: null | "") => value.trim() || empty;
 
@@ -134,11 +130,7 @@ export function toComposeBody(state: WizardState): ComposeIssueBody {
   };
 }
 
-/** Why the save button is disabled, or undefined when it's ready.
- *
- * Returned as copy rather than a boolean so the button can explain itself instead
- * of being mysteriously inert.
- */
+/** Why the save button is disabled, or undefined when it's ready. */
 export function validateWizard(state: WizardState): string | undefined {
   if (!state.title.trim()) return "An issue needs a title.";
   if (state.newDrills.some(isPartialDrill)) {

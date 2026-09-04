@@ -6,9 +6,8 @@ import type { AdminDrill } from "@/lib/content/types";
 /**
  * Search existing drills and pick one to prescribe.
  *
- * Debounced at 250ms to match the other search boxes. Drills already attached are
- * shown greyed rather than hidden, so it is obvious the drill exists and is already
- * in use rather than looking like the search missed it.
+ * Already-attached drills are greyed rather than hidden, so they don't look like a
+ * search miss.
  */
 export default function DrillAttachPanel({
   attachedIds,

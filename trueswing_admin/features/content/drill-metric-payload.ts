@@ -1,15 +1,9 @@
 /**
- * Pure helpers for the drill metric sub-form.
+ * Pure helpers for the drill metric sub-form. Validation returns a reason string or
+ * undefined, so the disabled save button can explain itself.
  *
- * Same shape as compose-payload.ts and taxonomy-payload.ts: no form library, no zod —
- * validation returns a reason string or undefined so the disabled save button can explain
- * itself, and everything here runs in vitest without a DOM.
- *
- * The rules mirror `backend/core/services/drill_metrics.validate_metric`. That duplication
- * is deliberate and bounded: the server is authoritative and returns a 422 naming the
- * field, but a metric is fiddly enough to author (four numbers, two of them proportions)
- * that discovering a mistake on save is a bad trade for the person writing forty of them.
- * If the two ever disagree, the server is right and this is the bug.
+ * The rules deliberately mirror `backend/core/services/drill_metrics.validate_metric`;
+ * the server is authoritative, so if the two disagree this is the bug. See ADR-0009.
  */
 
 /** Every field is a string because they all come from inputs. Coerced on the way out. */
@@ -24,8 +18,8 @@ export type MetricDraft = {
   ok: string;
 };
 
-/** Types the app can render an input for. Adding one here without shipping that input is
- * what B2's default branch survives, but it still means an authored drill nobody can score. */
+/** Types the app can render an input for. Adding one here without also shipping its
+ * input means an authored drill nobody can score. */
 export const METRIC_TYPES = [
   ["", "Feel only — no number"],
   ["make_rate", "Make rate — how many out of N"],
@@ -79,8 +73,7 @@ const asNumber = (raw: string): number | null => {
 /**
  * Why the save button is disabled, or undefined when it should be enabled.
  *
- * A feel-only drill validates trivially — that is the point of `type: ""`, and it is what
- * every drill authored before Slice B still is.
+ * A feel-only drill (`type: ""`) validates trivially — that is the point of it.
  */
 export function validateMetricDraft(draft: MetricDraft): string | undefined {
   if (draft.type === "") return undefined;
@@ -154,9 +147,8 @@ export function metricFromDraft(draft: MetricDraft): Record<string, unknown> | n
 /**
  * What the thresholds mean in the drill's own units, for the hint under the inputs.
  *
- * `grade_at` is the part of a metric an admin gets wrong: it reads like a score out of
- * ten and is actually a fraction. Showing "8-10 dialed, 5-9 ok" turns an abstract 0.8
- * into the thing the golfer will see on the screen.
+ * `grade_at` is the part an admin gets wrong: it reads like a score out of ten and is
+ * actually a fraction, so the hint spells 0.8 out as "8 or more out of 10".
  */
 export function thresholdHint(draft: MetricDraft): string | undefined {
   if (draft.type === "" || validateMetricDraft(draft)) return undefined;

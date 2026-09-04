@@ -10,19 +10,12 @@ import { listTaxonomyTerms } from "@/lib/content/taxonomy-terms";
 import type { AdminTaxonomyTerm, TaxonomyKind } from "@/lib/content/types";
 
 /**
- * Content → Taxonomy (server component).
+ * Content → Taxonomy (server component): the vocabulary issues are tagged with — areas,
+ * goals, and misses scoped to one area. See ADR-0008.
  *
- * The vocabulary issues are tagged with: where on the course (areas), why someone
- * practises (goals), and what they see go wrong (misses, scoped to one area).
- *
- * This page is the reason the taxonomy moved out of source code. Adding a miss used to
- * mean a migration plus edits in three hand-synced files, so four areas of the game went
- * unauthored — roughly forty misses still have to be written, most of them wrong on the
- * first attempt. That loop has to be a form, not a deploy.
- *
- * All three kinds are fetched together rather than per tab: they are a few dozen rows in
- * total, switching tabs should not hit the network, and the miss editor needs the area
- * list anyway to offer a parent.
+ * All three kinds are fetched together rather than per tab: a few dozen rows in total,
+ * switching tabs should not hit the network, and the miss editor needs the area list
+ * anyway to offer a parent.
  */
 export default async function TaxonomyPage() {
   const token = await requireSessionToken();

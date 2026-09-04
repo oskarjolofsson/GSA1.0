@@ -7,19 +7,19 @@ import { labelsFrom } from "@/features/content/constants";
 import type { Taxonomy, Coverage } from "@/lib/content/types";
 
 /**
- * Where the catalog has content and where it does not.
+ * Where the catalog has content and where it does not. One grid per area: misses down,
+ * goals across.
  *
- * One grid per area: misses down, goals across. A zero cell means a golfer who
- * picks that goal and reports that miss gets nothing back — those are the gaps
- * worth filling, so they are the ones highlighted rather than the populated cells.
+ * Zero cells are the ones highlighted, not the populated ones — a golfer who picks that
+ * goal and reports that miss gets nothing back, which is the gap worth filling.
  */
 export default function CoverageGrid({
   coverage,
   taxonomy,
 }: {
   coverage: Coverage;
-  // Supplies the display words. Nullable because the taxonomy fetch can fail
-  // independently of the coverage fetch; the labels then fall back to raw keys.
+  // Nullable: the taxonomy fetch can fail independently of the coverage fetch, and the
+  // labels then fall back to raw keys.
   taxonomy: Taxonomy | null;
 }) {
   const labels = labelsFrom(taxonomy);

@@ -12,18 +12,8 @@ import { paginate, parsePage } from "@/features/shared/paginate";
 const PAGE_SIZE = 10;
 
 /**
- * Admin subscriptions screen (server component).
- *
- *   session ─▶ getSubscribers(page) ─┬ ok     ─▶ <SubscriptionsExplorer/>
- *                                     ├ denied ─▶ "No access" notice
- *                                     └ error  ─▶ error notice
- *
- * No separate admin check: the subscriptions endpoint is `require_admin`, so its
- * 403 already means "not admin" — one round-trip does both. verifyAdmin runs
- * only at sign-in (app/page.tsx).
- *
- * Pagination is server-side: `?page=N` → offset. Prev/Next are links that change
- * the query, so each page is a fresh server fetch.
+ * Admin subscriptions screen (server component). Pagination is server-side: `?page=N`
+ * becomes an offset and Prev/Next are links, so each page is a fresh fetch.
  *
  * Next 16: `searchParams` is a Promise and must be awaited.
  */

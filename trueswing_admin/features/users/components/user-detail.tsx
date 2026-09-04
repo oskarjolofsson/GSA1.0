@@ -67,7 +67,6 @@ export default function UserDetail({
   const [error, setError] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // Role is editable, so track it locally and reflect changes immediately.
   const [role, setRole] = useState<string | null>(user.role ?? null);
   const [roleError, setRoleError] = useState<string | null>(null);
   const [isRolePending, startRole] = useTransition();
