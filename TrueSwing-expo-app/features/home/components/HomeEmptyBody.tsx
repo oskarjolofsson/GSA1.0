@@ -11,7 +11,6 @@ type Props = {
  * Sits UNDER the hero and area tabs rather than replacing the screen, so a first-run golfer
  * sees the same home they will keep seeing, with the areas already in front of them.
  */
-
 export default function HomeEmptyBody({ onStart }: Props) {
   return (
     <View>

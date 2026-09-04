@@ -1,19 +1,10 @@
 /**
- * Split a drill's authored text into the items a golfer reads, shared by the practice
- * how-to overlay, the library sheet and the pre-drill brief so all three agree.
+ * Split a drill's authored text into the steps a golfer reads. Shared by the how-to
+ * overlay, the library sheet and the pre-drill brief so all three agree.
  *
- * Splits on periods, so drill text must be authored as sentences (a DESIGN.md rule that
- * predates this file). Abbreviations break that -- "10 ft. from the hole" splits in two --
- * so a segment starting with a lower-case letter is treated as a continuation and joined
- * back with its period restored:
- *
- *   "Set up square. Land within 10 ft. from the hole. Reset."
- *     split      -> ["Set up square", "Land within 10 ft", "from the hole", "Reset"]
- *     joined     -> ["Set up square", "Land within 10 ft. from the hole", "Reset"]
- *
- * Capitalisation rather than length, because the stray fragment is sometimes the first
- * piece ("10 ft") and sometimes the last ("out"). The residual risk is an item deliberately
- * authored in lower case folding into the one above it, which is the more legible failure.
+ * Splits on periods, so drill text must be authored as sentences (DESIGN.md, "Sequence
+ * and instructions"). A segment starting lower-case is rejoined to the one above with its
+ * period restored, so "10 ft. from the hole" survives as one step.
  */
 
 /** True when a segment continues the previous sentence rather than starting a new one. */

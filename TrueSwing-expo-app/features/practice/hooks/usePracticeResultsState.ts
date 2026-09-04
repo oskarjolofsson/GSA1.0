@@ -5,17 +5,12 @@ import type { DrillRun } from 'features/drill/types/DrillRun';
 import { getPracticeSessionResults } from '../services/sessionService';
 
 /**
- * What the golfer scored this session, drill by drill.
+ * What the golfer scored this session, drill by drill. One fetch, not two.
  *
- * ONE FETCH, NOT TWO. This used to `await loadSession()` and then `await loadResults()` in
- * sequence -- two serial round trips before anything rendered, and the session it fetched
- * was never read by the screen.
- *
- * IT OWNS ITS OWN FAILURE. The completion screen renders everything that matters (the
- * fraction, what's next, Continue) from the `StepAdvance` it already holds, so a failure
- * here must degrade this section alone. DESIGN.md: "Independent fetches fail independently.
- * A screen that can render from one source must render." Blocking Continue because a list of
- * numbers failed to load would cost the golfer their next session over cosmetics.
+ * Owns its own failure: the completion screen renders the fraction, what's next and
+ * Continue from the `StepAdvance` it already holds, so a failure here degrades this
+ * section alone and never blocks Continue. DESIGN.md, "independent fetches fail
+ * independently".
  */
 
 interface UsePracticeResultsStateReturn {

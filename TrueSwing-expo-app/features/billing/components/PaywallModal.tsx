@@ -16,17 +16,12 @@ import {
 import type { PaywallReason } from 'features/billing/types';
 
 /**
- * Full-screen paywall.
+ * Full-screen paywall, opened from `paywall.open` state rather than routed to.
  *
- * NOT a route, and cannot become one: BillingContext renders this as a sibling of
- * {children}, which puts it outside the expo-router tree entirely. The 402 interceptor
- * also fires from anywhere with no navigator in hand. `presentationStyle="fullScreen"`
- * with NO `transparent` prop is the whole mechanism — RN silently downgrades to
- * `overFullScreen` whenever `transparent` is true.
- *
- *   BillingProvider
- *     |- {children}        <- the router tree lives in here
- *     '- <PaywallModal />  <- reached only via paywall.open state
+ * It cannot become a route: BillingContext renders it as a sibling of {children}, outside
+ * the expo-router tree, and the 402 interceptor fires from anywhere with no navigator in
+ * hand. Do not add a `transparent` prop — RN silently downgrades
+ * `presentationStyle="fullScreen"` to `overFullScreen` whenever it is true.
  */
 
 // One record rather than three `reason ===` ternaries scattered through the render.

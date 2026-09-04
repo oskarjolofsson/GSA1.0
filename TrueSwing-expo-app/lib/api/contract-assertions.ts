@@ -1,19 +1,14 @@
 /**
- * Compile-time drift tripwire. This file has no runtime output and no Jest
- * tests — it exists so `tsc --noEmit` (run in `npm run typecheck` / CI) fails
- * when the backend OpenAPI schema drifts away from the shapes the app overrides
- * or hand-maintains.
+ * Compile-time drift tripwire: no runtime output and no tests, it exists so `tsc --noEmit`
+ * fails when the backend OpenAPI schema drifts from the shapes this app overrides.
  *
- * Directly-aliased types (e.g. `Analysis = Schemas['GetAnalysis']`) are already
- * checked by tsc at every consumer, so they need no assertion here. The value
- * is in the types that DON'T alias 1:1:
- *   - program types override loosely-typed backend fields (prescription dict,
- *     string session_type/status/grade) — assert those keys still exist, so an
- *     Omit<> doesn't silently stop protecting anything after a rename.
- *   - the shared (non-overridden) fields must stay assignable from the backend.
+ * Directly-aliased types need no assertion -- tsc already checks them at every consumer. The
+ * value is in the types that do not alias 1:1, where an `Omit<>` could silently stop
+ * protecting anything after a rename.
  *
  * Regenerate the schema with `npm run gen:api-types` before trusting a green run.
  */
+
 import type { Schemas } from 'lib/api/types';
 import type { Program, ProgramStep, StepAdvance, CompleteStepBody } from 'features/programs/types';
 
