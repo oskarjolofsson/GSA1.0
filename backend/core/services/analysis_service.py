@@ -6,7 +6,7 @@ from .dtos.analysis_service_dto import (
     GetAnalaysisDTO,
     IssueSwingTimelineItemDTO,
 )
-from .exceptions import NotFoundException, InvalidStateException, InvalidVideoException
+from .exceptions import NotFoundException, InvalidStateException, InvalidVideoException, ForbiddenException
 
 from ..infrastructure.storage.r2Adaptor import generate_upload_url, put_object
 from core.infrastructure.db.repositories import issues as issues_repo
@@ -107,13 +107,16 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
     """
     Drive one analysis from `awaiting_upload` through to `completed` or `failed`.
 
-    Does not authorize the caller: `dto.user_id` is trusted as already checked.
+    Authorizes the caller: `dto.user_id` must own the analysis.
     """
     analysis_object: Analysis = get_analysis_by_id_in_db(
         analysis_id=dto.analysis_id, session=db_session
     )
     if analysis_object is None:
         raise NotFoundException("Analysis", str(dto.analysis_id))
+
+    if analysis_object.user_id != dto.user_id:
+        raise ForbiddenException("You do not have access to this analysis.")
     
     if analysis_object.status != "awaiting_upload":
         raise InvalidStateException(f"Analysis is in '{analysis_object.status}' state, expected 'awaiting_upload'")

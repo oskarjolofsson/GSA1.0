@@ -89,18 +89,13 @@ def run_analysis(
     """
     Confirm the video upload finished and start processing the analysis.
 
+    Owner-scoped: a caller who does not own the analysis is rejected with 403.
+
     Only valid while the analysis is in `awaiting_upload`; any other state is
     rejected as an invalid state transition.
-
-    UNVERIFIED OWNERSHIP: the user_id handed to the service is read off the
-    analysis row, not from `current_user`. Any authenticated premium caller who
-    knows an analysis_id can therefore start processing on someone else's
-    analysis. Tracked separately — do not treat this endpoint as owner-scoped.
     """
-    analysis = service_get_analysis_by_id(analysis_id, db_session=db)
-
     dto = RunAnalysisDTO(
-        user_id=analysis.user_id,
+        user_id=UUID(current_user["user_id"]),
         analysis_id=analysis_id,
     )
 
