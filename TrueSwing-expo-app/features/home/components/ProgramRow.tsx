@@ -14,56 +14,25 @@ type Props = {
 const SAND_DIM = '#8A8676';
 
 /**
- * One open program, and the screen's primary action.
+ * One open program: title, the drills in the next session, a progress bar, and the screen's
+ * primary action. Type on ink -- no card, no surface, no shadow.
  *
- *   Hold your finish                    (i)
- *   Slow takeaway · Mirror check
- *   ▬▬░░░░
- *   ┌──────────────────────────────────────┐
- *   │            Start practice            │   gold, 1px stroke
- *   └──────────────────────────────────────┘
+ * The row itself is inert; the title and the info button are two explicit targets. Starting
+ * a session writes a `practice_sessions` row server-side, so a whole-row trigger would turn
+ * every curious tap into real state.
  *
- * NO CARD, NO SURFACE, NO SHADOW. DESIGN.md: "Cards earn their existence. Use one
- * when the card *is* the interaction... Not to group text." This is type on ink.
- *
- * THE BUTTON EXISTS BECAUSE A GOLFER COULD NOT FIND THE OLD ONE. A usability test
- * (2026-08-09, a non-technical golfer) got as far as picking an area and then
- * stalled: starting a session was a 13px underlined link, the smallest text on a
- * screen whose largest was a 48px streak count. She read the hierarchy correctly;
- * the hierarchy was wrong.
- *
- * WHY IT IS A STROKE AND NOT A FILL. `SLOTS_PER_AREA = 2`, so this row can render
- * twice. DESIGN.md allows a gold FILL only for "a genuinely primary, one-per-screen
- * action" — two filled buttons would break that, the same rule that killed the old
- * add-focus hero panel. A stroke is legal twice, and the screen's gold now totals
- * exactly three: the selected area tab plus at most two of these.
- *
- * THAT BUDGET WAS PAID FOR BY DELETING THE ROUND ROW. Before, "Played a round? /
- * Log it" held two of the three gold appearances and this row had none — the
- * loudest thing on the screen pointed at the least important action.
- *
- * TAPPING THE TITLE NO LONGER OPENS THE SHEET. It used to, and the info button is
- * new. Starting a session writes a `practice_sessions` row server-side, so making
- * the whole row a trigger would turn every curious tap into real state (TODOS
- * already tracks orphaned sessions). The row is inert; two explicit targets.
- *
- * NO NUMERAL. The `2/6` that sat top-right is gone — the segment bar underneath
- * already carries the same count, and at 22px the numeral was competing with the
- * focus title for the eye while telling the golfer nothing they need before
- * deciding to practise.
+ * The Start button is a gold stroke rather than a fill. See ADR-0021.
  */
 export default function ProgramRow({ program, starting, onStart, onOpenInfo }: Props) {
   const total = program.total_drills;
   const grooved = program.grooved_count;
 
-  // The drills in the next session, when the server resolved them. Falls back
-  // to the program title, which is always present.
+  // Falls back to the program title, which is always present.
   const drillNames = program.next_step?.drills?.map((d) => d.title) ?? [];
   const subtitle = drillNames.length > 0 ? drillNames.join(' · ') : program.title;
 
-  // One segment per drill. Guarded: a program can legitimately have zero
-  // drills if its issue has none linked yet, and `Array.from({length: 0})` is
-  // an empty row rather than a crash.
+  // One segment per drill. A program can legitimately have zero drills, if its issue has
+  // none linked yet.
   const segments = Array.from({ length: Math.max(total, 0) });
 
   return (
@@ -76,8 +45,7 @@ export default function ProgramRow({ program, starting, onStart, onOpenInfo }: P
           </Text>
         </View>
 
-        {/* The only other target on the row. Carries what the title used to:
-            what the jargon means, swing history, and removing the focus. */}
+        {/* Opens the issue sheet: jargon, swing history, remove. */}
         <Pressable
           onPress={onOpenInfo}
           hitSlop={10}

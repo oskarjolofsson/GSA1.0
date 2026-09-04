@@ -35,3 +35,10 @@ yet (`showSecondary` in `HomeScreen`, and `AreaEmptyCard`).
 
 Home does not overscroll. The hero runs full bleed to the top, so an iOS rubber-band would
 drag ink above the photograph and pull the greeting off its composition.
+
+The Start action is a gold stroke, never a fill. `SLOTS_PER_AREA = 2`, so `ProgramRow` can
+render twice, and DESIGN.md allows a gold fill only for a genuinely primary, one-per-screen
+action — the same rule that killed the old add-focus hero panel. A stroke is legal twice, and
+the screen's gold then totals exactly three: the selected area tab plus at most two Start
+buttons. That budget was paid for by deleting the "Played a round? / Log it" row, which held
+two of the three gold appearances while pointing at the least important action.
