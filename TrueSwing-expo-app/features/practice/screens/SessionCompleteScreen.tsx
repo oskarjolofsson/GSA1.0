@@ -9,23 +9,16 @@ import { usePracticeResultsState } from '../hooks/usePracticeResultsState';
 import type { PracticeSession } from '../types/Session';
 
 /**
- * The end of a range visit, and the way into the next one.
- *
- * Four states, because the old screen had one (a "Session complete" hero and an Exit button)
- * and that one lied in two of the four cases:
+ * The end of a range visit, and the way into the next one. Four states:
  *
  *   advanced + next step   -> what moved, what's next, Continue
  *   advanced + no next     -> the focus is finished; Continue would have nowhere to go
  *   advance-failed         -> practice saved, plan did NOT move, retry offered
  *   no-program             -> a session with nothing to advance
  *
- * WHAT MOVED, NOT JUST THE TOTAL. `grooved_count` shipped as a bare fraction with nothing in
- * the app explaining it. A drill fills in at strength 3 and only a "Very good" block adds one
- * (`backend/core/services/program_service.py:31-36`), so most sessions move nothing -- and the
- * screen has to be honest about that case too, or the golfer is left wondering.
- *
- * The delta does NOT name the drill. `StepAdvance` returns the count, not per-drill strength,
- * so naming one would be a guess dressed as a fact.
+ * Shows what moved, not just the total, and is honest when nothing moved -- most sessions do
+ * not (ADR-0020). The delta does not name a drill: `StepAdvance` returns the count only, so
+ * naming one would be a guess dressed as a fact.
  */
 
 type Props = {

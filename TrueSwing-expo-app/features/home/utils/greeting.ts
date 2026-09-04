@@ -1,13 +1,11 @@
 /**
  * The line under "Hello, {name}".
  *
- * Pure on purpose: no clock, no randomness inside. The caller passes the day key,
- * which is what makes the phrase stable while the golfer is on the screen —
- * `Math.random()` here would re-roll it on every render, and reading the clock
- * here would make it untestable.
+ * Pure on purpose: the caller passes the day key, so the phrase is stable across renders and
+ * the function stays testable.
  *
- * Voice, from DESIGN.md: direct, practical, honest. No exclamation marks, no
- * congratulation for showing up.
+ * Voice, from DESIGN.md: direct, practical, honest. No exclamation marks, no congratulation
+ * for showing up.
  */
 
 export type GreetingState = 'none' | 'one' | 'many';

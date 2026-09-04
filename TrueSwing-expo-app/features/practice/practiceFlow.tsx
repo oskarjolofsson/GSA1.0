@@ -17,15 +17,9 @@ import type { PracticeSession } from './types';
  * A range visit: work through a step's drills, then either continue into the next step or
  * stop for the day.
  *
- * THE HOOKS LIVE HERE, NOT IN THE SCREENS. Two reasons, both learned the hard way:
- *
- *  1. A failed `completeStep` has to stay retryable from the completion screen. Mounted in
- *     the practice screen, the runner unmounted before the retry could ever fire.
- *  2. Continuing swaps in a new session and the drill machine resets off that -- but
- *     `useScreenSequence` keeps `currentIndex` in local state, so handing down a new session
- *     does NOT move the screen. Without the explicit `goToPractice()` below, "Continue
- *     practice" would start a new session and leave the golfer staring at the completion
- *     screen. Every unit test would have passed.
+ * The hooks live here rather than in the screens (ADR-0022). Note the explicit
+ * `goToPractice()` on continue: `useScreenSequence` keeps `currentIndex` in local state, so
+ * handing down a new session does NOT by itself move the screen.
  */
 
 type PracticeFlowProps = {
