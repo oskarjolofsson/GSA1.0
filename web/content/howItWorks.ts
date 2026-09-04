@@ -1,17 +1,8 @@
 /**
- * "How it works" — the one section that replaces the old
- * StartWithYourIssue / Program / Proof trio.
+ * Copy for the three "how it works" cards, which are a genuine 1 -> 2 -> 3 sequence.
  *
- * Modeled on Datafast's "Find … in 3 steps": three static cards, image-top /
- * text-bottom, read in one scan. Everything lives in the static HTML — no
- * client JS, nothing hidden behind a click — so a crawler sees all three steps.
- *
- * The three cards ARE a sequence (1 → 2 → 3), so the numbered titles are honest
- * here. Copy is carried over from the retired constants in content/landing.ts.
- *
- * Card images are the existing lifestyle photos as PLACEHOLDERS. Real app
- * screenshots (the "one thing" screen, a program, the squares grid) drop in
- * later with no layout change — the card media region keeps its aspect ratio.
+ * Card images are lifestyle photos standing in for real app screenshots; the media
+ * region keeps its aspect ratio so swapping them needs no layout change.
  */
 import { img } from "@/lib/images";
 

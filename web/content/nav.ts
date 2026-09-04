@@ -1,15 +1,9 @@
 /**
- * Nav links.
+ * Nav links. Every href is an on-page anchor; content/nav.test.ts asserts each one
+ * matches a section that actually renders.
  *
- * Every href here is an on-page anchor, because this site is one scrolling page
- * plus two legal routes. content/nav.test.ts asserts each anchor matches a
- * section id that actually renders — a nav link that scrolls nowhere is the
- * classic way this breaks.
- *
- * Section ids: HowItWorks carries #start (the section), Faq carries #faq. Other
- * ids render but are deliberately not in the nav — HowItWorks's #program (card 2)
- * and #proof, and Problem (#problem). Two links is enough, and "The problem" is
- * not something anyone navigates to on purpose.
+ * #program, #proof and #problem render but are deliberately absent — two links is
+ * enough, and nobody navigates to "the problem" on purpose.
  */
 export const NAV_LINKS = [
   { href: "#start", label: "How it works" },

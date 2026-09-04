@@ -4,18 +4,11 @@ import { AppStoreButton } from "./AppStoreButton";
 import { ScrollCue } from "./ScrollCue";
 
 /**
- * The "how it works" section. Replaces StartWithYourIssue / Program / Proof.
+ * The "how it works" section: three static cards, arrows between them on desktop.
  *
- * Three static cards, image-top / text-bottom, arrows between on desktop. No
- * client JS: everything renders server-side into the static HTML, so the whole
- * story is in the bytes on disk for crawlers (see tests/static-html.test.ts).
- *
- * Anchors: the section carries #start (card 1 is "start with your issue") and
- * card 2 carries #program — both are nav targets (content/nav.ts). Don't drop
- * either without updating the nav and its test.
- *
- * On wide screens the section fills the viewport and centers vertically; on
- * mobile the cards stack at natural height.
+ * Carries #start, and card 2 carries #program — both are nav targets, so dropping
+ * either means updating content/nav.ts and its test. Server-rendered (ADR-0041),
+ * which tests/static-html.test.ts asserts.
  */
 export function HowItWorks() {
   return (
