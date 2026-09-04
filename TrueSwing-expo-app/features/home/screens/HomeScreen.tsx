@@ -20,29 +20,16 @@ import { removeFocus } from 'features/programs/services/programService';
 import analysisService from 'features/analysis/services/analysisService';
 import type { Issue } from 'features/issues/types';
 
-/** A tier-2 boundary: the .13 rule with real air either side. The only heavy
- *  mark on the screen, which is what makes the page resolve into blocks before
- *  a word is read. */
+/** The screen's one tier-2 boundary: a .13 rule with real air either side. See ADR-0021. */
 function Section({ children }: { children: React.ReactNode }) {
   return <View className="mt-9 border-t border-white/[.13] pt-7">{children}</View>;
 }
 
 /**
- * A separator between peers inside the secondary block.
+ * A .07 hairline separator between peers inside the secondary block. See ADR-0021.
  *
- * Home used to give four sections their own tier-2 rule, which handed each of
- * them the same claim on attention as the one thing the golfer came to do. Now a
- * single tier-2 rule marks where the primary block ends, and everything after it
- * separates with .07 hairlines and tighter air: "still here, not the point".
- *
- * `first` drops the rule for whichever item opens the block — the tier-2 rule
- * above it is already the boundary, and a hairline immediately under it would
- * read as a double line.
- *
- * DIMMING IS DONE WITH THE TOKEN, NOT AN OPACITY LAYER. A first pass wrapped
- * these in ~60% opacity and they read as disabled rather than secondary — a
- * golfer should still be able to use them, just not be pulled toward them. The
- * components inside carry `text-sand-dim` themselves.
+ * `first` drops the rule for whichever item opens the block — the tier-2 rule above it is
+ * already the boundary, and a hairline under it would read as a double line.
  */
 function Quiet({ children, first = false }: { children: React.ReactNode; first?: boolean }) {
   if (first) return <View>{children}</View>;
@@ -61,40 +48,11 @@ type HomeScreenProps = {
 };
 
 /**
- * Home: a photograph, the parts of the game, and what the golfer has open in the
- * one they picked.
+ * Home: a photograph, the parts of the game, and what the golfer has open in the one they
+ * picked. Starting a session is the one thing that wins; everything below it recedes.
  *
- *   hero (360px, full bleed)
- *   area tabs
- *   ── programs, separated by AIR not rules ──
- *   each ending in a gold "Start practice" button
- *   ─────────── the ONE tier-2 rule ───────────
- *   could also work on          ┐
- *   ┈┈┈┈┈┈┈┈ hairline ┈┈┈┈┈┈┈┈  │ everything here is
- *   streak                      │ secondary: sand-dim,
- *   ┈┈┈┈┈┈┈┈ hairline ┈┈┈┈┈┈┈┈  │ hairlines, no gold
- *   your swings                 ┘
- *
- * ONE THING WINS, AND IT IS STARTING A SESSION. A usability test (2026-08-09)
- * found a golfer who picked an area fine and then could not work out how to
- * practise: the action was 13px underlined text, the smallest type on a screen
- * whose largest was a 48px streak count, and all three of the screen's permitted
- * gold appearances sat on a "Played a round?" row. The hierarchy was inverted and
- * she read it correctly. Everything below the Start button now recedes.
- *
- * SEPARATION HAS EXACTLY THREE TIERS. Between two programs: no rule, 34px of air
- * — they are peers of the same kind, and a line would say "different kind of
- * thing", which is false. Between items in the secondary block: a .07 hairline.
- * Between the primary block and that secondary one: a single .13 rule. It is used
- * ONCE, where the boundary is real; four of them gave four sections the same claim
- * on attention as the one thing the golfer came to do.
- *
- * AN AREA WITH NOTHING OPEN SHOWS NOTHING ELSE. No suggestions, no streak, no
- * archive — see `showSecondary` below and `AreaEmptyCard`.
- *
- * NO OVERSCROLL. The hero runs full bleed to the top of the screen, so an iOS
- * rubber-band would drag ink in above the photograph and pull the greeting off
- * its composition.
+ * The layout, its three separation tiers, and why an empty area shows nothing else are in
+ * ADR-0021.
  */
 export default function HomeScreen({
   selectedArea,
@@ -129,18 +87,13 @@ export default function HomeScreen({
     refetchPrograms,
   } = useHomeData(selectedArea, user?.name);
 
-  // Picked once per mount: stable while the golfer is here, different when they
-  // come back. Lazy initialiser so it is not re-rolled on every render.
+  // Lazy initialiser, so the image is picked once per mount rather than re-rolled per render.
   const [heroImage] = useState(() => pickHeroImage());
 
   const [startingId, setStartingId] = useState<string | null>(null);
 
-  // The issue whose detail sheet is open. That sheet carries what the old home
-  // card's info button, history link and remove action used to.
   const [infoIssue, setInfoIssue] = useState<Issue | null>(null);
 
-  // Streak and archive only appear once the golfer has something going in this
-  // area. See the render below — a bare area gets the invitation and nothing else.
   const showSecondary = hasAnything && areaPrograms.length > 0;
 
   const handleStart = useCallback(
@@ -261,16 +214,8 @@ export default function HomeScreen({
             />
           </View>
 
-          {/* ONE TIER-2 RULE ON THE SCREEN, AND IT SITS HERE: the boundary between
-              what the golfer came to do and everything else. That is exactly the
-              job DESIGN.md gives the .13 rule ("different kind of thing starts
-              here"). Inside the block below, items are peers of one kind, so they
-              separate with .07 hairlines instead.
-
-              NOTHING BELOW THE INVITATION WHEN AN AREA IS BARE. A golfer with
-              nothing going in this part of the game gets one instruction and one
-              control; a streak and an archive underneath would be two more things
-              to read that cannot help them yet. */}
+          {/* The screen's one tier-2 rule sits here, and nothing renders below the
+              invitation when an area is bare. See ADR-0021. */}
           {startable.length > 0 || showSecondary ? (
             <Section>
               {startable.length > 0 ? (

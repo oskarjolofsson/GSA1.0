@@ -7,22 +7,12 @@ import type { Issue } from 'features/issues/types';
 /**
  * Which drills this practice run works through, and where we are in them.
  *
- * Split out of the old `usePracticeScreenState`, which fetched drills AND ran the
- * drill-run lifecycle AND ended the session AND accumulated grades AND completed the
- * program step. `features/CLAUDE.md`: if a hook needs an "and" to describe it, split it.
- *
- * THE FETCH IS KEYED ON THE ISSUE, THE FILTER IS A DERIVATION. This is the whole reason
- * the two concerns are worth separating. A program step names a subset of the issue's
- * drills, and continuing into the next step keeps the same issue while changing that
- * subset. Keying the fetch on the subset made "Continue practice" re-request an identical
- * list from the network just to filter it differently -- latency on the one tap in this
- * feature that is supposed to feel instant.
+ * The fetch is keyed on the ISSUE and the step's subset is a derivation, so continuing into
+ * the next step filters an already-loaded list instead of re-requesting an identical one.
  */
 
-// Stateless wrapper around `apiClient`, so one instance for the module rather than one
-// per render. Constructing it in the hook body armed a trap: the moment anyone added it
-// to the fetch effect's dependency array (which an exhaustive-deps autofix will
-// eventually suggest) a new identity every render becomes an infinite refetch loop.
+// Module-scope on purpose: constructed in the hook body, a new identity every render turns
+// into an infinite refetch the moment exhaustive-deps adds it to the effect's deps.
 const drillService = new DrillService();
 
 export interface DrillQueue {
@@ -44,19 +34,16 @@ export function useDrillQueue(
   issue: Issue | null,
   drillIds?: string[] | null,
   /**
-   * Identifies THIS run, so the queue starts from the first drill again when a new one
-   * begins. Pass the practice session id.
+   * Identifies THIS run, so the queue restarts at the first drill. Pass the practice
+   * session id.
    *
-   * Not derivable from the issue or the drill ids, which is the whole reason it is a
-   * separate argument. `_pick_due_drills` chooses the two lowest-strength drills, so two
-   * consecutive steps very often prescribe the SAME two drills -- and then `drillIdsKey` is
-   * unchanged, the reset below never fires, and a golfer who taps "Continue practice" lands
-   * in the new session already on "Drill 2 of 2" with the first drill skipped.
+   * Not derivable from the issue or the drill ids: two consecutive steps often prescribe
+   * the SAME drills, leaving `drillIdsKey` unchanged and the reset below unfired.
    */
   runKey?: string | null
 ): DrillQueue {
-  // Joined so the value is a stable primitive: a fresh array literal every render
-  // would re-fire the derivation and the index reset on every keystroke upstream.
+  // Joined into a stable primitive: a fresh array literal every render would re-fire the
+  // derivation and the index reset.
   const drillIdsKey = drillIds?.length ? drillIds.join(',') : null;
   const issueId = issue?.id ?? null;
 
@@ -98,8 +85,8 @@ export function useDrillQueue(
     };
   }, [issueId, reloadToken]);
 
-  // A program step runs only its own drills, in its own order. Ids the server named but
-  // the catalog no longer returns are dropped rather than rendered as holes.
+  // A program step runs only its own drills, in its own order. Ids the catalog no longer
+  // returns are dropped rather than rendered as holes.
   const drills = useMemo<Drill[]>(() => {
     if (!drillIdsKey) return allDrills;
     return drillIdsKey

@@ -29,22 +29,12 @@ type Props = {
 /**
  * The rating phase: how a finished block gets recorded.
  *
- * THIS COMPONENT OWNS THE QUESTION, AND THAT IS THE BUG FIX. The prompt used to be rendered
- * by the parent screen, in a `flex-1` region that sat above this block inside a
- * `justify-between` column. A ten-rep count grid is about 400px, plus the caption, "Log it"
- * and "Skip" -- roughly 560px of bottom content on an 844px screen. The `flex-1` region
- * collapsed toward zero and the question was clipped out of existence: the golfer finished
- * hitting balls and got a number pad with nothing telling them what it was for. Owning the
- * prompt here means no sibling can squeeze it, and the input is what yields instead.
+ * This component owns the prompt as well as the input, so no sibling can squeeze it -- with
+ * the prompt in a `flex-1` sibling above, a ten-rep grid collapsed it to nothing and the
+ * golfer got a number pad with no question. The input yields instead.
  *
- * The `default` branch is the other load-bearing part. `drills.metric` is authored in the
- * admin CMS with no app release, so any build in the wild can be handed a metric type it has
- * never heard of. An unknown type and a null metric route to the same place: the feel picker,
- * which always completes.
- *
- * The screen never sends a grade for a scored drill. It posts the raw number and the server
- * decides what it was worth, because `grade_at` is editable content and an old build would
- * otherwise judge against thresholds nobody can see any more.
+ * An unknown metric type and a null metric both route to the feel picker, which always
+ * completes. A scored drill posts its raw number and never a grade. See ADR-0020.
  */
 export default function BlockRating({ metric: raw, onComplete, disabled = false }: Props) {
   const metric = asMetric(raw);
@@ -55,14 +45,14 @@ export default function BlockRating({ metric: raw, onComplete, disabled = false 
   const [proximity, setProximity] = useState<number>(() => proximityStart(metric));
 
   const value = counted ? count : proximity;
-  // A counted drill has nothing to log until a tile is tapped. Proximity always has a
-  // value (it opens at half the ceiling), so its action is live from the start.
+  // A counted drill has nothing to log until a tile is tapped; proximity opens at half the
+  // ceiling, so its action is live from the start.
   const canLog = value !== null;
   const caption = renderable ? gradeCaption(gradePreview(metric, value)) : null;
 
   return (
     <View className="flex-1">
-      {/* Fixed. The whole point of this component's structure. */}
+      {/* Fixed height: this is what must not be squeezed. */}
       <View>
         <Text className="text-[11px] font-semibold uppercase tracking-[2.5px] text-sand-dim">
           How it went
@@ -72,7 +62,7 @@ export default function BlockRating({ metric: raw, onComplete, disabled = false 
         </Text>
       </View>
 
-      {/* Yields. A 20-rep grid scrolls inside this box instead of pushing the
+      {/* Yields. A 20-rep grid shrinks inside this box rather than pushing the
                 question off the top or the button off the bottom. */}
       <View className="my-6 flex-1 justify-center">
         {!renderable ? (
@@ -93,11 +83,8 @@ export default function BlockRating({ metric: raw, onComplete, disabled = false 
       </View>
 
       <View>
-        {/* What that number is worth, live, named as a consequence rather than a
-                    compliment -- an "OK" block moves a drill's strength by exactly zero, so
-                    calling it "Solid" was the screen telling the golfer something the
-                    scheduler does not record. Reserved height so selecting a tile does not
-                    shift the button under their thumb. */}
+        {/* Live grade preview (ADR-0020). Height is reserved so selecting a tile
+                    does not shift the button under the golfer's thumb. */}
         {renderable ? (
           <View className="h-6 items-center justify-center">
             {caption ? (
@@ -129,11 +116,8 @@ export default function BlockRating({ metric: raw, onComplete, disabled = false 
 }
 
 /**
- * Skipping is always available and always completes the block.
- *
- * A golfer who lost count, got rained on, or simply does not want to record a number still
- * showed up. The session counts; only the grade is lost, which leaves the drill's strength
- * exactly where it was.
+ * Skipping is always available and always completes the block. The session counts; only the
+ * grade is lost, leaving the drill's strength where it was.
  */
 function SkipButton({ disabled, onPress }: { disabled: boolean; onPress: () => void }) {
   return (

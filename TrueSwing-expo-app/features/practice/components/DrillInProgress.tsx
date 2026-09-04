@@ -1,17 +1,12 @@
 import { Pressable, Text, View } from 'react-native';
 
 /**
- * The block screen. Deliberately the emptiest screen in the app.
+ * The block screen. Deliberately the emptiest screen in the app: a golfer holding a club does
+ * not read their phone between shots, so the pre-drill brief carries the content and this
+ * screen only has to be a target you can hit at arm's length with a glove on.
  *
- * WHY IT CARRIES ALMOST NOTHING. The obvious design keeps the drill's focus points visible
- * while the golfer hits balls. Field testing says that is wasted: they do not look at the
- * phone between shots, because they are holding a club. So the pre-drill brief carries the
- * content, and this screen has one job -- be a target you can hit at arm's length, with a
- * glove on, without reading anything.
- *
- * What survived: the drill name, so a glance confirms which block is running, and the
- * ambient glow (mounted by the parent) which signals "running" without asking to be read.
- * What went: a pulsing "Eyes on the ball" cue that nobody was there to see.
+ * What survived: the drill name, and the ambient glow (mounted by the parent) signalling
+ * "running" without asking to be read.
  */
 
 type Props = {

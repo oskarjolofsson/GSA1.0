@@ -1,8 +1,7 @@
 import type { ActivityLevel } from "features/home/utils/activityLevels";
 import type { Schemas } from "lib/api/types";
 
-// One activity-count row from GET /activity, derived from the backend OpenAPI
-// schema (lib/api/schema.d.ts).
+// One activity-count row from GET /activity.
 export type ActivityCount = Schemas["ActivityCount"];
 
 // One rendered grid cell in the rolling 7-day strip.
@@ -17,22 +16,14 @@ export type DayCell = {
 export type ActivityStats = {
     week: DayCell[]; // 7 cells, oldest -> today (today rightmost)
     /**
-     * 28 cells for the home grid, laid out as TWO ROWS OF FOURTEEN — a fortnight
-     * per row, newest fortnight first. Read row-major:
+     * 28 cells for the home grid: two rows of fourteen, newest fortnight first, read
+     * row-major.
      *
      *   index  0..13   days -13 .. today   (today is index 13, the last cell)
      *   index 14..27   days -27 .. -14
      *
-     * NEWEST ON TOP, not the GitHub convention of oldest-first. On a phone the
-     * top row sits closest to the section heading, so "how am I doing lately"
-     * is answered before the eye has to travel.
-     *
-     * FOURTEEN COLUMNS, NOT SEVEN, so the squares halve to ~18px and a month
-     * costs two rows instead of four. The price is that columns no longer line
-     * up by weekday — this is a rolling 28-day window ending today, not a
-     * calendar. That is why the weekday letters were dropped: they belonged to a
-     * 7-column grid, and repeating S M T W T F S twice would be noise on an
-     * element that is deliberately receding.
+     * A rolling 28-day window ending today, NOT a calendar -- at fourteen columns nothing
+     * lines up by weekday, which is why the letters are unused in this grid.
      */
     month: DayCell[];
     streakDays: number;
@@ -45,8 +36,8 @@ const FORTNIGHT = 14;
 
 const WEEKDAY_INITIALS = ["S", "M", "T", "W", "T", "F", "S"]; // index = Date.getDay()
 
-// Local YYYY-MM-DD for a Date — uses the device timezone. We deliberately avoid
-// toISOString(), which converts to UTC and can shift the day across midnight.
+// Local YYYY-MM-DD in the device timezone. Deliberately not toISOString(), which converts
+// to UTC and can shift the day across midnight.
 export function localDateString(date: Date): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -60,7 +51,6 @@ export function countToLevel(count: number): ActivityLevel {
     return 2;
 }
 
-// Pure derivation of the streak number + rolling-7 grid from the raw counts.
 // `now` is injectable so tests are deterministic.
 export function deriveActivityStats(counts: ActivityCount[], now: Date = new Date()): ActivityStats {
     const byDay = new Map<string, number>();
@@ -83,8 +73,8 @@ export function deriveActivityStats(counts: ActivityCount[], now: Date = new Dat
         });
     }
 
-    // Streak: walk back from today while each day has activity. If today isn't
-    // done yet, start from yesterday so the streak doesn't read 0 every morning.
+    // Walk back from today while each day has activity. If today is not done yet, start
+    // from yesterday, or the streak reads 0 every morning.
     let streakDays = 0;
     let cursor = new Date(now);
     if ((byDay.get(localDateString(cursor)) ?? 0) < 1) {
@@ -95,9 +85,8 @@ export function deriveActivityStats(counts: ActivityCount[], now: Date = new Dat
         cursor = addDays(cursor, -1);
     }
 
-    // The 28-day grid. Built fortnight by fortnight so the newest one lands in
-    // the first row: within a fortnight days still run oldest -> newest, so the
-    // very last cell of the FIRST row is today.
+    // Built fortnight by fortnight so the newest lands in the first row; within a
+    // fortnight days still run oldest -> newest, so the first row's last cell is today.
     const month: DayCell[] = [];
     for (let row = 0; row < MONTH_DAYS / FORTNIGHT; row++) {
         const newestOffset = row * FORTNIGHT; // 0 for the top row, 14 for the next

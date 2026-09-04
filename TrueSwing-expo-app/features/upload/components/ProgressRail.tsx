@@ -15,19 +15,11 @@ type Props = {
 };
 
 /**
- * The ordered-sequence rail from DESIGN.md: a hairline spine with a gold node per
- * step, filled once that step is behind us.
+ * The ordered-sequence rail from DESIGN.md ("Progress and waiting"): a hairline spine
+ * with a gold node per step, filled once that step is behind us.
  *
- *   ●  Uploaded          done      solid gold
- *   │    6.1 MB sent
- *   ◉  Analysing         active    gold stroke + pulsing centre
- *   │    Reading your swing frame by frame
- *   ○  Building program  pending   faint cream stroke
- *
- * The rail exists here rather than a percentage because only the upload phase has
- * a denominator. A ring would have to invent a number the moment the bytes finish,
- * and the brand book's "Honest" is the reason we don't. The pulsing centre node is
- * the one moving element, so the screen reads as working rather than frozen.
+ * A rail rather than a percentage because only the upload phase has a denominator — a
+ * ring would have to invent a number once the bytes finish.
  */
 export default function ProgressRail({ steps, activeIndex }: Props) {
   return (

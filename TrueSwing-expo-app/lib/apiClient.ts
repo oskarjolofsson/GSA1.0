@@ -20,14 +20,10 @@ export function registerPaymentRequiredHandler(handler: PaymentRequiredHandler |
 }
 
 /**
- * Shared authenticated fetch utility for all API requests.
- * Automatically handles:
- * - Supabase session retrieval and token injection
- * - Error responses with proper ApiError creation
- * - 204 No Content responses
- * 
- * @throws {ApiError} When the server returns an error response
- * @throws {Error} When not signed in or session retrieval fails
+ * Shared authenticated fetch for all API requests: injects the Supabase token, turns error
+ * responses into `ApiError`, and returns undefined for 204.
+ *
+ * Throws a plain Error when there is no session.
  */
 export async function fetchWithAuth<T>(
     url: string,
@@ -70,7 +66,6 @@ export async function fetchWithAuth<T>(
                 ? errorData.detail 
                 : JSON.stringify(errorData.detail);
         } catch {
-            // Response is not JSON, use statusText
             detail = response.statusText;
         }
 
@@ -87,7 +82,6 @@ export async function fetchWithAuth<T>(
         );
     }
 
-    // Handle 204 No Content
     if (response.status === 204) {
         return {} as T;
     }

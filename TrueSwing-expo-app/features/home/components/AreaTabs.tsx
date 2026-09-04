@@ -12,33 +12,12 @@ type Props = {
 };
 
 /**
- * The five parts of the game, as underline tabs.
+ * The parts of the game, as underline tabs. Each of the three states carries two cues,
+ * because DESIGN.md forbids colour-only signalling.
  *
- *  Full swing 2   Chipping   Putting 1   Bunker   Pitching
- *  ▔▔▔▔▔▔▔▔▔▔▔
- *
- * NOT PILLS. DESIGN.md: "Hairline rules, not cards. A stack of bordered pills is
- * the most generic pattern in mobile design." The library already presents these
- * same areas as rules (AreaGrid), so a bordered-chip row here would have been a
- * second pattern for one concept — which is the drift that file exists to stop.
- *
- * THREE STATES, EACH WITH TWO CUES, because DESIGN.md's accessibility floor says
- * "No colour-only signalling":
- *
- *   selected           bright label + numeral + 2px gold underline
- *   active, not sel.   bright label + numeral
- *   inactive           dim label, no numeral
- *
- * The numeral replaces a dot on purpose. A dot says "something here"; a numeral
- * says "two here, and the cap is two", which is what a golfer needs before they
- * try a third and get a 409 back.
- *
- * EQUAL-WIDTH COLUMNS, not natural widths. All five have to fit without
- * scrolling, and `golfer_label` is admin-editable — renaming "Bunker" to "Bunker
- * play" would silently push a sibling off a fixed row. Equal columns degrade by
- * wrapping the label instead, so no area ever becomes unreachable.
- *
- * Inactive areas stay tappable. DESIGN.md, C5: "No area is ever greyed out."
+ * The numeral shows a golfer they are at the two-per-area cap before a third attempt
+ * returns 409. Columns are equal-width so an admin renaming `golfer_label` longer wraps
+ * instead of pushing an area off the row, and inactive areas stay tappable.
  */
 export default function AreaTabs({ areas, selectedKey, countByArea, onSelect }: Props) {
   return (

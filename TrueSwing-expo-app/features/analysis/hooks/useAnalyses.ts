@@ -29,10 +29,8 @@ export default function useAnalyses(): UseAnalysesReturn {
             setLoading(true);
             setError(null);
 
-            // 1. Fetch list of analyses
             const fetched = await analysisService.getAnalysesForUser();
 
-            // 2. Sort newest first
             fetched.sort((a, b) => {
                 const dateA = new Date(a.created_at || 0).getTime();
                 const dateB = new Date(b.created_at || 0).getTime();
@@ -56,7 +54,6 @@ export default function useAnalyses(): UseAnalysesReturn {
     const deleteActiveAnalysis = useCallback(async (analysis_id: string): Promise<void> => {
         try {
             await analysisService.deleteAnalysis(analysis_id);
-            // Refresh the list of analyses after deletion
             const updatedAnalyses = await analysisService.getAnalysesForUser();
             setAllAnalyses(updatedAnalyses);
         } catch (err) {

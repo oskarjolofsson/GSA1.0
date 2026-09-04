@@ -21,8 +21,7 @@ type Props = {
   onBrowse: (areaKey?: string) => void;
 };
 
-/** Vertical air between two programs. No rule: they are peers of the same kind,
- *  and a line here would read as a boundary between different kinds of thing. */
+/** Vertical air between two programs. No rule: they are peers. See ADR-0021. */
 const PROGRAM_GAP = 34;
 
 /**
@@ -34,18 +33,8 @@ const PROGRAM_GAP = 34;
  *     area has suggestions     with StartableList rendering directly beneath it
  *   neither                -> the invitation, centred, and nothing else on screen
  *
- * THE LAST TWO USED TO BE ONE BRANCH THAT RENDERED NOTHING. An area with
- * suggestions but no programs returned `null` and let StartableList speak for
- * itself, on the reasoning that "nothing here" above two startable things is a
- * contradiction. The 2026-08-09 usability test showed the opposite problem: with no
- * heading at all, a golfer had nothing telling her those rows were the thing to
- * pick. The headline is the same in both states because it is true in both — the
- * difference is only whether there is a list under it, which is also why the
- * centred layout is off in that case.
- *
- * Split out of HomeScreen because that file was past the 200-line cap in
- * features/CLAUDE.md, and because this branching is the part most likely to be
- * read on its own when a state renders wrong.
+ * The last two share a headline because it is true in both; the only difference is whether
+ * a list renders under it, which is also why the centred layout is off in that case.
  */
 export default function HomeAreaBody({
   hasAnything,
