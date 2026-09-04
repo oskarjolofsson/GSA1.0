@@ -1,6 +1,3 @@
-/**
- * Custom error class for API errors that preserves HTTP status codes
- */
 export class ApiError extends Error {
     public readonly status: number;
     public readonly code: string;
@@ -15,9 +12,6 @@ export class ApiError extends Error {
     }
 }
 
-/**
- * Map HTTP status codes to error codes
- */
 function getErrorCode(status: number): string {
     switch (status) {
         case 400:
@@ -37,9 +31,6 @@ function getErrorCode(status: number): string {
     }
 }
 
-/**
- * User-friendly error messages based on HTTP status codes
- */
 const ERROR_MESSAGES: Record<number, string> = {
     400: 'The request was invalid. Please check your input and try again.',
     401: 'Please sign in to continue.',
@@ -49,18 +40,15 @@ const ERROR_MESSAGES: Record<number, string> = {
     500: 'Something went wrong on our end. Please try again later.',
 };
 
-/**
- * Get a user-friendly error message from any error type
- */
+/** Anything unmapped falls through to the error's own message. */
 export function getErrorMessage(error: unknown): string {
     if (error instanceof ApiError) {
         return ERROR_MESSAGES[error.status] || error.message;
     }
     
     if (error instanceof Error) {
-        // Check for network errors. React Native's fetch rejects with
-        // `TypeError: Network request failed` (not the browser's "Failed to fetch"
-        // / "NetworkError"), so match all three to detect offline on every platform.
+        // React Native's fetch rejects with `TypeError: Network request failed`, not the
+        // browser's "Failed to fetch" / "NetworkError". Match all three.
         if (
             error.message.includes('Failed to fetch') ||
             error.message.includes('NetworkError') ||
@@ -68,7 +56,6 @@ export function getErrorMessage(error: unknown): string {
         ) {
             return 'Unable to connect to the server. Please check your internet connection.';
         }
-        // Check for "Not signed in" error from session check
         if (error.message === 'Not signed in') {
             return 'Please sign in to continue.';
         }
@@ -79,9 +66,8 @@ export function getErrorMessage(error: unknown): string {
 }
 
 /**
- * Friendly text for Supabase auth error codes. Supabase-js exposes a stable
- * `code` string on AuthApiError (e.g. 'invalid_credentials'); we key off that
- * rather than the raw English message, which can change between versions.
+ * Friendly text for Supabase auth error codes. Keyed on AuthApiError's stable `code`, not
+ * on the raw English message, which changes between versions.
  */
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
     invalid_credentials: 'Incorrect email or password.',
@@ -96,11 +82,8 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
     email_address_invalid: 'Enter a valid email address.',
 };
 
-/**
- * Get a user-friendly message for an auth error. Maps the Supabase auth `code`
- * to clear text; anything unmapped (network failures, generic errors) falls
- * through to getErrorMessage.
- */
+/** Anything unmapped -- network failures, generic errors -- falls through to
+ *  getErrorMessage. */
 export function getAuthErrorMessage(error: unknown): string {
     const code = (error as { code?: string })?.code;
     if (code && AUTH_ERROR_MESSAGES[code]) {
@@ -109,9 +92,6 @@ export function getAuthErrorMessage(error: unknown): string {
     return getErrorMessage(error);
 }
 
-/**
- * Get the HTTP status code from an error (if available)
- */
 export function getErrorStatus(error: unknown): number | null {
     if (error instanceof ApiError) {
         return error.status;
@@ -119,9 +99,6 @@ export function getErrorStatus(error: unknown): number | null {
     return null;
 }
 
-/**
- * Check if an error is an authentication error
- */
 export function isAuthError(error: unknown): boolean {
     if (error instanceof ApiError) {
         return error.status === 401;
@@ -132,16 +109,10 @@ export function isAuthError(error: unknown): boolean {
     return false;
 }
 
-/**
- * Check if an error is a permission error
- */
 export function isForbiddenError(error: unknown): boolean {
     return error instanceof ApiError && error.status === 403;
 }
 
-/**
- * Check if an error is a not found error
- */
 export function isNotFoundError(error: unknown): boolean {
     return error instanceof ApiError && error.status === 404;
 }
