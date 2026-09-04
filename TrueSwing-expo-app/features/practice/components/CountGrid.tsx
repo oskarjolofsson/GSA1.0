@@ -10,18 +10,15 @@ type Props = {
 /**
  * Pick a whole number from 0 to reps.
  *
- * Two columns of large tiles rather than a row of tappable dots. A ten-dot row puts every
- * target under ~34px on a phone, below the 44px minimum, and a stepper makes reaching 8
- * cost eight taps. One tile is one tap to any value, with no arithmetic and no drag.
+ * Two columns of large tiles rather than a row of dots: a ten-dot row puts every target
+ * under the 44px minimum, and a stepper makes reaching 8 cost eight taps.
  *
- * The last tile spans the full width when the count is even, so 0..10 (eleven values)
- * closes cleanly instead of leaving a hole in the grid.
+ * The last tile spans the full width when the count is even, so 0..10 closes cleanly.
  *
- * Scrolls rather than shrinks, at every rep count. `flex-1` means the grid takes the space
- * its parent gives it and scrolls the rest -- shrinking the tiles to fit would quietly
- * reintroduce the touch-target problem this layout exists to solve, and growing to fit the
- * content is what let an 11-tile grid crush the question above it off the screen.
+ * Scrolls rather than shrinks, at every rep count -- shrinking tiles to fit reintroduces the
+ * touch-target problem, and growing to fit content crushed the question above it off screen.
  */
+
 export default function CountGrid({ reps, value, onSelect, disabled = false }: Props) {
   const values = Array.from({ length: reps + 1 }, (_, i) => i);
   const hasOrphan = values.length % 2 === 1;
