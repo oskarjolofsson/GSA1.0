@@ -9,31 +9,32 @@ from core.infrastructure.db.repositories import billing_subscription as billing_
 from core.services import exceptions
 
 def is_subscribed(user_id: UUID, db_session: Session) -> bool:
-    # Get profile by user_id
+    """True when the user has a paid subscription with any provider."""
     profile: models.Profile = profiles.get_profile_by_id(user_id, db_session)
     if not profile:
         raise exceptions.NotFoundException("User", str(user_id))
-    
-    
-    # Get active subscription by billing user_id
+
     billing_subscription = billing_subscription_repo.get_active_subscriptions_for_user(user_id, db_session)
-    # Return true if active subscription exists, false otherwise
     if billing_subscription: return True
     return False
 
 
 def has_free_tier(user_id: UUID, db_session: Session) -> bool:
-    # Get profile by user_id
+    """
+    True while the user is inside the 7-day trial that starts at signup.
+
+    The window runs from profile creation, not from first use, so it expires on
+    schedule whether or not the golfer ever opened the app.
+    """
     profile: models.Profile = profiles.get_profile_by_id(user_id, db_session)
     if not profile:
         raise exceptions.NotFoundException("User", str(user_id))
-    
-    # If the profile has was created withing the last 7 days, they are eligible for the free tier
+
     return profile.created_at >= datetime.now(timezone.utc) - timedelta(days=7)
     
     
 def can_access_premium_features(user_id: UUID, db_session: Session) -> bool:
-    # A user can access premium features if they are either subscribed or have free tier access
+    """The single flag to gate premium features on. Prefer it over recombining the two below."""
     return is_subscribed(user_id, db_session) or has_free_tier(user_id, db_session)
 
 
@@ -45,8 +46,11 @@ def free_tier_expires_at(user_id: UUID, db_session: Session) -> datetime:
 
 
 def get_subscription_summary(user_id: UUID, db_session: Session) -> dict | None:
-    # Period/cancel info for the UI's subscription card. None when the user has
-    # no active subscription (free tier or never subscribed).
+    """
+    Period and cancellation info for the UI's subscription card.
+
+    None when the user has no active subscription — free tier or never subscribed.
+    """
     subscription = billing_subscription_repo.get_active_subscriptions_for_user(user_id, db_session)
     if subscription is None:
         return None

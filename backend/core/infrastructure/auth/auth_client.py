@@ -1,5 +1,3 @@
-# TODO implmenet this for supabase
-# TODO THen write tests for it and implment in routers
 import time
 import requests
 from jose import jwt, JWTError

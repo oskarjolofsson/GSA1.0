@@ -87,11 +87,16 @@ def run_analysis(
     current_user: dict = Depends(require_premium)
 ):
     """
-    Confirm that the video upload has completed.
-    Now the analysis processing can be triggered.
+    Confirm the video upload finished and start processing the analysis.
+
+    Only valid while the analysis is in `awaiting_upload`; any other state is
+    rejected as an invalid state transition.
+
+    UNVERIFIED OWNERSHIP: the user_id handed to the service is read off the
+    analysis row, not from `current_user`. Any authenticated premium caller who
+    knows an analysis_id can therefore start processing on someone else's
+    analysis. Tracked separately — do not treat this endpoint as owner-scoped.
     """
-    # Note: user_id would typically come from authentication
-    # For now, we get it from the analysis
     analysis = service_get_analysis_by_id(analysis_id, db_session=db)
 
     dto = RunAnalysisDTO(
@@ -115,7 +120,6 @@ def list_analyses(
     user_id = UUID(current_user["user_id"])
     analyses = service_get_analyses_by_user_id(user_id, db_session=db)
     
-    # Get thumbnail URLs for all analyses
     analysis_ids = [analysis.analysis_id for analysis in analyses]
     thumbnail_result = get_video_thumbnail_urls_from_analyses(analysis_ids, db_session=db)
     

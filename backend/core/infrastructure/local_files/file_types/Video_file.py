@@ -71,7 +71,6 @@ class Video_file(File):
             
             cap.release()
             
-            # Create keyframes object from list of images
             kf = Keyframes()
             kf.add_all(keyframe_images)
             return kf

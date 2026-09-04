@@ -1,27 +1,7 @@
-"""Scoreable drills: validating a drill's metric, and turning a raw score into a grade.
+"""Validating a drill's metric, and turning a raw score into a grade.
 
-Why this exists
----------------
-Full swing needs a camera and an AI to say anything useful, so `blockFeel.ts` asks the
-golfer how the block felt and stuffs that ordinal into `successful_reps`. Ten 6-footers
-just needs counting. This module is the difference between "that felt okay" and "8 out of
-10, which is better than your last four sessions."
-
-The grade is derived here and nowhere else. The phone posts the raw number and the metric
-type; it never posts a grade. That is deliberate: `grade_at` is admin-editable content, and
-a build that shipped before you retuned a threshold would otherwise keep grading on numbers
-nobody can see any more. Deriving server-side means retuning a drill takes effect for every
-client immediately, including ones installed months ago.
-
-Grades are proportions, not counts
-----------------------------------
-`grade_at` holds fractions of the way to a perfect score, so one authored threshold works
-at any rep count. On a 10-rep drill the defaults put 8-10 at dialed, 5-7 at ok, and under 5
-at rough. Change `reps` to 20 and the same thresholds mean 16 and 10 -- no re-authoring.
-
-The derived grade feeds `program_service._apply_grades` unchanged, which is the whole
-point: the scheduler already fills range sessions with the lowest-strength drills, so a
-real number now decides what you practise next instead of a vibe.
+Grades are derived here and nowhere else — the client posts the raw number only.
+Thresholds are proportions, so they hold at any rep count. See ADR-0002.
 """
 
 from __future__ import annotations

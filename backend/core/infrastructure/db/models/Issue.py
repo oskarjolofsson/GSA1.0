@@ -75,14 +75,12 @@ class Issue(Base):
         server_default=func.now(),
     )
 
-    # Relationship to analysis_issues
     analysis_issues = relationship(
         "AnalysisIssue",
         back_populates="issue",
         cascade="all, delete-orphan",
     )
 
-    # Relationship to issue_drill
     issue_drills = relationship(
         "IssueDrill",
         back_populates="issue",

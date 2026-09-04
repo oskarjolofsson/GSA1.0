@@ -14,19 +14,9 @@ class AnalysisAI(Protocol):
         extra: Optional[str] = None,
         model: str = None
     ) -> dict:
-        """
-        Analyze a golf swing video.
-        
-        Args:
-            video_path: Local path to the video file
-            shape: Wanted ball shape (optional)
-            height: Wanted ball height (optional)  
-            misses: Actual result/miss pattern (optional)
-            extra: Additional user notes (optional)
-            model: Model identifier (required, provider-specific). Implementations
-                must reject a missing model rather than fall back to a default.
-        
-        Returns:
-            dict: Analysis results containing issues, key findings, and metadata
+        """Analyze a golf swing video and return issues, key findings and metadata.
+
+        `model` is required and provider-specific. Implementations must reject a missing model
+        rather than fall back to a default.
         """
         ...

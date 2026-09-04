@@ -1,17 +1,10 @@
-"""
-Read-only MCP: exposes the True Swing API's OpenAPI spec as one resource.
+"""Read-only MCP server exposing the True Swing OpenAPI spec as its one resource.
 
-This is a pure *reference* server. It exposes exactly ONE read-only MCP
-resource — the full OpenAPI schema, every route and every method, no
-exceptions — and nothing else. No tools. No live API calls. No auth. Reading
-the resource returns the spec; it never touches the backend or any user data,
-so there is nothing to authenticate and nothing that can mutate.
+Pure reference: no tools, no live API calls, no auth, no user data — reading the
+resource cannot touch the backend or mutate anything.
 
-Run standalone from the backend/ directory:
-
-    python -m app.mcp.read_only_server        # serves http://127.0.0.1:9000/mcp
-
-Host/port override via MCP_HOST / MCP_PORT.
+    python -m app.mcp.read_only_server    # http://127.0.0.1:9000/mcp
+                                          # override with MCP_HOST / MCP_PORT
 """
 import os
 

@@ -55,19 +55,8 @@ def generate_program(
 ) -> ProgramDTO:
     """Start grooving an issue, from either entry point. Idempotent.
 
-    Two callers reach this: the AI path passes `analysis_issue_id` (a fault diagnosed from
-    a swing video) and the coach/browse path passes `issue_id` (something picked out of the
-    library). They used to be separate functions that disagreed about what a duplicate
-    means -- the AI one returned the existing program, the browse one raised 409 -- so the
-    same user action succeeded or failed depending on which screen it started from.
-
-    One rule now: asking for a program you already have returns it. That is what both
-    callers in the app want, and it matches the partial unique index
-    programs_one_active_per_issue, which makes "one active program per issue" a fact of the
-    schema rather than a convention.
-
-    Idempotency is keyed on the issue, not the analysis issue. Two analyses can diagnose
-    the same fault, and the index does not care which one sent you.
+    Takes `analysis_issue_id` (AI path) or `issue_id` (browse path). Asking for a program
+    you already have returns it rather than raising. See ADR-0004.
     """
     if analysis_issue_id is not None:
         analysis_issue = analysis_issue_repo.get_analysis_issue_by_id(analysis_issue_id, session)

@@ -156,22 +156,10 @@ def persist_issue_with_drills(
     strict_tags: bool,
     db_session: Session,
 ) -> CatalogIssueDTO:
-    """Write an issue, its tags, any new drills and all the links, in one go.
+    """Write an issue, its tags, any new drills and all the links, in one transaction.
 
-    Shared by the user-authoring path and the admin catalog path, which differ only
-    in ownership and how strictly tags are validated:
-
-        user  -> user_id=<uid>, source="custom",  strict_tags=False
-        admin -> user_id=None,  source="catalog", strict_tags=True
-
-    Atomicity comes from the request session: every repo call flushes rather than
-    commits, and app/dependencies/db.py commits once at the end or rolls back on any
-    exception. A failure part-way through leaves no rows behind.
-
-    `strict_tags` picks the validator. Lenient drops unknown values, which suits
-    AI-generated input; strict raises 422 so an admin never sees a tag silently
-    vanish. Does NOT start a program — callers use
-    program_service.generate_program(user_id, session, issue_id=...) for that.
+    Shared by the user-authoring and admin catalog paths, which differ only in ownership
+    and `strict_tags`. Does NOT start a program. See ADR-0007.
     """
     from core.services.exceptions import ValidationException
 
