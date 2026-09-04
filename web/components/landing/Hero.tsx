@@ -5,22 +5,12 @@ import { AppStoreButton } from "./AppStoreButton";
 import { ScrollCue } from "./ScrollCue";
 
 /**
- * Full-viewport hero, variant D — the photo IS the first screen.
+ * Full-viewport hero — the photo IS the first screen.
  *
- * Layout notes:
- *  - `min-h-screen` with the photo `absolute inset-0 object-cover`.
- *  - A left-to-right scrim carries the text. Copy sits in the left half where
- *    the scrim is near-opaque; the phone in the photo stays readable on the right.
- *  - `object-position` shifts per breakpoint. The crop that frames the phone at
- *    1440 pushes it off-screen at 375, so mobile pulls focus further right.
- *
- * Motion is pure CSS (see globals.css). The photo animates from 0.55 opacity,
- * never from 0: it is the Largest Contentful Paint element, and fading it in
- * from invisible defers when the browser records it as painted. The motion you
- * actually notice is the staggered text, which is not what gets measured.
- *
- * `priority` + explicit dimensions: this is the LCP image, so it must not be
- * lazy-loaded, and the reserved box prevents layout shift.
+ * A left-to-right scrim carries the copy in the left half while the phone stays
+ * readable on the right. The photo is the LCP element, so its loading and motion
+ * are constrained: see ADR-0044 before changing `priority`, the opacity ramp or
+ * `object-position`.
  */
 export function Hero() {
   return (
@@ -33,10 +23,7 @@ export function Hero() {
           fill
           priority
           sizes="100vw"
-          /* Mobile crops hard horizontally, so the focal point shifts left to
-             keep the phone and a hint of the drill screen in frame — at 72% it
-             showed only the dark bezel and read as an abstract shape rather
-             than an app. Verified at 375px; don't tune one without the other. */
+          /* Focal point per breakpoint; verified at 375px (ADR-0044). */
           className="object-cover object-[55%_50%] sm:object-[65%_50%]"
         />
       </div>
