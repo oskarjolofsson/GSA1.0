@@ -6,19 +6,12 @@ type Props = {
 };
 
 /**
- * The golfer has no focus anywhere — nothing open, nothing diagnosed.
+ * The golfer has no focus anywhere -- nothing open, nothing diagnosed.
  *
- * Sits UNDER the hero and the area tabs rather than replacing the whole screen,
- * which is what the old full-screen HomeWelcome did. Keeping the composition
- * means a first-run golfer sees the same home they will keep seeing, with the
- * areas already in front of them, instead of a separate welcome screen that
- * vanishes forever after one tap.
- *
- * Copy is carried over from HomeWelcome verbatim. What did NOT come across is its
- * gold LinearGradient button: DESIGN.md has no gradients, and "a gold-filled
- * primary button is a SaaS move and reads as someone else's product". The action
- * is a cream underline like every other action on this screen.
+ * Sits UNDER the hero and area tabs rather than replacing the screen, so a first-run golfer
+ * sees the same home they will keep seeing, with the areas already in front of them.
  */
+
 export default function HomeEmptyBody({ onStart }: Props) {
   return (
     <View>

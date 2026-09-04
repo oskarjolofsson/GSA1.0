@@ -8,15 +8,11 @@ import {
 /**
  * The parts of the game, for the home tabs.
  *
- * Reads the cache first so the tab row paints on the first frame rather than
- * popping in — the taxonomy is admin-edited occasionally and read constantly, so
- * a slightly stale label is a far better failure than an empty row. The network
- * refresh then corrects it in place.
- *
- * On total failure the list is empty and HomeScreen renders the body without
- * tabs, which is degraded but honest. DESIGN.md: "Independent fetches fail
- * independently. A screen that can render from one source must render."
+ * Reads the cache first so the tab row paints on the first frame; the network refresh
+ * corrects it in place. On total failure the list is empty and HomeScreen renders the body
+ * without tabs -- degraded but honest.
  */
+
 export default function useAreas(): { areas: TaxonomyTerm[]; loading: boolean } {
   const [areas, setAreas] = useState<TaxonomyTerm[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
