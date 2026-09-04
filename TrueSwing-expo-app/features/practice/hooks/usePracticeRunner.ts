@@ -14,17 +14,8 @@ import type { DrillQueue } from './useDrillQueue';
 /**
  * Running the blocks: start a drill run, record what the golfer scored, move on.
  *
- * ONE STATUS, NOT TWO BOOLEANS. The hook this replaced returned `loading` and `error`
- * separately -- five loading sources OR'd together and four error sources OR'd together --
- * and the screen checked `loading` first. So a failure on the final drill left `finishing`
- * true forever, `loading` therefore true forever, and the error branch was never reached:
- * the golfer who had just finished their session sat on a spinner with no button, and the
- * completion guard blocked any retry. A union makes that state unrepresentable rather than
- * resolved by the order of two `if`s.
- *
- * WHY THIS LIVES IN THE FLOW, NOT THE SCREEN. A failed `completeStep` has to be retryable
- * from the completion screen, by which point the practice screen has unmounted. Mounting
- * the runner in `practiceFlow` lets it outlive the screen transition.
+ * Mounted in `practiceFlow`, not in the practice screen, so a failed submission stays
+ * retryable after that screen unmounts. See ADR-0022.
  */
 
 export type PracticeStatus =
@@ -37,11 +28,9 @@ export type PracticeStatus =
 /**
  * How the session ended, handed to the completion screen.
  *
- * `groovedBefore` is captured when the session starts so the completion screen can show
- * what moved (`+1 · Gate Drill filled in`) rather than only a total the golfer cannot
- * explain. A drill fills in at strength 3 and only a `dialed` block adds one
- * (`backend/core/services/program_service.py:31-36`), so most sessions move nothing and
- * the screen has to be honest about that too.
+ * `groovedBefore` is captured at session start so the screen can show what moved rather
+ * than a total the golfer cannot explain. Most sessions move nothing: a drill fills in at
+ * strength 3 and only a `dialed` block adds one.
  */
 export type SessionOutcome =
   | { kind: 'advanced'; advance: StepAdvance; groovedBefore: number }
@@ -80,14 +69,12 @@ export function usePracticeRunner({
   const startedForRef = useRef<string | null>(null);
   // In-flight guard: stops a double tap on "Log it" submitting twice.
   const submittingRef = useRef<boolean>(false);
-  // Runs whose submission fully SUCCEEDED. Unlike the old single-id guard this is only
-  // written once everything landed, so a failed submission stays retryable.
+  // Runs whose submission fully SUCCEEDED -- written only once everything landed, so a
+  // failed submission stays retryable.
   const settledRunsRef = useRef<Set<string>>(new Set());
   // Submitting the last block is three calls (end the drill, end the session, advance the
-  // program) and any one of them can fail. These record which already landed so a retry
-  // resumes rather than restarts -- re-ending a drill run that already has a completed_at
-  // is not something to find out about in production. Getting this wrong is how the first
-  // version of this hook blocked its own retry.
+  // program) and any one can fail. These record which already landed so a retry resumes
+  // rather than restarts. See ADR-0022.
   const drillEndedRef = useRef<Set<string>>(new Set());
   const sessionEndedRef = useRef<boolean>(false);
   // Grades keyed by run id rather than pushed to an array, so retrying a failed block
@@ -98,8 +85,8 @@ export function usePracticeRunner({
 
   const sessionId = session?.id ?? null;
 
-  // A new session (continuing into the next step) resets everything. Keyed on the id
-  // rather than object identity so an unrelated re-render cannot wipe a run in progress.
+  // A new session (continuing into the next step) resets everything. Keyed on the id rather
+  // than object identity so an unrelated re-render cannot wipe a run in progress.
   useEffect(() => {
     startedForRef.current = null;
     submittingRef.current = false;
@@ -148,10 +135,8 @@ export function usePracticeRunner({
   /**
    * Report the finished step back to the program.
    *
-   * Failure here does NOT block the completion screen. The practice happened and the
-   * session is saved; only the schedule did not move. The old code logged this to the
-   * console and then congratulated the golfer anyway, which meant a plan that silently
-   * stopped advancing looked exactly like one that was working.
+   * Failure here does NOT block the completion screen -- it surfaces as `advance-failed`
+   * with a retry. See ADR-0022.
    */
   const advanceProgram = useCallback(
     async (ctx: ProgramContext, practiceSessionId: string) => {
@@ -189,9 +174,8 @@ export function usePracticeRunner({
 
       const { feel, metricValue } = result;
 
-      // A scored block sends the raw number and no grade: the server grades it against
-      // the drill's current thresholds, because `grade_at` is admin-editable content
-      // and an old build would otherwise judge against numbers nobody can see now.
+      // A scored block sends the raw number and no grade: the server grades it against the
+      // drill's current thresholds. See ADR-0020.
       if (programContext && currentRun.drill_id) {
         if (metricValue !== null) {
           gradesRef.current.set(currentRun.id, {
@@ -241,9 +225,8 @@ export function usePracticeRunner({
           onSessionCompleted({ kind: 'no-program' });
         }
       } catch (err) {
-        // The golfer hit the balls. Losing the block because the network blinked is
-        // the one outcome worth building a retry for -- and `finishing` has to come
-        // back down or the union collapses to a permanent spinner again.
+        // `finishing` has to come back down here, or the union collapses to a permanent
+        // spinner with no retry. See ADR-0022.
         setFinishing(false);
         setFailure({
           message: err instanceof Error ? err.message : 'Could not save that drill',
@@ -270,8 +253,8 @@ export function usePracticeRunner({
 
   let status: PracticeStatus;
   if (failure) {
-    // Checked FIRST, and it is a separate variant rather than a second boolean, so no
-    // future flag added to the loading side can hide it again.
+    // Checked FIRST, and a variant rather than a flag, so nothing added to the loading
+    // side can hide it. See ADR-0022.
     status = { kind: 'error', message: failure.message, retry: failure.retry };
   } else if (queue.error) {
     status = { kind: 'error', message: queue.error, retry: queue.retryLoad };
