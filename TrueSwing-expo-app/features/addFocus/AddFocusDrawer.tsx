@@ -16,43 +16,16 @@ type Entry = {
 };
 
 /**
- * The three ways to start a focus, as hairline rows.
+ * The ways to start a focus, as hairline rows -- equal peers, no primary. The drawer has no
+ * idea which one the golfer wants; that is why they opened it.
  *
- *   START A FOCUS
+ * Rows push routes rather than swapping state in place, and that is load-bearing:
+ * `useRequirePremiumEntry` gates on route focus, and a drawer does not blur the screen
+ * behind it, so a flow rendered inside this component would never fire the paywall.
  *
- *   [List]   Browse the library
- *            Pick what to work on
- *            ────────────────────────
- *   [Video]  Upload a swing
- *            Let AI find your misses
- *            ────────────────────────
- *   [File]   Coach feedback
- *            Turn a lesson into a plan
- *
- * NOT PANELS, AND NOT THE OLD CHOOSER. This replaced `FocusPanel`, whose hero
- * variant was a gold LinearGradient with a glow and a 24px radius. That broke
- * three DESIGN.md rules at once — "No gradients", "Gold is a stroke or a
- * small-caps label, never a fill", "Hairline rules, not cards" — and it mattered
- * more here than on the full screen it came from: at 300px over a dimmed
- * photograph, a gold card is the loudest object in the app.
- *
- * THREE EQUAL PEERS, no primary. The old chooser promoted "Browse the library"
- * to a hero. A golfer arriving with their coach's notes is not taking the lesser
- * path, and the drawer has no idea which of the three they want — that is the
- * whole reason they opened it.
- *
- * GOLD APPEARS EXACTLY THREE TIMES, as three icon strokes, which is DESIGN.md's
- * per-screen cap. That is also why the `+` that opens this drawer is cream and
- * not gold: it would have been a fourth, and both are on screen together.
- *
- * SUBTITLES ARE ONE LINE EACH (<=34 chars). The originals were written for a
- * full-width screen and wrapped to four or five lines at this width, which is
- * the opposite of the ~60% air the brand book runs on.
- *
- * The rows push routes rather than swapping state in place. That is load-bearing,
- * not stylistic: `useRequirePremiumEntry` gates on route focus, and a drawer does
- * not blur the screen behind it, so a flow rendered inside this component would
- * never fire the paywall.
+ * Icon strokes are the only gold on this surface, which is why the `+` that opens the drawer
+ * is cream -- both are on screen together and DESIGN.md caps gold per screen. Subtitles must
+ * stay one line (<=34 chars) at drawer width.
  */
 const ENTRIES: Entry[] = [
   {
