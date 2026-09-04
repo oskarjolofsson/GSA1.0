@@ -12,33 +12,19 @@ type Props = {
 };
 
 /**
- * The five parts of the game, as underline tabs.
- *
- *  Full swing 2   Chipping   Putting 1   Bunker   Pitching
- *  ▔▔▔▔▔▔▔▔▔▔▔
- *
- * NOT PILLS. DESIGN.md: "Hairline rules, not cards. A stack of bordered pills is
- * the most generic pattern in mobile design." The library already presents these
- * same areas as rules (AreaGrid), so a bordered-chip row here would have been a
- * second pattern for one concept — which is the drift that file exists to stop.
- *
- * THREE STATES, EACH WITH TWO CUES, because DESIGN.md's accessibility floor says
- * "No colour-only signalling":
+ * The parts of the game, as underline tabs. Three states, each with two cues, because
+ * DESIGN.md forbids colour-only signalling:
  *
  *   selected           bright label + numeral + 2px gold underline
  *   active, not sel.   bright label + numeral
  *   inactive           dim label, no numeral
  *
- * The numeral replaces a dot on purpose. A dot says "something here"; a numeral
- * says "two here, and the cap is two", which is what a golfer needs before they
- * try a third and get a 409 back.
+ * The numeral, rather than a dot, is what tells a golfer they are at the two-per-area cap
+ * before they try a third and get a 409 back.
  *
- * EQUAL-WIDTH COLUMNS, not natural widths. All five have to fit without
- * scrolling, and `golfer_label` is admin-editable — renaming "Bunker" to "Bunker
- * play" would silently push a sibling off a fixed row. Equal columns degrade by
- * wrapping the label instead, so no area ever becomes unreachable.
- *
- * Inactive areas stay tappable. DESIGN.md, C5: "No area is ever greyed out."
+ * Columns are equal-width, not natural: `golfer_label` is admin-editable, and a longer
+ * rename must wrap rather than push an area off the row and out of reach. Inactive areas
+ * stay tappable -- DESIGN.md C5, "no area is ever greyed out".
  */
 export default function AreaTabs({ areas, selectedKey, countByArea, onSelect }: Props) {
   return (
