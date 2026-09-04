@@ -46,14 +46,12 @@ export default function UploadFlow({ onCancel }: { onCancel: () => void }) {
   );
 
   const handleStartUpload = async () => {
-    // Check consent before starting upload
     const consent = await hasValidAiConsent();
     if (!consent) {
       setIsConsentModalVisible(true);
       return;
     }
 
-    // set start and end-time to correct values before starting upload
     promptActions.setStartTime(startTime);
     promptActions.setEndTime(endTime);
 

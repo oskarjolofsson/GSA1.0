@@ -70,7 +70,6 @@ export async function fetchWithAuth<T>(
                 ? errorData.detail 
                 : JSON.stringify(errorData.detail);
         } catch {
-            // Response is not JSON, use statusText
             detail = response.statusText;
         }
 
@@ -87,7 +86,6 @@ export async function fetchWithAuth<T>(
         );
     }
 
-    // Handle 204 No Content
     if (response.status === 204) {
         return {} as T;
     }
