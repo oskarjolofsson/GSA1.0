@@ -104,25 +104,11 @@ def analyze_video(
     model: str = None,
     db_session = None
 ) -> dict:
-    """
-    Analyze a golf swing video using Google Gemini.
+    """Analyze a golf swing video with Google Gemini and return the parsed result.
 
-    Args:
-        client: Initialized Gemini client
-        video_path: Local path to the video file
-        shape: Wanted ball shape (optional)
-        height: Wanted ball height (optional)
-        misses: Actual result/miss pattern (optional)
-        extra: Additional user notes (optional)
-        model: Model identifier to run with. Required — there is no default;
-            callers resolve it via model_selection.get_active_analysis_model().
-
-    Returns:
-        dict: Parsed analysis results
-
-    Raises:
-        ValueError: If model is missing or the response is invalid/empty
-        Exception: If video processing fails
+    `model` is required and has no default — callers resolve it via
+    `model_selection.get_active_analysis_model()`, so a model change takes effect without
+    touching this code. Raises ValueError on a missing model or an empty/invalid response.
     """
     if not model:
         raise ValueError("analyze_video requires an explicit model; none was provided")
@@ -159,7 +145,6 @@ def analyze_video(
         response = _call_gemini_api(client, contents, model)
         print(f"Received response from Gemini API: {response.text[:500]}")  # Log first 500 chars of response
         
-        # Parse response
         result = _parse_response(response)
         
         return result

@@ -49,18 +49,11 @@ def _resolve_session_area(
 ) -> str | None:
     """Which part of the game this session is, read from the issue being practised.
 
-    Whatever `issues.area` says right now is what gets stamped -- nothing here knows the
-    names of any areas, so adding a sixth one needs no change to this function.
+    Prefers `issue_id`, falling back to `analysis_issue_id` for older builds. Stamps
+    whatever `issues.area` currently says, so a new area needs no change here.
 
-    Two sources, in order of how directly they name the issue:
-
-      1. `issue_id`, sent by the client. Covers every path, including the library ones
-         that have no AnalysisIssue at all.
-      2. `analysis_issue_id`, for older builds that only send that. Resolves through to
-         the same issue.
-
-    Returns None when neither is available or the row has gone. That is unattributed, not
-    an error: the session is real work the golfer did and must still earn its square.
+    Returns None when neither id resolves. That is unattributed, not an error — the
+    session is real work and still earns its square.
     """
     if issue_id is not None:
         issue = issue_repo.get_issue_by_id(issue_id, session)

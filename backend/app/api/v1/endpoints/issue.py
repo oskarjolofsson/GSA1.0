@@ -45,22 +45,10 @@ def create_issue(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_admin)
 ):
-    """
-    Create a new issue.
+    """Create an issue. Only `title` is required.
 
-    Arguments (JSON body):
-        title (str): Issue title
-        area (str, optional): Area of the game (FULL_SWING, CHIPPING, PUTTING, BUNKER, PITCHING)
-        kind (str, optional): 'fault' (default) or 'skill'
-        current_motion (str, optional): Current motion description
-        expected_motion (str, optional): Expected motion description
-        swing_effect (str, optional): Effect on swing
-        shot_outcome (str, optional): Expected shot outcome
-        layman_title/layman_desc (str, optional): Plain-language browse copy
-        misses (list[str], optional): Ball-flight miss tags
-        goals (list[str], optional): Goal tags
-
-    Unknown area/kind/tag values return 422. Allowed values: GET /api/v1/taxonomy/.
+    Unknown area, kind or tag values return 422; GET /api/v1/taxonomy/ lists what is
+    allowed.
     """
     dto = CreateIssueDTO(
         title=request.title,
@@ -280,29 +268,10 @@ def update_issue(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_admin)
 ):
-    """
-    Update an existing issue.
+    """Update an existing issue. All body fields are optional.
 
-    Arguments:
-        issue_id (UUID): Issue identifier
-    
-    Arguments (JSON body):
-        title (str, optional): Issue title
-        area (str, optional): Area of the game
-        kind (str, optional): 'fault' or 'skill'
-        current_motion (str, optional): Current motion description
-        expected_motion (str, optional): Expected motion description
-        swing_effect (str, optional): Effect on swing
-        shot_outcome (str, optional): Expected shot outcome
-        layman_title/layman_desc (str, optional): Plain-language browse copy
-        misses (list[str], optional): Miss tags. Replaces the set; omit to leave
-            tags alone, pass [] to remove them all.
-        goals (list[str], optional): Goal tags, same replace semantics.
-
-    Unknown area/kind/tag values return 422.
-
-    Returns:
-        JSON response with updated issue details
+    `misses` and `goals` replace the whole set: omit one to leave its tags alone, pass []
+    to clear them. Unknown area, kind or tag values return 422.
     """
     dto = UpdateIssueDTO(
         title=request.title,

@@ -87,7 +87,6 @@ def get_unused_issues_of_user_id(user_id: UUID, session: Session) -> list[models
         )
     )
     
-    # Return all issues NOT in the active set
     return (
         session.query(models.Issue)
         .filter(models.Issue.id.notin_(active_issues))

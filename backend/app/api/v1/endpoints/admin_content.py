@@ -187,6 +187,14 @@ def delete_issue(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_admin),
 ):
+    """
+    Delete a catalog issue and everything that depends on it.
+
+    Refuses with 409 while the issue is still referenced by user data, unless
+    `confirm_impact` is set — a mistaken call would otherwise quietly cascade away
+    golfers' programs, practice sessions and analysis history. Call the impact
+    endpoint first to show the operator what they are about to destroy.
+    """
     service.delete_issue(issue_id, db, confirm_impact=confirm_impact)
 
 
@@ -282,6 +290,12 @@ def delete_drill(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_admin),
 ):
+    """
+    Delete a catalog drill and detach it from every issue that prescribes it.
+
+    Refuses with 409 while the drill is still referenced, unless `confirm_impact`
+    is set; see the impact endpoint for what a confirmed delete would remove.
+    """
     service.delete_drill(drill_id, db, confirm_impact=confirm_impact)
 
 

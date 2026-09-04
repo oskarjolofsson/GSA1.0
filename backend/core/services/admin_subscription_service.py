@@ -1,19 +1,7 @@
-"""Admin subscription management.
+"""Admin subscription management: list subscribers, search profiles, grant and revoke comps.
 
-Backs the dashboard's Business → Subscriptions section. An admin can:
-  - list active subscribers (paginated)
-  - search profiles (to find who to grant to)
-  - grant a manual comp subscription
-  - revoke a manual comp subscription
-
-A "grant" is a billing_subscriptions row with provider="manual" / status="active".
-entitlement_service.is_subscribed() already returns true for it, so there are no
-changes to entitlement logic. A "revoke" soft-ends the row (status=canceled,
-ended_at=now) so is_subscribed() flips to false while history is preserved.
-
-Manual grants deliberately do NOT touch Stripe/RevenueCat. Revoke is scoped to
-manual rows only — ending a provider-synced row here would just get recreated by
-the next webhook.
+A grant is an ordinary billing_subscriptions row with provider="manual"; revoke is
+scoped to manual rows only and never touches Stripe or RevenueCat. See ADR-0005.
 """
 
 from uuid import UUID

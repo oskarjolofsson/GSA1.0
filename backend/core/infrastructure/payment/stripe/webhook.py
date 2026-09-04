@@ -1,4 +1,3 @@
-# app/infrastructure/stripe/webhook.py
 import stripe
 from stripe import StripeClient
 
