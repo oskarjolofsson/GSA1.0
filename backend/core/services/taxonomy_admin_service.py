@@ -1,24 +1,8 @@
-"""Admin CRUD for the practice vocabulary.
+"""Admin CRUD for the practice vocabulary (areas, goals, misses).
 
-The point of moving areas, goals and misses into tables was to stop every new value being
-a migration. Slice C authors roughly forty misses across four new areas of the game, most
-of them wrong on the first attempt, so this is the surface that makes that tolerable.
-
-Two rules run through everything here:
-
-DELETING IS RESTRICTED, NOT CASCADED
-    issues.area, issue_goals.goal and issue_misses.miss all reference these with ON DELETE
-    RESTRICT. Removing a value that content still carries fails at the database, and we
-    turn that into a counted message ("12 issues use this") rather than a 500. Silently
-    stripping tags off authored content would be worse than refusing.
-
-    `active = false` is the way to retire a value that cannot be deleted: it disappears
-    from the pickers and from validation while existing content keeps its tags.
-
-EVERY WRITE BUSTS THE CACHE
-    core.services.taxonomy holds the vocabulary in a process-level cache so its validators
-    can stay pure. A write that does not reset it is invisible until the process restarts —
-    which is exactly the bug this module exists to prevent, so `_committed` wraps it.
+Deletes are RESTRICTed, not cascaded: removing a value content still uses returns a
+counted 409, and `active = false` is how you retire one instead. Every write must bust
+the taxonomy cache; `_committed` does that. See ADR-0001.
 """
 
 from sqlalchemy import func, select

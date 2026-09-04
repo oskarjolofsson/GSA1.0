@@ -1,41 +1,10 @@
 """Canonical practice-taxonomy vocabularies, read from the database.
 
-Four axes describe an issue for the library:
-  * area  = WHERE in the game (course location)
-  * miss  = WHAT the golfer sees, scoped to one area — the golfer-facing entry
-  * goal  = WHY they practice (aspiration)
-  * kind  = fault (a swing flaw) vs skill (a non-fault focus, e.g. clubhead speed)
+Four axes describe an issue: area (WHERE in the game), miss (WHAT the golfer sees,
+scoped to one area), goal (WHY they practice) and kind (fault vs skill).
 
-Areas, goals and misses live in the `taxonomy_*` tables (migration 20260802000000) and are
-edited from the admin dashboard. `kind` stays a module constant: it is a two-value
-structural flag that drives program semantics, not vocabulary anyone authors.
-
-WHY A CACHE
------------
-These validators are pure functions called from a dozen places that have no database
-session to hand — `normalize_area_strict(dto.area)` deep inside a service, the AI
-structurer, schema builders. Threading a session through all of them to read three tiny
-tables would be a large diff for no benefit, so the vocabulary is loaded once per process
-and held in `_CACHE`.
-
-That makes this the backend's first piece of process-lived mutable state, which has two
-consequences worth naming:
-
-  1. Admin writes must call `reset_cache()`, or new vocabulary is invisible until restart.
-  2. Tests must start cold. The suite rolls back after every test, so a cache warmed by
-     rows that were then rolled back would serve values that no longer exist and leak
-     across test boundaries. `tests/conftest.py` has an autouse fixture for this, in the
-     same spirit as `_shared_user_intact`.
-
-AREA-SCOPED MISSES
-------------------
-`normalize_misses_strict` takes an area and refuses anything belonging elsewhere. A putt is
-not sliced and a chip is not hooked; before the taxonomy moved into the database all eight
-misses were one flat ball-flight list, so nothing stopped a putting issue being tagged
-SLICE. That check is what makes area-first navigation honest.
-
-The lenient variants (`normalize_miss`, `normalize_goals`) stay area-agnostic: they exist
-for machine-generated input, where dropping an unrecognised value beats raising.
+Validators are pure and read a process-level cache, so admin writes must call
+`reset_cache()` and tests must start cold. See ADR-0001.
 """
 
 from __future__ import annotations
@@ -148,20 +117,14 @@ def reset_cache() -> None:
 
 
 def prime_from(session) -> None:
-    """Reload the cache through an existing session.
+    """Reload the vocabulary cache through an existing session. Tests only.
 
-    For tests. `db_session` holds its writes in a transaction that is rolled back and never
-    committed, so the fresh session `reset_cache` would open cannot see them — a test that
-    inserts a miss and then calls a validator would find it missing, on a different
-    connection entirely.
+    A test's writes live in an uncommitted transaction, so the fresh session `reset_cache`
+    opens cannot see them. Production commits, where `reset_cache` is enough.
 
-    Production has no use for this: admin writes commit, and `reset_cache` is enough.
-
-    IMPORT THIS MODULE ABSOLUTELY: `from core.services import taxonomy`. Some test files
-    reach into the package with relative imports (`from ...core.services import taxonomy`),
-    which Python resolves to a *separate module object* under `backend.` with its own
-    `_CACHE`. Priming that one leaves the services' copy untouched, and the failure reads as
-    "the vocabulary is empty" rather than "you imported it twice".
+    Import this module absolutely (`from core.services import taxonomy`); a relative import
+    resolves to a separate module object with its own `_CACHE`, and priming that one fails
+    as "the vocabulary is empty".
     """
     global _CACHE
     _CACHE = _load(session)

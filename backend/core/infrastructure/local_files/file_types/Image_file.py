@@ -60,7 +60,6 @@ class Image_file(File):
         # Convert to grayscale for detection
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        # Detect faces
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
         pixel_size = 20  # Increase for bigger blocks

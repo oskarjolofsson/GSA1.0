@@ -6,18 +6,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 class TaxonomyMiss(Base):
     """What the golfer sees go wrong, scoped to one area of the game.
 
-    The `area` column is the load-bearing part. Misses used to be one flat list of eight
-    ball-flight values, so nothing stopped a putting issue being tagged SLICE. Scoping them
-    is what lets normalize_misses_strict(values, area) refuse a cross-area tag, and what
-    makes area-first navigation possible in the library: "which sounds like you?" can only
-    offer the right options once the options know where they belong.
+    `area` is load-bearing: it is what lets normalize_misses_strict refuse a cross-area tag
+    (SLICE is FULL_SWING, CHUNK is CHIPPING) and what makes area-first library navigation
+    possible. See ADR-0001.
 
-        SLICE      -> FULL_SWING     curves hard right
-        CHUNK      -> CHIPPING       club hits the ground first
-        LEAVES_SHORT -> PUTTING      never gets to the hole
-
-    `blurb` carries most of the weight for short game. Every golfer knows what a slice is;
-    almost none could name a chunk, so the subtitle is what makes the row self-identifiable.
+    `blurb` carries the short game — every golfer knows a slice, almost none could name a
+    chunk, so the subtitle is what makes the row self-identifiable.
     """
 
     __tablename__ = "taxonomy_misses"

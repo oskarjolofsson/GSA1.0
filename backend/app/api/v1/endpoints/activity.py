@@ -23,22 +23,14 @@ def get_activity(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    """
-    Per-day, per-area activity counts for the contribution graph.
+    """Per-day, per-area activity counts for the contribution graph.
 
-    Sums completed practice sessions and completed successful analyses, grouped by
-    calendar day in `tz` AND by area, so the graph can stack a bunker session against a
-    range session. A day with two areas returns two rows; a client that only wants the
-    old "did anything happen" answer sums them.
+    Sums completed practice sessions and successful analyses, grouped by calendar day in
+    `tz` and by area, so a day with two areas returns two rows. `area` is null for
+    unattributed activity — free practice, and anything predating per-area sessions.
 
-    `area` is null for unattributed activity: free practice with no issue behind it, and
-    anything created before sessions carried an area.
-
-    `from_date`/`to_date` bound the range, both inclusive and both optional. Omitting
-    them returns the user's whole history, which is what this endpoint did before it
-    could be bounded. `from_date` after `to_date` is a 422 rather than an empty list --
-    an empty graph reads as "you did no practice", which the caller cannot tell from a
-    range it got backwards.
+    `from_date`/`to_date` are inclusive and optional; omitting both returns all history.
+    A backwards range is a 422, not an empty list, which would read as "you did nothing".
     """
     user_id = UUID(current_user["user_id"])
     counts = service_get_activity_counts(

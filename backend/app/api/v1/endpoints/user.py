@@ -58,4 +58,10 @@ def delete_user(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
+    """
+    Permanently delete a user, in both Supabase auth and the local profile.
+
+    Self-service or admin-only: deleting anyone other than yourself requires admin
+    and is otherwise refused with 403. Not reversible and not a soft delete.
+    """
     user_service.delete_user_by_user_id(user_id=current_user["user_id"], user_id_to_delete=user_id, db_session=db)

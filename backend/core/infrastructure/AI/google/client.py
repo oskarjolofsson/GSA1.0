@@ -35,20 +35,9 @@ class GoogleAnalysisClient(AnalysisAI):
         model: str = None,
         db_session: Optional[object] = None
     ) -> dict:
-        """
-        Analyze a golf swing video.
+        """Analyze a golf swing video with Gemini and return the parsed result.
 
-        Args:
-            video_path: Local path to the video file
-            shape: Wanted ball shape (optional)
-            height: Wanted ball height (optional)
-            misses: Actual result/miss pattern (optional)
-            extra: Additional user notes (optional)
-            model: Model identifier to run with. Required — there is no default;
-                callers resolve it via model_selection.get_active_analysis_model().
-
-        Returns:
-            dict: Analysis results
+        `model` is required — callers resolve it via model_selection.get_active_analysis_model().
         """
         return videoAnalyzer.analyze_video(
             client=self.client,

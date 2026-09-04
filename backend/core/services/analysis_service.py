@@ -8,7 +8,6 @@ from .dtos.analysis_service_dto import (
 )
 from .exceptions import NotFoundException, InvalidStateException, InvalidVideoException
 
-# Infrastructure imports
 from ..infrastructure.storage.r2Adaptor import generate_upload_url, put_object
 from core.infrastructure.db.repositories import issues as issues_repo
 from core.infrastructure.db.repositories import programs as programs_repo
@@ -73,7 +72,6 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
             analysis=analysis, session=db_session
         )
 
-        # Create prompt entry
         prompt = Prompt(
             analysis_id=analysis.id,
             prompt_shape=dto.prompt_shape,
@@ -106,7 +104,11 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
 
 
 def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
-    # Check that analysis exists and is in correct state by getting that analysis object from the database with the analysis_id
+    """
+    Drive one analysis from `awaiting_upload` through to `completed` or `failed`.
+
+    Does not authorize the caller: `dto.user_id` is trusted as already checked.
+    """
     analysis_object: Analysis = get_analysis_by_id_in_db(
         analysis_id=dto.analysis_id, session=db_session
     )
@@ -117,7 +119,6 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         raise InvalidStateException(f"Analysis is in '{analysis_object.status}' state, expected 'awaiting_upload'")
 
     try:
-        # Set processing state on analysis object
         analysis_object.status = "processing"
         analysis_object.started_at = datetime.now(timezone.utc)
         analysis_object = update_analysis(analysis=analysis_object, session=db_session)
@@ -201,7 +202,6 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
             camera_view=analysis_results.get("camera_view"),
         )
 
-        # Insert analysis_issues that are found in the analysis_results_object
         for issue in analysis_results_object.issues:
             analysis_issue_object = AnalysisIssue(
                 analysis_id=analysis_object.id,
@@ -212,7 +212,6 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
                 analysis_issue=analysis_issue_object, session=db_session
             )
 
-        # Set completed state on analysis object
         analysis_object.status = "completed"
         analysis_object.success = True
         analysis_object = update_analysis(analysis=analysis_object, session=db_session)
@@ -333,7 +332,6 @@ def delete_analysis_issue(analysis_issue_id: UUID, db_session, user_id: UUID) ->
     if analysis_issue_object is None:
         raise NotFoundException("AnalysisIssue", str(analysis_issue_id))
     
-    # Get all analysis_issues with the same user_id and issue_id
     all_analysis_issues: list[models.AnalysisIssue] = get_analysis_issues_by_user_id_and_issue_id(user_id=user_id, issue_id=analysis_issue_object.issue_id, session=db_session)
     
     for ai in all_analysis_issues:      # Change status
