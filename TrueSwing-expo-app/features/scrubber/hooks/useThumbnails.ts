@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { FRAME_COUNT } from '../utils/constants';
 
-// Ported verbatim from features/upload/components/videoTrimBar.tsx (lines 81–98 in the original).
-// Generates FRAME_COUNT evenly-spaced thumbnail URIs across the video; resolves them in parallel
-// and replaces them as they come in so the strip can render placeholders meanwhile.
+// Generates FRAME_COUNT evenly-spaced thumbnail URIs across the video, resolved in parallel and
+// swapped in as they arrive so the strip can render placeholders meanwhile.
 export function useThumbnails(videoUri: string | null, durationMs: number) {
   const [frames, setFrames] = useState<Array<string | null>>(() => Array(FRAME_COUNT).fill(null));
 
