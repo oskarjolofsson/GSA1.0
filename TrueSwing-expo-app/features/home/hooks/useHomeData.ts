@@ -18,7 +18,6 @@ import type { TaxonomyTerm } from 'features/library/services/taxonomyService';
  * Three requests fire on focus: activity, issues, programs. Deliberately NOT
  * /issues/todays-issue/; the default tab is derived from the programs already in hand.
  */
-
 export default function useHomeData(selectedArea: string | null, name?: string | null) {
   const activity = useActivity();
   const { areas, loading: areasLoading } = useAreas();

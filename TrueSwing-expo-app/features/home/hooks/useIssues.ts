@@ -18,7 +18,6 @@ interface UseIssuesReturn {
  * default. Home derives its default tab from GET /programs/ instead. That endpoint is
  * untouched and still serves other callers.
  */
-
 export default function useIssues(): UseIssuesReturn {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

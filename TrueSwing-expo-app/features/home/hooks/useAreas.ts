@@ -12,7 +12,6 @@ import {
  * corrects it in place. On total failure the list is empty and HomeScreen renders the body
  * without tabs -- degraded but honest.
  */
-
 export default function useAreas(): { areas: TaxonomyTerm[]; loading: boolean } {
   const [areas, setAreas] = useState<TaxonomyTerm[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

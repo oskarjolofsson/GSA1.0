@@ -10,7 +10,6 @@ import { isPremiumAllowed } from 'features/billing/utils/Gate';
  * While status is still loading, entry is allowed optimistically -- the backend 402 and its
  * interceptor are the real enforcement.
  */
-
 export function useRequirePremium() {
   const { status, openPaywall } = useBilling();
 

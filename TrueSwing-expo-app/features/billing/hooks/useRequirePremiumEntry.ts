@@ -11,7 +11,6 @@ import { useRequirePremium } from 'features/billing/hooks/useRequirePremium';
  * `AddFocusDrawer` would never fire `useFocusEffect` and a free golfer would walk straight
  * into upload with no paywall, no error and no log.
  */
-
 export function useRequirePremiumEntry() {
   const router = useRouter();
   const { requirePremium } = useRequirePremium();

@@ -12,19 +12,12 @@ type Props = {
 };
 
 /**
- * The parts of the game, as underline tabs. Three states, each with two cues, because
- * DESIGN.md forbids colour-only signalling:
+ * The parts of the game, as underline tabs. Each of the three states carries two cues,
+ * because DESIGN.md forbids colour-only signalling.
  *
- *   selected           bright label + numeral + 2px gold underline
- *   active, not sel.   bright label + numeral
- *   inactive           dim label, no numeral
- *
- * The numeral, rather than a dot, is what tells a golfer they are at the two-per-area cap
- * before they try a third and get a 409 back.
- *
- * Columns are equal-width, not natural: `golfer_label` is admin-editable, and a longer
- * rename must wrap rather than push an area off the row and out of reach. Inactive areas
- * stay tappable -- DESIGN.md C5, "no area is ever greyed out".
+ * The numeral shows a golfer they are at the two-per-area cap before a third attempt
+ * returns 409. Columns are equal-width so an admin renaming `golfer_label` longer wraps
+ * instead of pushing an area off the row, and inactive areas stay tappable.
  */
 export default function AreaTabs({ areas, selectedKey, countByArea, onSelect }: Props) {
   return (

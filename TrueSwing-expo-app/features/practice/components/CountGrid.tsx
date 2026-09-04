@@ -18,7 +18,6 @@ type Props = {
  * Scrolls rather than shrinks, at every rep count -- shrinking tiles to fit reintroduces the
  * touch-target problem, and growing to fit content crushed the question above it off screen.
  */
-
 export default function CountGrid({ reps, value, onSelect, disabled = false }: Props) {
   const values = Array.from({ length: reps + 1 }, (_, i) => i);
   const hasOrphan = values.length % 2 === 1;

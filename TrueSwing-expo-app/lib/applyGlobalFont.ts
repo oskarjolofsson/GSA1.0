@@ -10,21 +10,11 @@ import {
 type StyledElement = React.ReactElement<{ style?: StyleProp<TextStyle> }>;
 
 /**
- * App-wide default font.
+ * App-wide default font: patches the host Text/TextInput render once so every text node
+ * picks up the matching Hanken Grotesk weight, instead of editing 50+ screens.
  *
- * The app has 50+ screens that render <Text> with the system font and various
- * `font-bold` / `font-semibold` weights. Rather than editing every file, we
- * patch the host Text/TextInput render once so each text node defaults to the
- * matching Hanken Grotesk weight. Anything that sets an explicit fontFamily
- * (e.g. the home screen's Fraunces via `font-display`) is left untouched.
- *
- *   fontWeight  ->  Hanken Grotesk family
- *   400/normal  ->  Regular
- *   500         ->  Medium
- *   600         ->  SemiBold
- *   700/bold+   ->  Bold
- *
- * (Weights below 400 fall back to Regular — Light isn't bundled.)
+ * An explicit fontFamily (Fraunces via `font-display`) is left alone. Weights below 400
+ * fall back to Regular — Light is not bundled.
  */
 const HANKEN_BY_WEIGHT: Record<string, string> = {
     "100": "HankenGrotesk_400Regular",
