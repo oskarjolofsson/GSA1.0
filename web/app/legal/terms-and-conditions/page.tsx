@@ -5,20 +5,12 @@ import { buildMetadata } from "@/lib/metadata";
 export const metadata: Metadata = buildMetadata("/legal/terms-and-conditions");
 
 /**
- * Ported word-for-word from
- * frontend/src/features/legal/screens/TermsAndConditionsScreen.jsx.
+ * The published terms, not a summary — edit the wording here.
  *
- * Nothing has been added or reworded. Two sections were commented out in the
- * source (Intellectual Property, Contact) and are deliberately left out here —
- * they were never published, so resurrecting them would be a new legal term,
- * not a port.
- *
- * NOTE for the billing decision: the "Payments, Subscriptions & Refunds"
- * section below describes recurring billing in Euros, cancellation "via your
- * account settings", and True Swing charging a payment method directly. That
- * describes web/Stripe billing. If the app moves to Apple in-app purchase,
- * this section becomes inaccurate — Apple owns billing, cancellation and
- * refunds in that model. Revisit alongside the Stripe question in the plan.
+ * KNOWN INACCURACY: "Payments, Subscriptions & Refunds" describes True Swing
+ * charging a payment method directly and cancellation via account settings, which
+ * is web/Stripe only. Mobile purchases now go through RevenueCat, where Apple and
+ * Google own billing, cancellation and refunds. Tracked separately.
  */
 export default function TermsAndConditionsPage() {
   return (

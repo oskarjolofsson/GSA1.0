@@ -1,22 +1,10 @@
 import type { PricingPlan } from "./types";
 
 /**
- * NOT PUBLISHED. See app/page.tsx — <Pricing /> is deliberately not imported.
+ * NOT PUBLISHED — <Pricing /> is deliberately not imported in app/page.tsx, and
+ * `priceMinor` is null because no price is confirmed.
  *
- * Two conflicting prices exist in the legacy codebase and neither is confirmed:
- *   - frontend/src/features/landing/components/prices.tsx  -> EUR 14.99/month
- *     (and that component was itself commented out of the landing page)
- *   - frontend/src/features/billing/screens/PricingPage.tsx -> EUR 9
- *     (marked `// TODO: replace placeholder copy + price`)
- *
- * A wrong price on the page built to rank in Google is the number people
- * screenshot and quote back at you. Publishing waits for a real one.
- *
- * TO PUBLISH:
- *   1. Set priceMinor and currency to the confirmed values.
- *   2. Set PRICING_PUBLISHED = true.
- *   3. Import and render <Pricing /> in app/page.tsx.
- *   4. Update tests/static-html.test.ts, which currently asserts it is absent.
+ * See ADR-0042 for why the gate is the missing import and for the steps to publish.
  */
 export const PRICING: PricingPlan = {
   id: "premium",

@@ -4,19 +4,10 @@ import { NAV_LINKS } from "@/content/nav";
 import { SITE } from "@/content/site";
 
 /**
- * Site header. Sits over the full-bleed hero photo.
+ * Site header, fixed over the full-bleed hero photo.
  *
- * The separator is a hairline PLUS a downward scrim, not a hairline alone. On a
- * photo the bare line washes out wherever the image brightens, and the links
- * lose contrast with it. The scrim gives the nav its own surface so it stays
- * legible over any frame — which matters because the hero image is intended to
- * become video, and video brightness changes shot to shot.
- *
- * Fixed, so it follows the scroll and stays reachable on a long page. This is
- * pure CSS position: fixed — no scroll state and no client component, so the
- * whole page stays server-rendered with zero JS. The gradient + backdrop-blur
- * give the bar its own surface, so it reads cleanly over the hero photo at the
- * top and over the dark sections below once you scroll.
+ * The hairline separator needs its accompanying scrim to stay legible over a
+ * bright frame, and the whole bar is CSS-only with no scroll state. See ADR-0041.
  */
 export function Nav() {
   return (
