@@ -3,16 +3,10 @@ import { routes } from "@/lib/api/routes";
 import { toMutationResult, type MutationResult } from "@/lib/api/result";
 
 /**
- * Change a user's role (admin endpoint).
+ * Change a user's role.
  *
- * Contract: PATCH {NEXT_PUBLIC_API_URL}/api/v1/users/{user_id}/role/
- *   Authorization: Bearer <supabase access token>
- *   body { role: "user" | "admin" }
- *   → 200 GetUser | 403 when changing your own role | 422 bad role
- *
- * Returns a `MutationResult` so the caller can tell the self-change 403
- * (denied) apart from an outage (error). The caller reaches this only after the
- * `withAdmin` gate, so a 403 here means "own role", not "not an admin".
+ * Callers reach this only past the `withAdmin` gate, so a `denied` means the admin
+ * tried to change their OWN role — which the backend refuses — not "not an admin".
  */
 export async function setUserRole(
   userId: string,

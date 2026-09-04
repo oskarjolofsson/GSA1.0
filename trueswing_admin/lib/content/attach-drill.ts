@@ -22,9 +22,6 @@ export async function attachDrill(
 /**
  * Unlink a drill from an issue. The drill and its practice history survive — it may
  * be prescribed by other issues.
- *
- * Contract: DELETE /api/v1/admin/content/issues/{issue_id}/drills/{drill_id}/
- *   → 200 AdminIssueSchema | 404 the link does not exist
  */
 export async function detachDrill(
   issueId: string,

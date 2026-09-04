@@ -11,13 +11,9 @@ import type { AdminTaxonomyTerm, TaxonomyKind } from "./types";
 /**
  * List every term of one kind, including retired ones.
  *
- * Contract: GET /api/v1/admin/content/taxonomy/{kind}/
- *   → 200 AdminTaxonomyTermSchema[]
- *     403 not admin
- *
  * Inactive rows are included on purpose: this is the editor, and a retired value you
- * cannot see is a value you cannot bring back. Each row carries `usage_count`, so the UI
- * can disable delete on a term issues still reference without a request per row.
+ * cannot see is one you cannot bring back. Each row carries `usage_count`, so the UI
+ * can disable delete without a request per row.
  */
 export async function listTaxonomyTerms(
   kind: TaxonomyKind,
@@ -33,15 +29,8 @@ export async function listTaxonomyTerms(
 /**
  * Add a vocabulary value.
  *
- * Contract: POST /api/v1/admin/content/taxonomy/{kind}/
- *   body CreateTaxonomyTermRequest
- *   → 201 AdminTaxonomyTermSchema
- *     403 not admin
- *     409 the key is taken
- *     422 a miss naming an area that does not exist
- *
  * Keys are normalised server-side (upper-cased, spaces and hyphens to underscores), so
- * `slice` and `SLICE` collide rather than becoming two rows.
+ * `slice` and `SLICE` collide with a 409 rather than becoming two rows.
  */
 export async function createTaxonomyTerm(
   kind: TaxonomyKind,
@@ -59,13 +48,8 @@ export async function createTaxonomyTerm(
 /**
  * Edit labels, ordering or active state. Partial: omitted fields are left alone.
  *
- * Contract: PATCH /api/v1/admin/content/taxonomy/{kind}/{key}/
- *   → 200 AdminTaxonomyTermSchema
- *     404 unknown key
- *
- * `key` is not editable. Issues, issue_goals and issue_misses all reference it, so a
- * rename would orphan every tag. Setting `active: false` is how a term in use is taken
- * out of circulation.
+ * `key` is not editable — issues, issue_goals and issue_misses all reference it, so a
+ * rename would orphan every tag. `active: false` is how a term in use is retired.
  */
 export async function updateTaxonomyTerm(
   kind: TaxonomyKind,
@@ -84,14 +68,8 @@ export async function updateTaxonomyTerm(
 /**
  * Remove a vocabulary value.
  *
- * Contract: DELETE /api/v1/admin/content/taxonomy/{kind}/{key}/
- *   → 204
- *     409 issues still use it, with `detail` giving the count
- *     404 unknown key
- *
- * The 409 is the normal case rather than an error path: deleting would mean retagging
- * every issue that carries the term, so the API refuses and names `active: false` as the
- * alternative.
+ * A 409 is the normal case, not an error path: the API refuses while issues still carry
+ * the term and its `detail` gives the count. `active: false` is the alternative.
  */
 export async function deleteTaxonomyTerm(
   kind: TaxonomyKind,

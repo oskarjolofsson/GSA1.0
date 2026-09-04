@@ -6,11 +6,8 @@ import type { AdminIssue } from "./types";
 /**
  * Fetch one issue with its tags and linked drills.
  *
- * Contract: GET /api/v1/admin/content/issues/{issue_id}/
- *   → 200 AdminIssueSchema | 403 not admin | 404 unknown issue
- *
- * A 404 maps to `error` rather than a distinct state: the only way to reach this
- * with a bad id is a stale link, and the page shows the same "couldn't load" copy.
+ * A 404 maps to `error` rather than a state of its own: the only way to get here with
+ * a bad id is a stale link, and the page shows the same "couldn't load" copy.
  */
 export async function getIssue(
   issueId: string,

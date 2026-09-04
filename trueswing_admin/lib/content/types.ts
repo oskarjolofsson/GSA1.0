@@ -1,8 +1,6 @@
 /**
- * Content catalog types, derived from the backend's OpenAPI schema
- * (`app/api/v1/schemas/admin_content.py` and `taxonomy.py`). Regenerate with
- * `npm run gen:api-types`; these aliases then track any backend change
- * automatically. See `lib/README.md`.
+ * Content catalog types, derived from the backend's OpenAPI schema. Regenerate with
+ * `npm run gen:api-types`. See `lib/README.md`.
  */
 import type { components } from "@/lib/api/schema";
 
@@ -51,13 +49,7 @@ export type CoverageCell = components["schemas"]["CoverageCellSchema"];
 /** The allowed tag vocabularies, with the words each audience sees. */
 export type Taxonomy = components["schemas"]["TaxonomyResponse"];
 
-/**
- * One vocabulary value: `label` for the admin, `golfer_label` + `blurb` for the player.
- *
- * These labels used to live in features/content/constants.ts and, separately, in the expo
- * app — four hand-synced copies of the same list. They come from the API now, which is
- * what let those files go.
- */
+/** One vocabulary value: `label` for the admin, `golfer_label` + `blurb` for the player. */
 export type TaxonomyTerm = components["schemas"]["TaxonomyTermSchema"];
 
 /** A miss, plus the area it belongs to. A putt is not sliced. */
