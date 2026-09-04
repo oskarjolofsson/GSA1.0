@@ -6,11 +6,8 @@ import type { DeleteImpact } from "./types";
 /**
  * Fetch what deleting an issue would destroy. Read-only.
  *
- * Contract: GET /api/v1/admin/content/issues/{issue_id}/impact/
- *   → 200 DeleteImpactResponse | 403 not admin | 404 unknown issue
- *
- * Analyses, programs and practice sessions all CASCADE from an issue, so these
- * counts are real user data. `blocking` true means the delete needs confirmation.
+ * Analyses, programs and practice sessions all CASCADE from an issue, so these counts
+ * are real user data. `blocking` true means the delete needs confirmation.
  */
 export async function getIssueDeleteImpact(
   issueId: string,
@@ -22,9 +19,6 @@ export async function getIssueDeleteImpact(
 
 /**
  * Fetch what deleting a drill would touch.
- *
- * Contract: GET /api/v1/admin/content/drills/{drill_id}/impact/
- *   → 200 DeleteImpactResponse | 403 not admin | 404 unknown drill
  *
  * `drill_runs` above zero means the delete is impossible, not merely destructive:
  * practice_drill_runs.drill_id is ON DELETE NO ACTION, so the database refuses it

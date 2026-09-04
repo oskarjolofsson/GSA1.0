@@ -6,11 +6,8 @@ import type { UpdateDrillBody } from "./types";
 /**
  * Update a drill. Partial: omitted fields are left untouched.
  *
- * `area` and `metric` are the exception to "omitted": null clears them, so sending null
- * un-scopes or un-scores the drill rather than leaving it alone.
- *
- * Contract: PATCH /api/v1/admin/content/drills/{drill_id}/
- *   → 200 AdminDrillSchema | 403 not admin | 404 unknown drill
+ * `area` and `metric` are the exception — null clears them, so sending null un-scopes
+ * or un-scores the drill rather than leaving it alone.
  */
 export async function updateDrill(
   drillId: string,

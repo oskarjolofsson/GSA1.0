@@ -1,11 +1,8 @@
 /**
- * Three-state result for an authenticated admin GET.
+ * Three-state result for an authenticated admin GET. See ADR-0010.
  *
- * Lets a page tell "not an admin" (403) apart from "couldn't reach the API"
- * (missing base URL / network / 5xx / bad body) without a separate verify call —
- * the data endpoint is itself `require_admin`, so its status already carries the
- * admin verdict. Never collapse denied and error together: one is a permission
- * state (show "no access"), the other an outage (show "try again").
+ * Never collapse denied and error: one is a permission state (show "no access"), the
+ * other an outage (show "try again").
  */
 export type FetchResult<T> =
   | { status: "ok"; data: T }
@@ -15,14 +12,8 @@ export type FetchResult<T> =
 /**
  * Map an `authedFetch` outcome to a `FetchResult`.
  *
- *   res === null (no base URL / thrown fetch) ─▶ error
- *   403                                        ─▶ denied
- *   other non-2xx                              ─▶ error
- *   2xx, parse(res) throws / returns null      ─▶ error
- *   2xx, parse(res) returns T                  ─▶ ok
- *
- * `parse` validates and shapes the body; return `null` to reject an
- * unexpected payload (treated as error, never a silent empty success).
+ * `parse` validates and shapes the body; return `null` to reject an unexpected
+ * payload — it becomes `error`, never a silent empty success.
  */
 export async function toResult<T>(
   res: Response | null,
@@ -43,25 +34,9 @@ export async function toResult<T>(
 /**
  * Result of an authenticated admin mutation (POST/DELETE/PATCH).
  *
- * The write-side counterpart to `FetchResult`. Where reads only needed
- * ok/denied/error, mutations can fail in ways the caller wants to distinguish
- * ("already subscribed" vs "no such user" vs "try again"). The statuses map
- * 1:1 to the backend's exception handlers (backend/app/exception_handlers.py),
- * every one of which responds `{ detail: string }`:
- *
- *   2xx                                    ─▶ ok
- *   400 InvalidStateException               ─▶ invalidState
- *   401 Authentication/UnauthorizedException ─▶ unauthorized
- *   403 ForbiddenException                  ─▶ denied
- *   404 NotFoundException                   ─▶ notFound
- *   409 ConflictException                   ─▶ conflict
- *   422 Validation/InvalidVideoException    ─▶ invalidInput
- *   502 StripeInfrastructureError           ─▶ serviceUnavailable
- *   500 / null / any other non-2xx          ─▶ error
- *
- * `detail` carries the backend's human message on the failure branches so the
- * UI can surface it verbatim (mirrors the frontend apiClient reading
- * `errorData.detail`).
+ * The branches map 1:1 to the backend's exception handlers
+ * (backend/app/exception_handlers.py); `detail` carries their human message so the UI
+ * can surface it verbatim.
  */
 export type MutationResult =
   | { status: "ok" }
@@ -87,9 +62,8 @@ const STATUS_TO_MUTATION: Record<number, MutationResult["status"]> = {
 /**
  * Map an `authedFetch` outcome to a `MutationResult`.
  *
- * A 2xx (including 201/204) is `ok`. Any known error status maps to its named
- * branch and best-effort reads `{ detail }` off the body; unknown non-2xx and
- * `null` (network / missing base URL) fall through to `error`.
+ * Any 2xx is `ok`; unknown non-2xx and `null` (network / missing base URL) fall
+ * through to `error`.
  */
 export async function toMutationResult(
   res: Response | null,

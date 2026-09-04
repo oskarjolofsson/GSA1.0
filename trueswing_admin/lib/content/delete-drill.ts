@@ -5,15 +5,10 @@ import { toMutationResult, type MutationResult } from "@/lib/api/result";
 /**
  * Delete a catalog drill.
  *
- * Contract: DELETE /api/v1/admin/content/drills/{drill_id}/?confirm_impact
- *   → 204 deleted
- *     409 either it needs confirmation, or it can never be deleted because it has
- *         recorded practice runs (practice_drill_runs is ON DELETE NO ACTION)
- *     403 not admin | 404 unknown drill
- *
- * Those two 409s mean different things and the backend `detail` distinguishes them.
- * Setting confirmImpact will not get past the practice-history one — detach the
- * drill from its issues instead so it stops being prescribed.
+ * Two different 409s, told apart by the backend's `detail`: one wants confirmImpact,
+ * the other is a drill with recorded practice runs, which can never be deleted
+ * (practice_drill_runs is ON DELETE NO ACTION). confirmImpact will not get past the
+ * second — detach the drill from its issues instead.
  */
 export async function deleteDrill(
   drillId: string,

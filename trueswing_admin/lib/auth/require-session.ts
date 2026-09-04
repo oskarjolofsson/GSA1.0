@@ -2,16 +2,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Resolve the current Supabase access token.
+ * Resolve the current Supabase access token, or null.
  *
- * Two shapes for two callers, both wrapping the same `createClient()` +
- * `getSession()` dance that every page and action used to copy:
- *
- *   requireSessionToken()  server components — token or redirect("/login")
- *   getSessionToken()      server actions    — token or null
- *
- * Actions can't `redirect()` cleanly mid-mutation, so they get the nullable
- * variant and short-circuit themselves.
+ * The nullable variant, for server actions — they cannot `redirect()` cleanly
+ * mid-mutation. Server components use `requireSessionToken` below.
  */
 export async function getSessionToken(): Promise<string | null> {
   const supabase = await createClient();
