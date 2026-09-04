@@ -1,15 +1,8 @@
 /**
  * Ask the trueswing API whether the current user is an admin.
  *
- * Contract: GET {NEXT_PUBLIC_API_URL}/api/v1/admin/verify/
- *   Authorization: Bearer <supabase access token>
- *   → 200 { is_admin: boolean }
- *   → 403 when not verified
- *
- * Three-state result so the caller can tell "not admin" (403 / is_admin=false)
- * apart from "couldn't reach the API" (network / 5xx). Never collapse an error
- * into a deny — that would hide outages, and never into an allow — that would
- * be a security hole.
+ * Three-state on purpose: never collapse an error into a deny (that hides outages) or
+ * into an allow (that is a security hole).
  */
 import { routes } from "@/lib/api/routes";
 

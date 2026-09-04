@@ -21,14 +21,11 @@ type Props = {
 };
 
 /**
- * Technical → Users screen.
+ * Technical → Users: a server-paged browse list, or a debounced server search spanning
+ * all users when a query is typed.
  *
- *   query empty ─▶ server-paged browse list (Prev/Next change ?page)
- *   query typed ─▶ debounced server search (spans ALL users, not just the page)
- *   row clicked ─▶ <UserDetail/> (view + delete)
- *
- * Delete removes the row optimistically (via `removed`); the page also
- * revalidates server-side so a later navigation reflects the truth.
+ * Delete removes the row optimistically via `removed`; the page also revalidates, so a
+ * later navigation reflects the truth.
  */
 export default function UsersExplorer({
   page,

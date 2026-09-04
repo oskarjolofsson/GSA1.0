@@ -16,9 +16,8 @@ const labelCls = "text-xs font-semibold uppercase tracking-wide text-zinc-400";
 /**
  * Area and metric, shared by the create form and the detail editor.
  *
- * The metric inputs appear only once a type is chosen. Before Slice B every drill was
- * feel-only, and most still are — mirror work has no number to record — so the default
- * state is the quiet one and scoring is opt-in.
+ * The metric inputs appear only once a type is chosen: most drills are feel-only —
+ * mirror work has no number to record — so scoring is opt-in.
  */
 export default function DrillMetricFields({
   taxonomy,

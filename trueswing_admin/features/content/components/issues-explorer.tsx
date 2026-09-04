@@ -40,15 +40,11 @@ type Props = {
 };
 
 /**
- * Content → Issues.
+ * Content → Issues: a server-paged browse list, or a debounced server search spanning
+ * all issues when a query is typed.
  *
- *   query empty ─▶ server-paged browse list (Prev/Next change ?page)
- *   query typed ─▶ debounced server search across ALL issues, not just this page
- *   row clicked ─▶ <IssueDetail/>
- *   New issue   ─▶ <IssueForm/>
- *
- * Deleted rows are hidden optimistically via `removed`; the action also
- * revalidates so a later navigation reflects the truth.
+ * Deleted rows are hidden optimistically via `removed`; the action also revalidates, so
+ * a later navigation reflects the truth.
  */
 export default function IssuesExplorer({
   page,
@@ -221,10 +217,9 @@ const SOURCE_TABS = [
 /**
  * Which slice of the catalog is on screen.
  *
- * Links rather than local state so each tab is a fresh server fetch with its own
- * total and its own pagination, the same way `?page=` works. Defaults to Catalog:
- * mixing golfer-authored issues into the list you curate is what made the
- * distinction invisible.
+ * Links rather than local state, so each tab is a fresh server fetch with its own total
+ * and pagination. Defaults to Catalog, which keeps golfer-authored issues out of the
+ * list the admin curates.
  */
 function SourceTabs({ active }: { active: string }) {
   return (
@@ -260,8 +255,7 @@ function IssueList({
 }: {
   issues: AdminIssue[];
   onSelect: (issue: AdminIssue) => void;
-  // Built from the fetched taxonomy by the parent. Passed rather than imported so
-  // the tag chips read the database's words, not a second hardcoded copy.
+  // Built from the fetched taxonomy by the parent (ADR-0008).
   labels: Labels;
 }) {
   return (

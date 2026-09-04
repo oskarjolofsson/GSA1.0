@@ -1,9 +1,6 @@
 /**
- * Pure helpers for the taxonomy editor.
- *
- * Same shape as compose-payload.ts: no form library, no zod — validation returns a reason
- * string or undefined, so the disabled save button can explain itself. Keeping it out of
- * the JSX also means vitest can assert on it in a node environment.
+ * Pure helpers for the taxonomy editor. Validation returns a reason string or undefined,
+ * so the disabled save button can explain itself.
  */
 
 import type { AdminTaxonomyTerm, TaxonomyKind } from "@/lib/content/types";
@@ -39,19 +36,13 @@ export function draftFromTerm(term: AdminTaxonomyTerm): TermDraft {
 }
 
 /**
- * Mirror of the server's key normalisation, so the admin sees what will be stored before
- * they commit to it. The backend does this too and its version is authoritative — this is
- * only to stop "leaves short" looking like it will be saved verbatim.
+ * Mirror of the server's key normalisation, so the admin sees what will actually be
+ * stored before committing to it. The backend's version is authoritative. See ADR-0009.
  */
 export const normalizeKey = (raw: string) =>
   raw.trim().toUpperCase().replace(/[\s-]+/g, "_");
 
-/**
- * Why the save button is disabled, or undefined when it should be enabled.
- *
- * Returns a reason rather than a boolean for the same purpose as validateWizard: a
- * disabled control with no explanation is a dead end.
- */
+/** Why the save button is disabled, or undefined when it should be enabled. */
 export function validateTermDraft(
   draft: TermDraft,
   kind: TaxonomyKind,
@@ -89,9 +80,8 @@ export function toCreateBody(draft: TermDraft, kind: TaxonomyKind) {
 }
 
 /**
- * `key` is deliberately absent: it is the foreign key issues reference, so the API refuses
- * to change it. Reword a term through its labels; replace it by adding the new one and
- * retiring the old.
+ * `key` is deliberately absent: issues reference it, so the API refuses to change it.
+ * Reword a term through its labels; replace it by adding the new one and retiring the old.
  */
 export function toUpdateBody(draft: TermDraft, kind: TaxonomyKind) {
   const body: Record<string, unknown> = {

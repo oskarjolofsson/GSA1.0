@@ -6,15 +6,9 @@ import type { UpdateIssueBody } from "./types";
 /**
  * Edit a catalog issue.
  *
- * Contract: PATCH /api/v1/admin/content/issues/{issue_id}/
- *   body UpdateAdminIssueRequest
- *   → 200 AdminIssueSchema
- *     403 not admin | 404 unknown issue
- *     422 an unknown area/kind/tag value, with `detail` naming it
- *
- * Partial and three-state: omit a field to leave it, send "" to clear it, send
- * text to set it. Tags work the same — omit to keep, [] to remove them all. The
- * server validates before applying anything, so a 422 changes nothing.
+ * Three-state fields: omit to leave it, "" to clear it, text to set it. Tags work the
+ * same — omit to keep, [] to remove them all. The server validates before applying
+ * anything, so a 422 changes nothing and its `detail` names the rejected value.
  */
 export async function updateIssue(
   issueId: string,

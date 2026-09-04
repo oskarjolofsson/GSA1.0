@@ -33,17 +33,9 @@ function parseSource(raw: string | string[] | undefined): string {
 /**
  * Content → Issues (server component).
  *
- *   session ─▶ getIssuesPage(page) ─┬ ok     ─▶ <IssuesExplorer/>
- *                                    ├ denied ─▶ "No access" notice
- *                                    └ error  ─▶ error notice
- *
- * No separate admin check: /admin/content/issues/ is `require_admin`, so its 403
- * already carries the verdict in the same round trip.
- *
- * The taxonomy is fetched here rather than in the client so the tag pickers have
- * their vocabulary before first paint. If it fails the explorer still renders — it
- * just cannot offer the wizard, because a picker with no vocabulary would let the
- * admin save tags the backend then rejects.
+ * The taxonomy is fetched here rather than in the client so the tag pickers have their
+ * vocabulary before first paint. If it fails the explorer still renders, but cannot
+ * offer the wizard — an empty picker would let the admin save tags the backend rejects.
  *
  * Next 16: `searchParams` is a Promise and must be awaited.
  */

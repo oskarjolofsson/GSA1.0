@@ -3,14 +3,9 @@ import { routes } from "@/lib/api/routes";
 import type { User } from "./types";
 
 /**
- * Search users by name/email (admin endpoint).
+ * Search users by name/email. Spans all users, not one page.
  *
- * Contract: GET {NEXT_PUBLIC_API_URL}/api/v1/users/search/?q&limit
- *   Authorization: Bearer <supabase access token>
- *   → 200 User[]
- *
- * Returns `null` on failure so the caller can distinguish an API error from an
- * empty result set.
+ * `null` on failure, distinct from `[]` for no matches.
  */
 export async function searchUsers(
   token: string,

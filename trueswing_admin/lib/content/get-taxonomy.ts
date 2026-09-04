@@ -6,13 +6,7 @@ import type { Taxonomy } from "./types";
 /**
  * Fetch the allowed tag vocabularies.
  *
- * Contract: GET /api/v1/taxonomy/
- *   → 200 TaxonomyResponse
- *
- * Tag pickers render from this rather than from hardcoded arrays. The write paths
- * validate strictly and return 422 on an unknown value, so a drifted local copy
- * would mean the admin ticks a tag and the save fails — or worse, on the lenient
- * paths, silently drops it.
+ * Tag pickers render from this, never from a local constant — see ADR-0008.
  */
 export async function getTaxonomy(token: string): Promise<FetchResult<Taxonomy>> {
   const res = await authedFetch(routes.taxonomy(), token);

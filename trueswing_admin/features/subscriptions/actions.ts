@@ -11,11 +11,8 @@ import type { ProfileMatch } from "@/lib/subscriptions/types";
 const SUBSCRIPTIONS_PATH = "/business/subscriptions";
 
 /**
- * Server Actions are reachable by direct POST, but every admin endpoint they hit
- * is `require_admin` on the backend — a non-admin token gets a 403 and the lib
- * wrapper returns `denied`. So there's no separate verify here; we just need a
- * session token. Mutations revalidate the subscriptions route so the next server
- * render fetches a fresh page.
+ * These actions need only a session token: every endpoint behind them is
+ * `require_admin`, so a non-admin's call comes back `denied`. See ADR-0010.
  */
 
 /** Outcome shape the client components consume: ok, plus a message on failure. */
