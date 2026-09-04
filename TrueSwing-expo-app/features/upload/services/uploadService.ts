@@ -9,7 +9,6 @@ export async function create_analysis(
   startTime: number = 0,
   endTime: number = 0
 ): Promise<CreateAnalysisResponse> {
-  // create body for the request
   const requestBody = {
     start_time: startTime,
     end_time: endTime,
@@ -46,7 +45,6 @@ export async function upload_video(
   videoUri: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<void> {
-  // Validate the videoUri and uploadUrl
   if (!uploadUrl || !videoUri) {
     throw new Error('Invalid upload URL or video URI');
   }
