@@ -21,7 +21,6 @@ export default function useVideoURL(activeAnalysis: Analysis | null): string | n
             const analysisId = activeAnalysis.analysis_id;
             const now = Date.now();
 
-            // Check the cache first
             const cachedItem = urlCache[analysisId];
             if (cachedItem && cachedItem.expiresAt > now) {
                 console.log('Using cached URL for:', analysisId);

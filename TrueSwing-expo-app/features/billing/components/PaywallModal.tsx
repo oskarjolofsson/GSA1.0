@@ -72,7 +72,6 @@ export default function PaywallModal() {
     };
   }, []);
 
-  // Fetch the offering each time the paywall opens.
   useEffect(() => {
     if (!paywall.open) return;
     return loadOffering();
@@ -91,7 +90,6 @@ export default function PaywallModal() {
       const info = await purchasePackage(pkg);
       if (hasPremiumEntitlement(info)) {
         closePaywall();
-        // Reconcile backend status in the background.
         void refreshUntilPremium();
       }
     } catch (e) {

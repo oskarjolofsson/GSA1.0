@@ -67,7 +67,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<AppUser | null>(null);  // Changed from User
   const [loading, setLoading] = useState(true);
 
-  // Helper to transform Supabase User to AppUser
   function toAppUser(supabaseUser: User | undefined): AppUser | null {
     if (!supabaseUser) return null;
     return {
