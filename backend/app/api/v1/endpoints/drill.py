@@ -34,23 +34,10 @@ def create_drill(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_admin)
 ):
-    """
-    Create a new drill in the global catalog.
+    """Create a drill in the global catalog. Admin-only.
 
-    Admin-only: drill_service.create_drill leaves user_id NULL, and a NULL user_id
-    means the drill is global. Users author their own drills through
-    POST /issues/custom/, which stamps ownership.
-
-    Arguments (JSON body):
-        title (str): Title of the drill
-        task (str): Description of the drill task
-        success_signal (str): Description of what indicates a successful drill
-        fault_indicator (str): Description of what indicates a failed drill
-
-    Returns:
-        JSON response with:
-        - success
-        - drill_id
+    Leaves user_id NULL, which is what makes the drill global. Users author their own
+    through POST /issues/custom/, which stamps ownership.
     """
     dto = CreateDrillDTO(
         title=request.title,
@@ -153,20 +140,7 @@ def update_drill(
     db: Session = Depends(get_db),
     current_user: dict = Depends(require_admin)
 ):
-    """
-    Update an existing drill.
-
-    Arguments:
-        drill_id (UUID): Drill identifier
-
-    JSON body:
-        title (str, optional): Updated title of the drill
-        task (str, optional): Updated description of the drill task
-        success_signal (str, optional): Updated description of what indicates a successful drill
-        fault_indicator (str, optional): Updated description of what indicates a failed drill 
-
-    Returns:
-        JSON response with updated drill details
+    """Update a drill. All body fields are optional; omitted ones are left alone.
     """
     dto = UpdateDrillDTO(
         title=request.title,

@@ -38,7 +38,6 @@ class Prompt(Base):
         server_default=func.now(),
     )
 
-    # Relationship
     analysis = relationship("Analysis", back_populates="prompt")
 
     __table_args__ = (Index("idx_prompts_analysis_id", "analysis_id"),)

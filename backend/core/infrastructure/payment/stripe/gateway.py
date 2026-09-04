@@ -1,4 +1,3 @@
-# app/infrastructure/stripe/gateway.py
 from stripe import StripeClient
 
 from core.infrastructure.payment.stripe.client import stripe_client

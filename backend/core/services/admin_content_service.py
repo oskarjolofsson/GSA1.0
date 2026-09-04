@@ -252,9 +252,7 @@ def create_drill(
         task=task.strip(),
         success_signal=success_signal.strip(),
         fault_indicator=fault_indicator.strip(),
-        # Both validated here rather than left to the column: a bad area is a 422 naming
-        # the field instead of an IntegrityError surfacing as a 500, and a bad metric is
-        # caught while the person who wrote it is still looking at the form.
+        # Validated here so a bad value is a 422 naming the field, not a 500.
         area=taxonomy.normalize_area_optional(area),
         metric=drill_metrics.validate_metric(metric),
     )
@@ -271,9 +269,7 @@ def update_drill(drill_id: UUID, fields: dict, db_session: Session) -> AdminDril
     if not drill:
         raise NotFoundException("Drill", str(drill_id))
 
-    # `area` and `metric` are the only fields that can be *cleared*, so they read the
-    # supplied keys rather than skipping on None: a drill that stops being scored has to
-    # be able to go back to feel-only, and `None` is how the form says so.
+    # area/metric are the only clearable fields, so None means "clear", not "skip".
     if "area" in fields:
         drill.area = taxonomy.normalize_area_optional(fields["area"])
     if "metric" in fields:
@@ -374,23 +370,10 @@ def detach_drill(issue_id: UUID, drill_id: UUID, db_session: Session) -> AdminIs
 
 
 def coverage(db_session: Session) -> CoverageDTO:
-    """Issue counts per area / miss / goal, including the empty combinations.
+    """Issue counts for every area/miss/goal cell, including empty ones.
 
-    Cells are generated from the taxonomy rather than from the data, so a
-    combination with no issues still appears — an absent row is exactly the gap
-    worth seeing.
-
-    Two things this deliberately does NOT do:
-
-    Outer joins, not inner. An issue with no miss or goal tags used to produce zero rows
-    and vanish from the grid entirely — invisible in the one tool built to find untagged
-    content. With ~30 issues to author across four new areas that stops being a curiosity
-    and becomes the main thing you would want the grid to show you.
-
-    Cells scoped by area, not a cross-product. Misses belong to exactly one area now, so
-    iterating every area against every miss would emit CHIPPING x SLICE and similar —
-    permanently unfillable cells that read as gaps forever. The old shape produced
-    5 x 8 x 6 = 240 cells, most of them nonsense.
+    Cells come from the taxonomy rather than the data, so a combination with no issues
+    still appears — the gap is the point. See ADR-0003 for the join and scoping choices.
     """
     rows = db_session.execute(
         select(
@@ -415,17 +398,12 @@ def coverage(db_session: Session) -> CoverageDTO:
         for goal in taxonomy.allowed_goals()
     ]
 
-    # Issues carrying no miss or goal at all. The outer joins above give them a cell keyed
-    # on NULL, which no (area, miss, goal) triple can reach, so surface the count directly
-    # rather than letting them disappear again a layer up.
+    # Untagged issues key on NULL, which no (area, miss, goal) triple reaches.
     untagged = sum(
         n for (area, miss, goal), n in counts.items() if miss is None or goal is None
     )
 
-    # Reachability is asymmetric by kind. A 'fault' issue is reachable through its
-    # misses with no goal tag at all, but a 'skill' issue is listed only under its
-    # goals -- with none it falls out of the library tree entirely and can be found
-    # only by search. That is invisible from the grid, so count it directly.
+    # A skill issue with no goals falls out of the library tree entirely (ADR-0003).
     goalless_skills = db_session.execute(
         select(func.count())
         .select_from(models.Issue)

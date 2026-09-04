@@ -51,7 +51,6 @@ class Drill(Base):
         server_default=func.now(),
     )
 
-    # Relationship to issue_drill
     issue_drills = relationship(
         "IssueDrill",
         back_populates="drill",

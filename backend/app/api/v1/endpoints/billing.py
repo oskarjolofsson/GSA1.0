@@ -15,6 +15,15 @@ async def checkout_session(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    Open a Stripe Checkout session for a web subscription.
+
+    Refuses with 409 if the user already has an active subscription with **any**
+    provider, including a mobile one bought through RevenueCat. Mobile purchases
+    happen on the store and cannot be intercepted here, but they land in
+    `billing_subscriptions` via the RevenueCat webhook, so this is where the
+    double-subscription is caught.
+    """
     checkout_url = await billing_service.start_subscription_checkout(
         user_id=UUID(current_user["user_id"]),
         db_session=db,
@@ -27,6 +36,13 @@ async def portal(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    Open the Stripe customer portal, where a web subscriber manages their plan.
+
+    Stripe-only: a RevenueCat (mobile) subscription is managed in the App Store or
+    Play Store and the portal cannot touch it. Check `provider` on the status
+    endpoint before sending a user here.
+    """
     portal_url = await billing_service.create_customer_portal(
         user_id=UUID(current_user["user_id"]),
         db_session=db,
@@ -39,6 +55,14 @@ def status(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """
+    Everything the client needs to decide what a user may access and what to render.
+
+    `can_access_premium` is the flag to gate features on — it is true for both paying
+    subscribers and users still inside the 7-day free tier, so callers should not try
+    to recombine `is_subscribed` and `has_free_tier` themselves. `subscription` is
+    None when the user has never subscribed.
+    """
     user_id = UUID(current_user["user_id"])
     return {
         "is_subscribed": entitlement_service.is_subscribed(user_id, db),

@@ -56,5 +56,4 @@ class R2Client:
             ContentType=content_type,
         )
     
-# Instantiate a single global R2 client
 r2_client = R2Client()

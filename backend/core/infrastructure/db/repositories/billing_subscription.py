@@ -90,27 +90,9 @@ CURRENT_SUBSCRIPTION_STATUSES = ("trialing", "active")
 def _valid_subscription_conditions(now: datetime) -> list:
     """The single "is this subscription valid right now?" predicate.
 
-    Shared by every "genuinely subscribed" read — the admin grant-guard, the
-    admin search `subscribed` flag, and the admin dashboard list — so they can
-    never drift apart. A row is valid iff:
-
-        status ∈ (active, trialing)
-        AND ended_at IS NULL
-        AND (current_period_start IS NULL OR current_period_start <= now)
-        AND (current_period_end   IS NULL OR current_period_end   >  now)
-
-    A NULL bound is open-ended: NULL start = "already started", NULL end =
-    "never expires" (manual comps). Only an explicit future start or a past end
-    disqualifies the row.
-
-    Distinct from ``_entitling_condition`` (entitlement), which additionally
-    honors grace states (past_due/unpaid) regardless of the period clock. The
-    admin grant-guard deliberately excludes grace so an admin can comp a lapsed
-    account.
-
-    Callers must supply the ``BillingSubscription`` (and, for user-scoped reads,
-    join ``BillingCustomer``) themselves; these conditions reference
-    ``BillingSubscription`` columns only.
+    Shared by every genuinely-subscribed read so they cannot drift apart. Distinct from
+    `_entitling_condition`, which also honors grace states. Callers supply the
+    BillingSubscription themselves. See ADR-0006.
     """
     return [
         models.BillingSubscription.status.in_(CURRENT_SUBSCRIPTION_STATUSES),
