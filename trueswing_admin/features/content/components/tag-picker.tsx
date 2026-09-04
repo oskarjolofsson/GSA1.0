@@ -3,9 +3,7 @@
 /**
  * Checkbox group over a vocabulary supplied by the server.
  *
- * `values` always comes from GET /api/v1/taxonomy/ — never a local constant. The
- * write paths validate strictly and 422 on an unknown value, so a hardcoded list
- * that drifted would offer the admin tags the save then rejects.
+ * `values` always comes from GET /api/v1/taxonomy/, never a local constant — ADR-0008.
  */
 export default function TagPicker({
   legend,

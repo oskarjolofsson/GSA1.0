@@ -43,10 +43,8 @@ const TAXONOMY_PATH = "/content/taxonomy";
 type ActionResult = { ok: boolean; reason?: string };
 
 /**
- * Every endpoint behind these actions is `require_admin`, so a 403 already means
- * "not an admin" and there is nothing for `withAdmin` to add. This mirrors
- * features/subscriptions/actions.ts rather than the users feature, whose backend
- * routes are only `get_current_user` and therefore need the extra gate.
+ * Every endpoint behind these actions is `require_admin`, so a session token is all
+ * they need — no `withAdmin`. See ADR-0010.
  */
 async function withToken<T>(
   fallback: T,
@@ -66,11 +64,8 @@ function revalidateContent() {
 }
 
 /**
- * A vocabulary change reaches further than the taxonomy page.
- *
- * The issue form renders its pickers from the taxonomy, and the coverage grid builds
- * its cells from it — add a chipping miss and a new column should appear there. So a
- * write here revalidates the content pages too, not just its own.
+ * Revalidate the taxonomy page and the content pages with it: the issue form's pickers
+ * and the coverage grid's cells are both built from the taxonomy.
  */
 function revalidateTaxonomy() {
   revalidatePath(TAXONOMY_PATH);
@@ -93,10 +88,8 @@ export async function composeIssueAction(
 /**
  * Edit an issue.
  *
- * Returns the refreshed issue alongside the usual `{ ok, reason }` so the detail
- * view can re-render what was just saved instead of the snapshot the list loaded.
- * The PATCH response already contains it, but `MutationResult` carries no body, so
- * this re-reads rather than widening that type for one caller.
+ * Returns the refreshed issue alongside `{ ok, reason }` so the detail view can render
+ * what was just saved instead of the snapshot the list loaded.
  */
 export async function updateIssueAction(
   issueId: string,
@@ -282,10 +275,8 @@ export async function updateTaxonomyTermAction(
 /**
  * Delete a vocabulary value.
  *
- * A 409 here is expected rather than exceptional: the API refuses while issues still
- * carry the term and its `detail` gives the count ("12 issues use this"). contentFailureReason
- * passes that through verbatim, which is the whole point — replacing it with a generic
- * line would throw away the only number the admin needs.
+ * A 409 is expected, not exceptional: the API refuses while issues still carry the term,
+ * and its `detail` ("12 issues use this") reaches the admin verbatim.
  */
 export async function deleteTaxonomyTermAction(
   kind: TaxonomyKind,

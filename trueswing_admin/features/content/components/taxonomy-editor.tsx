@@ -33,23 +33,12 @@ const SINGULAR: Record<TaxonomyKind, string> = {
 };
 
 /**
- * Edit the vocabulary issues are tagged with.
+ * Edit the vocabulary issues are tagged with. See ADR-0008.
  *
- * This is the surface the taxonomy refactor exists for. Adding a miss used to mean a
- * migration plus three hand-synced file edits, which is a large part of why four areas of
- * the game went unauthored — roughly forty misses have to be written, most wrong on the
- * first attempt.
- *
- * Three things the UI has to get right, because they are where the data model has teeth:
- *
- *   key is immutable        issues, issue_goals and issue_misses all reference it, so a
- *                           rename would orphan every tag. Shown, never editable on an
- *                           existing term.
- *   delete vs retire        a term in use cannot be deleted (ON DELETE RESTRICT). The
- *                           delete button is disabled with the count, and `active` is
- *                           offered as what the admin actually wants.
- *   misses belong to areas  a putt is not sliced. The area select is required for a miss
- *                           and the backend refuses a cross-area tag.
+ * Three places the data model has teeth: `key` is shown but never editable (content
+ * references it, so a rename would orphan every tag); a term in use cannot be deleted
+ * (ON DELETE RESTRICT), so delete is disabled with its count and `active: false` is
+ * offered instead; and a miss must name an area — a putt is not sliced.
  */
 export default function TaxonomyEditor({
   terms,

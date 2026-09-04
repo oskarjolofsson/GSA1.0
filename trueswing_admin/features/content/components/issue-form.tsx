@@ -41,20 +41,12 @@ const field =
 const labelCls = "text-xs font-semibold uppercase tracking-wide text-zinc-400";
 
 /**
- * Author a catalog issue: identity, tags, plain-language copy and drills, saved in
- * one request to the composite endpoint.
+ * Author a catalog issue: identity, tags, plain-language copy and drills, saved in one
+ * request to the composite endpoint. Create and edit are the same form; edit seeds from
+ * the issue, hides the drill section and PATCHes.
  *
- * The guards are the point of this component:
- * Create and edit are the same form. Edit seeds from the issue, hides the drill
- * section (drills are attached from the detail view) and PATCHes instead of POSTing.
- *
- * The guards are the point of this component:
- *   double-click     the save button disables while pending — the endpoint has no
- *                    idempotency key, so two clicks would create two issues
- *   navigate away    beforeunload fires while the form differs from its initial state
- *   incomplete drill blocks the save rather than silently dropping the half-typed row
- *   422 on a tag     the backend `detail` names the rejected value and is rendered
- *                    beside the picker it came from, not as a toast
+ * The save button disables while pending because the endpoint has no idempotency key —
+ * two clicks would create two issues.
  */
 export default function IssueForm({
   taxonomy,
@@ -146,10 +138,8 @@ export default function IssueForm({
   /**
    * Change the area, dropping any selected miss that does not belong to the new one.
    *
-   * The API does this too — `update_issue` prunes stale tags server-side, so a script or
-   * curl cannot create an issue filed under BUNKER carrying a full-swing SLICE. Doing it
-   * here as well is not redundant: it means the admin watches it happen instead of
-   * discovering it in the response.
+   * `update_issue` prunes stale tags server-side too; doing it here means the admin
+   * watches it happen instead of discovering it in the response. See ADR-0009.
    */
   const changeArea = (area: string) => {
     const keep = new Set(missesForArea(taxonomy, area));

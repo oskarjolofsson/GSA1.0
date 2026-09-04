@@ -43,8 +43,7 @@ export default function IssueDetail({
   attachAction: (issueId: string, drillId: string) => Promise<ActionResult>;
   detachAction: (issueId: string, drillId: string) => Promise<ActionResult>;
   searchDrillsAction: (q: string) => Promise<{ ok: boolean; matches: AdminDrill[] }>;
-  // Display words for the tag chips. Nullable: a failed taxonomy fetch degrades to
-  // raw keys rather than blanking the page.
+  // Nullable: a failed taxonomy fetch degrades to raw keys rather than blanking the page.
   taxonomy: Taxonomy | null;
 }) {
   const labels = labelsFrom(taxonomy);

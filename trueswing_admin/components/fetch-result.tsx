@@ -30,12 +30,7 @@ type Props<T> = {
 /**
  * Render a three-state `FetchResult` uniformly across admin pages.
  *
- *   ok     ─▶ children(data)
- *   denied ─▶ <Notice> with deniedBody   (account isn't an admin)
- *   error  ─▶ <Notice> with errorBody    (API unreachable — try again)
- *
- * Replaces the denied/error switch every page used to hand-roll. Kept a server
- * component (no "use client") so pages stay server-rendered.
+ * Deliberately not a client component, so the pages using it stay server-rendered.
  */
 export function FetchResultView<T>({
   result,

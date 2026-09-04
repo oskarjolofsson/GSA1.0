@@ -3,14 +3,10 @@ import { routes } from "@/lib/api/routes";
 import { toMutationResult, type MutationResult } from "@/lib/api/result";
 
 /**
- * Revoke (soft-end) a manual subscription (admin endpoint).
+ * Revoke (soft-end) a manual subscription.
  *
- * Contract: DELETE {NEXT_PUBLIC_API_URL}/api/v1/admin/subscriptions/{id}/
- *   Authorization: Bearer <supabase access token>
- *   → 204 on success, 409 if not a manual sub, 404 if missing
- *
- * Returns a `MutationResult` so the caller can tell "not a manual sub"
- * (conflict) and "missing" (notFound) apart from a generic failure.
+ * `conflict` means the subscription is not a manual comp — a Stripe or RevenueCat one
+ * has to be cancelled where it was bought.
  */
 export async function revokeSubscription(
   subscriptionId: string,

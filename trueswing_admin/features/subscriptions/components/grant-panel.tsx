@@ -13,9 +13,8 @@ type Props = {
 /**
  * Find a customer and grant them a comp subscription.
  *
- * Debounced search hits the backend `/search/` endpoint (server-side match).
- * Each result knows whether it's already subscribed, so Grant is disabled for
- * those. A raced grant (backend 409) surfaces as an inline error.
+ * Results carry their own subscribed flag, so Grant is disabled for those; a raced
+ * grant still 409s and surfaces inline.
  */
 export default function GrantPanel({ searchAction, grantAction }: Props) {
   const [query, setQuery] = useState("");

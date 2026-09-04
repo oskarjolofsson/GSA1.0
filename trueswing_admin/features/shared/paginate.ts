@@ -1,14 +1,9 @@
 /**
- * Pure pagination math for the server-paged subscriber list.
+ * Pure pagination math for the server-paged lists: `?page=N` (1-based, clamped to ≥ 1)
+ * in, `limit`/`offset` and the Prev/Next button state out.
  *
- * The page reads `?page=N` (1-based) from the URL; the API takes `limit`/`offset`.
- * This maps between them and derives the Prev/Next button state, so the view and
- * the tests share one source of truth.
- *
- *   page (1-based, clamped ≥1) ──▶ offset = (page-1)*limit
- *   pageCount = ceil(total/limit)   (at least 1, even when total = 0)
- *   hasPrev = page > 1
- *   hasNext = offset + itemsOnPage < total
+ * `pageCount` is at least 1 even when `total` is 0, so an empty list still renders as
+ * "page 1 of 1" rather than "1 of 0".
  */
 export interface PageInfo {
   /** 1-based page actually used after clamping. */

@@ -25,11 +25,8 @@ const miss = (key: string, area: string, label: string, golfer: string, blurb: s
 });
 
 /**
- * Terms carry their labels now, and misses carry their area.
- *
  * PITCHING deliberately has a miss of its own, so the area-change behaviour has somewhere
- * real to switch to: picking it must drop the full-swing tags rather than leave an issue
- * carrying a SLICE it can never legally have.
+ * real to switch to: picking it must drop the full-swing tags.
  */
 const FULL_SWING_MISSES = [
   miss("SLICE", "FULL_SWING", "Slice", "I slice it", "Curves hard right"),
@@ -257,9 +254,8 @@ describe("IssueForm in edit mode", () => {
     id: "issue-1",
     title: "Early extension",
     description: "hips move toward the ball",
-    // FULL_SWING because the miss below belongs to it. Misses are area-scoped now, so
-    // the picker for PITCHING would not offer FAT at all — the old fixture paired them
-    // without noticing, which is exactly what the scoping exists to catch.
+    // FULL_SWING because the miss below belongs to it: misses are area-scoped, so the
+    // picker for PITCHING would not offer FAT at all.
     area: "FULL_SWING",
     kind: "fault",
     source: "catalog",

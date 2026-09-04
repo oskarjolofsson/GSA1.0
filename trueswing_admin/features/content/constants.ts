@@ -1,24 +1,17 @@
 /**
  * Display labels for the tag vocabularies, read from the taxonomy the API serves.
+ * See ADR-0008.
  *
- * These used to be four hardcoded maps here, mirrored again in the expo app — four
- * hand-synced copies of one list. Adding a miss meant a migration plus three file edits,
- * which is a large part of why four areas of the game went unauthored. The labels live in
- * `taxonomy_areas` / `taxonomy_goals` / `taxonomy_misses` now, and both apps read them.
- *
- * `labelsFrom(taxonomy)` returns the same helpers the components already called, so the
- * call sites did not change shape — only where the words come from. Pass `null` (the
- * taxonomy fetch failed) and every helper falls back to the raw key, so a picker degrades
- * to "LOW_WEAK" rather than rendering blank.
+ * Pass `null` — the taxonomy fetch failed — and every helper falls back to the raw key,
+ * so a picker degrades to "LOW_WEAK" rather than rendering blank.
  */
 
 import type { Taxonomy, TaxonomyTerm } from "@/lib/content/types";
 
 /**
- * `kind` is the one vocabulary still defined in code. It is a two-value structural flag
+ * `kind` is the one vocabulary still defined in code: a two-value structural flag
  * deciding which branch of the library an issue appears under (a fault is listed under
- * its misses, a skill under its goals) -- not content anyone authors, so a lookup table
- * would be ceremony.
+ * its misses, a skill under its goals), not content anyone authors.
  */
 const KIND_LABELS: Record<string, string> = {
   fault: "Fault",
@@ -39,13 +32,8 @@ export function labelsFrom(taxonomy: Taxonomy | null | undefined) {
     kindLabel: (v: string) => KIND_LABELS[v] ?? v,
 
     /**
-     * Golfer-facing phrasing, for the preview pane: what a player actually reads rather
-     * than the admin's shorthand.
-     *
-     * Title and subtitle are joined here because the preview is one line. The expo app
-     * renders them as two — `golfer_label` bold, `blurb` underneath — which is why they
-     * are separate columns rather than one string. That split is also why the old
-     * hardcoded "I slice it (curves hard right)" no longer appears anywhere.
+     * Golfer-facing phrasing for the preview pane. Joins `golfer_label` and `blurb`
+     * because the preview is one line; the expo app renders them as two.
      */
     golferMissLabel: (v: string) => {
       const term = byKey(taxonomy?.misses, v);
@@ -62,7 +50,7 @@ export function labelsFrom(taxonomy: Taxonomy | null | undefined) {
  * The misses valid for one area, as the picker should offer them.
  *
  * A miss belongs to exactly one area — a putt is not sliced — and the backend refuses a
- * cross-area tag, so offering the full list would let an admin tick something the save
+ * cross-area tag, so offering the full list would let an admin tick a value the save
  * then rejects.
  */
 export function missesForArea(

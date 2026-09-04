@@ -69,8 +69,8 @@ const renderExplorer = (items: AdminDrill[], over: Record<string, unknown> = {})
 
 describe("authoring a scored drill", () => {
   it("sends area and metric on create", async () => {
-    // The gap this closes: B1-B4 built the entire scoring path, but with no way to
-    // author a metric every drill stayed feel-only and the counting UI never rendered.
+    // Without an authoring path every drill stays feel-only and the counting UI in the
+    // golfer app never renders at all.
     const user = userEvent.setup();
     const { createAction } = renderExplorer([]);
 

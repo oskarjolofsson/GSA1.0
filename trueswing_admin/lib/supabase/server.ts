@@ -3,11 +3,9 @@ import { cookies } from "next/headers";
 
 /**
  * Supabase client for Server Components, Route Handlers, and Server Actions.
- * Next 16's `cookies()` is async, hence the await.
  *
- * Note: the `setAll` catch is intentional — Server Components cannot set
- * cookies. In that context the middleware is responsible for refreshing the
- * session, so a failed write here is safe to swallow.
+ * The `setAll` catch is intentional: Server Components cannot set cookies, and there
+ * the middleware refreshes the session instead, so a failed write is safe to swallow.
  */
 export async function createClient() {
   const cookieStore = await cookies();

@@ -2,16 +2,12 @@ import { getSessionToken } from "@/lib/auth/require-session";
 import { verifyAdmin } from "@/lib/auth/verify-admin";
 
 /**
- * Run `fn` only when the caller is a verified admin.
+ * Run `fn` only when the caller is a verified admin, else return `fallback`.
  *
- *   no session token      ─▶ fallback
- *   verifyAdmin !== admin  ─▶ fallback   (denied or error)
- *   admin                  ─▶ fn(token)
- *
- * Used by Server Actions that hit backend endpoints which are NOT themselves
- * `require_admin` — e.g. `deleteUserAction`: the DELETE /users/{id}/ endpoint
- * only lets you delete your own account, so this `verifyAdmin` gate is the ONLY
- * thing stopping a non-admin from calling the action directly. Do not remove it.
+ * For the Server Actions whose backend route is only `get_current_user` rather than
+ * `require_admin` — the users feature. The backend still refuses cross-user writes, so
+ * this is defence in depth and the source of a better message, not the only gate.
+ * See ADR-0010.
  */
 export async function withAdmin<T>(
   fn: (token: string) => Promise<T>,

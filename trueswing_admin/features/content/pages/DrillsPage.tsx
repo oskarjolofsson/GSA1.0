@@ -18,9 +18,6 @@ const PAGE_SIZE = 20;
 /**
  * Content → Drills (server component).
  *
- * Same shape as the issues screen: `require_admin` on the endpoint means its 403
- * already carries the admin verdict, so there is no separate check.
- *
  * Next 16: `searchParams` is a Promise and must be awaited.
  */
 export default async function DrillsPage({

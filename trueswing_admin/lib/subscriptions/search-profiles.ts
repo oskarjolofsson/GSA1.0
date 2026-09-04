@@ -5,12 +5,7 @@ import type { ProfileMatch } from "./types";
 /**
  * Search profiles by name/email to find who to grant a subscription to.
  *
- * Contract: GET {NEXT_PUBLIC_API_URL}/api/v1/admin/subscriptions/search/?q&limit
- *   Authorization: Bearer <supabase access token>
- *   → 200 ProfileMatch[]
- *
- * Returns `null` on failure so the caller can distinguish an API error from an
- * empty result set.
+ * `null` on failure, distinct from `[]` for no matches.
  */
 export async function searchProfiles(
   token: string,
