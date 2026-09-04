@@ -1,17 +1,9 @@
 /**
- * Landing page copy.
+ * Landing page copy, lifted largely verbatim from the root README.md — change the
+ * pitch in both together.
  *
- * Most of this is lifted VERBATIM from the root README.md, which already
- * carries the approved wording — including the problem block that sits
- * commented out at README.md:21-26. Prefer editing in one place: if you change
- * the pitch, change it here and in the README together.
- *
- * The locked position: an adherence promise, not an accuracy promise. AI stays
- * backstage. Never lead with "AI swing analysis".
- *
- * The start / program / proof copy that used to live here (ISSUE_SECTION,
- * PROGRAM, PROOF) moved to content/howItWorks.ts when those three sections were
- * merged into one "how it works" section.
+ * The positioning is locked: adherence, not accuracy, and never lead with AI.
+ * See ADR-0040.
  */
 
 import { img } from "@/lib/images";

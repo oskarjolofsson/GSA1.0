@@ -1,20 +1,11 @@
 import type { FaqItem } from "./types";
 
 /**
- * Questions ported from frontend/src/features/landing/components/faq.jsx.
- * ANSWERS REWRITTEN — the originals predate the "not an AI coach" pivot and
- * led with "advanced AI analyses your swing", promised a "personal coach
- * available 24/7", pitched beginners, and claimed desktop support.
+ * The single source for both the rendered FAQ and the FAQPage JSON-LD — editing
+ * this changes the structured data Google sees.
  *
- * Rules for editing this file:
- *   - Never lead with AI. It stays backstage: diagnosis and plan generation.
- *   - The promise is adherence, not accuracy. No claim about how correct the
- *     analysis is, and no video-derived score.
- *   - Audience is the 15-5 handicap golfer who already knows their fault.
- *     Not beginners, not coaches.
- *
- * This array is the single source for the rendered FAQ and the FAQPage JSON-LD.
- * Changing it changes both.
+ * Answers must follow the locked positioning: adherence not accuracy, AI backstage,
+ * written for the 15-5 golfer. See ADR-0040.
  */
 export const FAQ: readonly FaqItem[] = [
   {

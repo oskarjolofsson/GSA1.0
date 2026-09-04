@@ -1,15 +1,9 @@
 /**
- * The "Scroll" affordance that sits at the bottom of a section and takes you to
- * the next one.
+ * The "Scroll" affordance at the bottom of a section, linking to the next one.
  *
- * It is a plain anchor, not a button with a scroll handler: the page is
- * server-rendered with zero JS, and an on-page anchor gets smooth scrolling for
- * free from `scroll-behavior: smooth` on <html> (see globals.css). That also
- * means it works with JS disabled and is a real, focusable link for keyboard
- * and screen-reader users — hence the visually-hidden destination in the label.
- *
- * `label` names where it goes ("the problem", "how it works") so the accessible
- * name is "Scroll to the problem" rather than a bare, repeated "Scroll".
+ * A plain anchor rather than a scroll handler (ADR-0041). `label` names the
+ * destination so the accessible name reads "Scroll to the problem", not a bare
+ * repeated "Scroll".
  */
 export function ScrollCue({ href, label }: { href: string; label: string }) {
   return (

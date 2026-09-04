@@ -5,17 +5,10 @@ import { buildMetadata } from "@/lib/metadata";
 export const metadata: Metadata = buildMetadata("/legal/privacy-policy");
 
 /**
- * Ported faithfully from frontend/src/features/legal/screens/PrivacyScreen.jsx.
+ * The published privacy policy, not a summary of one — edit the wording here.
  *
- * Two deliberate changes from the original, both reviewable in isolation:
- *   1. "Last updated" moved from May 17th 2026 to July 21st 2026 — the date had
- *      gone stale and this edit is a material change.
- *   2. Plausible Analytics added: a new "Analytics" section and an entry in the
- *      Third-Party Services list. The site now loads plausible.io, so it has to
- *      be disclosed here.
- *
- * Everything else is word-for-word. If you change wording, change it here — this
- * page is the published policy, not a summary of one.
+ * Any third-party service the site loads must be disclosed in both the Analytics
+ * section and the Third-Party Services list.
  */
 export default function PrivacyPolicyPage() {
   return (
