@@ -42,3 +42,15 @@ action — the same rule that killed the old add-focus hero panel. A stroke is l
 the screen's gold then totals exactly three: the selected area tab plus at most two Start
 buttons. That budget was paid for by deleting the "Played a round? / Log it" row, which held
 two of the three gold appearances while pointing at the least important action.
+
+## The activity scale is exempt from the gold cap
+
+`ACTIVITY_COLORS` keeps gold for level 2. The 2026-08-09 simplification briefly dimmed it to
+sand-at-85%, on the theory that a 28-day grid would put ~10 gold squares on screen and
+outshine "Start practice". Checked on a device that was wrong twice over: a golfer typically
+has a handful of lit days, not ten, and the streak section is small enough and low enough
+that the squares read as texture rather than competition. It was reverted.
+
+The cap is about ACCENT — chrome and calls to action fighting for the eye. A contribution
+scale is data: the colour encodes a value, and the two steps have to be told apart at ~21px.
+Sand and gold do that; two opacities of sand did not.
