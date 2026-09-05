@@ -68,31 +68,47 @@ def _resolve_session_area(
     return None
     
     
-def record_practice_session_completion(session_id: UUID, session: Session) -> PracticeSessionResponseDTO:
-    """Mark a practice session as completed."""
+def load_owned_practice_session(session_id: UUID, user_id: UUID, session: Session) -> models.PracticeSession:
+    """Load a practice session and authorize the caller as its owner.
+
+    Every endpoint that addresses a session by an id from the request routes through
+    here, so the ownership rule lives in one place. Not-found is raised before
+    forbidden: the id is an unguessable UUID, so a caller holding one that does not
+    exist learns nothing from the distinction.
+    """
     practice_session = repo.get_practice_session_by_id(session_id, session)
     if not practice_session:
         raise exceptions.NotFoundException(f"Practice session with ID {session_id} not found", str(session_id))
-    
+
+    if practice_session.user_id != user_id:
+        raise exceptions.ForbiddenException("You do not have access to this practice session.")
+
+    return practice_session
+
+
+def record_practice_session_completion(session_id: UUID, user_id: UUID, session: Session) -> PracticeSessionResponseDTO:
+    """Mark a practice session as completed."""
+    practice_session = load_owned_practice_session(session_id, user_id, session)
+
     practice_session.status = "completed"
     practice_session.completed_at = datetime.now(tz=timezone.utc)
     updated_session = repo.update_practice_session(practice_session, session)
     return _session_to_response_dto(updated_session)
 
 
-def get_practice_session_by_id(session_id: UUID, session: Session) -> PracticeSessionResponseDTO:
+def get_practice_session_by_id(session_id: UUID, user_id: UUID, session: Session) -> PracticeSessionResponseDTO:
     """Retrieve a practice session by its ID."""
-    practice_session = repo.get_practice_session_by_id(session_id, session)
-    if not practice_session:
-        raise exceptions.NotFoundException(f"Practice session with ID {session_id} not found", str(session_id))
+    practice_session = load_owned_practice_session(session_id, user_id, session)
     return _session_to_response_dto(practice_session)
     
     
 # =========== PRACTICE DRILL RUNS ============
 
     
-def record_drill_run_start(session_id: UUID, drill_id: UUID, order_index: int | None, session: Session) -> PracticeDrillRunResponseDTO:
+def record_drill_run_start(session_id: UUID, drill_id: UUID, order_index: int | None, user_id: UUID, session: Session) -> PracticeDrillRunResponseDTO:
     """Record the start of a drill run within a practice session."""
+    load_owned_practice_session(session_id, user_id, session)
+
     new_drill_run = models.PracticeDrillRun(
         session_id=session_id,
         drill_id=drill_id,
@@ -103,11 +119,17 @@ def record_drill_run_start(session_id: UUID, drill_id: UUID, order_index: int | 
     return _drill_run_to_response_dto(created_drill_run, drill_title=drill.title, metric=drill.metric)
 
 
-def record_drill_run_completion(drill_run_dto: CompleteDrillRunDTO, session: Session) -> PracticeDrillRunResponseDTO:
-    """Record the completion of a drill run."""
+def record_drill_run_completion(drill_run_dto: CompleteDrillRunDTO, user_id: UUID, session: Session) -> PracticeDrillRunResponseDTO:
+    """Record the completion of a drill run.
+
+    A run is owned through its parent session, so the caller is authorized against that
+    session rather than against the run row itself.
+    """
     drill_run = repo.get_practice_drill_run_by_id(drill_run_dto.drill_run_id, session)
     if not drill_run:
         raise exceptions.NotFoundException(f"Drill run with ID {drill_run_dto.drill_run_id} not found", str(drill_run_dto.drill_run_id))
+
+    load_owned_practice_session(drill_run.session_id, user_id, session)
 
     drill: models.Drill = get_drill_by_id(drill_run.drill_id, session)
 
@@ -167,8 +189,10 @@ def _reject_mismatched_score(drill: models.Drill, dto: CompleteDrillRunDTO) -> N
         )
 
 
-def get_practice_session_results(session_id: UUID, session: Session) -> list[PracticeDrillRunResponseDTO]:
+def get_practice_session_results(session_id: UUID, user_id: UUID, session: Session) -> list[PracticeDrillRunResponseDTO]:
     """Retrieve the results of a completed practice session."""
+    load_owned_practice_session(session_id, user_id, session)
+
     drill_runs = repo.get_practice_drill_runs_by_session_id(session_id, session)
     drills: list[models.Drill] = drill_repo.get_drills_by_ids(
         [run.drill_id for run in drill_runs if run.drill_id is not None], session

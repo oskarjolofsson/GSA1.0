@@ -45,7 +45,9 @@ def get_analysis(
     """
     Get details of a specific analysis.
     """
-    analysis = service_get_analysis_by_id(analysis_id, db_session=db)
+    analysis = service_get_analysis_by_id(
+        analysis_id, UUID(current_user["user_id"]), db_session=db
+    )
 
     return GetAnalysis.from_domain(analysis)
 
@@ -170,7 +172,9 @@ def get_analysis_video_url(
         - success
         - video_url
     """
-    result = get_video_read_url_by_analysis(analysis_id, db_session=db)
+    result = get_video_read_url_by_analysis(
+        analysis_id, UUID(current_user["user_id"]), db_session=db
+    )
 
     return {
         "success": True,
@@ -187,7 +191,7 @@ def delete_analysis(
     """
     Delete a specific analysis and all associated data.
     """
-    service_delete_analysis(analysis_id, db_session=db)
+    service_delete_analysis(analysis_id, UUID(current_user["user_id"]), db_session=db)
 
 
 @router.get("/{analysis_id}/issues/", response_model=list[GetAnalysisIssue])
@@ -199,7 +203,9 @@ def get_analysis_issues(
     """
     Get all issues associated with a specific analysis.
     """
-    issues = service_get_analysis_issues(analysis_id, db_session=db)
+    issues = service_get_analysis_issues(
+        analysis_id, UUID(current_user["user_id"]), db_session=db
+    )
 
     return [GetAnalysisIssue.from_domain(issue) for issue in issues]
 

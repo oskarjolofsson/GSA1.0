@@ -2,6 +2,8 @@
 import pytest
 import uuid
 
+from core.infrastructure.db.models.Analysis import Analysis
+
 from core.services import user_service
 from core.infrastructure.db.repositories.drills import get_drill_by_id
 from core.infrastructure.db.models.Drill import Drill
@@ -116,19 +118,56 @@ def test_get_drill_not_found(client, auth_headers):
     assert "not found" in response.json()["detail"].lower()
 
 
-def test_get_drills_by_analysis(client, db_session, auth_headers):
+def test_get_drills_by_analysis(client, db_session, test_user, auth_headers):
     """Test getting all drills for a specific analysis."""
-    fake_analysis_id = uuid.uuid4()
-    
+    analysis = Analysis(user_id=test_user["user_id"], model_version="test", status="completed")
+    db_session.add(analysis)
+    db_session.flush()
+
     response = client.get(
-        f"/api/v1/drills/by-analysis/{fake_analysis_id}",
+        f"/api/v1/drills/by-analysis/{analysis.id}",
         headers=auth_headers,
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
     assert len(data) == 0  # No drills associated with this analysis
+
+
+def test_get_drills_by_analysis_not_found(client, auth_headers):
+    """An analysis id that matches no row is a 404, not an empty list.
+
+    Since #164 the endpoint loads the owning analysis to authorize the caller, so a
+    missing analysis is reported rather than silently answering with [].
+    """
+    response = client.get(
+        f"/api/v1/drills/by-analysis/{uuid.uuid4()}",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 404
+
+
+def test_get_drills_by_analysis_rejects_non_owner(
+    client, db_session, disposable_user, auth_headers
+):
+    """Which drills an analysis prescribed is a statement about that user's swing.
+
+    Regression test for the lower-severity half of #164.
+    """
+    analysis = Analysis(
+        user_id=disposable_user["user_id"], model_version="test", status="completed"
+    )
+    db_session.add(analysis)
+    db_session.flush()
+
+    response = client.get(
+        f"/api/v1/drills/by-analysis/{analysis.id}",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 403, response.text
 
 
 def test_get_drills_by_issue(client, db_session, auth_headers):

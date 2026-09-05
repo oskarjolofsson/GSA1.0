@@ -38,7 +38,7 @@ def _run(db, drill, user_id):
     return run
 
 
-def _complete(db, run, **kw):
+def _complete(db, run, user_id, **kw):
     return practice_session_service.record_drill_run_completion(
         CompleteDrillRunDTO(
             drill_run_id=run.id,
@@ -47,6 +47,7 @@ def _complete(db, run, **kw):
             skipped=False,
             **kw,
         ),
+        user_id,
         db,
     )
 
@@ -56,7 +57,7 @@ class TestRecordingAScore:
         drill = _drill(db_session, metric=MAKE_RATE_10)
         run = _run(db_session, drill, test_user["user_id"])
 
-        result = _complete(db_session, run, metric_value=8)
+        result = _complete(db_session, run, test_user["user_id"], metric_value=8)
 
         assert result.metric_value == 8
         assert result.grade == "dialed"
@@ -68,13 +69,13 @@ class TestRecordingAScore:
         # payoff for deriving server-side instead of trusting the client's grade.
         drill = _drill(db_session, metric=MAKE_RATE_10)
         run = _run(db_session, drill, test_user["user_id"])
-        _complete(db_session, run, metric_value=8)
+        _complete(db_session, run, test_user["user_id"], metric_value=8)
 
         drill.metric = {**MAKE_RATE_10, "grade_at": {"dialed": 0.9, "ok": 0.7}}
         db_session.flush()
 
         results = practice_session_service.get_practice_session_results(
-            run.session_id, db_session
+            run.session_id, test_user["user_id"], db_session
         )
         assert results[0].metric_value == 8
         assert results[0].grade == "ok"
@@ -84,7 +85,7 @@ class TestRecordingAScore:
         drill = _drill(db_session)
         run = _run(db_session, drill, test_user["user_id"])
 
-        result = _complete(db_session, run, feel=3)
+        result = _complete(db_session, run, test_user["user_id"], feel=3)
 
         assert result.feel == 3
         assert result.grade is None
@@ -95,7 +96,7 @@ class TestRecordingAScore:
         drill = _drill(db_session, metric=MAKE_RATE_10)
         run = _run(db_session, drill, test_user["user_id"])
 
-        result = _complete(db_session, run, feel=2)
+        result = _complete(db_session, run, test_user["user_id"], feel=2)
 
         assert result.feel == 2
         assert result.metric_value is None
@@ -107,7 +108,7 @@ class TestRecordingAScore:
         run = _run(db_session, drill, test_user["user_id"])
 
         with pytest.raises(exceptions.ValidationException) as err:
-            _complete(db_session, run, metric_value=8)
+            _complete(db_session, run, test_user["user_id"], metric_value=8)
         assert "Mirror work" in str(err.value)
 
 
@@ -134,13 +135,13 @@ class TestDeletingAPractisedDrill:
     def test_results_render_an_orphaned_run_without_a_title(self, db_session, test_user):
         drill = _drill(db_session)
         run = _run(db_session, drill, test_user["user_id"])
-        _complete(db_session, run, feel=2)
+        _complete(db_session, run, test_user["user_id"], feel=2)
 
         db_session.delete(drill)
         db_session.flush()
 
         results = practice_session_service.get_practice_session_results(
-            run.session_id, db_session
+            run.session_id, test_user["user_id"], db_session
         )
         assert [r.drill_title for r in results] == ["Unknown Drill"]
 
@@ -159,7 +160,7 @@ class TestTheFrozenColumn:
         run = _run(db_session, drill, test_user["user_id"])
 
         # A current client sends 0 and lets the server decide.
-        _complete(db_session, run, feel=3, successful_reps=0)
+        _complete(db_session, run, test_user["user_id"], feel=3, successful_reps=0)
 
         assert run.feel == 3
         assert run.successful_reps == 3
@@ -168,7 +169,7 @@ class TestTheFrozenColumn:
         drill = _drill(db_session, metric=MAKE_RATE_10)
         run = _run(db_session, drill, test_user["user_id"])
 
-        _complete(db_session, run, metric_value=8)
+        _complete(db_session, run, test_user["user_id"], metric_value=8)
 
         # 8 putts made is not a feel, and writing it here would read back as "dialed"
         # on any build that still interprets this column as an ordinal.
@@ -182,7 +183,7 @@ class TestTheFrozenColumn:
         drill = _drill(db_session)
         run = _run(db_session, drill, test_user["user_id"])
 
-        _complete(db_session, run, successful_reps=2)
+        _complete(db_session, run, test_user["user_id"], successful_reps=2)
 
         assert run.feel == 2
 
@@ -190,7 +191,7 @@ class TestTheFrozenColumn:
         drill = _drill(db_session)
         run = _run(db_session, drill, test_user["user_id"])
 
-        _complete(db_session, run, successful_reps=7)
+        _complete(db_session, run, test_user["user_id"], successful_reps=7)
 
         assert run.feel is None
         assert run.successful_reps == 0
