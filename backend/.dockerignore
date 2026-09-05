@@ -19,8 +19,7 @@ pip-delete-this-directory.txt
 .vscode/
 .idea/
 
-# Node / frontend (if in same repo)
-frontend/
+# Node
 node_modules/
 dist/
 build/

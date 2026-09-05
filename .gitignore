@@ -119,6 +119,5 @@ uploads
 results/
 *.mp4
 
-frontend/graphify-out
 graphify-out/
 .gstack/
