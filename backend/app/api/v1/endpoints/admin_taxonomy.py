@@ -20,6 +20,7 @@ from app.api.v1.schemas.admin_taxonomy import (
 from app.dependencies.db import get_db
 from app.dependencies.require_admin import require_admin
 from core.services import taxonomy_admin_service as service
+from core.services.dtos.taxonomy_dto import AdminTaxonomyTermDTO
 
 router = APIRouter()
 
@@ -28,16 +29,16 @@ router = APIRouter()
 _KINDS = {"areas": "area", "goals": "goal", "misses": "miss"}
 
 
-def _to_schema(kind: str, row, db) -> AdminTaxonomyTermSchema:
+def _to_schema(term: AdminTaxonomyTermDTO) -> AdminTaxonomyTermSchema:
     return AdminTaxonomyTermSchema(
-        key=row.key,
-        label=row.label,
-        golfer_label=row.golfer_label,
-        blurb=row.blurb,
-        sort=row.sort,
-        active=row.active,
-        area=getattr(row, "area", None),
-        usage_count=service.usage_count(kind, row.key, db),
+        key=term.key,
+        label=term.label,
+        golfer_label=term.golfer_label,
+        blurb=term.blurb,
+        sort=term.sort,
+        active=term.active,
+        area=term.area,
+        usage_count=term.usage_count,
     )
 
 
@@ -56,7 +57,7 @@ def list_terms(
     a second round trip per row.
     """
     kind = _KINDS.get(segment, segment)
-    return [_to_schema(kind, r, db) for r in service.list_terms(kind, db)]
+    return [_to_schema(term) for term in service.list_terms(kind, db)]
 
 
 @router.post("/taxonomy/{segment}/", response_model=AdminTaxonomyTermSchema, status_code=201)
@@ -77,8 +78,7 @@ def create_term(
     409 if the key is taken. Keys are normalised, so `slice` collides with `SLICE`.
     """
     kind = _KINDS.get(segment, segment)
-    row = service.create_term(kind, request.model_dump(exclude_none=True), db)
-    return _to_schema(kind, row, db)
+    return _to_schema(service.create_term(kind, request.model_dump(exclude_none=True), db))
 
 
 @router.patch("/taxonomy/{segment}/{key}/", response_model=AdminTaxonomyTermSchema)
@@ -100,8 +100,7 @@ def update_term(
     carries it: gone from the pickers and from validation, existing tags untouched.
     """
     kind = _KINDS.get(segment, segment)
-    row = service.update_term(kind, key, request.model_dump(exclude_unset=True), db)
-    return _to_schema(kind, row, db)
+    return _to_schema(service.update_term(kind, key, request.model_dump(exclude_unset=True), db))
 
 
 @router.delete("/taxonomy/{segment}/{key}/", status_code=204)

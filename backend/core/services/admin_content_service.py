@@ -11,10 +11,8 @@ and the user-authoring path stay one implementation.
 
 from uuid import UUID
 
-from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from core.infrastructure.db import models
 from core.infrastructure.db.repositories import drills as drill_repo
 from core.infrastructure.db.repositories import issue_drills as issue_drill_repo
 from core.infrastructure.db.repositories import issues as issue_repo
@@ -41,7 +39,7 @@ from core.services import drill_metrics, taxonomy
 # ------------------------------ mapping ------------------------------
 
 
-def _to_admin_issue_dto(issue: models.Issue) -> AdminIssueDTO:
+def _to_admin_issue_dto(issue) -> AdminIssueDTO:
     return AdminIssueDTO(
         id=issue.id,
         title=issue.title,
@@ -72,7 +70,7 @@ def _to_admin_issue_dto(issue: models.Issue) -> AdminIssueDTO:
     )
 
 
-def _to_admin_drill_dto(drill: models.Drill) -> AdminDrillDTO:
+def _to_admin_drill_dto(drill) -> AdminDrillDTO:
     return AdminDrillDTO(
         id=drill.id,
         title=drill.title,
@@ -180,22 +178,13 @@ def issue_delete_impact(issue_id: UUID, db_session: Session) -> DeleteImpactDTO:
     if issue_repo.get_issue_by_id(issue_id, db_session) is None:
         raise NotFoundException("Issue", str(issue_id))
 
-    def count(model, *where):
-        return db_session.scalar(
-            select(func.count()).select_from(model).where(*where)
-        ) or 0
-
-    analysis_issue_ids = select(models.AnalysisIssue.id).where(
-        models.AnalysisIssue.issue_id == issue_id
-    )
     return DeleteImpactDTO(
-        analysis_issues=count(models.AnalysisIssue, models.AnalysisIssue.issue_id == issue_id),
-        programs=count(models.Program, models.Program.issue_id == issue_id),
-        practice_sessions=count(
-            models.PracticeSession,
-            models.PracticeSession.analysis_issue_id.in_(analysis_issue_ids),
+        analysis_issues=issue_repo.count_analysis_issues_for_issue(issue_id, db_session),
+        programs=issue_repo.count_programs_for_issue(issue_id, db_session),
+        practice_sessions=issue_repo.count_practice_sessions_for_issue(
+            issue_id, db_session
         ),
-        mappings=count(models.IssueDrill, models.IssueDrill.issue_id == issue_id),
+        mappings=issue_repo.count_drill_mappings_for_issue(issue_id, db_session),
     )
 
 
@@ -246,17 +235,19 @@ def create_drill(
     db_session: Session,
 ) -> AdminDrillDTO:
     """A catalog drill: user_id stays NULL, which is what makes it global."""
-    drill = models.Drill(
-        user_id=None,
-        title=title.strip(),
-        task=task.strip(),
-        success_signal=success_signal.strip(),
-        fault_indicator=fault_indicator.strip(),
-        # Validated here so a bad value is a 422 naming the field, not a 500.
-        area=taxonomy.normalize_area_optional(area),
-        metric=drill_metrics.validate_metric(metric),
+    drill = drill_repo.add_drill(
+        {
+            "user_id": None,
+            "title": title.strip(),
+            "task": task.strip(),
+            "success_signal": success_signal.strip(),
+            "fault_indicator": fault_indicator.strip(),
+            # Validated here so a bad value is a 422 naming the field, not a 500.
+            "area": taxonomy.normalize_area_optional(area),
+            "metric": drill_metrics.validate_metric(metric),
+        },
+        db_session,
     )
-    drill_repo.create_drill(drill, db_session)
     return get_drill(drill.id, db_session)
 
 
@@ -293,19 +284,12 @@ def drill_delete_impact(drill_id: UUID, db_session: Session) -> DeleteImpactDTO:
     if drill_repo.get_drill_by_id(drill_id, db_session) is None:
         raise NotFoundException("Drill", str(drill_id))
 
-    def count(model, *where):
-        return db_session.scalar(
-            select(func.count()).select_from(model).where(*where)
-        ) or 0
-
     return DeleteImpactDTO(
-        mappings=count(models.IssueDrill, models.IssueDrill.drill_id == drill_id),
-        program_drill_states=count(
-            models.ProgramDrillState, models.ProgramDrillState.drill_id == drill_id
+        mappings=drill_repo.count_issue_mappings_for_drill(drill_id, db_session),
+        program_drill_states=drill_repo.count_program_drill_states_for_drill(
+            drill_id, db_session
         ),
-        drill_runs=count(
-            models.PracticeDrillRun, models.PracticeDrillRun.drill_id == drill_id
-        ),
+        drill_runs=drill_repo.count_practice_drill_runs_for_drill(drill_id, db_session),
     )
 
 
@@ -345,9 +329,7 @@ def attach_drill(issue_id: UUID, drill_id: UUID, db_session: Session) -> AdminIs
         # uq_issue_drill would raise anyway; a clean 409 says why.
         raise ConflictException("That drill is already attached to this issue.")
 
-    issue_drill_repo.create_issue_drill(
-        models.IssueDrill(issue_id=issue_id, drill_id=drill_id), db_session
-    )
+    issue_drill_repo.add_issue_drill(issue_id, drill_id, db_session)
     return get_issue(issue_id, db_session)
 
 
@@ -375,19 +357,10 @@ def coverage(db_session: Session) -> CoverageDTO:
     Cells come from the taxonomy rather than the data, so a combination with no issues
     still appears — the gap is the point. See ADR-0003 for the join and scoping choices.
     """
-    rows = db_session.execute(
-        select(
-            models.Issue.area,
-            models.IssueMiss.miss,
-            models.IssueGoal.goal,
-            func.count(func.distinct(models.Issue.id)),
-        )
-        .select_from(models.Issue)
-        .outerjoin(models.IssueMiss, models.IssueMiss.issue_id == models.Issue.id)
-        .outerjoin(models.IssueGoal, models.IssueGoal.issue_id == models.Issue.id)
-        .group_by(models.Issue.area, models.IssueMiss.miss, models.IssueGoal.goal)
-    ).all()
-    counts = {(r[0], r[1], r[2]): r[3] for r in rows}
+    counts = {
+        (area, miss, goal): n
+        for area, miss, goal, n in issue_repo.count_issues_by_area_miss_goal(db_session)
+    }
 
     cells = [
         CoverageCellDTO(
@@ -404,12 +377,7 @@ def coverage(db_session: Session) -> CoverageDTO:
     )
 
     # A skill issue with no goals falls out of the library tree entirely (ADR-0003).
-    goalless_skills = db_session.execute(
-        select(func.count())
-        .select_from(models.Issue)
-        .outerjoin(models.IssueGoal, models.IssueGoal.issue_id == models.Issue.id)
-        .where(models.Issue.kind == "skill", models.IssueGoal.issue_id.is_(None))
-    ).scalar_one()
+    goalless_skills = issue_repo.count_goalless_skill_issues(db_session)
 
     return CoverageDTO(
         cells=cells,

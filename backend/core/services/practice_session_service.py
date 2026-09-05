@@ -1,4 +1,3 @@
-from core.infrastructure.db import models
 from core.infrastructure.db.repositories import practice_sessions as repo
 from core.infrastructure.db.repositories import drills as drill_repo
 from core.infrastructure.db.repositories import analysis_issues as analysis_issue_repo
@@ -32,15 +31,17 @@ def record_practice_session_start(
     has no issue behind it, and because builds shipped before this parameter existed do
     not send it -- those sessions land unattributed rather than being refused.
     """
-    new_session = models.PracticeSession(
-        user_id=user_id,
-        analysis_issue_id=analysis_issue_id,
-        status="in_progress",
-        session_type=session_type,
-        notes=notes,
-        area=_resolve_session_area(issue_id, analysis_issue_id, session),
+    created_session = repo.add_practice_session(
+        {
+            "user_id": user_id,
+            "analysis_issue_id": analysis_issue_id,
+            "status": "in_progress",
+            "session_type": session_type,
+            "notes": notes,
+            "area": _resolve_session_area(issue_id, analysis_issue_id, session),
+        },
+        session,
     )
-    created_session = repo.create_practice_session(new_session, session)
     return _session_to_response_dto(created_session)
 
 
@@ -68,7 +69,7 @@ def _resolve_session_area(
     return None
     
     
-def load_owned_practice_session(session_id: UUID, user_id: UUID, session: Session) -> models.PracticeSession:
+def load_owned_practice_session(session_id: UUID, user_id: UUID, session: Session):
     """Load a practice session and authorize the caller as its owner.
 
     Every endpoint that addresses a session by an id from the request routes through
@@ -109,13 +110,15 @@ def record_drill_run_start(session_id: UUID, drill_id: UUID, order_index: int | 
     """Record the start of a drill run within a practice session."""
     load_owned_practice_session(session_id, user_id, session)
 
-    new_drill_run = models.PracticeDrillRun(
-        session_id=session_id,
-        drill_id=drill_id,
-        order_index=order_index,
+    created_drill_run = repo.add_practice_drill_run(
+        {
+            "session_id": session_id,
+            "drill_id": drill_id,
+            "order_index": order_index,
+        },
+        session,
     )
-    created_drill_run = repo.create_practice_drill_run(new_drill_run, session)
-    drill: models.Drill = get_drill_by_id(drill_id, session)
+    drill = get_drill_by_id(drill_id, session)
     return _drill_run_to_response_dto(created_drill_run, drill_title=drill.title, metric=drill.metric)
 
 
@@ -131,7 +134,7 @@ def record_drill_run_completion(drill_run_dto: CompleteDrillRunDTO, user_id: UUI
 
     load_owned_practice_session(drill_run.session_id, user_id, session)
 
-    drill: models.Drill = get_drill_by_id(drill_run.drill_id, session)
+    drill = get_drill_by_id(drill_run.drill_id, session)
 
     _reject_mismatched_score(drill, drill_run_dto)
 
@@ -169,7 +172,7 @@ def _resolve_feel(dto: CompleteDrillRunDTO) -> int | None:
     return dto.successful_reps if 1 <= dto.successful_reps <= 3 else None
 
 
-def _reject_mismatched_score(drill: models.Drill, dto: CompleteDrillRunDTO) -> None:
+def _reject_mismatched_score(drill, dto: CompleteDrillRunDTO) -> None:
     """A score has to match the drill that produced it.
 
     A metric_value on a feel-only drill is a client bug -- there are no thresholds to grade
@@ -194,7 +197,7 @@ def get_practice_session_results(session_id: UUID, user_id: UUID, session: Sessi
     load_owned_practice_session(session_id, user_id, session)
 
     drill_runs = repo.get_practice_drill_runs_by_session_id(session_id, session)
-    drills: list[models.Drill] = drill_repo.get_drills_by_ids(
+    drills = drill_repo.get_drills_by_ids(
         [run.drill_id for run in drill_runs if run.drill_id is not None], session
     )
     drill_id_to_title = {drill.id: drill.title for drill in drills}
@@ -213,7 +216,7 @@ def get_practice_session_results(session_id: UUID, user_id: UUID, session: Sessi
 
 # =========== HELPER FUNCTIONS ============
 
-def _session_to_response_dto(session: models.PracticeSession) -> PracticeSessionResponseDTO:
+def _session_to_response_dto(session) -> PracticeSessionResponseDTO:
     """Convert PracticeSession model to response DTO."""
     return PracticeSessionResponseDTO(
         id=session.id,
@@ -227,7 +230,7 @@ def _session_to_response_dto(session: models.PracticeSession) -> PracticeSession
 
 
 def _drill_run_to_response_dto(
-    drill_run: models.PracticeDrillRun,
+    drill_run,
     drill_title: str,
     metric: dict | None = None,
 ) -> PracticeDrillRunResponseDTO:
@@ -256,7 +259,7 @@ def _drill_run_to_response_dto(
     )
     
     
-def get_drill_by_id(drill_id: UUID, session: Session) -> models.Drill:
+def get_drill_by_id(drill_id: UUID, session: Session):
     """Helper function to retrieve a drill by ID."""
     drill = drill_repo.get_drill_by_id(drill_id, session)
     if not drill:

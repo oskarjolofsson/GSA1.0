@@ -60,3 +60,14 @@ def delete_analysis_issues_by_analysis_id(analysis_id, session: Session) -> None
         delete(models.AnalysisIssue).where(models.AnalysisIssue.analysis_id == analysis_id)
     )
     session.flush()
+
+def add_analysis_issue(
+    analysis_id, issue_id, confidence, session: Session
+) -> models.AnalysisIssue:
+    """Link an issue the model detected to the analysis that detected it."""
+    return create_analysis_issue(
+        models.AnalysisIssue(
+            analysis_id=analysis_id, issue_id=issue_id, confidence=confidence
+        ),
+        session,
+    )

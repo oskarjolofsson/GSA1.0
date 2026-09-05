@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.api.v1.schemas.taxonomy import TaxonomyResponse
 from app.dependencies.auth import get_current_user
 from app.dependencies.db import get_db
+from core.services import taxonomy as taxonomy_service
 
 router = APIRouter()
 
@@ -25,4 +26,4 @@ def get_taxonomy(
     view is what the library navigates, since a miss belongs to exactly one area and the
     "which sounds like you?" step can only offer the right options once an area is chosen.
     """
-    return TaxonomyResponse.from_db(db)
+    return TaxonomyResponse.from_vocabulary(taxonomy_service.get_vocabulary(db))

@@ -36,3 +36,8 @@ def get_mapping_count(session: Session) -> int:
     """Get total count of issue-drill mappings."""
     stmt = select(func.count()).select_from(IssueDrill)
     return session.scalar(stmt) or 0
+
+
+def add_issue_drill(issue_id: UUID, drill_id: UUID, session: Session) -> IssueDrill:
+    """Attach a drill to an issue."""
+    return create_issue_drill(IssueDrill(issue_id=issue_id, drill_id=drill_id), session)

@@ -11,23 +11,21 @@ from .exceptions import NotFoundException, InvalidStateException, InvalidVideoEx
 from ..infrastructure.storage.r2Adaptor import generate_upload_url, put_object
 from core.infrastructure.db.repositories import issues as issues_repo
 from core.infrastructure.db.repositories import programs as programs_repo
-from core.infrastructure.db import models
 from ..infrastructure.db.repositories.analysis import (
-    create_analysis as create_analysis_in_db,
+    add_analysis,
+    commit_failed_state,
     get_analysis_by_id as get_analysis_by_id_in_db,
     update_analysis,
     get_analyses_by_user_id as get_analyses_by_user_id_in_db,
     delete_analysis as delete_analysis_in_db,
 )
 from ..infrastructure.db.repositories.videos import (
-    create_video,
-    update_video,
+    add_video,
+    set_video_keys,
     get_video_by_id,
 )
-from ..infrastructure.db.models.Analysis import Analysis
-from ..infrastructure.db.models.Video import Video
 from ..infrastructure.db.repositories.analysis_issues import (
-    create_analysis_issue,
+    add_analysis_issue,
     get_analysis_issue_by_id,
     get_analysis_issues_by_analysis_id,
     modify_analysis_issues as modify_analysis_issues_in_db,
@@ -35,7 +33,6 @@ from ..infrastructure.db.repositories.analysis_issues import (
     delete_analysis_issues_by_analysis_id,
 
 )
-from ..infrastructure.db.models.AnalysisIssue import AnalysisIssue
 from ..infrastructure.storage.r2Adaptor import get_object
 from ..infrastructure.storage.r2Client import r2_client
 from ..infrastructure.local_files.file_types.Video_file import Video_file
@@ -47,45 +44,47 @@ from uuid import UUID
 import os
 import tempfile
 from ..infrastructure.db.repositories.prompts import (
-    create_prompt,
+    add_prompt,
     get_prompt_by_analysis_id,
 )
-from ..infrastructure.db.models.Prompt import Prompt
 from datetime import datetime, timezone
 
 
 def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
     analysis = None
     try:
-        video: Video = Video(
-            user_id=dto.user_id, start_time=dto.start_time, end_time=dto.end_time
-        )
-        video = create_video(video=video, session=db_session)
-
-        analysis = Analysis(
-            user_id=dto.user_id,
-            model_version=get_active_analysis_model(),
-            video_id=video.id,
-            status="awaiting_upload",
-        )
-        analysis: Analysis = create_analysis_in_db(
-            analysis=analysis, session=db_session
+        video = add_video(
+            {
+                "user_id": dto.user_id,
+                "start_time": dto.start_time,
+                "end_time": dto.end_time,
+            },
+            db_session,
         )
 
-        prompt = Prompt(
-            analysis_id=analysis.id,
-            prompt_shape=dto.prompt_shape,
-            prompt_height=dto.prompt_height,
-            prompt_misses=dto.prompt_misses,
-            prompt_extra=dto.prompt_extra,
+        analysis = add_analysis(
+            {
+                "user_id": dto.user_id,
+                "model_version": get_active_analysis_model(),
+                "video_id": video.id,
+                "status": "awaiting_upload",
+            },
+            db_session,
         )
-        create_prompt(prompt=prompt, session=db_session)
+
+        add_prompt(
+            {
+                "analysis_id": analysis.id,
+                "prompt_shape": dto.prompt_shape,
+                "prompt_height": dto.prompt_height,
+                "prompt_misses": dto.prompt_misses,
+                "prompt_extra": dto.prompt_extra,
+            },
+            db_session,
+        )
 
         video_key = f"videos/{video.id}"
-        thumbnail_key = f"thumbnails/{video.id}.jpg"
-        video.video_key = video_key
-        video.thumbnail_key = thumbnail_key
-        update_video(video=video, session=db_session)
+        set_video_keys(video, video_key, f"thumbnails/{video.id}.jpg", db_session)
 
         upload_url = generate_upload_url(key=video_key)
 
@@ -93,17 +92,13 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
     except Exception as e:
         if analysis:
             try:
-                analysis.error_message = str(e)
-                analysis.success = False
-                analysis.status = "failed"
-                update_analysis(analysis=analysis, session=db_session)
-                db_session.commit()  # Commit error state before re-raising
+                commit_failed_state(analysis, str(e), db_session)
             except Exception:
                 pass  # If we can't save error state, continue with original exception
         raise
 
 
-def load_owned_analysis(analysis_id: UUID, user_id: UUID, db_session) -> Analysis:
+def load_owned_analysis(analysis_id: UUID, user_id: UUID, db_session):
     """Load an analysis and authorize the caller as its owner.
 
     Every analysis endpoint addresses a row by an id taken from the request, so the
@@ -111,7 +106,7 @@ def load_owned_analysis(analysis_id: UUID, user_id: UUID, db_session) -> Analysi
     before forbidden: the id is an unguessable UUID, so a caller holding one that does
     not exist learns nothing from the distinction.
     """
-    analysis_object: Analysis = get_analysis_by_id_in_db(
+    analysis_object = get_analysis_by_id_in_db(
         analysis_id=analysis_id, session=db_session
     )
     if analysis_object is None:
@@ -129,7 +124,7 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
 
     Authorizes the caller: `dto.user_id` must own the analysis.
     """
-    analysis_object: Analysis = load_owned_analysis(
+    analysis_object = load_owned_analysis(
         analysis_id=dto.analysis_id, user_id=dto.user_id, db_session=db_session
     )
     
@@ -145,7 +140,7 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         prompt_object = get_prompt_by_analysis_id(analysis_id=analysis_object.id, session=db_session)
 
         # Download the video from R2 using the video_key in analysis, and save it to a temporary location
-        video_object: Video = get_video_by_id(
+        video_object = get_video_by_id(
             analysis_object.video_id, session=db_session
         )
         try:
@@ -221,13 +216,8 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         )
 
         for issue in analysis_results_object.issues:
-            analysis_issue_object = AnalysisIssue(
-                analysis_id=analysis_object.id,
-                issue_id=issue["issue_id"],
-                confidence=issue["confidence"],
-            )
-            create_analysis_issue(
-                analysis_issue=analysis_issue_object, session=db_session
+            add_analysis_issue(
+                analysis_object.id, issue["issue_id"], issue["confidence"], db_session
             )
 
         analysis_object.status = "completed"
@@ -241,18 +231,14 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
             # failed analysis never persists issues (they'd otherwise leak onto
             # the home screen while the analysis itself is filtered out).
             delete_analysis_issues_by_analysis_id(analysis_object.id, session=db_session)
-            analysis_object.error_message = str(e)
-            analysis_object.success = False
-            analysis_object.status = "failed"
-            update_analysis(analysis=analysis_object, session=db_session)
-            db_session.commit()  # Commit error state before re-raising
+            commit_failed_state(analysis_object, str(e), db_session)
         except Exception:
             pass  # If we can't save error state, continue with original exception
         raise
 
 
 def get_analysis_by_id(analysis_id: UUID, user_id: UUID, db_session) -> GetAnalaysisDTO:
-    analysis_object: Analysis = load_owned_analysis(
+    analysis_object = load_owned_analysis(
         analysis_id=analysis_id, user_id=user_id, db_session=db_session
     )
 
@@ -261,7 +247,7 @@ def get_analysis_by_id(analysis_id: UUID, user_id: UUID, db_session) -> GetAnala
 
 
 def get_analyses_by_user_id(user_id: UUID, db_session) -> list[GetAnalaysisDTO]:
-    analysis_objects: list[Analysis] = get_analyses_by_user_id_in_db(
+    analysis_objects = get_analyses_by_user_id_in_db(
         user_id=user_id, session=db_session
     )
 
@@ -281,7 +267,7 @@ def get_issue_swing_timeline(user_id: UUID, issue_id: UUID, db_session) -> list[
 
     The AI read is reference only; the player judges the footage.
     """
-    analysis_issues: list[AnalysisIssue] = get_analysis_issues_by_user_id_and_issue_id(
+    analysis_issues = get_analysis_issues_by_user_id_and_issue_id(
         user_id=user_id, issue_id=issue_id, session=db_session
     )
     if not analysis_issues:
@@ -294,7 +280,7 @@ def get_issue_swing_timeline(user_id: UUID, issue_id: UUID, db_session) -> list[
     # detection onward (so pre-issue swings aren't shown as "not detected"). "First
     # detection" is the earliest detecting swing's date, not the AnalysisIssue row
     # time.
-    analyses: list[Analysis] = get_analyses_by_user_id_in_db(user_id=user_id, session=db_session)
+    analyses = get_analyses_by_user_id_in_db(user_id=user_id, session=db_session)
 
     detected_dates = [a.created_at for a in analyses if a.id in confidence_by_analysis and a.created_at]
     first_detected_at = min(detected_dates) if detected_dates else None
@@ -322,7 +308,7 @@ def get_issue_swing_timeline(user_id: UUID, issue_id: UUID, db_session) -> list[
 
 
 def delete_analysis(analysis_id: UUID, user_id: UUID, db_session) -> None:
-    analysis_object: Analysis = load_owned_analysis(
+    analysis_object = load_owned_analysis(
         analysis_id=analysis_id, user_id=user_id, db_session=db_session
     )
 
@@ -333,7 +319,7 @@ def delete_analysis(analysis_id: UUID, user_id: UUID, db_session) -> None:
 def get_analysis_issues(analysis_id: UUID, user_id: UUID, db_session) -> list[GetAnalaysisIssueDTO]:
     load_owned_analysis(analysis_id=analysis_id, user_id=user_id, db_session=db_session)
 
-    analysis_issues: list[AnalysisIssue] = get_analysis_issues_by_analysis_id(
+    analysis_issues = get_analysis_issues_by_analysis_id(
         analysis_id=analysis_id, session=db_session
     )
 
@@ -342,13 +328,13 @@ def get_analysis_issues(analysis_id: UUID, user_id: UUID, db_session) -> list[Ge
 
 def delete_analysis_issue(analysis_issue_id: UUID, db_session, user_id: UUID) -> None:
     # Check that it exists
-    analysis_issue_object: AnalysisIssue = get_analysis_issue_by_id(
+    analysis_issue_object = get_analysis_issue_by_id(
         analysis_issue_id=analysis_issue_id, session=db_session
     )
     if analysis_issue_object is None:
         raise NotFoundException("AnalysisIssue", str(analysis_issue_id))
     
-    all_analysis_issues: list[models.AnalysisIssue] = get_analysis_issues_by_user_id_and_issue_id(user_id=user_id, issue_id=analysis_issue_object.issue_id, session=db_session)
+    all_analysis_issues = get_analysis_issues_by_user_id_and_issue_id(user_id=user_id, issue_id=analysis_issue_object.issue_id, session=db_session)
     
     for ai in all_analysis_issues:      # Change status
         ai.active = False
@@ -367,7 +353,7 @@ def delete_analysis_issue(analysis_issue_id: UUID, db_session, user_id: UUID) ->
 # ------------------------------ Helper functions ------------------------------
 
 
-def from_analysis_object_to_dto(analysis_object: Analysis) -> GetAnalaysisDTO:
+def from_analysis_object_to_dto(analysis_object) -> GetAnalaysisDTO:
     return GetAnalaysisDTO(
         analysis_id=analysis_object.id,
         user_id=analysis_object.user_id,
@@ -383,7 +369,7 @@ def from_analysis_object_to_dto(analysis_object: Analysis) -> GetAnalaysisDTO:
 
 
 def from_analysis_issue_object_to_dto(
-    analysis_issue_object: AnalysisIssue,
+    analysis_issue_object,
 ) -> GetAnalaysisIssueDTO:
     return GetAnalaysisIssueDTO(
         analysis_issue_id=analysis_issue_object.id,

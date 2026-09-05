@@ -11,6 +11,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from core.services.dtos.taxonomy_dto import (
+    TaxonomyMissDTO,
+    TaxonomyTermDTO,
+    TaxonomyVocabularyDTO,
+)
 from core.services.exceptions import ValidationException
 
 # Not table-driven. `kind` distinguishes a diagnosable fault from a non-fault training
@@ -53,32 +58,14 @@ def _load(session=None) -> _Vocabulary:
     """
     from contextlib import nullcontext
 
-    from sqlalchemy import select
-
-    from core.infrastructure.db import models
+    from core.infrastructure.db.repositories import taxonomy as taxonomy_repo
     from core.infrastructure.db.session import SessionLocal
 
     # nullcontext so a caller-supplied session is not closed out from under them.
     with (nullcontext(session) if session is not None else SessionLocal()) as session:
-        areas = tuple(
-            session.scalars(
-                select(models.TaxonomyArea.key)
-                .where(models.TaxonomyArea.active.is_(True))
-                .order_by(models.TaxonomyArea.sort, models.TaxonomyArea.key)
-            ).all()
-        )
-        goals = tuple(
-            session.scalars(
-                select(models.TaxonomyGoal.key)
-                .where(models.TaxonomyGoal.active.is_(True))
-                .order_by(models.TaxonomyGoal.sort, models.TaxonomyGoal.key)
-            ).all()
-        )
-        miss_rows = session.execute(
-            select(models.TaxonomyMiss.key, models.TaxonomyMiss.area)
-            .where(models.TaxonomyMiss.active.is_(True))
-            .order_by(models.TaxonomyMiss.sort, models.TaxonomyMiss.key)
-        ).all()
+        areas = tuple(taxonomy_repo.list_active_area_keys(session))
+        goals = tuple(taxonomy_repo.list_active_goal_keys(session))
+        miss_rows = taxonomy_repo.list_active_miss_keys_with_area(session)
 
     by_area: dict[str, list[str]] = {area: [] for area in areas}
     area_of: dict[str, str] = {}
@@ -309,3 +296,52 @@ def normalize_kind_strict(value: str | None) -> str:
             f"Unknown kind '{key}'. Allowed values: {', '.join(ALLOWED_KINDS)}."
         )
     return key
+
+
+def get_vocabulary(session) -> TaxonomyVocabularyDTO:
+    """Every vocabulary with its display labels, for the clients' tag pickers.
+
+    Reads the rows rather than the validator cache above. The cache holds keys only,
+    because that is all the validators need; this serves labels too.
+
+    Every area gets an entry in `misses_by_area`, including empty ones: a client
+    rendering an area grid needs to know an area exists with nothing in it yet
+    ("Coming soon") rather than having it silently absent.
+    """
+    from core.infrastructure.db.repositories import taxonomy as taxonomy_repo
+
+    def term(row) -> TaxonomyTermDTO:
+        return TaxonomyTermDTO(
+            key=row.key,
+            label=row.label,
+            golfer_label=row.golfer_label,
+            blurb=row.blurb,
+            sort=row.sort,
+        )
+
+    def miss(row) -> TaxonomyMissDTO:
+        return TaxonomyMissDTO(
+            key=row.key,
+            area=row.area,
+            label=row.label,
+            golfer_label=row.golfer_label,
+            blurb=row.blurb,
+            sort=row.sort,
+        )
+
+    areas = taxonomy_repo.list_active_areas(session)
+    misses = [miss(m) for m in taxonomy_repo.list_active_misses(session)]
+
+    by_area: dict[str, list[TaxonomyMissDTO]] = {a.key: [] for a in areas}
+    for m in misses:
+        by_area.setdefault(m.area, []).append(m)
+
+    return TaxonomyVocabularyDTO(
+        areas=[term(a) for a in areas],
+        goals=[term(g) for g in taxonomy_repo.list_active_goals(session)],
+        misses=misses,
+        misses_by_area=by_area,
+        kinds=list(ALLOWED_KINDS),
+        default_area=DEFAULT_AREA,
+        default_kind=DEFAULT_KIND,
+    )

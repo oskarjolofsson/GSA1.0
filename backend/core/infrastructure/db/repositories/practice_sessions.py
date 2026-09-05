@@ -176,3 +176,13 @@ def delete_practice_drill_run(drill_run: PracticeDrillRun, session: Session) -> 
     session.delete(drill_run)
     session.flush()
 
+
+
+def add_practice_session(fields: dict, session: Session) -> PracticeSession:
+    """Insert a practice session from already-resolved fields."""
+    return create_practice_session(PracticeSession(**fields), session)
+
+
+def add_practice_drill_run(fields: dict, session: Session) -> PracticeDrillRun:
+    """Insert a drill run from already-resolved fields."""
+    return create_practice_drill_run(PracticeDrillRun(**fields), session)

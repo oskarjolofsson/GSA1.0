@@ -43,3 +43,8 @@ def get_feedback_by_rating(rating: int, session: Session) -> list[UserFeedback]:
         .order_by(UserFeedback.created_at.desc())
     )
     return session.scalars(stmt).all()
+
+
+def add_feedback(fields: dict, session: Session) -> UserFeedback:
+    """Insert a feedback entry from already-validated fields."""
+    return create_feedback(UserFeedback(**fields), session)

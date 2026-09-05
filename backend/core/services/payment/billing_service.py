@@ -4,7 +4,6 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from core.config import PRICE_ID
-from core.infrastructure.db import models
 from core.infrastructure.db.repositories import profiles
 from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
 from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
@@ -22,7 +21,7 @@ WebhookHandler = Callable[[Any, Session, int | None], Awaitable[None]]
 
 
 async def start_subscription_checkout(user_id: UUID, db_session: Session) -> str:
-    profile: models.Profile = profiles.get_profile_by_id(user_id, db_session)
+    profile = profiles.get_profile_by_id(user_id, db_session)
     if not profile:
         raise exceptions.NotFoundException("User", str(user_id))
 
@@ -69,7 +68,7 @@ async def start_subscription_checkout(user_id: UUID, db_session: Session) -> str
 
 
 async def create_customer_portal(user_id: UUID, db_session: Session) -> str:
-    profile: models.Profile = profiles.get_profile_by_id(user_id, db_session)
+    profile = profiles.get_profile_by_id(user_id, db_session)
     if not profile:
         raise exceptions.NotFoundException("User", str(user_id))
 

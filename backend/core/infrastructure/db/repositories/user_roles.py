@@ -112,3 +112,8 @@ def remove_role_from_user(user_id: UUID, role_id: int, session: Session) -> None
 def remove_all_roles_from_user(user_id: UUID, session: Session) -> None:
     session.query(UserRole).filter(UserRole.user_id == user_id).delete()
     session.flush()
+
+
+def add_role_to_user(user_id: UUID, role_id: int, session: Session) -> UserRole:
+    """Grant a role by id."""
+    return assign_role_to_user(UserRole(user_id=user_id, role_id=role_id), session)

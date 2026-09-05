@@ -3,21 +3,21 @@ from uuid import UUID
 
 from core.infrastructure.db.repositories.feedback import (
     get_all_feedback as repo_get_all_feedback,
-    create_feedback as repo_create_feedback,
+    add_feedback as repo_add_feedback,
 )
-from core.infrastructure.db.models.Feedback import UserFeedback
 from .dtos.feedback_service_dto import CreateFeedbackDTO, FeedbackResponseDTO
 
 
 def create_feedback(dto: CreateFeedbackDTO, db_session: Session) -> FeedbackResponseDTO:
     """Create a new feedback entry."""
-    new_feedback = UserFeedback(
-        user_id=dto.user_id,
-        rating=dto.rating,
-        comments=dto.comments,
+    created_feedback = repo_add_feedback(
+        {
+            "user_id": dto.user_id,
+            "rating": dto.rating,
+            "comments": dto.comments,
+        },
+        db_session,
     )
-
-    created_feedback = repo_create_feedback(new_feedback, db_session)
 
     return from_feedback_to_response_dto(created_feedback)
 
@@ -32,7 +32,7 @@ def get_all_feedback(db_session: Session, limit: int = 100) -> list[FeedbackResp
 # ------------ Helper Methods ------------
 
 
-def from_feedback_to_response_dto(feedback: UserFeedback) -> FeedbackResponseDTO:
+def from_feedback_to_response_dto(feedback) -> FeedbackResponseDTO:
     """Transform a UserFeedback object to FeedbackResponseDTO."""
     return FeedbackResponseDTO(
         id=feedback.id,

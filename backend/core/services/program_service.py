@@ -1,8 +1,8 @@
-from core.infrastructure.db import models
 from core.infrastructure.db.repositories import programs as repo
 from core.infrastructure.db.repositories import drills as drill_repo
 from core.infrastructure.db.repositories import analysis_issues as analysis_issue_repo
 from core.infrastructure.db.repositories import issues as issue_repo
+from core.infrastructure.db.repositories import taxonomy as taxonomy_repo
 from core.services import exceptions
 from core.services import drill_metrics
 from core.services.dtos.program_service_dto import (
@@ -14,7 +14,6 @@ from core.services.dtos.program_service_dto import (
 )
 
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 from uuid import UUID
 from datetime import datetime, timezone
 import logging
@@ -161,18 +160,19 @@ def _seed_program(
 
     drills = drill_repo.get_drills_by_issue_id(issue_id, session)
 
-    program = models.Program(
-        user_id=user_id,
-        analysis_issue_id=source_analysis_issue_id,
-        issue_id=issue_id,
-        title=title,
-        status="active",
-        area=issue.area,
-        slot=slot,
+    program = repo.try_add_program(
+        {
+            "user_id": user_id,
+            "analysis_issue_id": source_analysis_issue_id,
+            "issue_id": issue_id,
+            "title": title,
+            "status": "active",
+            "area": issue.area,
+            "slot": slot,
+        },
+        session,
     )
-    try:
-        repo.create_program(program, session)
-    except IntegrityError:
+    if program is None:
         # Something took this slot (or this issue) between _allocate_slot's read and this
         # insert. The index is the authority and it just refused us.
         #
@@ -180,7 +180,6 @@ def _seed_program(
         # that, and the golfer may well have zero. In practice this means a double-submit
         # got past the client, so it is logged at warning -- that log line is the only way
         # to find out the client-side guard has broken.
-        session.rollback()
         log.warning(
             "program slot race: insert lost to a concurrent request",
             extra={
@@ -194,12 +193,7 @@ def _seed_program(
             "Couldn't start that focus just now. Try again."
         )
 
-    states = [
-        models.ProgramDrillState(program_id=program.id, drill_id=drill.id, strength=0)
-        for drill in drills
-    ]
-    if states:
-        repo.create_drill_states(states, session)
+    states = repo.add_drill_states(program.id, [drill.id for drill in drills], session)
 
     _schedule_next_step(program.id, session)
 
@@ -246,7 +240,7 @@ def _area_label(area: str, session: Session) -> str:
     pays for it. Falls back to the raw key if the row is missing — a clumsy message beats
     a second exception thrown while building the first one's text.
     """
-    row = session.get(models.TaxonomyArea, area)
+    row = taxonomy_repo.get_term("area", area, session)
     return row.golfer_label.lower() if row else area.replace("_", " ").lower()
 
 
@@ -291,13 +285,13 @@ def list_active_programs(user_id: UUID, session: Session) -> list[ProgramDTO]:
 
     program_ids = [p.id for p in programs]
 
-    states_by_program: dict[UUID, list[models.ProgramDrillState]] = {}
+    states_by_program: dict[UUID, list] = {}
     for state in repo.get_drill_states_by_program_ids(program_ids, session):
         states_by_program.setdefault(state.program_id, []).append(state)
 
     # get_pending_steps_by_program_ids orders by order_index, and an active program holds
     # at most one pending step, so first-wins is both stable and correct.
-    step_by_program: dict[UUID, models.ProgramStep] = {}
+    step_by_program: dict[UUID, object] = {}
     for step in repo.get_pending_steps_by_program_ids(program_ids, session):
         step_by_program.setdefault(step.program_id, step)
 
@@ -411,7 +405,7 @@ def complete_step(
 
 # =========== SCHEDULING ============
 
-def _schedule_next_step(program_id: UUID, session: Session) -> models.ProgramStep:
+def _schedule_next_step(program_id: UUID, session: Session):
     """Pick the drills that feel roughest and persist a pending step for them.
 
     Every step is practice now. There used to be a repeating range/range/play cycle that
@@ -427,21 +421,23 @@ def _schedule_next_step(program_id: UUID, session: Session) -> models.ProgramSte
     states = repo.get_drill_states_by_program_id(program_id, session)
     drill_ids = _pick_due_drills(states, NUM_DRILLS_PER_RANGE)
 
-    step = models.ProgramStep(
-        program_id=program_id,
-        order_index=len(completed),
-        session_type="range",
-        prescription={
-            "drill_ids": [str(d) for d in drill_ids],
-            "num_blocks": len(drill_ids),
-            "cue": None,
+    return repo.add_step(
+        {
+            "program_id": program_id,
+            "order_index": len(completed),
+            "session_type": "range",
+            "prescription": {
+                "drill_ids": [str(d) for d in drill_ids],
+                "num_blocks": len(drill_ids),
+                "cue": None,
+            },
+            "status": "pending",
         },
-        status="pending",
+        session,
     )
-    return repo.create_step(step, session)
 
 
-def _pick_due_drills(states: list[models.ProgramDrillState], count: int) -> list[UUID]:
+def _pick_due_drills(states: list, count: int) -> list[UUID]:
     """Lowest-strength drills first; ties broken by oldest last_seen (never-seen
     drills surface first)."""
     if not states or count <= 0:
@@ -508,7 +504,7 @@ def _next_strength(strength: int, grade: str) -> int:
 
 # =========== DTO HELPERS ============
 
-def _verify_owner(program: models.Program | None, program_id: UUID, user_id: UUID) -> None:
+def _verify_owner(program, program_id: UUID, user_id: UUID) -> None:
     if program is None:
         raise exceptions.NotFoundException("Program", str(program_id))
     if str(program.user_id) != str(user_id):
@@ -521,7 +517,7 @@ def _groove_progress(program_id: UUID, session: Session) -> tuple[int, int]:
     return grooved, len(states)
 
 
-def _drill_title_map(steps: list[models.ProgramStep], session: Session) -> dict[str, str]:
+def _drill_title_map(steps: list, session: Session) -> dict[str, str]:
     """Batch-resolve drill ids → titles across the given steps' range prescriptions
     (one query). drill_ids are stored as strings in the prescription JSON."""
     ids: set[str] = set()
@@ -534,7 +530,7 @@ def _drill_title_map(steps: list[models.ProgramStep], session: Session) -> dict[
     return {str(d.id): d.title for d in drills}
 
 
-def _program_to_dto(program: models.Program, session: Session) -> ProgramDTO:
+def _program_to_dto(program, session: Session) -> ProgramDTO:
     grooved_count, total_drills = _groove_progress(program.id, session)
     title_map = _drill_title_map(list(program.steps), session)
     return ProgramDTO(
@@ -553,7 +549,7 @@ def _program_to_dto(program: models.Program, session: Session) -> ProgramDTO:
     )
 
 
-def _step_to_dto(step: models.ProgramStep, title_map: dict[str, str]) -> ProgramStepDTO:
+def _step_to_dto(step, title_map: dict[str, str]) -> ProgramStepDTO:
     drills: list[StepDrillDTO] = []
     if step.session_type == "range":
         for did in (step.prescription or {}).get("drill_ids", []):
@@ -573,6 +569,6 @@ def _step_to_dto(step: models.ProgramStep, title_map: dict[str, str]) -> Program
     )
 
 
-def _step_to_dto_resolved(step: models.ProgramStep, session: Session) -> ProgramStepDTO:
+def _step_to_dto_resolved(step, session: Session) -> ProgramStepDTO:
     """Convenience for single-step callers: build the title map for one step."""
     return _step_to_dto(step, _drill_title_map([step], session))

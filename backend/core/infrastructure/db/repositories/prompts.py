@@ -25,3 +25,7 @@ def delete_prompt(prompt: Prompt, session: Session) -> None:
     """Delete a prompt."""
     session.delete(prompt)
     session.flush()
+
+def add_prompt(fields: dict, session: Session) -> Prompt:
+    """Insert a prompt from already-resolved fields."""
+    return create_prompt(Prompt(**fields), session)

@@ -19,7 +19,6 @@ from core.services import drill_metrics, exceptions, taxonomy
 from core.infrastructure.db.repositories import practice_sessions as practice_repo
 from core.infrastructure.db.repositories import analysis as analysis_repo
 from core.infrastructure.db.repositories import drills as drill_repo
-from core.infrastructure.db import models
 from core.services.video import get_video_thumbnail_urls_from_analyses
 from core.services.dtos.activity_service_dto import (
     ActivityCountDTO,
@@ -135,7 +134,7 @@ def get_day_detail(user_id: UUID, target_date: date, tz: str, session: Session) 
 # =========== HELPERS ===========
 
 def _build_session_dtos(
-    sessions: list[models.PracticeSession], session: Session
+    sessions: list, session: Session
 ) -> list[ActivitySessionDTO]:
     if not sessions:
         return []
@@ -187,7 +186,7 @@ def _build_session_dtos(
 
 
 def _build_analysis_dtos(
-    analyses: list[models.Analysis], session: Session
+    analyses: list, session: Session
 ) -> list[ActivityAnalysisDTO]:
     if not analyses:
         return []
