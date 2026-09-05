@@ -10,6 +10,7 @@ from core.infrastructure.db.repositories.videos import (
 from core.infrastructure.db.models.Video import Video
 from core.infrastructure.db.session import SessionLocal
 from core.infrastructure.storage.r2Adaptor import generate_read_url
+from .analysis_service import load_owned_analysis
 from .exceptions import NotFoundException
 from .dtos.video_service_dto import VideoResponseDTO, VideoUrlResponseDTO, VideoThumbnailListResponseDTO
 
@@ -24,8 +25,14 @@ def get_video_by_id(video_id: UUID, db_session: Session) -> VideoResponseDTO:
     return from_video_to_response_dto(video)
 
 
-def get_video_read_url_by_analysis(analysis_id: UUID, db_session: Session) -> VideoUrlResponseDTO:
-    """Get a signed read URL for a video by analysis ID."""
+def get_video_read_url_by_analysis(analysis_id: UUID, user_id: UUID, db_session: Session) -> VideoUrlResponseDTO:
+    """Get a signed read URL for a video by analysis ID.
+
+    The URL grants direct access to the user's own swing footage, so the caller is
+    authorized against the owning analysis before one is minted.
+    """
+    load_owned_analysis(analysis_id=analysis_id, user_id=user_id, db_session=db_session)
+
     video = repo_get_video_by_analysis_id(analysis_id, db_session)
     if not video:
         raise NotFoundException("Video", f"for analysis {analysis_id}")

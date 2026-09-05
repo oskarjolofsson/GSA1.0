@@ -6,7 +6,7 @@ from .dtos.analysis_service_dto import (
     GetAnalaysisDTO,
     IssueSwingTimelineItemDTO,
 )
-from .exceptions import NotFoundException, InvalidStateException, InvalidVideoException
+from .exceptions import NotFoundException, InvalidStateException, InvalidVideoException, ForbiddenException
 
 from ..infrastructure.storage.r2Adaptor import generate_upload_url, put_object
 from core.infrastructure.db.repositories import issues as issues_repo
@@ -103,17 +103,35 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
         raise
 
 
+def load_owned_analysis(analysis_id: UUID, user_id: UUID, db_session) -> Analysis:
+    """Load an analysis and authorize the caller as its owner.
+
+    Every analysis endpoint addresses a row by an id taken from the request, so the
+    ownership comparison belongs here rather than in each caller. Not-found is raised
+    before forbidden: the id is an unguessable UUID, so a caller holding one that does
+    not exist learns nothing from the distinction.
+    """
+    analysis_object: Analysis = get_analysis_by_id_in_db(
+        analysis_id=analysis_id, session=db_session
+    )
+    if analysis_object is None:
+        raise NotFoundException("Analysis", str(analysis_id))
+
+    if analysis_object.user_id != user_id:
+        raise ForbiddenException("You do not have access to this analysis.")
+
+    return analysis_object
+
+
 def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
     """
     Drive one analysis from `awaiting_upload` through to `completed` or `failed`.
 
-    Does not authorize the caller: `dto.user_id` is trusted as already checked.
+    Authorizes the caller: `dto.user_id` must own the analysis.
     """
-    analysis_object: Analysis = get_analysis_by_id_in_db(
-        analysis_id=dto.analysis_id, session=db_session
+    analysis_object: Analysis = load_owned_analysis(
+        analysis_id=dto.analysis_id, user_id=dto.user_id, db_session=db_session
     )
-    if analysis_object is None:
-        raise NotFoundException("Analysis", str(dto.analysis_id))
     
     if analysis_object.status != "awaiting_upload":
         raise InvalidStateException(f"Analysis is in '{analysis_object.status}' state, expected 'awaiting_upload'")
@@ -233,12 +251,10 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         raise
 
 
-def get_analysis_by_id(analysis_id: UUID, db_session) -> GetAnalaysisDTO:
-    analysis_object: Analysis = get_analysis_by_id_in_db(
-        analysis_id=analysis_id, session=db_session
+def get_analysis_by_id(analysis_id: UUID, user_id: UUID, db_session) -> GetAnalaysisDTO:
+    analysis_object: Analysis = load_owned_analysis(
+        analysis_id=analysis_id, user_id=user_id, db_session=db_session
     )
-    if analysis_object is None:
-        raise NotFoundException("Analysis", str(analysis_id))
 
     return_analysis_object = from_analysis_object_to_dto(analysis_object)
     return return_analysis_object
@@ -305,18 +321,18 @@ def get_issue_swing_timeline(user_id: UUID, issue_id: UUID, db_session) -> list[
     return items
 
 
-def delete_analysis(analysis_id: UUID, db_session) -> None:
-    analysis_object: Analysis = get_analysis_by_id_in_db(
-        analysis_id=analysis_id, session=db_session
+def delete_analysis(analysis_id: UUID, user_id: UUID, db_session) -> None:
+    analysis_object: Analysis = load_owned_analysis(
+        analysis_id=analysis_id, user_id=user_id, db_session=db_session
     )
-    if analysis_object is None:
-        raise NotFoundException("Analysis", str(analysis_id))
 
     # Deleting the analysis will also delete the analysis issues that belong to that analysis, because of the cascade delete relationship defined in the Analysis model
     delete_analysis_in_db(analysis=analysis_object, session=db_session)
 
 
-def get_analysis_issues(analysis_id: UUID, db_session) -> list[GetAnalaysisIssueDTO]:
+def get_analysis_issues(analysis_id: UUID, user_id: UUID, db_session) -> list[GetAnalaysisIssueDTO]:
+    load_owned_analysis(analysis_id=analysis_id, user_id=user_id, db_session=db_session)
+
     analysis_issues: list[AnalysisIssue] = get_analysis_issues_by_analysis_id(
         analysis_id=analysis_id, session=db_session
     )

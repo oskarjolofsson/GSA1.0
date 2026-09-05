@@ -56,7 +56,7 @@ def test_completed_play_session_counts_toward_activity(db_session, test_user):
         session=db_session,
         session_type="play",
     )
-    svc.record_practice_session_completion(dto.id, db_session)
+    svc.record_practice_session_completion(dto.id, test_user["user_id"], db_session)
 
     counts = repo.get_completed_session_counts_by_day(test_user["user_id"], "UTC", db_session)
     assert sum(count for _day, _area, count in counts) >= 1

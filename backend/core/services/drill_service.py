@@ -15,6 +15,7 @@ from core.infrastructure.db.models.Drill import Drill
 from .dtos.drill_service_dto import CreateDrillDTO, UpdateDrillDTO, DrillResponseDTO
 from ..infrastructure.db.session import SessionLocal
 
+from core.services.analysis_service import load_owned_analysis
 from core.services.exceptions import NotFoundException
 
 
@@ -42,7 +43,15 @@ def get_all_drills(db_session) -> list[DrillResponseDTO]:
     return [from_drill_to_response_dto(drill) for drill in drills]
 
 
-def get_drills_by_analysis_id(analysis_id: UUID, db_session) -> list[DrillResponseDTO]:
+def get_drills_by_analysis_id(analysis_id: UUID, user_id: UUID, db_session) -> list[DrillResponseDTO]:
+    """Drills prescribed by one analysis.
+
+    Drills themselves are global catalog content, but *which* drills an analysis
+    prescribed is a statement about that user's swing, so the caller is authorized
+    against the owning analysis first.
+    """
+    load_owned_analysis(analysis_id=analysis_id, user_id=user_id, db_session=db_session)
+
     drills = repo_get_drills_by_analysis_id(analysis_id, db_session)
     return [from_drill_to_response_dto(drill) for drill in drills]
 

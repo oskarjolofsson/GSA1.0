@@ -66,7 +66,9 @@ def complete_practice_session(
     Returns:
         JSON response with updated session details
     """
-    result = service_complete_session(session_id=session_id, session=db)
+    result = service_complete_session(
+        session_id=session_id, user_id=UUID(current_user["user_id"]), session=db
+    )
     return PracticeSessionResponse.from_domain(result)
 
 
@@ -85,7 +87,9 @@ def get_practice_session_by_id(
     Returns:
         JSON response with practice session details
     """
-    result = service_get_practice_session_by_id(session_id=session_id, session=db)
+    result = service_get_practice_session_by_id(
+        session_id=session_id, user_id=UUID(current_user["user_id"]), session=db
+    )
     return PracticeSessionResponse.from_domain(result)
 
 
@@ -115,6 +119,7 @@ def start_drill_run(
         session_id=session_id,
         drill_id=request.drill_id,
         order_index=request.order_index,
+        user_id=UUID(current_user["user_id"]),
         session=db,
     )
     return PracticeDrillRun.from_domain(result)
@@ -147,7 +152,9 @@ def complete_drill_run(
         metric_value=request.metric_value,
     )
     
-    result = service_complete_drill_run(drill_run_dto=dto, session=db)
+    result = service_complete_drill_run(
+        drill_run_dto=dto, user_id=UUID(current_user["user_id"]), session=db
+    )
     return PracticeDrillRun.from_domain(result)
 
 
@@ -166,6 +173,8 @@ def get_practice_session_results(
     Returns:
         JSON response with session results, including drill runs and reps
     """
-    drill_runs = service_get_practice_session_results(session_id=session_id, session=db)
+    drill_runs = service_get_practice_session_results(
+        session_id=session_id, user_id=UUID(current_user["user_id"]), session=db
+    )
     return [PracticeDrillRun.from_domain(run) for run in drill_runs]
 

@@ -275,3 +275,55 @@ def test_run_analysis(client, run_analysis_and_set_completed, db_session, auth_h
         assert ai is not None
         # Verify its inactive
         assert ai.active == False
+
+def test_run_analysis_rejects_non_owner(client, analysis_with_id, disposable_auth_headers, db_session):
+    """A premium caller who is not the owner cannot start someone else's analysis.
+
+    Regression test for #156: the endpoint used to hand the service the user_id read
+    off the analysis row, so any authenticated premium caller holding an analysis_id
+    could drive another user's analysis out of `awaiting_upload`.
+    """
+    analysis_id, _owner_id = analysis_with_id
+
+    response = client.patch(
+        f"/api/v1/analyses/{analysis_id}/",
+        headers=disposable_auth_headers,
+    )
+
+    assert response.status_code == 403, response.text
+
+    # The analysis must be untouched: still awaiting the owner's upload.
+    db_analysis = get_analysis_by_id(analysis_id=analysis_id, session=db_session)
+    assert db_analysis.status == "awaiting_upload"
+
+
+@pytest.mark.parametrize(
+    "method,path_suffix",
+    [
+        ("get", ""),
+        ("get", "video-url/"),
+        ("get", "issues/"),
+        ("delete", ""),
+    ],
+)
+def test_analysis_endpoints_reject_non_owner(
+    client, analysis_with_id, disposable_auth_headers, db_session, method, path_suffix
+):
+    """A caller who does not own the analysis cannot read or delete it.
+
+    Regression test for #163: these endpoints authenticated the caller but passed only
+    the analysis_id to the service, so any authenticated user holding an analysis_id
+    could read another user's analysis and its issues, mint a signed URL for their
+    original swing video, or delete the analysis outright.
+    """
+    analysis_id, _owner_id = analysis_with_id
+
+    response = getattr(client, method)(
+        f"/api/v1/analyses/{analysis_id}/{path_suffix}",
+        headers=disposable_auth_headers,
+    )
+
+    assert response.status_code == 403, response.text
+
+    # The analysis must survive the rejected DELETE.
+    assert get_analysis_by_id(analysis_id=analysis_id, session=db_session) is not None
