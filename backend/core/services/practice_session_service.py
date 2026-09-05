@@ -78,7 +78,7 @@ def load_owned_practice_session(session_id: UUID, user_id: UUID, session: Sessio
     """
     practice_session = repo.get_practice_session_by_id(session_id, session)
     if not practice_session:
-        raise exceptions.NotFoundException(f"Practice session with ID {session_id} not found", str(session_id))
+        raise exceptions.NotFoundException("PracticeSession", str(session_id))
 
     if practice_session.user_id != user_id:
         raise exceptions.ForbiddenException("You do not have access to this practice session.")
@@ -127,7 +127,7 @@ def record_drill_run_completion(drill_run_dto: CompleteDrillRunDTO, user_id: UUI
     """
     drill_run = repo.get_practice_drill_run_by_id(drill_run_dto.drill_run_id, session)
     if not drill_run:
-        raise exceptions.NotFoundException(f"Drill run with ID {drill_run_dto.drill_run_id} not found", str(drill_run_dto.drill_run_id))
+        raise exceptions.NotFoundException("DrillRun", str(drill_run_dto.drill_run_id))
 
     load_owned_practice_session(drill_run.session_id, user_id, session)
 
@@ -260,5 +260,5 @@ def get_drill_by_id(drill_id: UUID, session: Session) -> models.Drill:
     """Helper function to retrieve a drill by ID."""
     drill = drill_repo.get_drill_by_id(drill_id, session)
     if not drill:
-        raise exceptions.NotFoundException(f"Drill with ID {drill_id} not found", str(drill_id))
+        raise exceptions.NotFoundException("Drill", str(drill_id))
     return drill
