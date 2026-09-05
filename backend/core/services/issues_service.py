@@ -103,12 +103,12 @@ def get_issues_by_user_id(user_id: UUID, db_session: Session) -> list[IssueRespo
     group is now a set rather than a single focus. The ordering still holds -- it just
     ranks the active issues among themselves by confidence instead of naming one winner.
     """
-    issues: list[Issue] = repo_get_issues_by_user_id(user_id, db_session)
+    issues = repo_get_issues_by_user_id(user_id, db_session)
     dtos = _batch_fetch_analysis_issues(user_id, issues, db_session)
 
     # Custom (coach/browse) issues have no AnalysisIssue, so they don't come back
     # above — append them. They carry no analysis linkage.
-    custom_issues: list[Issue] = repo_get_custom_issues_by_user_id(user_id, db_session)
+    custom_issues = repo_get_custom_issues_by_user_id(user_id, db_session)
     dtos.extend(from_issue_to_response_dto(issue) for issue in custom_issues)
 
     # Annotate each issue with its program status (active wins over completed). Key
@@ -315,7 +315,7 @@ def from_issue_to_response_dto(issue, analysis_issue=None) -> IssueResponseDTO:
     )
 
 
-def _batch_fetch_analysis_issues(user_id: UUID, issues: list[Issue], db_session: Session) -> list[IssueResponseDTO]:
+def _batch_fetch_analysis_issues(user_id: UUID, issues: list, db_session: Session) -> list[IssueResponseDTO]:
     """Attach each issue's analysis linkage (analysis id, confidence) for this user."""
     issue_ids: list[UUID] = [issue.id for issue in issues]
     analysis_issues = repo_analysis_issues.get_analysis_issues_by_user_id_and_issue_ids(user_id=user_id, issue_ids=issue_ids, session=db_session)
