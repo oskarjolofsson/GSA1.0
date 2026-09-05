@@ -13,7 +13,6 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from core.infrastructure.db import models
 from core.infrastructure.db.repositories import issues as issue_repo
 from core.infrastructure.db.repositories import drills as drill_repo
 from core.infrastructure.db.repositories import issue_drills as issue_drill_repo
@@ -74,7 +73,7 @@ def _default_structurer(text: str, image_bytes: bytes | None, image_mime: str | 
     )
 
 
-def _issue_to_catalog_dto(issue: models.Issue) -> CatalogIssueDTO:
+def _issue_to_catalog_dto(issue) -> CatalogIssueDTO:
     # Walk the already-loaded join rows rather than making a per-issue repo call:
     # the issues repo eager-loads issue_drills and their drills, so mapping this
     # over a whole catalog stays flat instead of 1+N.
@@ -185,43 +184,39 @@ def persist_issue_with_drills(
         area = issue.area or DEFAULT_AREA
         kind = issue.kind or DEFAULT_KIND
 
-    new_issue = models.Issue(
-        user_id=user_id,
-        source=source,
-        title=issue.title.strip(),
-        description=issue.description.strip(),
-        area=area,
-        kind=kind,
-        layman_title=issue.layman_title,
-        layman_desc=issue.layman_desc,
+    new_issue = issue_repo.add_issue(
+        {
+            "user_id": user_id,
+            "source": source,
+            "title": issue.title.strip(),
+            "description": issue.description.strip(),
+            "area": area,
+            "kind": kind,
+            "layman_title": issue.layman_title,
+            "layman_desc": issue.layman_desc,
+        },
+        misses,
+        goals,
+        db_session,
     )
-    for miss_value in misses:
-        new_issue.misses.append(models.IssueMiss(miss=miss_value))
-    for goal in goals:
-        new_issue.goals.append(models.IssueGoal(goal=goal))
-    issue_repo.create_issue(new_issue, db_session)
 
     for d in new_drills:
-        new_drill = models.Drill(
-            user_id=user_id,
-            title=d.title.strip(),
-            task=d.task.strip(),
-            success_signal=d.success_signal.strip(),
-            fault_indicator=d.fault_indicator.strip(),
-        )
-        drill_repo.create_drill(new_drill, db_session)
-        issue_drill_repo.create_issue_drill(
-            models.IssueDrill(issue_id=new_issue.id, drill_id=new_drill.id),
+        new_drill = drill_repo.add_drill(
+            {
+                "user_id": user_id,
+                "title": d.title.strip(),
+                "task": d.task.strip(),
+                "success_signal": d.success_signal.strip(),
+                "fault_indicator": d.fault_indicator.strip(),
+            },
             db_session,
         )
+        issue_drill_repo.add_issue_drill(new_issue.id, new_drill.id, db_session)
 
     for drill_id in existing_drill_ids or []:
         if drill_repo.get_drill_by_id(drill_id, db_session) is None:
             raise NotFoundException("Drill", str(drill_id))
-        issue_drill_repo.create_issue_drill(
-            models.IssueDrill(issue_id=new_issue.id, drill_id=drill_id),
-            db_session,
-        )
+        issue_drill_repo.add_issue_drill(new_issue.id, drill_id, db_session)
 
     return _issue_to_catalog_dto(new_issue)
 

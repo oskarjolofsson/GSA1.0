@@ -5,21 +5,16 @@ from core.infrastructure.db.repositories.issue_drills import (
     get_issue_drill_by_id as repo_get_issue_drill_by_id,
     get_issue_drills_by_issue_id as repo_get_issue_drills_by_issue_id,
     get_issue_drills_by_drill_id as repo_get_issue_drills_by_drill_id,
-    create_issue_drill as repo_create_issue_drill,
+    add_issue_drill as repo_add_issue_drill,
     delete_issue_drill as repo_delete_issue_drill,
 )
-from core.infrastructure.db.models.IssueDrill import IssueDrill
 from .dtos.issue_drill_service_dto import CreateIssueDrillDTO, IssueDrillResponseDTO
 from core.services.exceptions import NotFoundException
 
 
 def create_issue_drill(dto: CreateIssueDrillDTO, db_session: Session) -> IssueDrillResponseDTO:
     """Create a new issue-drill link."""
-    new_issue_drill = IssueDrill(
-        issue_id=dto.issue_id,
-        drill_id=dto.drill_id,
-    )
-    created_issue_drill = repo_create_issue_drill(new_issue_drill, db_session)
+    created_issue_drill = repo_add_issue_drill(dto.issue_id, dto.drill_id, db_session)
     return from_issue_drill_to_response_dto(created_issue_drill)
 
 
@@ -51,7 +46,7 @@ def delete_issue_drill(issue_drill_id: UUID, db_session: Session) -> None:
     repo_delete_issue_drill(issue_drill_id, db_session)
 
 
-def from_issue_drill_to_response_dto(issue_drill: IssueDrill) -> IssueDrillResponseDTO:
+def from_issue_drill_to_response_dto(issue_drill) -> IssueDrillResponseDTO:
     """Convert an IssueDrill model to response DTO."""
     return IssueDrillResponseDTO(
         id=issue_drill.id,

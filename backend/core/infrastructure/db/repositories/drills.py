@@ -3,6 +3,8 @@ from ..models.Issue import Issue
 from ..models.AnalysisIssue import AnalysisIssue
 from ..models.IssueDrill import IssueDrill
 from ..models.Analysis import Analysis
+from ..models.PracticeDrillRun import PracticeDrillRun
+from ..models.ProgramDrillState import ProgramDrillState
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import delete, select, func, or_
 from uuid import UUID
@@ -147,3 +149,40 @@ def count_drills_admin(session: Session, *, q: str | None = None) -> int:
 def get_drill_with_issues(drill_id: UUID, session: Session) -> Drill | None:
     """A single drill with its linked issues eager-loaded, for the detail view."""
     return session.get(Drill, drill_id, options=_ADMIN_DRILL_OPTS)
+
+
+# ------------ ADMIN: create and delete impact ------------
+
+
+def add_drill(fields: dict, session: Session) -> Drill:
+    """Insert a drill from already-validated fields."""
+    drill = Drill(**fields)
+    session.add(drill)
+    session.flush()
+    return drill
+
+
+def count_issue_mappings_for_drill(drill_id: UUID, session: Session) -> int:
+    """Issues prescribing this drill. CASCADEs on delete."""
+    return session.scalar(
+        select(func.count()).select_from(IssueDrill).where(IssueDrill.drill_id == drill_id)
+    ) or 0
+
+
+def count_program_drill_states_for_drill(drill_id: UUID, session: Session) -> int:
+    """Per-program strength rows for this drill. CASCADEs on delete."""
+    return session.scalar(
+        select(func.count())
+        .select_from(ProgramDrillState)
+        .where(ProgramDrillState.drill_id == drill_id)
+    ) or 0
+
+
+def count_practice_drill_runs_for_drill(drill_id: UUID, session: Session) -> int:
+    """Recorded runs of this drill. Its FK is ON DELETE SET NULL, so these survive the
+    delete — the count says how much history stops naming what it was."""
+    return session.scalar(
+        select(func.count())
+        .select_from(PracticeDrillRun)
+        .where(PracticeDrillRun.drill_id == drill_id)
+    ) or 0

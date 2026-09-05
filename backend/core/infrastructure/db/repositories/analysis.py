@@ -120,3 +120,22 @@ def update_analysis(analysis: Analysis, session: Session) -> Analysis:
 def delete_analysis(analysis: Analysis, session: Session) -> None:
     session.delete(analysis)
     session.flush()
+
+def add_analysis(fields: dict, session: Session) -> Analysis:
+    """Insert an analysis from already-resolved fields."""
+    return create_analysis(Analysis(**fields), session)
+
+
+def commit_failed_state(analysis: Analysis, message: str, session: Session) -> None:
+    """Record why an analysis failed, and commit it immediately.
+
+    The one place in the codebase that commits outside `get_db`. It has to: the caller
+    re-raises straight after, so the request's own commit never happens and the failure
+    would roll back with everything else — leaving an analysis stuck in `processing`
+    with nothing saying why.
+    """
+    analysis.error_message = message
+    analysis.success = False
+    analysis.status = "failed"
+    session.add(analysis)
+    session.commit()

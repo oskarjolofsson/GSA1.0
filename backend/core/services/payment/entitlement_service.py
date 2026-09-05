@@ -2,7 +2,6 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from datetime import timedelta, datetime, timezone
 
-from core.infrastructure.db import models
 from core.infrastructure.db.repositories import profiles
 from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
 from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
@@ -10,7 +9,7 @@ from core.services import exceptions
 
 def is_subscribed(user_id: UUID, db_session: Session) -> bool:
     """True when the user has a paid subscription with any provider."""
-    profile: models.Profile = profiles.get_profile_by_id(user_id, db_session)
+    profile = profiles.get_profile_by_id(user_id, db_session)
     if not profile:
         raise exceptions.NotFoundException("User", str(user_id))
 
@@ -26,7 +25,7 @@ def has_free_tier(user_id: UUID, db_session: Session) -> bool:
     The window runs from profile creation, not from first use, so it expires on
     schedule whether or not the golfer ever opened the app.
     """
-    profile: models.Profile = profiles.get_profile_by_id(user_id, db_session)
+    profile = profiles.get_profile_by_id(user_id, db_session)
     if not profile:
         raise exceptions.NotFoundException("User", str(user_id))
 
@@ -39,7 +38,7 @@ def can_access_premium_features(user_id: UUID, db_session: Session) -> bool:
 
 
 def free_tier_expires_at(user_id: UUID, db_session: Session) -> datetime:
-    profile: models.Profile = profiles.get_profile_by_id(user_id, db_session)
+    profile = profiles.get_profile_by_id(user_id, db_session)
     if not profile:
         raise exceptions.NotFoundException("User", str(user_id))
     return profile.created_at + timedelta(days=7)

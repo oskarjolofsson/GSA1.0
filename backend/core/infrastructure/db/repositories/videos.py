@@ -83,3 +83,15 @@ def delete_video(video_id: UUID, session: Session) -> None:
     if video:
         session.delete(video)
         session.flush()
+
+
+def add_video(fields: dict, session: Session) -> Video:
+    """Insert a video row from already-resolved fields."""
+    return create_video(Video(**fields), session)
+
+
+def set_video_keys(video: Video, video_key: str, thumbnail_key: str, session: Session) -> Video:
+    """Stamp the object-storage keys once they are known."""
+    video.video_key = video_key
+    video.thumbnail_key = thumbnail_key
+    return update_video(video, session)

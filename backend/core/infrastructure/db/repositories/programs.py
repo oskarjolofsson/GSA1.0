@@ -1,6 +1,7 @@
 from ..models.Program import Program
 from ..models.ProgramStep import ProgramStep
 from ..models.ProgramDrillState import ProgramDrillState
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -211,3 +212,35 @@ def update_drill_state(state: ProgramDrillState, session: Session) -> ProgramDri
     session.add(state)
     session.flush()
     return state
+
+
+def try_add_program(fields: dict, session: Session) -> Program | None:
+    """Insert a program, or return None if a unique index refused it.
+
+    The (user, area, slot) index is the authority on how many focuses a golfer may hold,
+    and it can refuse an insert whose slot was free when the caller looked. Returning
+    None rather than letting IntegrityError escape keeps `sqlalchemy.exc` in this layer;
+    the caller decides what to tell the golfer.
+    """
+    program = Program(**fields)
+    try:
+        return create_program(program, session)
+    except IntegrityError:
+        session.rollback()
+        return None
+
+
+def add_drill_states(
+    program_id: UUID, drill_ids: list[UUID], session: Session
+) -> list[ProgramDrillState]:
+    """Seed a program's per-drill strengths at zero."""
+    states = [
+        ProgramDrillState(program_id=program_id, drill_id=drill_id, strength=0)
+        for drill_id in drill_ids
+    ]
+    return create_drill_states(states, session) if states else []
+
+
+def add_step(fields: dict, session: Session) -> ProgramStep:
+    """Insert a scheduled step from already-resolved fields."""
+    return create_step(ProgramStep(**fields), session)

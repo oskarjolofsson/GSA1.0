@@ -151,7 +151,43 @@ def create_issue(issue: models.Issue, session: Session) -> models.Issue:
     return issue
 
 
+def add_issue(
+    fields: dict, misses: list[str], goals: list[str], session: Session
+) -> models.Issue:
+    """Insert an issue with its tag rows, from already-validated values."""
+    issue = models.Issue(**fields)
+    for miss in misses:
+        issue.misses.append(models.IssueMiss(miss=miss))
+    for goal in goals:
+        issue.goals.append(models.IssueGoal(goal=goal))
+    return create_issue(issue, session)
+
+
 # ------------ UPDATE ------------
+
+
+def set_issue_tags(
+    issue: models.Issue,
+    misses: list[str] | None,
+    goals: list[str] | None,
+    session: Session,
+) -> models.Issue:
+    """Replace an issue's tags. None leaves an axis alone, [] clears it.
+
+    `clear()` deletes the rows through delete-orphan, so the caller must have
+    validated the new values first — a bad tag must not reach the point of having
+    emptied the existing set.
+    """
+    if misses is not None:
+        issue.misses.clear()
+        for miss in misses:
+            issue.misses.append(models.IssueMiss(miss=miss))
+    if goals is not None:
+        issue.goals.clear()
+        for goal in goals:
+            issue.goals.append(models.IssueGoal(goal=goal))
+    session.flush()
+    return issue
 
 
 def update_issue(issue: models.Issue, session: Session) -> models.Issue:
@@ -278,3 +314,74 @@ def get_issue_with_drills(issue_id: UUID, session: Session) -> models.Issue | No
         .execution_options(populate_existing=True)
     )
     return session.scalars(stmt).unique().one_or_none()
+
+
+# ------------ ADMIN: delete impact and coverage ------------
+
+
+def count_analysis_issues_for_issue(issue_id: UUID, session: Session) -> int:
+    """Analyses that diagnosed this issue. CASCADEs on delete."""
+    return session.scalar(
+        select(func.count())
+        .select_from(AnalysisIssue)
+        .where(AnalysisIssue.issue_id == issue_id)
+    ) or 0
+
+
+def count_programs_for_issue(issue_id: UUID, session: Session) -> int:
+    """Programs built on this issue. CASCADEs on delete."""
+    return session.scalar(
+        select(func.count())
+        .select_from(models.Program)
+        .where(models.Program.issue_id == issue_id)
+    ) or 0
+
+
+def count_practice_sessions_for_issue(issue_id: UUID, session: Session) -> int:
+    """Practice sessions reaching this issue through analysis_issues — the transitive
+    half of the cascade, and the part that is actually a golfer's history."""
+    analysis_issue_ids = select(AnalysisIssue.id).where(
+        AnalysisIssue.issue_id == issue_id
+    )
+    return session.scalar(
+        select(func.count())
+        .select_from(models.PracticeSession)
+        .where(models.PracticeSession.analysis_issue_id.in_(analysis_issue_ids))
+    ) or 0
+
+
+def count_drill_mappings_for_issue(issue_id: UUID, session: Session) -> int:
+    """Drills attached to this issue. CASCADEs on delete."""
+    return session.scalar(
+        select(func.count()).select_from(IssueDrill).where(IssueDrill.issue_id == issue_id)
+    ) or 0
+
+
+def count_issues_by_area_miss_goal(
+    session: Session,
+) -> list[tuple[str, str | None, str | None, int]]:
+    """Issue counts per (area, miss, goal), outer-joined so untagged issues still
+    appear with NULLs rather than dropping out. See ADR-0003."""
+    rows = session.execute(
+        select(
+            models.Issue.area,
+            models.IssueMiss.miss,
+            models.IssueGoal.goal,
+            func.count(func.distinct(models.Issue.id)),
+        )
+        .select_from(models.Issue)
+        .outerjoin(models.IssueMiss, models.IssueMiss.issue_id == models.Issue.id)
+        .outerjoin(models.IssueGoal, models.IssueGoal.issue_id == models.Issue.id)
+        .group_by(models.Issue.area, models.IssueMiss.miss, models.IssueGoal.goal)
+    ).all()
+    return [(r[0], r[1], r[2], r[3]) for r in rows]
+
+
+def count_goalless_skill_issues(session: Session) -> int:
+    """Skill issues carrying no goal. They fall out of the library tree entirely."""
+    return session.execute(
+        select(func.count())
+        .select_from(models.Issue)
+        .outerjoin(models.IssueGoal, models.IssueGoal.issue_id == models.Issue.id)
+        .where(models.Issue.kind == "skill", models.IssueGoal.issue_id.is_(None))
+    ).scalar_one()

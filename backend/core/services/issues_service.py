@@ -3,7 +3,8 @@ from uuid import UUID
 
 from core.infrastructure.db.repositories.issues import (
     get_issue_by_id as repo_get_issue_by_id,
-    create_issue as repo_create_issue,
+    add_issue as repo_add_issue,
+    set_issue_tags as repo_set_issue_tags,
     update_issue as repo_update_issue,
     delete_issue as repo_delete_issue,
     get_issues_by_analysis_id as repo_get_issues_by_analysis_id,
@@ -17,8 +18,6 @@ from core.infrastructure.db.repositories.issues import (
 from core.infrastructure.db.repositories import analysis_issues as repo_analysis_issues
 
 from core.infrastructure.db.repositories import programs as programs_repo
-from core.infrastructure.db.models.Issue import Issue
-from core.infrastructure.db import models
 from .dtos.issues_service_dto import CreateIssueDTO, UpdateIssueDTO, IssueResponseDTO
 from core.services.exceptions import NotFoundException
 
@@ -37,7 +36,7 @@ def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
     # to exactly one area, so SLICE on a putting issue is refused.
     area = normalize_area_strict(dto.area)
 
-    new_issue = Issue(
+    issue_fields = dict(
         title=dto.title,
         description=dto.description,
         # Validated here rather than left to the foreign key, so a bad value is a 422
@@ -53,12 +52,12 @@ def create_issue(dto: CreateIssueDTO, db_session: Session) -> IssueResponseDTO:
     )
     # Strict normalizers (not the lenient ones used by issue_authoring_service):
     # this is an admin path, so an unknown tag is a 422 rather than a silent drop.
-    for miss in normalize_misses_strict(dto.misses, area):
-        new_issue.misses.append(models.IssueMiss(miss=miss))
-    for goal in normalize_goals_strict(dto.goals):
-        new_issue.goals.append(models.IssueGoal(goal=goal))
-
-    created_issue = repo_create_issue(new_issue, db_session)
+    created_issue = repo_add_issue(
+        issue_fields,
+        normalize_misses_strict(dto.misses, area),
+        normalize_goals_strict(dto.goals),
+        db_session,
+    )
     return from_issue_to_response_dto(created_issue)
 
 
@@ -69,14 +68,14 @@ def get_issue_by_id(issue_id: UUID, user_id: UUID, db_session: Session) -> Issue
     if not issue:
         raise NotFoundException(f"Issue with ID {issue_id} not found", str(issue_id))
 
-    analysis_issue: models.AnalysisIssue = repo_analysis_issues.get_analysis_issues_by_user_id_and_issue_id(user_id, issue_id, db_session)
+    analysis_issue = repo_analysis_issues.get_analysis_issues_by_user_id_and_issue_id(user_id, issue_id, db_session)
     if analysis_issue:
         return from_issue_to_response_dto(issue, analysis_issue[0])
     return from_issue_to_response_dto(issue)
 
 
 def get_all_issues(user_id: UUID, db_session: Session) -> list[IssueResponseDTO]:
-    issues: list[models.Issue] = repo_get_all_issues(db_session)
+    issues = repo_get_all_issues(db_session)
     return [from_issue_to_response_dto(issue) for issue in issues]
 
 
@@ -265,17 +264,9 @@ def update_issue(issue_id: UUID, dto: UpdateIssueDTO, db_session: Session) -> Is
         if value is not None:
             setattr(issue, field, value.strip() or None)
 
-    # Tags replace rather than merge: None leaves them, [] clears them. clear()
-    # deletes the rows via delete-orphan. Already validated above, so a bad tag
-    # never reaches the point of emptying the existing set.
-    if misses is not None:
-        issue.misses.clear()
-        for miss in misses:
-            issue.misses.append(models.IssueMiss(miss=miss))
-    if goals is not None:
-        issue.goals.clear()
-        for goal in goals:
-            issue.goals.append(models.IssueGoal(goal=goal))
+    # Tags replace rather than merge: None leaves them, [] clears them. Already
+    # validated above, so a bad tag never reaches the point of emptying the set.
+    repo_set_issue_tags(issue, misses, goals, db_session)
 
     updated_issue = repo_update_issue(issue, db_session)
     
@@ -300,7 +291,7 @@ def delete_issues_bulk(issue_ids: list[UUID], db_session: Session) -> None:
 # ------------ Helper Methods ------------
 
 
-def from_issue_to_response_dto(issue: Issue, analysis_issue: models.AnalysisIssue | None = None) -> IssueResponseDTO:
+def from_issue_to_response_dto(issue, analysis_issue=None) -> IssueResponseDTO:
     """Transform an Issue object to IssueResponseDTO with optional analysis_issue data."""
     return IssueResponseDTO(
         id=issue.id,
@@ -327,12 +318,12 @@ def from_issue_to_response_dto(issue: Issue, analysis_issue: models.AnalysisIssu
 def _batch_fetch_analysis_issues(user_id: UUID, issues: list[Issue], db_session: Session) -> list[IssueResponseDTO]:
     """Attach each issue's analysis linkage (analysis id, confidence) for this user."""
     issue_ids: list[UUID] = [issue.id for issue in issues]
-    analysis_issues: list[models.AnalysisIssue] = repo_analysis_issues.get_analysis_issues_by_user_id_and_issue_ids(user_id=user_id, issue_ids=issue_ids, session=db_session)
+    analysis_issues = repo_analysis_issues.get_analysis_issues_by_user_id_and_issue_ids(user_id=user_id, issue_ids=issue_ids, session=db_session)
 
     if not analysis_issues:
         return [from_issue_to_response_dto(issue) for issue in issues]
 
-    analysis_issues_by_issue_id: dict[UUID, models.AnalysisIssue] = {ai.issue_id: ai for ai in analysis_issues}
+    analysis_issues_by_issue_id = {ai.issue_id: ai for ai in analysis_issues}
 
     # Deliberately unsorted. This used to order by a rep-based success rate derived
     # from `successful_reps`, which never held reps — it held a feel ordinal. The one

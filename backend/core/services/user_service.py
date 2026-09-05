@@ -12,7 +12,6 @@ from core.infrastructure.db.repositories.profiles import (
 )
 from core.infrastructure.db.repositories import user_roles as user_roles_repo
 from core.infrastructure.db.repositories.analysis import get_analysis_counts_by_user_ids
-from core.infrastructure.db import models
 from sqlalchemy.orm import Session
 from uuid import UUID
 from datetime import datetime, timezone, timedelta
@@ -22,7 +21,7 @@ from core.config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLL_K
 
 def get_all_users(session: Session, *, limit: int, offset: int) -> PageDTO[GetUserDTO]:
     """One page of users (newest first) with the total, for the admin list."""
-    profiles: list[models.Profile] = get_profiles_page(
+    profiles = get_profiles_page(
         session, limit=limit, offset=offset
     )
     total = get_profile_count(session)
@@ -59,12 +58,12 @@ def search_users(session: Session, query: str, *, limit: int) -> list[GetUserDTO
     """Admin search over users by name/email, returning the full user shape."""
     if not query.strip():
         return []
-    profiles: list[models.Profile] = search_profiles(session, query, limit=limit)
+    profiles = search_profiles(session, query, limit=limit)
     return _enrich_profiles(profiles, session)
 
 
 def is_admin(user_id: str, session: Session) -> bool:
-    user: models.Profile = get_profile_by_id(user_id, session)
+    user = get_profile_by_id(user_id, session)
     if not user:
         raise exceptions.NotFoundException(f"User with id {user_id} not found", user_id)
 
@@ -83,8 +82,7 @@ def set_admin(user_id: str, set_to_admin: bool, session: Session) -> None:
     is_admin = user_roles_repo.user_has_role(user_id, "admin", session)
 
     if set_to_admin and not is_admin:
-        new_role = models.UserRole(user_id=UUID(user_id), role_id=admin_role.id)
-        user_roles_repo.assign_role_to_user(new_role, session)
+        user_roles_repo.add_role_to_user(UUID(user_id), admin_role.id, session)
         
     elif not set_to_admin and is_admin:
         user_roles_repo.remove_role_from_user(
@@ -98,7 +96,7 @@ def delete_user_by_user_id(user_id: str, user_id_to_delete: str, db_session: Ses
     if str(user_id) != str(user_id_to_delete) and not is_admin(user_id, db_session):
         raise exceptions.ForbiddenException(f"User not authorized to delete another user")
     
-    user_to_delete: models.Profile = get_profile_by_id(str(user_id_to_delete), db_session)
+    user_to_delete = get_profile_by_id(str(user_id_to_delete), db_session)
     if not user_to_delete:
         raise exceptions.NotFoundException("Profile not found", str(user_id_to_delete))
     
@@ -112,7 +110,7 @@ def delete_user_by_user_id(user_id: str, user_id_to_delete: str, db_session: Ses
 
 
 def _enrich_profiles(
-    profiles: list[models.Profile], session: Session
+    profiles: list, session: Session
 ) -> list[GetUserDTO]:
     """Map profiles to DTOs, batch-fetching roles + analysis counts.
 
@@ -137,7 +135,7 @@ def _enrich_profiles(
 
 
 def from_profile_to_dto(
-    profile: models.Profile, role: str | None = None, analyses_count: int = 0
+    profile, role: str | None = None, analyses_count: int = 0
 ) -> GetUserDTO:
     return GetUserDTO(
         id=profile.id,

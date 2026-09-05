@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 
-from core.infrastructure.db import models
-from core.services import taxonomy
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from core.services.dtos.taxonomy_dto import (
+    TaxonomyMissDTO,
+    TaxonomyTermDTO,
+    TaxonomyVocabularyDTO,
+)
 
 
 class TaxonomyTermSchema(BaseModel):
@@ -27,6 +28,16 @@ class TaxonomyTermSchema(BaseModel):
     blurb: str | None = None
     sort: int = 0
 
+    @classmethod
+    def from_dto(cls, dto: TaxonomyTermDTO) -> "TaxonomyTermSchema":
+        return cls(
+            key=dto.key,
+            label=dto.label,
+            golfer_label=dto.golfer_label,
+            blurb=dto.blurb,
+            sort=dto.sort,
+        )
+
 
 class TaxonomyMissSchema(TaxonomyTermSchema):
     """A miss, plus the area it belongs to.
@@ -37,6 +48,17 @@ class TaxonomyMissSchema(TaxonomyTermSchema):
     """
 
     area: str
+
+    @classmethod
+    def from_dto(cls, dto: TaxonomyMissDTO) -> "TaxonomyMissSchema":
+        return cls(
+            key=dto.key,
+            area=dto.area,
+            label=dto.label,
+            golfer_label=dto.golfer_label,
+            blurb=dto.blurb,
+            sort=dto.sort,
+        )
 
 
 class TaxonomyResponse(BaseModel):
@@ -62,62 +84,21 @@ class TaxonomyResponse(BaseModel):
     default_kind: str
 
     @classmethod
-    def from_db(cls, session: Session) -> "TaxonomyResponse":
-        """Read the taxonomy tables directly rather than through the validator cache.
+    def from_vocabulary(cls, vocabulary: TaxonomyVocabularyDTO) -> "TaxonomyResponse":
+        """Wire shape for what the service read.
 
-        The cache in core.services.taxonomy holds keys only, because that is all the
-        validators need. This endpoint also serves labels, so it reads the rows.
+        Purely a translation: the grouping, the ordering and the empty-area entries are
+        all decided in `core.services.taxonomy.get_vocabulary`.
         """
-        areas = session.scalars(
-            select(models.TaxonomyArea)
-            .where(models.TaxonomyArea.active.is_(True))
-            .order_by(models.TaxonomyArea.sort, models.TaxonomyArea.key)
-        ).all()
-        goals = session.scalars(
-            select(models.TaxonomyGoal)
-            .where(models.TaxonomyGoal.active.is_(True))
-            .order_by(models.TaxonomyGoal.sort, models.TaxonomyGoal.key)
-        ).all()
-        misses = session.scalars(
-            select(models.TaxonomyMiss)
-            .where(models.TaxonomyMiss.active.is_(True))
-            .order_by(models.TaxonomyMiss.sort, models.TaxonomyMiss.key)
-        ).all()
-
-        def term(row) -> TaxonomyTermSchema:
-            return TaxonomyTermSchema(
-                key=row.key,
-                label=row.label,
-                golfer_label=row.golfer_label,
-                blurb=row.blurb,
-                sort=row.sort,
-            )
-
-        def miss(row) -> TaxonomyMissSchema:
-            return TaxonomyMissSchema(
-                key=row.key,
-                area=row.area,
-                label=row.label,
-                golfer_label=row.golfer_label,
-                blurb=row.blurb,
-                sort=row.sort,
-            )
-
-        miss_schemas = [miss(m) for m in misses]
-
-        # Every area gets a key, including empty ones: a client rendering an area grid
-        # needs to know an area exists with nothing in it yet ("Coming soon") rather than
-        # having it silently absent.
-        by_area: dict[str, list[TaxonomyMissSchema]] = {a.key: [] for a in areas}
-        for m in miss_schemas:
-            by_area.setdefault(m.area, []).append(m)
-
         return cls(
-            areas=[term(a) for a in areas],
-            goals=[term(g) for g in goals],
-            misses=miss_schemas,
-            misses_by_area=by_area,
-            kinds=list(taxonomy.ALLOWED_KINDS),
-            default_area=taxonomy.DEFAULT_AREA,
-            default_kind=taxonomy.DEFAULT_KIND,
+            areas=[TaxonomyTermSchema.from_dto(a) for a in vocabulary.areas],
+            goals=[TaxonomyTermSchema.from_dto(g) for g in vocabulary.goals],
+            misses=[TaxonomyMissSchema.from_dto(m) for m in vocabulary.misses],
+            misses_by_area={
+                area: [TaxonomyMissSchema.from_dto(m) for m in misses]
+                for area, misses in vocabulary.misses_by_area.items()
+            },
+            kinds=list(vocabulary.kinds),
+            default_area=vocabulary.default_area,
+            default_kind=vocabulary.default_kind,
         )

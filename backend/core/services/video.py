@@ -7,7 +7,6 @@ from core.infrastructure.db.repositories.videos import (
     get_videos_by_analysis_ids as repo_get_videos_by_analysis_ids,
     delete_video as repo_delete_video,
 )
-from core.infrastructure.db.models.Video import Video
 from core.infrastructure.db.session import SessionLocal
 from core.infrastructure.storage.r2Adaptor import generate_read_url
 from .analysis_service import load_owned_analysis
@@ -45,7 +44,7 @@ def get_video_read_url_by_analysis(analysis_id: UUID, user_id: UUID, db_session:
 
 
 def get_video_thumbnail_urls_from_analyses(analysis_ids: list[UUID], db_session: Session) -> VideoThumbnailListResponseDTO:
-    videos: list[Video] = repo_get_videos_by_analysis_ids(analysis_ids, db_session)
+    videos = repo_get_videos_by_analysis_ids(analysis_ids, db_session)
     thumbnail_urls = {}
     for video in videos:
         if video.thumbnail_key:
@@ -64,7 +63,7 @@ def delete_video(video_id: UUID, db_session: Session) -> None:
     repo_delete_video(video_id, db_session)
 
 
-def from_video_to_response_dto(video: Video) -> VideoResponseDTO:
+def from_video_to_response_dto(video) -> VideoResponseDTO:
     """Convert Video model to VideoResponseDTO."""
     return VideoResponseDTO(
         id=video.id,
