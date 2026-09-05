@@ -39,12 +39,17 @@ def test_delete_analysis_issues(test_user, db_session):
 def test_delete_analysis_and_cascade(test_user, db_session):
     to: AnalysisTestObject = create_analysis_and_analysis_issues(db_session, test_user["user_id"])
     
-    analysis_service.delete_analysis(to.analysis.id, db_session=db_session)
+    analysis_service.delete_analysis(to.analysis.id, test_user["user_id"], db_session=db_session)
     
     with pytest.raises(exceptions.NotFoundException):
-        assert analysis_service.get_analysis_by_id(analysis_id=to.analysis.id, db_session=db_session)
+        assert analysis_service.get_analysis_by_id(
+            analysis_id=to.analysis.id, user_id=test_user["user_id"], db_session=db_session
+        )
 
-    assert analysis_service.get_analysis_issues(analysis_id=to.analysis.id, db_session=db_session) == []
+    with pytest.raises(exceptions.NotFoundException):
+        analysis_service.get_analysis_issues(
+            analysis_id=to.analysis.id, user_id=test_user["user_id"], db_session=db_session
+        )
     assert analysis_issues_repo.get_analysis_issues_by_analysis_id(to.analysis.id, session=db_session) == []
     
 

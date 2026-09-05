@@ -271,7 +271,9 @@ class TestRunAnalysis:
     ):
         """Test get, list, and delete operations on analyses and analysis issues"""
         # Test get_analysis_by_id
-        analysis_dto = get_analysis_by_id_service(completed_analysis_shared, db_session=shared_db_session)
+        analysis_dto = get_analysis_by_id_service(
+            completed_analysis_shared, test_user["user_id"], db_session=shared_db_session
+        )
         
         assert analysis_dto is not None
         assert analysis_dto.analysis_id == completed_analysis_shared
@@ -285,18 +287,22 @@ class TestRunAnalysis:
         assert completed_analysis_shared in analysis_ids
         
         # Test get_analysis_issues
-        issues = get_analysis_issues(completed_analysis_shared, db_session=shared_db_session)
+        issues = get_analysis_issues(
+            completed_analysis_shared, test_user["user_id"], db_session=shared_db_session
+        )
         assert len(issues) > 0
         first_issue_id = issues[0].analysis_issue_id
         
         # Test delete_analysis_issue
         delete_analysis_issue(first_issue_id, db_session=shared_db_session, user_id=test_user["user_id"])
-        remaining_issues = get_analysis_issues(completed_analysis_shared, db_session=shared_db_session)
+        remaining_issues = get_analysis_issues(
+            completed_analysis_shared, test_user["user_id"], db_session=shared_db_session
+        )
         assert len(remaining_issues) == len(issues) - 1
         remaining_issue_ids = [i.analysis_issue_id for i in remaining_issues]
         assert first_issue_id not in remaining_issue_ids
         
         # Test delete_analysis
-        delete_analysis(completed_analysis_shared, db_session=shared_db_session)
+        delete_analysis(completed_analysis_shared, test_user["user_id"], db_session=shared_db_session)
         analysis_in_db = get_analysis_by_id(completed_analysis_shared, session=shared_db_session)
         assert analysis_in_db is None

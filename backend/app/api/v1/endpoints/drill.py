@@ -84,7 +84,9 @@ def get_drills_by_analysis(
     Returns:
         JSON response with a list of drills
     """
-    drills = service_get_drills_by_analysis_id(analysis_id, db_session=db)
+    drills = service_get_drills_by_analysis_id(
+        analysis_id, UUID(current_user["user_id"]), db_session=db
+    )
 
     return [GetDrill.from_domain(drill) for drill in drills]
 
