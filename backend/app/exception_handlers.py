@@ -10,7 +10,6 @@ from core.services.exceptions import (
     ForbiddenException,
     ConflictException
 )
-from core.infrastructure.payment.stripe import exceptions
 from core.infrastructure.payment.revenuecat.exceptions import (
     RevenueCatWebhookVerificationError,
 )
@@ -85,17 +84,6 @@ async def conflict_exception_handler(request: Request, exc: ConflictException):
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content={"detail": str(exc)},
-    )
-
-
-async def stripe_infrastructure_exception_handler(
-    request: Request,
-    exc: exceptions.StripeInfrastructureError,
-):
-    print(f"Stripe infrastructure error: {format_exc()}")
-    return JSONResponse(
-        status_code=status.HTTP_502_BAD_GATEWAY,
-        content={"detail": "The payment service is temporarily unavailable. Please try again later."},
     )
 
 

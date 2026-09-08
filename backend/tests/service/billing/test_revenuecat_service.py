@@ -1,6 +1,6 @@
 """Unit tests for the RevenueCat webhook plumbing (no DB, no network).
 
-Covers the auth verifier, the RevenueCat-event -> Stripe-shaped status mapping, and
+Covers the auth verifier, the RevenueCat-event -> billing status mapping, and
 the small id-extraction helpers. The DB-backed end-to-end behaviour lives in
 tests/api/billing/test_revenuecat_webhook.py.
 """
@@ -93,7 +93,7 @@ def test_trial_period_maps_to_trialing():
 
 def test_cancellation_keeps_access_but_sets_cancel_flags():
     fields = svc._derive_status_fields("CANCELLATION", _event())
-    # Still entitled until expiration, matches the Stripe at-period-end behaviour.
+    # Still entitled until expiration — cancellation takes effect at period end.
     assert fields["status"] == "active"
     assert fields["cancel_at_period_end"] is True
     assert fields["canceled_at"] == 1_710_000_000

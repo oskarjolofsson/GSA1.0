@@ -15,11 +15,12 @@ def test_is_subscribed_returns_true_when_user_has_active_subscription(db_session
 	billing_customer = billing_customer_repo.create_billing_customer(
 		user_id=test_user["user_id"],
 		customer_id="cus_entitlement_active",
+		provider="revenuecat",
 		session=db_session,
 	)
 	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
-		provider="stripe",
+		provider="revenuecat",
 		external_subscription_id="sub_entitlement_active",
 		external_price_id="price_entitlement_active",
 		status="active",
@@ -43,6 +44,7 @@ def test_get_subscription_summary_returns_period_and_cancel_fields(db_session, t
 	billing_customer = billing_customer_repo.create_billing_customer(
 		user_id=test_user["user_id"],
 		customer_id="cus_summary",
+		provider="revenuecat",
 		session=db_session,
 	)
 	# A genuinely-current subscription: started in the past, period still in the
@@ -54,7 +56,7 @@ def test_get_subscription_summary_returns_period_and_cancel_fields(db_session, t
 	canceled_at = int((now - timedelta(hours=12)).timestamp())
 	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
-		provider="stripe",
+		provider="revenuecat",
 		external_subscription_id="sub_summary",
 		external_price_id="price_summary",
 		status="active",
@@ -76,16 +78,17 @@ def test_get_subscription_summary_returns_period_and_cancel_fields(db_session, t
 
 
 def test_is_subscribed_true_when_active_and_scheduled_to_cancel(db_session, test_user):
-	# cancel_at_period_end is Stripe's scheduling flag, not an access gate:
+	# cancel_at_period_end is the provider's scheduling flag, not an access gate:
 	# an active subscription scheduled to cancel must still count as subscribed.
 	billing_customer = billing_customer_repo.create_billing_customer(
 		user_id=test_user["user_id"],
 		customer_id="cus_scheduled_cancel",
+		provider="revenuecat",
 		session=db_session,
 	)
 	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
-		provider="stripe",
+		provider="revenuecat",
 		external_subscription_id="sub_scheduled_cancel",
 		external_price_id="price_scheduled_cancel",
 		status="active",
@@ -105,11 +108,12 @@ def test_is_subscribed_false_when_status_canceled(db_session, test_user):
 	billing_customer = billing_customer_repo.create_billing_customer(
 		user_id=test_user["user_id"],
 		customer_id="cus_canceled_status",
+		provider="revenuecat",
 		session=db_session,
 	)
 	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
-		provider="stripe",
+		provider="revenuecat",
 		external_subscription_id="sub_canceled_status",
 		external_price_id="price_canceled_status",
 		status="canceled",
@@ -128,11 +132,12 @@ def _seed_sub(db_session, test_user, *, customer_id, external_id, status, period
 	billing_customer = billing_customer_repo.create_billing_customer(
 		user_id=test_user["user_id"],
 		customer_id=customer_id,
+		provider="revenuecat",
 		session=db_session,
 	)
 	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
-		provider="stripe",
+		provider="revenuecat",
 		external_subscription_id=external_id,
 		external_price_id="price_x",
 		status=status,
@@ -220,11 +225,12 @@ def test_can_access_premium_features_returns_true_when_subscribed(db_session, te
 	billing_customer = billing_customer_repo.create_billing_customer(
 		user_id=test_user["user_id"],
 		customer_id="cus_entitlement_combo",
+		provider="revenuecat",
 		session=db_session,
 	)
 	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
-		provider="stripe",
+		provider="revenuecat",
 		external_subscription_id="sub_entitlement_combo",
 		external_price_id="price_entitlement_combo",
 		status="active",

@@ -94,8 +94,8 @@ Touched existing files:
 3. **Manage subscription is provider-aware.** `subscription.provider === 'revenuecat'`
    → deep-link to the native store subscription settings (iOS:
    `itms-apps://apps.apple.com/account/subscriptions`, Android: Play subscriptions
-   URL). `'stripe'` → open the web portal in a browser. A user who bought on web
-   cannot manage in-app and vice versa.
+   URL). `'manual'` (an admin-granted comp) → no manage action; there is no store
+   subscription behind it. Web checkout no longer exists, see ADR-0045.
 4. **Double-sub mitigation.** Before showing the paywall, if `is_subscribed`,
    show "Manage subscription" instead of "Subscribe" (mobile purchases can't be
    blocked server-side — integration doc §5).
@@ -125,7 +125,7 @@ Required suites (billing is high-blast-radius — ship it tested):
 - `useBilling` reducer: refresh dedupe, `invalidate`, paywall open/close.
 - 402 handler: fires once, ignores `/billing/` URLs, no loop.
 - `useRequirePremium`: blocks when `!can_access_premium`, allows when true/trial.
-- Provider-aware manage-subscription routing (revenuecat vs stripe branch).
+- Provider-aware manage-subscription routing (revenuecat vs manual branch).
 - `purchaseService`: cancelled purchase = no state change; restore flow.
 
 ---

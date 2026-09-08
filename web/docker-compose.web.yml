@@ -40,13 +40,12 @@ services:
 #       header @assets Cache-Control "public, max-age=31536000, immutable"
 #       header          Cache-Control "public, max-age=0, must-revalidate"
 #
-#       # Legacy routes retired with frontend/. See the plan's BLOCKING QUESTION
-#       # before enabling the /billing/* line — if the app still uses Stripe
-#       # web checkout, redirecting it drops a payer on the landing page.
+#       # Legacy routes retired with frontend/. Web checkout no longer exists
+#       # (payments are store-only, see ADR-0045), so /billing/* redirects too.
 #       handle /dashboard/*   { redir / 308 }
 #       handle /pricing       { redir / 308 }
 #       handle /auth/callback { redir / 308 }
-#       # handle /billing/*   { redir / 308 }   # <- BLOCKED, see above
+#       handle /billing/*     { redir / 308 }
 #
 #       reverse_proxy web:80
 #   }

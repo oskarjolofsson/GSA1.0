@@ -12,7 +12,7 @@ export type BillingStatus = {
 };
 
 export type SubscriptionSummary = {
-  provider: 'stripe' | 'revenuecat'; // who manages the sub
+  provider: 'revenuecat' | 'manual'; // who manages the sub (store purchase, or an admin comp)
   status: string; // trialing | active | past_due | canceled | ...
   current_period_end: string | null;
   cancel_at_period_end: boolean;

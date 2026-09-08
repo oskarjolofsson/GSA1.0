@@ -26,9 +26,9 @@ def get_customer_by_user_and_provider(
     provider: str,
     session: Session,
 ) -> models.BillingCustomer | None:
-    # A user can have one customer row per provider (a Stripe cus_* and a RevenueCat
-    # app-user-id). Callers that talk to a specific provider must scope by it — e.g.
-    # the Stripe checkout must never receive a RevenueCat customer_id.
+    # A user can have one customer row per provider (a RevenueCat app-user-id, a
+    # manual comp row). Callers that talk to a specific provider must scope by it,
+    # so a provider is never handed another provider's customer_id.
     stmt = select(models.BillingCustomer).where(
         models.BillingCustomer.user_id == user_id,
         models.BillingCustomer.provider == provider,
@@ -41,7 +41,7 @@ def create_billing_customer(
     user_id: UUID,
     customer_id: str,
     session: Session,
-    provider: str = "stripe",
+    provider: str,
 ) -> models.BillingCustomer:
     billing_customer = models.BillingCustomer(
         user_id=user_id,

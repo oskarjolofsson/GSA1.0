@@ -5,11 +5,11 @@ dashboard integrate with the billing endpoints exposed by the backend. The backe
 owns all subscription state and webhook handling; treat it as a black box behind the
 routes below.
 
-RevenueCat is the billing provider for **mobile** (App Store / Play Store in-app
-purchases). Stripe stays the provider for **web** — see
-[`stripe-frontend-integration.md`](./stripe-frontend-integration.md). Both feed the
-same entitlement state, so `GET /api/v1/billing/status` is the single source of
-truth across platforms.
+RevenueCat is the billing provider for **every** purchase (App Store / Play Store
+in-app purchases). There is no web checkout — see
+[ADR-0045](../../../../docs/adr/0045-payments-are-store-only.md). The only other
+provider value is `manual`, an admin-granted comp (ADR-0005). `GET /api/v1/billing/status`
+is the single source of truth for entitlement.
 
 The mobile app's job is to:
 
@@ -17,7 +17,7 @@ The mobile app's job is to:
 2. Sell the subscription through the RevenueCat SDK (not a backend route).
 3. Read the user's entitlement state from the backend and gate UI accordingly.
 
-The mobile app **never** handles webhooks and **never** calls Stripe routes.
+The mobile app **never** handles webhooks and **never** sells outside the store SDK.
 
 ---
 
@@ -28,9 +28,8 @@ The mobile app **never** handles webhooks and **never** calls Stripe routes.
 | GET | `/api/v1/billing/status` | mobile app | Read the user's entitlement state |
 | POST | `/api/v1/webhook/revenuecat/` | RevenueCat (not the app) | Receive purchase events |
 
-The web-only Stripe routes (`/api/v1/billing/checkout-session/` and
-`/api/v1/billing/portal/`) are **not** used by mobile — purchases and subscription
-management happen through the stores via the RevenueCat SDK.
+`GET /api/v1/billing/status` is the only billing route the app calls. Purchases and
+subscription management happen through the stores via the RevenueCat SDK.
 
 ### 1.1 `GET /api/v1/billing/status`
 
@@ -57,12 +56,12 @@ Response `200`:
 
 - `can_access_premium` — `is_subscribed || has_free_tier`. **This is the field the UI should gate on.**
 - `is_subscribed` — true if there is an active paid subscription on any platform.
-- `subscription.provider` — `"stripe"` (web) or `"revenuecat"` (mobile). Use it to
-  route "Manage subscription": `revenuecat` → deep-link to the App Store / Play
-  Store subscription settings; `stripe` → the web portal (the store cannot manage a
-  Stripe sub and vice versa). `subscription` is `null` when the user has no active
-  paid sub.
-- `status` — `trialing | active | past_due | canceled` (and other Stripe-style values).
+- `subscription.provider` — `"revenuecat"` (bought in-app) or `"manual"` (an
+  admin-granted comp). Use it to route "Manage subscription": `revenuecat` →
+  deep-link to the App Store / Play Store subscription settings; `manual` → no
+  manage action, the user cannot change a comp. `subscription` is `null` when the
+  user has no active paid sub.
+- `status` — `trialing | active | past_due | canceled`.
 - `free_tier_expires_at` — ISO 8601, `profile.created_at + 7 days`, always returned.
 
 ### 1.2 `POST /api/v1/webhook/revenuecat/` (configured in RevenueCat, not called by the app)
@@ -91,8 +90,8 @@ deduped — no action needed from the app.
    Connect shared secret) and Play Store app (Play service account).
 2. **Products → entitlement → offering.** Create the subscription products in App
    Store Connect / Play Console, import them into RevenueCat, attach them to a single
-   entitlement (e.g. `premium`), and expose them in a default offering. Keep pricing
-   roughly at parity with the Stripe web price (note Apple/Google take 15–30%).
+   entitlement (e.g. `premium`), and expose them in a default offering (note
+   Apple/Google take 15–30%).
 3. **Webhook.** Settings → Integrations → Webhooks:
    - **URL:** `https://<your-api-host>/api/v1/webhook/revenuecat/`
    - **Authorization header:** a strong random secret, equal to the backend env var
@@ -140,8 +139,7 @@ Premium backend endpoints return **HTTP 402** when the user is not entitled — 
 
 ## 4. Environment & configuration
 
-The backend reads one env var for this integration (selected by the `DEV` flag, same
-pattern as the Stripe vars):
+The backend reads one env var for this integration (selected by the `DEV` flag):
 
 - `SANDBOX_REVENUECAT_WEBHOOK_AUTH_TOKEN` (when `DEV=TRUE`)
 - `LIVE_REVENUECAT_WEBHOOK_AUTH_TOKEN` (production)

@@ -12,13 +12,10 @@ const STORE_SUBSCRIPTIONS_URL = Platform.select({
   default: 'https://apps.apple.com/account/subscriptions',
 });
 
-// Where stripe (web-purchased) subscriptions are managed.
-const WEB_BILLING_URL = `${process.env.EXPO_PUBLIC_WEB_URL ?? 'https://trueswing.se'}/dashboard/profile`;
-
 /**
  * Shows current subscription state and a provider-aware "Manage" action:
  * - revenuecat → native store subscription settings.
- * - stripe     → the web app (a store can't manage a Stripe sub, and vice versa).
+ * - manual     → no action; a comp granted by an admin is not managed anywhere.
  * Re-invalidates on mount since the user may return here after managing billing.
  */
 export default function SubscriptionCard() {
@@ -31,9 +28,8 @@ export default function SubscriptionCard() {
   const sub = status?.subscription ?? null;
 
   const handleManage = async () => {
-    const url = sub?.provider === 'stripe' ? WEB_BILLING_URL : STORE_SUBSCRIPTIONS_URL;
     try {
-      await Linking.openURL(url);
+      await Linking.openURL(STORE_SUBSCRIPTIONS_URL);
     } catch {
       Alert.alert('Error', 'Could not open subscription settings.');
     }
@@ -74,7 +70,21 @@ export default function SubscriptionCard() {
     );
   }
 
-  const managedOnWeb = sub.provider === 'stripe';
+  // A comp (provider="manual") has no store subscription behind it, so there is
+  // nowhere to send the user — render the state without a Manage action.
+  if (sub.provider === 'manual') {
+    return (
+      <View>
+        <Text className="font-display text-[18px] text-sand">Subscription</Text>
+        <Text className="mt-1.5 text-[13px] text-sand-dim">
+          Status: <Text className="text-sand">{sub.status}</Text>
+        </Text>
+        <Text className="mt-4 text-[13px] leading-5 text-sand-dim">
+          Granted by TrueSwing. Contact support if anything looks wrong.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View>
@@ -93,9 +103,7 @@ export default function SubscriptionCard() {
         <View className="flex-1 pr-3">
           <Text className="text-[15px] font-semibold text-sand">Manage subscription</Text>
           <Text className="mt-1 text-[13px] leading-5 text-sand-dim">
-            {managedOnWeb
-              ? 'Subscription was purchased on the web — manage it there'
-              : `Opens your ${Platform.OS === 'ios' ? 'App Store' : 'Play Store'} settings`}
+            {`Opens your ${Platform.OS === 'ios' ? 'App Store' : 'Play Store'} settings`}
           </Text>
         </View>
         <ChevronRight size={20} color="#8A8676" />

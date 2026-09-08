@@ -1,7 +1,5 @@
 import os
 
-FRONTEND_URL = os.getenv("VITE_API_URL")
-
 # TEST OR DEV
 DEV = os.getenv("DEV") == "TRUE"
 
@@ -34,16 +32,10 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
 SUPABASE_SERVICE_ROLL_KEY = os.getenv("SUPABASE_SERVICE_ROLL_KEY")
 
-# Stripe
-STRIPE_SECRET_KEY = os.getenv("SANDBOX_STRIPE_SECRET_KEY") if DEV else os.getenv("LIVE_STRIPE_SECRET_KEY")
-STRIPE_PUBLISH_KEY = os.getenv("SANDBOX_STRIPE_PUBLISH_KEY") if DEV else os.getenv("LIVE_STRIPE_PUBLISH_KEY")
-PRICE_ID = os.getenv("SANDBOX_STRIPE_PRICE_ID") if DEV else os.getenv("LIVE_STRIPE_PRICE_ID")
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-
 # RevenueCat (mobile in-app purchases via App Store / Play Store)
 # RevenueCat authenticates webhooks with a static shared secret that we set in
 # the dashboard's webhook "Authorization header" field and compare here — it does
-# not use Stripe-style HMAC signing.
+# not use HMAC signing over the request body.
 REVENUECAT_WEBHOOK_AUTH_TOKEN = (
     os.getenv("SANDBOX_REVENUECAT_WEBHOOK_AUTH_TOKEN")
     if DEV

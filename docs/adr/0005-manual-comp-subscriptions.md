@@ -8,6 +8,6 @@ while the history survives.
 
 ## Consequences
 
-Manual grants deliberately do not touch Stripe or RevenueCat. Revoke is scoped to
-manual rows only: ending a provider-synced row here would simply be recreated by the
-next webhook.
+Manual grants deliberately do not touch RevenueCat. Revoke is scoped to manual rows
+only: ending a provider-synced row here would simply be recreated by the next
+webhook.

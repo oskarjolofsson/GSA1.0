@@ -1,7 +1,7 @@
 """Admin subscription management: list subscribers, search profiles, grant and revoke comps.
 
 A grant is an ordinary billing_subscriptions row with provider="manual"; revoke is
-scoped to manual rows only and never touches Stripe or RevenueCat. See ADR-0005.
+scoped to manual rows only and never touches RevenueCat. See ADR-0005.
 """
 
 from uuid import UUID
@@ -123,7 +123,7 @@ def revoke_manual_subscription(subscription_id: UUID, db_session: Session) -> No
     if subscription.provider != MANUAL_PROVIDER:
         raise exceptions.ConflictException(
             "Only manual subscriptions can be revoked from the admin panel. "
-            "Stripe and RevenueCat subscriptions are managed by the provider."
+            "RevenueCat subscriptions are managed by the store."
         )
 
     billing_subscription_repo.end_subscription(subscription, db_session)

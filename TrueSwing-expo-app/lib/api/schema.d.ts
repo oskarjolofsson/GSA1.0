@@ -181,7 +181,15 @@ export interface paths {
         get: operations["get_issue_api_v1_admin_content_issues__issue_id___get"];
         put?: never;
         post?: never;
-        /** Delete Issue */
+        /**
+         * Delete Issue
+         * @description Delete a catalog issue and everything that depends on it.
+         *
+         *     Refuses with 409 while the issue is still referenced by user data, unless
+         *     `confirm_impact` is set — a mistaken call would otherwise quietly cascade away
+         *     golfers' programs, practice sessions and analysis history. Call the impact
+         *     endpoint first to show the operator what they are about to destroy.
+         */
         delete: operations["delete_issue_api_v1_admin_content_issues__issue_id___delete"];
         options?: never;
         head?: never;
@@ -261,7 +269,13 @@ export interface paths {
         get: operations["get_drill_api_v1_admin_content_drills__drill_id___get"];
         put?: never;
         post?: never;
-        /** Delete Drill */
+        /**
+         * Delete Drill
+         * @description Delete a catalog drill and detach it from every issue that prescribes it.
+         *
+         *     Refuses with 409 while the drill is still referenced, unless `confirm_impact`
+         *     is set; see the impact endpoint for what a confirmed delete would remove.
+         */
         delete: operations["delete_drill_api_v1_admin_content_drills__drill_id___delete"];
         options?: never;
         head?: never;
@@ -434,22 +448,10 @@ export interface paths {
         put?: never;
         /**
          * Create Drill
-         * @description Create a new drill in the global catalog.
+         * @description Create a drill in the global catalog. Admin-only.
          *
-         *     Admin-only: drill_service.create_drill leaves user_id NULL, and a NULL user_id
-         *     means the drill is global. Users author their own drills through
-         *     POST /issues/custom/, which stamps ownership.
-         *
-         *     Arguments (JSON body):
-         *         title (str): Title of the drill
-         *         task (str): Description of the drill task
-         *         success_signal (str): Description of what indicates a successful drill
-         *         fault_indicator (str): Description of what indicates a failed drill
-         *
-         *     Returns:
-         *         JSON response with:
-         *         - success
-         *         - drill_id
+         *     Leaves user_id NULL, which is what makes the drill global. Users author their own
+         *     through POST /issues/custom/, which stamps ownership.
          */
         post: operations["create_drill_api_v1_drills__post"];
         delete?: never;
@@ -568,19 +570,7 @@ export interface paths {
         head?: never;
         /**
          * Update Drill
-         * @description Update an existing drill.
-         *
-         *     Arguments:
-         *         drill_id (UUID): Drill identifier
-         *
-         *     JSON body:
-         *         title (str, optional): Updated title of the drill
-         *         task (str, optional): Updated description of the drill task
-         *         success_signal (str, optional): Updated description of what indicates a successful drill
-         *         fault_indicator (str, optional): Updated description of what indicates a failed drill
-         *
-         *     Returns:
-         *         JSON response with updated drill details
+         * @description Update a drill. All body fields are optional; omitted ones are left alone.
          */
         patch: operations["update_drill_api_v1_drills__drill_id___patch"];
         trace?: never;
@@ -715,7 +705,13 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete User */
+        /**
+         * Delete User
+         * @description Permanently delete a user, in both Supabase auth and the local profile.
+         *
+         *     Self-service or admin-only: deleting anyone other than yourself requires admin
+         *     and is otherwise refused with 403. Not reversible and not a soft delete.
+         */
         delete: operations["delete_user_api_v1_users__user_id___delete"];
         options?: never;
         head?: never;
@@ -745,8 +741,12 @@ export interface paths {
         head?: never;
         /**
          * Run Analysis
-         * @description Confirm that the video upload has completed.
-         *     Now the analysis processing can be triggered.
+         * @description Confirm the video upload finished and start processing the analysis.
+         *
+         *     Owner-scoped: a caller who does not own the analysis is rejected with 403.
+         *
+         *     Only valid while the analysis is in `awaiting_upload`; any other state is
+         *     rejected as an invalid state transition.
          */
         patch: operations["run_analysis_api_v1_analyses__analysis_id___patch"];
         trace?: never;
@@ -886,21 +886,10 @@ export interface paths {
         put?: never;
         /**
          * Create Issue
-         * @description Create a new issue.
+         * @description Create an issue. Only `title` is required.
          *
-         *     Arguments (JSON body):
-         *         title (str): Issue title
-         *         area (str, optional): Area of the game (FULL_SWING, CHIPPING, PUTTING, BUNKER, PITCHING)
-         *         kind (str, optional): 'fault' (default) or 'skill'
-         *         current_motion (str, optional): Current motion description
-         *         expected_motion (str, optional): Expected motion description
-         *         swing_effect (str, optional): Effect on swing
-         *         shot_outcome (str, optional): Expected shot outcome
-         *         layman_title/layman_desc (str, optional): Plain-language browse copy
-         *         misses (list[str], optional): Ball-flight miss tags
-         *         goals (list[str], optional): Goal tags
-         *
-         *     Unknown area/kind/tag values return 422. Allowed values: GET /api/v1/taxonomy/.
+         *     Unknown area, kind or tag values return 422; GET /api/v1/taxonomy/ lists what is
+         *     allowed.
          */
         post: operations["create_issue_api_v1_issues__post"];
         delete?: never;
@@ -1109,28 +1098,10 @@ export interface paths {
         head?: never;
         /**
          * Update Issue
-         * @description Update an existing issue.
+         * @description Update an existing issue. All body fields are optional.
          *
-         *     Arguments:
-         *         issue_id (UUID): Issue identifier
-         *
-         *     Arguments (JSON body):
-         *         title (str, optional): Issue title
-         *         area (str, optional): Area of the game
-         *         kind (str, optional): 'fault' or 'skill'
-         *         current_motion (str, optional): Current motion description
-         *         expected_motion (str, optional): Expected motion description
-         *         swing_effect (str, optional): Effect on swing
-         *         shot_outcome (str, optional): Expected shot outcome
-         *         layman_title/layman_desc (str, optional): Plain-language browse copy
-         *         misses (list[str], optional): Miss tags. Replaces the set; omit to leave
-         *             tags alone, pass [] to remove them all.
-         *         goals (list[str], optional): Goal tags, same replace semantics.
-         *
-         *     Unknown area/kind/tag values return 422.
-         *
-         *     Returns:
-         *         JSON response with updated issue details
+         *     `misses` and `goals` replace the whole set: omit one to leave its tags alone, pass []
+         *     to clear them. Unknown area, kind or tag values return 422.
          */
         patch: operations["update_issue_api_v1_issues__issue_id___patch"];
         trace?: never;
@@ -1290,19 +1261,11 @@ export interface paths {
         put?: never;
         /**
          * Start Practice Session
-         * @description Start a new practice session for the current user.
+         * @description Start a practice session for the current user.
          *
-         *     The session is stamped with the practised issue's area, so the contribution graph
-         *     can colour it. Sending neither id leaves it unattributed, which is a real state for
-         *     free practice -- never an error, because the session still happened.
-         *
-         *     Arguments (JSON body):
-         *         issue_id (UUID, optional): The issue being practised. Preferred: it is the only
-         *             one that works for library-started issues, which have no AnalysisIssue.
-         *         analysis_issue_id (UUID, optional): Link to a specific analysis issue
-         *
-         *     Returns:
-         *         JSON response with practice session details
+         *     Send `issue_id` where possible — it is the only one that works for library-started
+         *     issues, which have no AnalysisIssue; `analysis_issue_id` is the older path. Sending
+         *     neither leaves the session unattributed, which is a real state for free practice.
          */
         post: operations["start_practice_session_api_v1_practice_sessions_start__post"];
         delete?: never;
@@ -1448,23 +1411,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/webhook/stripe/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Stripe */
-        post: operations["stripe_api_v1_webhook_stripe__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/webhook/revenuecat/": {
         parameters: {
             query?: never;
@@ -1474,42 +1420,17 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Revenuecat */
+        /**
+         * Revenuecat
+         * @description Receive RevenueCat subscription lifecycle events for mobile purchases.
+         *
+         *     RevenueCat delivers both SANDBOX and PRODUCTION events to every configured
+         *     webhook, so sandbox test purchases arrive here too; events from the other
+         *     environment are recorded as processed and otherwise ignored. Event ids are
+         *     namespaced by provider before the idempotency check, so a provider's id can
+         *     never collide with another's in the shared table.
+         */
         post: operations["revenuecat_api_v1_webhook_revenuecat__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/billing/checkout-session/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Checkout Session */
-        post: operations["checkout_session_api_v1_billing_checkout_session__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/billing/portal/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Portal */
-        get: operations["portal_api_v1_billing_portal__get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1523,7 +1444,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Status */
+        /**
+         * Status
+         * @description Everything the client needs to decide what a user may access and what to render.
+         *
+         *     `can_access_premium` is the flag to gate features on — it is true for both paying
+         *     subscribers and users still inside the 7-day free tier, so callers should not try
+         *     to recombine `is_subscribed` and `has_free_tier` themselves. `subscription` is
+         *     None when the user has never subscribed.
+         */
         get: operations["status_api_v1_billing_status_get"];
         put?: never;
         post?: never;
@@ -1544,19 +1473,12 @@ export interface paths {
          * Get Activity
          * @description Per-day, per-area activity counts for the contribution graph.
          *
-         *     Sums completed practice sessions and completed successful analyses, grouped by
-         *     calendar day in `tz` AND by area, so the graph can stack a bunker session against a
-         *     range session. A day with two areas returns two rows; a client that only wants the
-         *     old "did anything happen" answer sums them.
+         *     Sums completed practice sessions and successful analyses, grouped by calendar day in
+         *     `tz` and by area, so a day with two areas returns two rows. `area` is null for
+         *     unattributed activity — free practice, and anything predating per-area sessions.
          *
-         *     `area` is null for unattributed activity: free practice with no issue behind it, and
-         *     anything created before sessions carried an area.
-         *
-         *     `from_date`/`to_date` bound the range, both inclusive and both optional. Omitting
-         *     them returns the user's whole history, which is what this endpoint did before it
-         *     could be bounded. `from_date` after `to_date` is a 422 rather than an empty list --
-         *     an empty graph reads as "you did no practice", which the caller cannot tell from a
-         *     range it got backwards.
+         *     `from_date`/`to_date` are inclusive and optional; omitting both returns all history.
+         *     A backwards range is a 422, not an empty list, which would read as "you did nothing".
          */
         get: operations["get_activity_api_v1_activity__get"];
         put?: never;
@@ -1603,10 +1525,34 @@ export interface paths {
          * @description Generate (or return the existing) active program.
          *
          *     Accepts either analysis_issue_id (AI path) or issue_id (coach/browse path).
-         *     Idempotent: re-calling with the same issue returns the active program rather
-         *     than creating a duplicate.
+         *     Idempotent from both: re-calling for an issue you are already grooving returns that
+         *     program rather than creating a duplicate or refusing.
          */
         post: operations["generate_program_api_v1_programs_generate__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/programs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Programs
+         * @description Every program the golfer currently has open, each with its next session inline.
+         *
+         *     A golfer may hold up to two active programs per area of the game, so this replaces
+         *     the old single-focus view. Scoped entirely by the authenticated user -- this route
+         *     takes no ids from the client, so there is nothing to tamper with.
+         */
+        get: operations["list_programs_api_v1_programs__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1622,9 +1568,12 @@ export interface paths {
         };
         /**
          * Get Active Program
-         * @description Get the current user's active program for the given analysis_issue_id or
-         *     issue_id, or their most recent active program if neither is specified.
-         *     Returns null if none.
+         * @description Get the current user's active program for the given analysis_issue_id or issue_id.
+         *     Returns null if there is none.
+         *
+         *     One of the two ids is required. Asking for "the" active program without saying which
+         *     stopped being a meaningful question once a golfer could hold several; use GET
+         *     /programs/ for the whole set.
          */
         get: operations["get_active_program_api_v1_programs_active__get"];
         put?: never;
@@ -2217,6 +2166,11 @@ export interface components {
              * @default 0
              */
             untagged_issues: number;
+            /**
+             * Goalless Skill Issues
+             * @default 0
+             */
+            goalless_skill_issues: number;
         };
         /** CreateAdminDrillRequest */
         CreateAdminDrillRequest: {
@@ -2923,6 +2877,13 @@ export interface components {
             grooved_count: number;
             /** Total Drills */
             total_drills: number;
+            /** Area */
+            area?: string | null;
+            /**
+             * Slot
+             * @default 0
+             */
+            slot: number;
             /** Steps */
             steps: components["schemas"]["ProgramStepResponse"][];
         };
@@ -2955,6 +2916,51 @@ export interface components {
              * @default []
              */
             drills: components["schemas"]["StepDrillResponse"][];
+        };
+        /**
+         * ProgramSummaryResponse
+         * @description One program as it appears in the list of everything the golfer has open.
+         *
+         *     Carries `next_step` inline so rendering the whole slate is a single request, and omits
+         *     `steps` because nothing displays a program's full history there -- sending it would
+         *     grow the payload with every session completed.
+         */
+        ProgramSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** Analysis Issue Id */
+            analysis_issue_id: string | null;
+            /** Issue Id */
+            issue_id: string | null;
+            /** Title */
+            title: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Grooved Count */
+            grooved_count: number;
+            /** Total Drills */
+            total_drills: number;
+            /** Area */
+            area?: string | null;
+            /**
+             * Slot
+             * @default 0
+             */
+            slot: number;
+            next_step?: components["schemas"]["ProgramStepResponse"] | null;
         };
         /** SetUserRoleRequest */
         SetUserRoleRequest: {
@@ -5712,104 +5718,11 @@ export interface operations {
             };
         };
     };
-    stripe_api_v1_webhook_stripe__post: {
-        parameters: {
-            query?: never;
-            header: {
-                "Stripe-Signature": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     revenuecat_api_v1_webhook_revenuecat__post: {
         parameters: {
             query?: never;
             header?: {
                 Authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    checkout_session_api_v1_billing_checkout_session__post: {
-        parameters: {
-            query?: never;
-            header: {
-                authorization: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    portal_api_v1_billing_portal__get: {
-        parameters: {
-            query?: never;
-            header: {
-                authorization: string;
             };
             path?: never;
             cookie?: never;
@@ -5963,6 +5876,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProgramResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_programs_api_v1_programs__get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgramSummaryResponse"][];
                 };
             };
             /** @description Validation Error */
