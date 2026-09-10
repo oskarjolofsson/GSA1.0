@@ -47,21 +47,13 @@ SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLL_KEY=
 
-# Stripe (optional for local dev — only needed to exercise billing)
-SANDBOX_STRIPE_SECRET_KEY=
-SANDBOX_STRIPE_PUBLISH_KEY=
-SANDBOX_STRIPE_PRICE_ID=
-LIVE_STRIPE_SECRET_KEY=
-LIVE_STRIPE_PUBLISH_KEY=
-STRIPE_WEBHOOK_SECRET=
-
 # RevenueCat (optional for local dev — only needed to exercise mobile billing)
 SANDBOX_REVENUECAT_WEBHOOK_AUTH_TOKEN=
 LIVE_REVENUECAT_WEBHOOK_AUTH_TOKEN=
 ```
 
-The Stripe and RevenueCat groups are optional for a plain local boot. Everything
-above them is required.
+The RevenueCat group is optional for a plain local boot. Everything above it is
+required.
 
 ## Tests
 

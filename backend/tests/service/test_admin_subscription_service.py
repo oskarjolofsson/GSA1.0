@@ -76,12 +76,12 @@ def test_list_excludes_expired_sub(test_user, db_session):
     customer = billing_customer_repo.create_billing_customer(
         user_id=test_user["user_id"],
         customer_id=f"cus_test_{uuid.uuid4().hex[:12]}",
-        provider="stripe",
+        provider="revenuecat",
         session=db_session,
     )
     billing_subscription_repo.upsert_subscription(
         billing_customer_id=customer.id,
-        provider="stripe",
+        provider="revenuecat",
         external_subscription_id=f"sub_test_{uuid.uuid4().hex[:12]}",
         external_price_id="price_test",
         status="active",

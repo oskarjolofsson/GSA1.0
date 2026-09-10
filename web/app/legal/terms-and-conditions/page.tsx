@@ -6,11 +6,6 @@ export const metadata: Metadata = buildMetadata("/legal/terms-and-conditions");
 
 /**
  * The published terms, not a summary — edit the wording here.
- *
- * KNOWN INACCURACY: "Payments, Subscriptions & Refunds" describes True Swing
- * charging a payment method directly and cancellation via account settings, which
- * is web/Stripe only. Mobile purchases now go through RevenueCat, where Apple and
- * Google own billing, cancellation and refunds. Tracked separately.
  */
 export default function TermsAndConditionsPage() {
   return (
@@ -68,13 +63,13 @@ export default function TermsAndConditionsPage() {
 
       <LegalSection
         subheader="Payments, Subscriptions & Refunds"
-        text={`Certain features of True Swing require a paid subscription or one-time purchase. By subscribing, you authorize True Swing (or its payment provider) to charge your selected payment method on a recurring basis, depending on your chosen plan (monthly or yearly).`}
+        text={`Paid features of True Swing are sold as auto-renewing subscriptions through the Apple App Store and Google Play. Apple or Google is the merchant of record: they take the payment, hold the payment method, and process any refund. True Swing never receives or stores your card details.`}
         points={[
-          "All prices are displayed in your Euros and include applicable taxes unless stated otherwise.",
-          "Subscription plans renew automatically at the end of each billing period unless cancelled prior to renewal.",
-          "You may cancel your subscription at any time via your account settings. Access will remain active until the end of the current billing period.",
-          "Payments are non-refundable, except where required by law or explicitly stated otherwise in promotional terms.",
-          "In case of failed payments, True Swing reserves the right to suspend or terminate access until payment is successfully processed.",
+          "Prices are shown in the App Store or Google Play at purchase, in your local currency, including applicable taxes.",
+          "Subscriptions renew automatically at the end of each billing period unless cancelled at least 24 hours before renewal.",
+          "Cancel at any time in your App Store or Google Play subscription settings — not in True Swing, which cannot cancel or refund on your behalf. Access remains active until the end of the paid period.",
+          "Refunds are handled by Apple or Google under their policies. Direct refund requests to them.",
+          "If a renewal payment fails, the store may suspend the subscription and access to paid features ends.",
         ]}
       />
     </main>

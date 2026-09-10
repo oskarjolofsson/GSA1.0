@@ -33,7 +33,6 @@ class BillingSubscription(Base):
     provider: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-        server_default="stripe",
     )
 
     external_subscription_id: Mapped[str] = mapped_column(

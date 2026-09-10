@@ -12,14 +12,14 @@ class RevenueCatWebhookVerifier:
     """Verifies the static Authorization header RevenueCat sends with each webhook
     and unwraps the `{ "event": {...} }` envelope into a typed event.
 
-    RevenueCat does not sign payloads (no HMAC like Stripe). Instead you configure
+    RevenueCat does not sign payloads (no HMAC over the body). Instead you configure
     a fixed Authorization header value in the dashboard and it is replayed on every
     request; we compare it in constant time against the configured secret.
     """
 
     def __init__(self, expected_token: str | None = None):
         # Read lazily from config when not injected so tests can monkeypatch the
-        # module-level token the same way the Stripe verifier is patched.
+        # module-level token rather than reading config at import time.
         self._expected_token = expected_token
 
     def _token(self) -> str | None:

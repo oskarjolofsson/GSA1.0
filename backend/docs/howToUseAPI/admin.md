@@ -15,6 +15,9 @@ All routes are under `/api/v1/admin` and require a bearer token. See
 | GET | `/api/v1/admin/verify/` | 🔓 User | Is the current user an admin? |
 | GET | `/api/v1/admin/stats/` | 🛡 Admin | Dashboard statistics |
 
+Admin-granted (comp) subscriptions live under `/api/v1/admin/subscriptions` and are
+documented separately: [Manual comps](./payment/manual-comp-subscriptions.md).
+
 ---
 
 ## 2. `GET /api/v1/admin/verify/` 🔓
@@ -52,4 +55,5 @@ Counts for the admin dashboard overview:
 `verify/` is the gate the client uses to reveal admin features; `stats/` is the
 at-a-glance health and growth view of the catalog and user base. The data-management
 itself lives in the [issues](./issues.md), [drills](./drills.md), and
-[issue–drill mappings](./issue-drills.md) APIs.
+[issue–drill mappings](./issue-drills.md) APIs, and giving a person a free
+subscription lives in [manual comps](./payment/manual-comp-subscriptions.md).

@@ -1,7 +1,6 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.infrastructure.payment.stripe.exceptions import StripeInfrastructureError
 from core.infrastructure.payment.revenuecat.exceptions import RevenueCatWebhookVerificationError
 from app.core.version import __version__, GIT_COMMIT
 
@@ -61,7 +60,6 @@ def create_app() -> FastAPI:
         invalid_video_exception_handler,
         forbidden_exception_handler,
         unauthorized_exception_handler,
-        stripe_infrastructure_exception_handler,
         revenuecat_webhook_verification_exception_handler,
         conflict_exception_handler
     )
@@ -75,7 +73,6 @@ def create_app() -> FastAPI:
     app.add_exception_handler(InvalidVideoException, invalid_video_exception_handler)
     app.add_exception_handler(ForbiddenException, forbidden_exception_handler)
     app.add_exception_handler(UnauthorizedException, unauthorized_exception_handler)
-    app.add_exception_handler(StripeInfrastructureError,stripe_infrastructure_exception_handler)
     app.add_exception_handler(RevenueCatWebhookVerificationError, revenuecat_webhook_verification_exception_handler)
     app.add_exception_handler(ConflictException, conflict_exception_handler)
 

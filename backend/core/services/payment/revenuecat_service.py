@@ -1,10 +1,10 @@
 """RevenueCat webhook ingestion (mobile App Store / Play Store IAP).
 
-RevenueCat is a second billing *provider* alongside Stripe. Mobile purchases made
-in the Expo app flow App Store / Play Store -> RevenueCat -> this webhook, and we
-fold them into the same provider-agnostic `billing_customers` / `billing_subscriptions`
-tables the Stripe path already writes. Entitlement (`entitlement_service`) then
-counts any active subscription across providers, so no entitlement change is needed.
+RevenueCat is the billing *provider* for every purchase. A purchase made in the
+Expo app flows App Store / Play Store -> RevenueCat -> this webhook, and we fold it
+into the provider-agnostic `billing_customers` / `billing_subscriptions` tables.
+Entitlement (`entitlement_service`) counts any active subscription across providers,
+so a manual comp (provider="manual") grants access through the same path.
 
 Identity: the mobile app sets RevenueCat `appUserID = supabase user.id` after login,
 so every event carries our user id in `app_user_id` (and `aliases`). We map straight
@@ -57,7 +57,7 @@ async def handle_revenuecat_webhook(
     )
 
     # Namespace the idempotency key so a RevenueCat event id can never collide with
-    # a Stripe event id in the shared processed_webhook_events table.
+    # another provider's event id in the shared processed_webhook_events table.
     idempotency_key = f"{PROVIDER}:{event_dto.event_id}"
     if processed_webhook_repo.exists(idempotency_key, db_session):
         return
@@ -169,7 +169,7 @@ def _handle_transfer(event: dict, db_session: Session) -> None:
 
 
 def _derive_status_fields(event_type: str, event: dict) -> dict:
-    """Map a RevenueCat event onto the Stripe-shaped status fields the schema uses.
+    """Map a RevenueCat event onto the status fields the billing schema uses.
 
     The derived `status` must land inside ACTIVE_SUBSCRIPTION_STATUSES
     (trialing / active / past_due / unpaid) for the row to grant entitlement.
@@ -206,7 +206,7 @@ def _derive_status_fields(event_type: str, event: dict) -> dict:
         return fields
 
     if event_type == "BILLING_ISSUE":
-        # Grace/billing-retry period — still entitled, matches Stripe past_due.
+        # Grace/billing-retry period — still entitled, recorded as past_due.
         fields["status"] = "past_due"
         return fields
 

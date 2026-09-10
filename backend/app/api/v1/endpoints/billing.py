@@ -3,53 +3,13 @@ from sqlalchemy.orm import Session
 
 from app.dependencies.auth import get_current_user
 from app.dependencies.db import get_db
-from core.services.payment import billing_service, entitlement_service
+from core.services.payment import entitlement_service
 from uuid import UUID
 
 
 router = APIRouter()
 
 
-@router.post("/checkout-session/")
-async def checkout_session(
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """
-    Open a Stripe Checkout session for a web subscription.
-
-    Refuses with 409 if the user already has an active subscription with **any**
-    provider, including a mobile one bought through RevenueCat. Mobile purchases
-    happen on the store and cannot be intercepted here, but they land in
-    `billing_subscriptions` via the RevenueCat webhook, so this is where the
-    double-subscription is caught.
-    """
-    checkout_url = await billing_service.start_subscription_checkout(
-        user_id=UUID(current_user["user_id"]),
-        db_session=db,
-    )
-    return {"checkout_url": checkout_url}
-    
-    
-@router.get("/portal/")
-async def portal(
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """
-    Open the Stripe customer portal, where a web subscriber manages their plan.
-
-    Stripe-only: a RevenueCat (mobile) subscription is managed in the App Store or
-    Play Store and the portal cannot touch it. Check `provider` on the status
-    endpoint before sending a user here.
-    """
-    portal_url = await billing_service.create_customer_portal(
-        user_id=UUID(current_user["user_id"]),
-        db_session=db,
-    )
-    return {"portal_url": portal_url}
-    
-    
 @router.get("/status")
 def status(
     current_user: dict = Depends(get_current_user),

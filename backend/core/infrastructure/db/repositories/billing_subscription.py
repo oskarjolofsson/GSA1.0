@@ -16,7 +16,7 @@ ACTIVE_SUBSCRIPTION_STATUSES = ("trialing", "active", "past_due", "unpaid")
 # current_period_end). NOT counted as "currently valid" by the admin grant-guard.
 GRACE_SUBSCRIPTION_STATUSES = ("past_due", "unpaid")
 
-# Manual comp grants created by an admin. Not backed by Stripe/RevenueCat, so
+# Manual comp grants created by an admin. Not backed by RevenueCat, so
 # there is nothing to charge and no external system to keep in sync.
 MANUAL_PROVIDER = "manual"
 MANUAL_PRICE_ID = "manual_comp"

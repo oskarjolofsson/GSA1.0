@@ -20,8 +20,8 @@ All endpoints are mounted under `/api/v1`.
 | [Feedback](./feedback.md) | `/api/v1/feedback` | User-submitted app feedback |
 | [Users](./users.md) | `/api/v1/users` | Account listing (admin) and account deletion |
 | [Admin](./admin.md) | `/api/v1/admin` | Admin dashboard stats and admin check |
-| [Payment — Stripe (web)](./payment/stripe-frontend-integration.md) | `/api/v1/billing` | Web subscriptions via Stripe |
 | [Payment — RevenueCat (mobile)](./payment/revenuecat-integration.md) | `/api/v1/billing`, `/api/v1/webhook/revenuecat` | Mobile subscriptions via App Store / Play Store |
+| [Payment — Manual comps](./payment/manual-comp-subscriptions.md) | `/api/v1/admin/subscriptions` | Admin-granted subscriptions (no charge) |
 
 ## Authentication & access levels
 

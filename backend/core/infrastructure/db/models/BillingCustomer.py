@@ -25,7 +25,6 @@ class BillingCustomer(Base):
     provider: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-        server_default="stripe",
     )
 
     customer_id: Mapped[str] = mapped_column(

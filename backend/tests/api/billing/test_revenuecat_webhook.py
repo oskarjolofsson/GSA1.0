@@ -2,8 +2,7 @@
 
 Drives JSON RevenueCat events through the HTTP endpoint -> auth verification ->
 revenuecat_service -> provider-agnostic billing repos -> real DB, then asserts the
-rows and the entitlement/status surface. Mirrors test_webhook_integration.py for
-the Stripe path.
+rows and the entitlement/status surface.
 """
 
 import pytest
