@@ -4,6 +4,9 @@ import pytest
 from sqlalchemy import text
 from supabase_auth.errors import AuthApiError
 
+from supabase import create_client
+
+from core.config import SUPABASE_URL, SUPABASE_ANON_KEY
 from core.infrastructure.db.engine import engine
 
 from core.infrastructure.db.repositories import profiles
@@ -207,3 +210,107 @@ def test_deleting_the_same_user_twice_reports_not_found(
 
     second = client.delete(f"/api/v1/users/{user_id}/", headers=disposable_auth_headers)
     assert second.status_code == 404
+
+
+# A service-role key that is missing or wrong makes Supabase answer 403 not_admin,
+# which must never be read as "the user is already gone". Reading it that way is
+# how an account ends up with no profile and a live auth row.
+def test_a_powerless_key_does_not_delete_the_profile(
+    disposable_user, disposable_auth_headers, client, monkeypatch
+):
+    user_id = str(disposable_user["user_id"])
+    powerless = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    monkeypatch.setattr(user_service, "_admin_client", lambda: powerless)
+
+    response = client.delete(f"/api/v1/users/{user_id}/", headers=disposable_auth_headers)
+    assert response.status_code >= 400
+
+    with engine.connect() as connection:
+        assert connection.execute(
+            text("SELECT 1 FROM profiles WHERE id = :id"), {"id": user_id}
+        ).first() is not None
+
+
+# The other half of the retry story: Supabase says the auth user is already gone,
+# but the profile row is still here. That state must reconcile to a clean delete,
+# not a dead end -- it is what a half-finished delete leaves behind.
+def test_delete_reconciles_a_profile_whose_auth_user_is_already_gone(
+    disposable_user, disposable_auth_headers, client, db_session, monkeypatch
+):
+    user_id = str(disposable_user["user_id"])
+
+    class _AlreadyGoneAdmin:
+        def delete_user(self, uid, should_soft_delete=False):
+            raise AuthApiError("User not found", 404, "user_not_found")
+
+        def get_user_by_id(self, uid):
+            raise AuthApiError("User not found", 404, "user_not_found")
+
+    class _FakeClient:
+        auth = type("_Auth", (), {"admin": _AlreadyGoneAdmin()})()
+
+    monkeypatch.setattr(user_service, "_admin_client", lambda: _FakeClient())
+
+    response = client.delete(f"/api/v1/users/{user_id}/", headers=disposable_auth_headers)
+    assert response.status_code == 204
+
+    # Asserted through the request's own session: Supabase was stubbed here, so no
+    # cascade ran outside the test transaction and only this session can see it.
+    assert profiles.get_profile_by_id(user_id, db_session) is None
+
+
+# The new cascades reach issues and drills, which are globally readable rows. This
+# pins the blast radius: deleting their author must not take out work that belongs
+# to somebody else.
+def test_deleting_a_user_leaves_another_users_program_alone(
+    disposable_user, disposable_auth_headers, client, test_user
+):
+    author_id = str(disposable_user["user_id"])
+    other_id = str(test_user["user_id"])
+    issue_id, drill_id, program_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO issues (id, title, description, source, user_id) "
+                "VALUES (:id, 'Authored by the deleted user', 'd', 'custom', :user_id)"
+            ),
+            {"id": str(issue_id), "user_id": author_id},
+        )
+        connection.execute(
+            text(
+                "INSERT INTO drills (id, title, task, success_signal, fault_indicator, user_id) "
+                "VALUES (:id, 'Authored by the deleted user', 't', 's', 'f', :user_id)"
+            ),
+            {"id": str(drill_id), "user_id": author_id},
+        )
+        connection.execute(
+            text(
+                "INSERT INTO programs (id, user_id, title, status) "
+                "VALUES (:id, :user_id, 'Other user program', 'active')"
+            ),
+            {"id": str(program_id), "user_id": other_id},
+        )
+
+    try:
+        response = client.delete(f"/api/v1/users/{author_id}/", headers=disposable_auth_headers)
+        assert response.status_code == 204
+
+        with engine.connect() as connection:
+            # The author's content went with them...
+            assert connection.execute(
+                text("SELECT 1 FROM issues WHERE id = :id"), {"id": str(issue_id)}
+            ).first() is None
+            assert connection.execute(
+                text("SELECT 1 FROM drills WHERE id = :id"), {"id": str(drill_id)}
+            ).first() is None
+            # ...and the other user's program did not.
+            assert connection.execute(
+                text("SELECT 1 FROM programs WHERE id = :id"), {"id": str(program_id)}
+            ).first() is not None
+    finally:
+        with engine.begin() as connection:
+            connection.execute(
+                text("DELETE FROM programs WHERE id = :id"), {"id": str(program_id)}
+            )

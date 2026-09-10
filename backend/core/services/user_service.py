@@ -126,7 +126,9 @@ def delete_user_by_user_id(user_id: str, user_id_to_delete: str, db_session: Ses
         # Already gone: a retry of a delete that half-succeeded must still be able
         # to clear the profile row below, so this is not a failure.
         if not _is_user_not_found(error):
-            raise
+            raise exceptions.ServiceException(
+                f"Supabase refused to delete auth user {profile_id}: {error}"
+            ) from error
 
     if _auth_user_exists(admin, profile_id):
         # Conflict rather than a bare 500: the admin gets the reason verbatim, and
@@ -151,17 +153,32 @@ def _admin_client() -> Client:
 
 
 def _auth_user_exists(admin, user_id: str) -> bool:
+    """True unless Supabase positively reports the user as absent.
+
+    Any other error is treated as "still there": the caller then refuses to touch
+    the profile, which is the safe direction when the answer is unknown.
+    """
     try:
         admin.get_user_by_id(user_id)
     except AuthApiError as error:
         if _is_user_not_found(error):
             return False
-        raise
+        raise exceptions.ServiceException(
+            f"Supabase could not confirm whether auth user {user_id} still exists: {error}"
+        ) from error
     return True
 
 
 def _is_user_not_found(error: AuthApiError) -> bool:
-    return getattr(error, "status", None) in (403, 404)
+    """Only a genuine "no such user" counts as already deleted.
+
+    403 is not_admin -- a missing or wrong service-role key. Reading it as
+    "already gone" would delete the profile of an account that still signs in,
+    which is the failure this whole path exists to prevent.
+    """
+    return getattr(error, "code", None) == "user_not_found" or (
+        getattr(error, "status", None) == 404
+    )
 
 
 # -------- Helper functions --------

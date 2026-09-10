@@ -40,9 +40,11 @@ def _all_auth_users(admin) -> list:
     page = 1
     while True:
         batch = admin.list_users(page=page, per_page=PAGE_SIZE)
-        if not batch:
-            return users
         users.extend(batch)
+        # A short page is the last one. Stopping only on an empty page would spin
+        # forever if the API ever repeated a full page.
+        if len(batch) < PAGE_SIZE:
+            return users
         page += 1
 
 
@@ -71,6 +73,15 @@ def main() -> None:
 
     if not apply:
         print("\ndry run — re-run with --apply to delete the accounts listed above")
+        return
+
+    # Deleting an auth account is irreversible, so --apply alone is not enough:
+    # the operator has to retype the count they just read, against the project
+    # named above.
+    answer = input(f"\ndelete these {len(orphans)} accounts from {SUPABASE_URL}? "
+                   f"type the number to confirm: ").strip()
+    if answer != str(len(orphans)):
+        print("not confirmed — nothing deleted")
         return
 
     for user in orphans:

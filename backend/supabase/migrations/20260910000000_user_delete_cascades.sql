@@ -49,3 +49,13 @@ alter table public.drills
   foreign key (user_id) references auth.users (id) on delete cascade;
 
 commit;
+
+-- Rollback (Supabase has no down-migrations; hand-written as in 20260802010000).
+-- Restores the constraints as they were. The rows deleted above are NOT restored
+-- by this -- they had no owner left, so recovering them needs a point-in-time
+-- restore:
+--   ALTER TABLE public.programs DROP CONSTRAINT IF EXISTS programs_user_id_fkey;
+--   ALTER TABLE public.programs ADD CONSTRAINT programs_user_id_fkey
+--     FOREIGN KEY (user_id) REFERENCES auth.users (id);
+--   ALTER TABLE public.issues DROP CONSTRAINT IF EXISTS issues_user_id_fkey;
+--   ALTER TABLE public.drills DROP CONSTRAINT IF EXISTS drills_user_id_fkey;
