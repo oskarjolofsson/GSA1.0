@@ -8,7 +8,7 @@ from core.infrastructure.db.repositories.profiles import (
     get_profile_count,
     get_profile_by_id,
     search_profiles,
-    delete_profile
+    delete_profile_by_id
 )
 from core.infrastructure.db.repositories import user_roles as user_roles_repo
 from core.infrastructure.db.repositories.analysis import get_analysis_counts_by_user_ids
@@ -16,7 +16,10 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from datetime import datetime, timezone, timedelta
 from supabase import create_client, Client
+from supabase_auth.errors import AuthApiError
 from core.config import SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLL_KEY
+
+_ADMIN_CLIENT: Client | None = None
 
 
 def get_all_users(session: Session, *, limit: int, offset: int) -> PageDTO[GetUserDTO]:
@@ -93,17 +96,72 @@ def set_admin(user_id: str, set_to_admin: bool, session: Session) -> None:
         
         
 def delete_user_by_user_id(user_id: str, user_id_to_delete: str, db_session: Session):
+    """Delete an account: the Supabase auth user first, its profile only after.
+
+    The two live in different systems and no transaction spans them, so the order
+    and the verification below are the whole safety story. `profiles.id` is
+    REFERENCES auth.users(id) ON DELETE CASCADE, which means a successful auth
+    delete has already removed the profile row -- the profile delete here is only
+    a reconciliation for the case where it somehow survived, and is idempotent so
+    the ordinary path (row already gone) is not an error.
+
+    The profile is NEVER removed while the auth user still exists. An auth row
+    without a profile is invisible to the admin panel (which lists profiles) yet
+    still signs in, and handle_new_user only fires on INSERT into auth.users, so
+    such an account can never be recovered or administered again.
+    """
     if str(user_id) != str(user_id_to_delete) and not is_admin(user_id, db_session):
         raise exceptions.ForbiddenException(f"User not authorized to delete another user")
-    
+
     user_to_delete = get_profile_by_id(str(user_id_to_delete), db_session)
     if not user_to_delete:
         raise exceptions.NotFoundException("Profile not found", str(user_id_to_delete))
-    
-    admin_client: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLL_KEY)
-    admin_client.auth.admin.delete_user(str(user_to_delete.id))
-    
-    delete_profile(user_to_delete, db_session)
+
+    profile_id = str(user_to_delete.id)
+    admin = _admin_client().auth.admin
+
+    try:
+        admin.delete_user(profile_id)
+    except AuthApiError as error:
+        # Already gone: a retry of a delete that half-succeeded must still be able
+        # to clear the profile row below, so this is not a failure.
+        if not _is_user_not_found(error):
+            raise
+
+    if _auth_user_exists(admin, profile_id):
+        # Conflict rather than a bare 500: the admin gets the reason verbatim, and
+        # the reason is the whole point -- the account is intact, not half-deleted.
+        raise exceptions.ConflictException(
+            f"Supabase still reports auth user {profile_id} after the delete call. "
+            f"The profile was left in place so the account stays administrable."
+        )
+
+    # Detach the ORM object the cascade has most likely already deleted, then issue
+    # an unconditional DELETE that tolerates zero matched rows.
+    db_session.expunge(user_to_delete)
+    delete_profile_by_id(profile_id, db_session)
+
+
+def _admin_client() -> Client:
+    """The service-role client, built once per process rather than per delete."""
+    global _ADMIN_CLIENT
+    if _ADMIN_CLIENT is None:
+        _ADMIN_CLIENT = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLL_KEY)
+    return _ADMIN_CLIENT
+
+
+def _auth_user_exists(admin, user_id: str) -> bool:
+    try:
+        admin.get_user_by_id(user_id)
+    except AuthApiError as error:
+        if _is_user_not_found(error):
+            return False
+        raise
+    return True
+
+
+def _is_user_not_found(error: AuthApiError) -> bool:
+    return getattr(error, "status", None) in (403, 404)
 
 
 # -------- Helper functions --------

@@ -1,5 +1,11 @@
 import uuid
 
+import pytest
+from sqlalchemy import text
+from supabase_auth.errors import AuthApiError
+
+from core.infrastructure.db.engine import engine
+
 from core.infrastructure.db.repositories import profiles
 from core.infrastructure.db import models
 from core.services import user_service
@@ -103,3 +109,101 @@ def test_delete_user(disposable_user, db_session, disposable_auth_headers, clien
     # Make sure profile is not present anymore
     profile: models.Profile = profiles.get_profile_by_id(disposable_user["user_id"], db_session)
     assert profile is None
+
+
+# Deleting an account must remove the Supabase auth row, not only the profile.
+# A surviving auth row is invisible in the admin panel (which lists profiles) yet
+# still signs in — handle_new_user fires on INSERT into auth.users, so the profile
+# is never recreated and the account is unreachable for administration.
+def test_delete_user_removes_auth_row(
+    disposable_user, disposable_auth_headers, client, supabase_admin_client
+):
+    user_id = str(disposable_user["user_id"])
+
+    response = client.delete(f"/api/v1/users/{user_id}/", headers=disposable_auth_headers)
+    assert response.status_code == 204
+
+    with pytest.raises(AuthApiError):
+        supabase_admin_client.auth.admin.get_user_by_id(user_id)
+
+
+# Real accounts own programs. Every other user-scoped table cascades off
+# auth.users, so the auth delete must not be blocked by one that does not.
+def test_delete_user_with_a_program(
+    disposable_user, disposable_auth_headers, client, supabase_admin_client
+):
+    user_id = str(disposable_user["user_id"])
+    program_id = uuid.uuid4()
+
+    # Committed outside db_session on purpose: the rows the auth delete has to
+    # cascade through must be visible to GoTrue's own transaction.
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "INSERT INTO programs (id, user_id, title, status) "
+                "VALUES (:id, :user_id, 'Groove the takeaway', 'active')"
+            ),
+            {"id": str(program_id), "user_id": user_id},
+        )
+
+    try:
+        response = client.delete(f"/api/v1/users/{user_id}/", headers=disposable_auth_headers)
+        assert response.status_code == 204
+
+        with pytest.raises(AuthApiError):
+            supabase_admin_client.auth.admin.get_user_by_id(user_id)
+
+        with engine.connect() as connection:
+            assert connection.execute(
+                text("SELECT 1 FROM programs WHERE id = :id"), {"id": str(program_id)}
+            ).first() is None
+    finally:
+        with engine.begin() as connection:
+            connection.execute(
+                text("DELETE FROM programs WHERE id = :id"), {"id": str(program_id)}
+            )
+
+
+# The invariant that makes an orphan account impossible: the profile row is the
+# only trace the admin panel can see, so it must never be dropped unless the auth
+# row is confirmed gone. Supabase is stubbed here because the failure being
+# specified — a delete call that reports success without removing the user — is a
+# property of that external service, not something the database can be coaxed into.
+def test_profile_survives_when_the_auth_user_is_not_actually_deleted(
+    disposable_user, disposable_auth_headers, client, monkeypatch
+):
+    user_id = str(disposable_user["user_id"])
+
+    class _SilentlyFailingAdmin:
+        def delete_user(self, uid, should_soft_delete=False):
+            return None  # reports success, removes nothing
+
+        def get_user_by_id(self, uid):
+            return object()  # user is still there
+
+    class _FakeClient:
+        auth = type("_Auth", (), {"admin": _SilentlyFailingAdmin()})()
+
+    monkeypatch.setattr(user_service, "_admin_client", lambda: _FakeClient())
+
+    response = client.delete(f"/api/v1/users/{user_id}/", headers=disposable_auth_headers)
+    assert response.status_code == 409
+    assert user_id in response.json()["detail"]
+
+    with engine.connect() as connection:
+        assert connection.execute(
+            text("SELECT 1 FROM profiles WHERE id = :id"), {"id": user_id}
+        ).first() is not None
+
+
+# Admins retry a delete that looked like it failed. The second call must report
+# the account is gone (404), not blow up.
+def test_deleting_the_same_user_twice_reports_not_found(
+    disposable_user, disposable_auth_headers, client
+):
+    user_id = str(disposable_user["user_id"])
+
+    assert client.delete(f"/api/v1/users/{user_id}/", headers=disposable_auth_headers).status_code == 204
+
+    second = client.delete(f"/api/v1/users/{user_id}/", headers=disposable_auth_headers)
+    assert second.status_code == 404

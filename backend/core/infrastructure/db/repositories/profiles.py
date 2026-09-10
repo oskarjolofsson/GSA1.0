@@ -1,6 +1,6 @@
 from ..models.Profile import Profile
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from datetime import datetime, timedelta, timezone
 
 
@@ -60,6 +60,13 @@ def get_new_profiles_count(session: Session, days: int) -> int:
 
 # --------------------- Delete ------------------
 
-def delete_profile(profile: Profile, session: Session):
-    session.delete(profile)
+def delete_profile_by_id(profile_id: str, session: Session) -> int:
+    """Delete a profile row by id. Idempotent: returns how many rows matched.
+
+    Deleting the auth user cascades this row away already, so the caller normally
+    finds nothing left to delete -- an ORM session.delete() of the stale object
+    would issue a DELETE matching zero rows and warn about it.
+    """
+    result = session.execute(delete(Profile).where(Profile.id == profile_id))
     session.flush()
+    return result.rowcount
