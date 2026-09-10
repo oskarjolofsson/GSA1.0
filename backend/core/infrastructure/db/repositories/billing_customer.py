@@ -5,14 +5,6 @@ from sqlalchemy.orm import Session
 from core.infrastructure.db import models
 
 
-def get_customer_by_user_id(
-    user_id: UUID,
-    session: Session,
-) -> models.BillingCustomer | None:
-    stmt = select(models.BillingCustomer).where(models.BillingCustomer.user_id == user_id)
-    return session.scalar(stmt)
-
-
 def get_customer_by_customer_id(
     customer_id: str,
     session: Session,

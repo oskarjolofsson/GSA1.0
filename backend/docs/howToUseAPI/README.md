@@ -21,6 +21,7 @@ All endpoints are mounted under `/api/v1`.
 | [Users](./users.md) | `/api/v1/users` | Account listing (admin) and account deletion |
 | [Admin](./admin.md) | `/api/v1/admin` | Admin dashboard stats and admin check |
 | [Payment — RevenueCat (mobile)](./payment/revenuecat-integration.md) | `/api/v1/billing`, `/api/v1/webhook/revenuecat` | Mobile subscriptions via App Store / Play Store |
+| [Payment — Manual comps](./payment/manual-comp-subscriptions.md) | `/api/v1/admin/subscriptions` | Admin-granted subscriptions (no charge) |
 
 ## Authentication & access levels
 

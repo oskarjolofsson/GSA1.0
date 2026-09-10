@@ -8,8 +8,9 @@ routes below.
 RevenueCat is the billing provider for **every** purchase (App Store / Play Store
 in-app purchases). There is no web checkout — see
 [ADR-0045](../../../../docs/adr/0045-payments-are-store-only.md). The only other
-provider value is `manual`, an admin-granted comp (ADR-0005). `GET /api/v1/billing/status`
-is the single source of truth for entitlement.
+provider value is `manual`, an admin-granted comp — see
+[manual-comp-subscriptions.md](./manual-comp-subscriptions.md). `GET /api/v1/billing/status`
+is the single source of truth for entitlement across both.
 
 The mobile app's job is to:
 
@@ -62,6 +63,8 @@ Response `200`:
   manage action, the user cannot change a comp. `subscription` is `null` when the
   user has no active paid sub.
 - `status` — `trialing | active | past_due | canceled`.
+- `subscription.current_period_end` — `null` on a comp, which never auto-expires. Do
+  not render a renewal date unless this is non-null.
 - `free_tier_expires_at` — ISO 8601, `profile.created_at + 7 days`, always returned.
 
 ### 1.2 `POST /api/v1/webhook/revenuecat/` (configured in RevenueCat, not called by the app)
@@ -152,18 +155,21 @@ billing secrets — only its RevenueCat public SDK key.
 
 ## 5. Double subscriptions — what the routes guarantee
 
-The two providers don't know about each other, so a user could in theory pay on both.
-What the routes enforce:
+There is only one purchase path (the store), so cross-provider stacking is gone with
+web checkout (ADR-0045). One case remains:
 
-- **Web checkout is cross-provider.** `POST /api/v1/billing/checkout-session/` returns
-  **409** if the user already has an active subscription on **either** platform. So a
-  web sub can't be stacked on top of a mobile one (or vice-versa on the web side).
 - **Mobile purchases can't be blocked server-side.** The App Store / Play Store owns
   the transaction; the backend only learns of it via webhook afterward. Mitigate in
   the app: before showing the paywall, call `GET /billing/status` and, if
   `is_subscribed`, show "manage subscription" instead.
+- **A comp on top of a store purchase is harmless.** A `manual` grant and a
+  `revenuecat` subscription can coexist; entitlement is "any active sub", so the
+  user just stays entitled. Nothing double-charges — a comp costs nothing. The admin
+  grant route refuses to add a comp on top of a *currently-valid* sub (409), but a
+  store purchase made afterwards cannot be blocked. See
+  [manual-comp-subscriptions.md](./manual-comp-subscriptions.md) §3.
 
 A double sub never breaks access (entitlement = any active sub); it is only a
-double-charge concern, resolved via refund.
+double-charge concern, resolved via a store refund.
 ```
 
