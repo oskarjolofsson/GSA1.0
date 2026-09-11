@@ -172,7 +172,7 @@ class TestCreateCustomIssue:
 
 
 class TestBrowseCatalog:
-    def test_lists_global_and_own_custom_only(self, db_session, test_user):
+    def test_lists_global_and_own_custom_only(self, db_session, test_user, disposable_user):
         """Intent: the browse library must be privacy-scoped. A user should see the
         global admin catalog (user_id NULL) plus their OWN custom issues, but never
         another user's custom issues.
@@ -185,7 +185,9 @@ class TestBrowseCatalog:
         create_issue(Issue(title="Global reverse pivot", description="d"), db_session)
         # Another user's custom issue must NOT appear
         other = Issue(title="Other user secret", description="d")
-        other.user_id = uuid.uuid4()
+        # A real auth user: issues.user_id is a foreign key onto auth.users, so
+        # that a deleted account's custom issues cannot outlive it.
+        other.user_id = disposable_user["user_id"]
         other.source = "custom"
         create_issue(other, db_session)
         db_session.flush()
@@ -341,12 +343,14 @@ class TestRemoveFocus:
         assert get_issue_by_id(created.id, db_session) is None
         assert not programs_repo.get_programs_for_issue(uid, created.id, db_session)
 
-    def test_remove_others_custom_issue_forbidden(self, db_session, test_user):
+    def test_remove_others_custom_issue_forbidden(self, db_session, test_user, disposable_user):
         """Ownership: you cannot remove another user's custom issue."""
-        import uuid as _uuid
         from core.services import exceptions
         other_issue = models.Issue(
-            title="Someone else's focus", description="d", source="custom", user_id=_uuid.uuid4()
+            title="Someone else's focus",
+            description="d",
+            source="custom",
+            user_id=disposable_user["user_id"],
         )
         db_session.add(other_issue)
         db_session.flush()

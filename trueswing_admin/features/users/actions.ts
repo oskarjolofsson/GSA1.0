@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { withAdmin } from "@/lib/auth/with-admin";
 import { getSessionToken } from "@/lib/auth/require-session";
 import { deleteUserRequest } from "@/lib/users/delete-user";
+import { deleteUserFailureReason } from "./failure-reason";
 import { searchUsers } from "@/lib/users/search-users";
 import { setUserRole } from "@/lib/users/set-user-role";
 import type { User } from "@/lib/users/types";
@@ -16,12 +17,18 @@ import type { User } from "@/lib/users/types";
  */
 export async function deleteUserAction(
   userId: string,
-): Promise<{ ok: boolean }> {
-  return withAdmin(async (token) => {
-    const result = await deleteUserRequest(userId, token);
-    if (result.status === "ok") revalidatePath("/technical/users");
-    return { ok: result.status === "ok" };
-  }, { ok: false });
+): Promise<{ ok: boolean; reason?: string }> {
+  return withAdmin(
+    async (token) => {
+      const result = await deleteUserRequest(userId, token);
+      if (result.status === "ok") {
+        revalidatePath("/technical/users");
+        return { ok: true };
+      }
+      return { ok: false, reason: deleteUserFailureReason(result) };
+    },
+    { ok: false, reason: "You aren't authorized to delete users." },
+  );
 }
 
 /**

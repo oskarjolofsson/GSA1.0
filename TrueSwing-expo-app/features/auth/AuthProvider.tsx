@@ -233,6 +233,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
         if (fullName?.givenName || fullName?.familyName) {
           await supabase.auth.updateUser({
             data: {
+              // `name` is the key the profiles trigger reads, and the key
+              // Google's ID token already uses. Apple gives us the name only
+              // here, on the first authorization, so write it under both keys.
+              name: [fullName.givenName, fullName.familyName]
+                .filter(Boolean)
+                .join(" "),
               full_name: [fullName.givenName, fullName.familyName]
                 .filter(Boolean)
                 .join(" "),

@@ -9,7 +9,7 @@ type Props = {
   currentUserId: string | null;
   onBack: () => void;
   onDeleted: (id: string) => void;
-  deleteAction: (id: string) => Promise<{ ok: boolean }>;
+  deleteAction: (id: string) => Promise<{ ok: boolean; reason?: string }>;
   roleAction: (
     id: string,
     role: "user" | "admin",
@@ -64,7 +64,7 @@ export default function UserDetail({
   roleAction,
 }: Props) {
   const [confirming, setConfirming] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const [role, setRole] = useState<string | null>(user.role ?? null);
@@ -75,12 +75,14 @@ export default function UserDetail({
   const isAdmin = role === "admin";
 
   function handleDelete() {
-    setError(false);
+    setError(null);
     startTransition(async () => {
-      const { ok } = await deleteAction(user.id);
-      if (ok) onDeleted(user.id);
+      const res = await deleteAction(user.id);
+      if (res.ok) onDeleted(user.id);
       else {
-        setError(true);
+        // The backend reason is the point: a refused delete can mean the account
+        // was left intact on purpose, which generic copy would hide.
+        setError(res.reason ?? "Couldn't delete this user. Please try again.");
         setConfirming(false);
       }
     });
@@ -170,9 +172,7 @@ export default function UserDetail({
 
       <div className="mt-6">
         {error && (
-          <p className="mb-2 text-sm text-red-600 dark:text-red-400">
-            Couldn&apos;t delete this user. Please try again.
-          </p>
+          <p className="mb-2 text-sm text-red-600 dark:text-red-400">{error}</p>
         )}
         {confirming ? (
           <div className="flex items-center gap-3">
