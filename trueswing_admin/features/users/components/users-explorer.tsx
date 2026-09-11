@@ -10,7 +10,7 @@ type Props = {
   page: UserPage;
   pageInfo: PageInfo;
   currentUserId: string | null;
-  deleteAction: (id: string) => Promise<{ ok: boolean }>;
+  deleteAction: (id: string) => Promise<{ ok: boolean; reason?: string }>;
   searchAction: (
     query: string,
   ) => Promise<{ ok: boolean; matches: User[] }>;
@@ -77,6 +77,9 @@ export default function UsersExplorer({
   }
 
   const browseRows = page.items.filter((u) => !removed.has(u.id));
+  // `removed` hides rows immediately; the count comes from the server page, so it
+  // would keep claiming the deleted users until revalidation lands.
+  const total = Math.max(page.total - removed.size, 0);
   const searchRows = matches.filter((u) => !removed.has(u.id));
 
   return (
@@ -86,7 +89,7 @@ export default function UsersExplorer({
           Users
         </h2>
         <span className="text-sm text-zinc-400">
-          {page.total} user{page.total === 1 ? "" : "s"}
+          {total} user{total === 1 ? "" : "s"}
         </span>
       </div>
 
