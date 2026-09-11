@@ -244,3 +244,15 @@ def list_catalog_issues(user_id: UUID, db_session: Session) -> list[CatalogIssue
     its drills."""
     issues = issue_repo.get_catalog_and_user_issues(user_id, db_session)
     return [_issue_to_catalog_dto(i) for i in issues]
+
+
+def list_global_catalog_issues(db_session: Session) -> list[CatalogIssueDTO]:
+    """The global catalog only — no user, so no custom issues.
+
+    Feeds the signed-out onboarding pick, which has no user_id to scope by. Its own
+    function rather than an optional argument on the one above: the unauthenticated
+    caller should not be able to reach the user-scoped query at all, however it is
+    called.
+    """
+    issues = issue_repo.get_global_catalog_issues(db_session)
+    return [_issue_to_catalog_dto(i) for i in issues]
