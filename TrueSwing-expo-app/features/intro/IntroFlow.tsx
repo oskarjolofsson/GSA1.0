@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { Redirect, useRouter } from "expo-router";
 
@@ -14,6 +14,7 @@ import {
 } from "./services/introSelectionService";
 import type { IntroArea, IntroBranch, IntroIssue } from "./services/introCatalogService";
 
+import IntroStepTransition from "./components/IntroStepTransition";
 import IntroWelcomeScreen from "./screens/IntroWelcomeScreen";
 import IntroAreaScreen from "./screens/IntroAreaScreen";
 import IntroGoalScreen from "./screens/IntroGoalScreen";
@@ -40,9 +41,17 @@ const SIGN_IN = "/(public)/sign-in" as const;
 export default function IntroFlow() {
     const router = useRouter();
     const { session, loading } = useAuth();
-    const { currentScreen, goToWelcome, goToArea, goToGoal, goToBranch, goToFocus } =
+    const { currentScreen, currentIndex, goToWelcome, goToArea, goToGoal, goToBranch, goToFocus } =
         useIntroFlowSequence();
     const catalog = useIntroCatalog();
+
+    // Direction the transition should slide: forward when the step index grew
+    // since the last render, back when it shrank (or repeated, e.g. "Skip").
+    const previousIndexRef = useRef(currentIndex);
+    const direction: 1 | -1 = currentIndex >= previousIndexRef.current ? 1 : -1;
+    useEffect(() => {
+        previousIndexRef.current = currentIndex;
+    }, [currentIndex]);
 
     // null while the flag is still being read — rendering the intro before that
     // resolves would flash it at golfers who have already been through it.
@@ -139,6 +148,7 @@ export default function IntroFlow() {
 
     return (
         <View style={{ flex: 1 }}>
+            <IntroStepTransition screenKey={currentScreen} direction={direction}>
             {currentScreen === "welcome" && (
                 <IntroWelcomeScreen onStart={goToArea} onSignIn={leaveToSignIn} />
             )}
@@ -185,6 +195,7 @@ export default function IntroFlow() {
                     onSkip={leaveToSignIn}
                 />
             )}
+            </IntroStepTransition>
         </View>
     );
 }

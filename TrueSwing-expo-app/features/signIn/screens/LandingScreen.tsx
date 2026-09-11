@@ -8,8 +8,15 @@ import {
   ScrollView,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Platform } from "react-native";
+
+import {
+  INTRO_SEEN_KEY,
+  INTRO_SELECTION_KEY,
+} from "features/intro/services/introSelectionService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type Props = {
   onGoogleButtonPress: () => Promise<void>;
@@ -208,6 +215,20 @@ export default function LandingScreen({
               </Text>
               .
             </Text>
+
+            {__DEV__ ? (
+              <TouchableOpacity
+                onPress={async () => {
+                  await AsyncStorage.multiRemove([INTRO_SEEN_KEY, INTRO_SELECTION_KEY]);
+                  router.replace("/(public)/intro");
+                }}
+                style={{ marginTop: 16, alignSelf: "center" }}
+              >
+                <Text style={{ color: "#f59e0b", fontSize: 12 }}>
+                  [DEV] Reset onboarding
+                </Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
       </ScrollView>

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import IntroHeader from "../components/IntroHeader";
 import IntroButton from "../components/IntroButton";
+import { tapHaptic } from "../utils/haptics";
 import type { IntroBranch, IntroIssue } from "../services/introCatalogService";
 
 type Props = {
@@ -43,7 +44,10 @@ export default function IntroBranchScreen({
                     {branches.map((branch, index) => (
                         <Pressable
                             key={branch.key}
-                            onPress={() => onSelect(branch)}
+                            onPress={() => {
+                                tapHaptic();
+                                onSelect(branch);
+                            }}
                             accessibilityRole="button"
                             accessibilityLabel={branch.golfer_label}
                             className={`min-h-[64px] flex-row items-center py-4 active:opacity-70 ${

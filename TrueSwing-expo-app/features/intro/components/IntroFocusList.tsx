@@ -1,6 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import { Check } from "lucide-react-native";
 
+import { tapHaptic } from "../utils/haptics";
 import type { IntroIssue } from "../services/introCatalogService";
 
 type Props = {
@@ -26,7 +27,10 @@ export default function IntroFocusList({ issues, selectedId, onSelect }: Props) 
                 return (
                     <Pressable
                         key={issue.id}
-                        onPress={() => onSelect(issue)}
+                        onPress={() => {
+                            tapHaptic();
+                            onSelect(issue);
+                        }}
                         accessibilityRole="radio"
                         accessibilityState={{ selected }}
                         className={`min-h-[64px] flex-row items-center py-4 active:opacity-70 ${

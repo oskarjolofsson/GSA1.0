@@ -1,5 +1,7 @@
 import { Pressable, Text, ActivityIndicator, View } from "react-native";
 
+import { tapHaptic } from "../utils/haptics";
+
 type Props = {
     label: string;
     onPress: () => void;
@@ -19,11 +21,15 @@ export default function IntroButton({
     tone = "primary",
 }: Props) {
     const inert = disabled || busy;
+    const handlePress = () => {
+        tapHaptic();
+        onPress();
+    };
 
     if (tone === "quiet") {
         return (
             <Pressable
-                onPress={onPress}
+                onPress={handlePress}
                 disabled={inert}
                 accessibilityRole="button"
                 className="min-h-[44px] items-center justify-center active:opacity-70"
@@ -35,7 +41,7 @@ export default function IntroButton({
 
     return (
         <Pressable
-            onPress={onPress}
+            onPress={handlePress}
             disabled={inert}
             accessibilityRole="button"
             accessibilityState={{ disabled: inert }}

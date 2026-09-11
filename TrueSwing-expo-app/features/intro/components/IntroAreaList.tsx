@@ -1,6 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 
+import { tapHaptic } from "../utils/haptics";
 import type { IntroArea } from "../services/introCatalogService";
 
 type Props = {
@@ -23,7 +24,10 @@ export default function IntroAreaList({ areas, onSelect }: Props) {
             {areas.map((area, index) => (
                 <Pressable
                     key={area.key}
-                    onPress={() => onSelect(area)}
+                    onPress={() => {
+                        tapHaptic();
+                        onSelect(area);
+                    }}
                     accessibilityRole="button"
                     accessibilityLabel={area.golfer_label}
                     className={`min-h-[64px] flex-row items-center py-4 active:opacity-70 ${

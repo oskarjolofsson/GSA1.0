@@ -1,6 +1,8 @@
 import { View, Text, Pressable } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
 
+import { tapHaptic } from "../utils/haptics";
+
 type Props = {
     eyebrow: string;
     heading: string;
@@ -16,7 +18,10 @@ export default function IntroHeader({ eyebrow, heading, onBack }: Props) {
             <View className="min-h-[44px] flex-row items-center">
                 {onBack ? (
                     <Pressable
-                        onPress={onBack}
+                        onPress={() => {
+                            tapHaptic();
+                            onBack();
+                        }}
                         accessibilityRole="button"
                         className="min-h-[44px] flex-row items-center pr-3 active:opacity-70"
                     >

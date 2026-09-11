@@ -22,7 +22,14 @@ jest.mock('lucide-react-native', () => new Proxy({}, { get: () => () => null }))
 // animation is not what these tests assert, the content inside it is.
 jest.mock('moti', () => {
   const { View, Text, ScrollView, Image } = jest.requireActual('react-native');
-  return { MotiView: View, MotiText: Text, MotiScrollView: ScrollView, MotiImage: Image };
+  return {
+    MotiView: View,
+    MotiText: Text,
+    MotiScrollView: ScrollView,
+    MotiImage: Image,
+    // Passthrough: presence/exit animations aren't what these tests assert either.
+    AnimatePresence: ({ children }) => children,
+  };
 });
 
 // Only the pieces feature code actually reaches for. Reduce-motion defaults to
