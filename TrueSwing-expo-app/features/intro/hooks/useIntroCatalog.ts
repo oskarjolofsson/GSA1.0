@@ -4,9 +4,11 @@ import { getErrorMessage } from "lib/errors";
 
 import {
     areasWithIssues,
+    branchesFor,
     getOnboardingCatalog,
-    issuesForArea,
+    issuesForBranch,
     type IntroArea,
+    type IntroBranch,
     type IntroIssue,
     type OnboardingCatalog,
 } from "../services/introCatalogService";
@@ -40,11 +42,17 @@ export function useIntroCatalog() {
         [catalog]
     );
 
-    const issuesIn = useCallback(
-        (areaKey: string): IntroIssue[] =>
-            catalog ? issuesForArea(catalog.issues, areaKey) : [],
+    const branchesIn = useCallback(
+        (areaKey: string, kind: IntroIssue["kind"]): IntroBranch[] =>
+            catalog ? branchesFor(catalog, areaKey, kind) : [],
         [catalog]
     );
 
-    return { areas, issuesIn, status, error, retry: load };
+    const issuesOn = useCallback(
+        (areaKey: string, kind: IntroIssue["kind"], branchKey: string): IntroIssue[] =>
+            catalog ? issuesForBranch(catalog, areaKey, kind, branchKey) : [],
+        [catalog]
+    );
+
+    return { areas, branchesIn, issuesOn, status, error, retry: load };
 }

@@ -8,6 +8,7 @@ import type { IntroArea, IntroIssue } from "../services/introCatalogService";
 
 type Props = {
     area: IntroArea;
+    kind: IntroIssue["kind"];
     issues: IntroIssue[];
     selectedId: string | null;
     onSelect: (issue: IntroIssue) => void;
@@ -27,6 +28,7 @@ type Props = {
  *  per area for the same reason. */
 export default function IntroFocusScreen({
     area,
+    kind,
     issues,
     selectedId,
     onSelect,
@@ -45,7 +47,7 @@ export default function IntroFocusScreen({
             >
                 <IntroHeader
                     eyebrow={area.golfer_label}
-                    heading={"What do you\nwant to fix?"}
+                    heading={kind === "skill" ? "What do you\nwant to work on?" : "What do you\nwant to fix?"}
                     onBack={onBack}
                 />
 

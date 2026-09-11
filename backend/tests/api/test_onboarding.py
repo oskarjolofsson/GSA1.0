@@ -35,7 +35,7 @@ def test_catalog_answers_without_a_token(client, db_session):
     response = client.get("/api/v1/onboarding/catalog/")
 
     assert response.status_code == 200
-    assert set(response.json()) == {"areas", "issues"}
+    assert set(response.json()) == {"areas", "goals", "misses", "issues"}
 
 
 def test_catalog_carries_areas_with_golfer_labels(client, db_session):

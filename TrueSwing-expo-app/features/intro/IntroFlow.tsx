@@ -12,16 +12,22 @@ import {
     markIntroSeen,
     savePendingSelection,
 } from "./services/introSelectionService";
-import type { IntroArea, IntroIssue } from "./services/introCatalogService";
+import type { IntroArea, IntroBranch, IntroIssue } from "./services/introCatalogService";
 
 import IntroWelcomeScreen from "./screens/IntroWelcomeScreen";
 import IntroAreaScreen from "./screens/IntroAreaScreen";
+import IntroGoalScreen from "./screens/IntroGoalScreen";
+import IntroBranchScreen from "./screens/IntroBranchScreen";
 import IntroFocusScreen from "./screens/IntroFocusScreen";
 
 const SIGN_IN = "/(public)/sign-in" as const;
 
 /**
- * The pre-signup intro: welcome -> pick an area -> pick one focus -> sign up.
+ * The pre-signup intro: welcome -> area -> goal -> branch -> focus -> sign up.
+ *
+ * The branch step mirrors the signed-in library's fork (`features/library/utils/
+ * libraryFork.ts`): under "fix an issue" it narrows by miss, under "get better"
+ * by goal, before the focus list.
  *
  * The pick cannot be sent anywhere yet — there is no account. It goes to the
  * device (`savePendingSelection`), and `useApplyIntroSelection` starts it on the
@@ -34,13 +40,16 @@ const SIGN_IN = "/(public)/sign-in" as const;
 export default function IntroFlow() {
     const router = useRouter();
     const { session, loading } = useAuth();
-    const { currentScreen, goToWelcome, goToArea, goToFocus } = useIntroFlowSequence();
+    const { currentScreen, goToWelcome, goToArea, goToGoal, goToBranch, goToFocus } =
+        useIntroFlowSequence();
     const catalog = useIntroCatalog();
 
     // null while the flag is still being read — rendering the intro before that
     // resolves would flash it at golfers who have already been through it.
     const [seen, setSeen] = useState<boolean | null>(null);
     const [area, setArea] = useState<IntroArea | null>(null);
+    const [kind, setKind] = useState<IntroIssue["kind"] | null>(null);
+    const [branch, setBranch] = useState<IntroBranch | null>(null);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
@@ -57,6 +66,27 @@ export default function IntroFlow() {
     const chooseArea = useCallback(
         (next: IntroArea) => {
             setArea(next);
+            setKind(null);
+            setBranch(null);
+            setSelectedId(null);
+            goToGoal();
+        },
+        [goToGoal]
+    );
+
+    const chooseKind = useCallback(
+        (next: IntroIssue["kind"]) => {
+            setKind(next);
+            setBranch(null);
+            setSelectedId(null);
+            goToBranch();
+        },
+        [goToBranch]
+    );
+
+    const chooseBranch = useCallback(
+        (next: IntroBranch) => {
+            setBranch(next);
             setSelectedId(null);
             goToFocus();
         },
@@ -67,6 +97,16 @@ export default function IntroFlow() {
         setSaveError(null);
         goToArea();
     }, [goToArea]);
+
+    const backToGoal = useCallback(() => {
+        setSaveError(null);
+        goToGoal();
+    }, [goToGoal]);
+
+    const backToBranch = useCallback(() => {
+        setSaveError(null);
+        goToBranch();
+    }, [goToBranch]);
 
     const confirm = useCallback(async () => {
         if (!selectedId || !area) return;
@@ -113,16 +153,35 @@ export default function IntroFlow() {
                     onSkip={leaveToSignIn}
                 />
             )}
-            {currentScreen === "focus" && area && (
+            {currentScreen === "goal" && area && (
+                <IntroGoalScreen
+                    areaLabel={area.golfer_label}
+                    onSelect={chooseKind}
+                    onBack={backToAreas}
+                    onSkip={leaveToSignIn}
+                />
+            )}
+            {currentScreen === "branch" && area && kind && (
+                <IntroBranchScreen
+                    areaLabel={area.golfer_label}
+                    kind={kind}
+                    branches={catalog.branchesIn(area.key, kind)}
+                    onSelect={chooseBranch}
+                    onBack={backToGoal}
+                    onSkip={leaveToSignIn}
+                />
+            )}
+            {currentScreen === "focus" && area && kind && branch && (
                 <IntroFocusScreen
                     area={area}
-                    issues={catalog.issuesIn(area.key)}
+                    kind={kind}
+                    issues={catalog.issuesOn(area.key, kind, branch.key)}
                     selectedId={selectedId}
                     onSelect={(issue: IntroIssue) => setSelectedId(issue.id)}
                     saving={saving}
                     saveError={saveError}
                     onContinue={confirm}
-                    onBack={backToAreas}
+                    onBack={backToBranch}
                     onSkip={leaveToSignIn}
                 />
             )}

@@ -1708,11 +1708,12 @@ export interface paths {
         };
         /**
          * Get Onboarding Catalog
-         * @description Areas and startable focus points for the intro shown before sign-up.
+         * @description Areas, the miss/goal fork, and startable focus points for the intro shown
+         *     before sign-up.
          *
          *     The one unauthenticated read in the API. It exists because the intro runs before
-         *     the golfer has a Supabase token, and hardcoding the areas and focus points in the
-         *     app would put them back out of sync with admin edits.
+         *     the golfer has a Supabase token, and hardcoding this in the app would put it back
+         *     out of sync with admin edits.
          *
          *     Safe to serve anonymously because it is strictly the admin-authored catalog:
          *     `get_global_catalog_issues` filters on `user_id IS NULL`, so no user's custom
@@ -2794,24 +2795,24 @@ export interface components {
          * OnboardingCatalogResponse
          * @description Everything the pre-signup intro needs, in one unauthenticated call.
          *
-         *     The intro asks a golfer who has no account yet to pick an area and one focus
-         *     point in it, so the app can start that focus the moment they sign up. It needs
-         *     the same vocabulary and the same catalog rows the library renders — which is why
+         *     The intro asks a golfer who has no account yet to pick an area, then a goal
+         *     (get better vs. fix an issue), then the miss/goal branch that narrows it, then
+         *     one focus point — the same fork the signed-in library navigates. It needs the
+         *     same vocabulary and the same catalog rows the library renders — which is why
          *     this is served rather than shipped in the binary. A local copy is what silently
          *     desynced builds from admin edits before the taxonomy moved server-side.
          *
-         *     Two deliberate narrowings versus the authenticated equivalents:
-         *
-         *       * `areas` only. The intro stops at "which part of your game?" and then lists
-         *         that area's focus points; it never navigates the miss/goal fork, so sending
-         *         misses, goals and kinds would be shipping an unauthenticated caller more
-         *         vocabulary than it can use.
-         *       * global catalog issues only, never a user's custom ones. There is no user
-         *         here to scope by, and `list_global_catalog_issues` cannot reach them.
+         *     One deliberate narrowing versus the authenticated equivalent: global catalog
+         *     issues only, never a user's custom ones. There is no user here to scope by, and
+         *     `list_global_catalog_issues` cannot reach them.
          */
         OnboardingCatalogResponse: {
             /** Areas */
             areas: components["schemas"]["TaxonomyTermSchema"][];
+            /** Goals */
+            goals: components["schemas"]["TaxonomyTermSchema"][];
+            /** Misses */
+            misses: components["schemas"]["TaxonomyMissSchema"][];
             /** Issues */
             issues: components["schemas"]["CatalogIssueSchema"][];
         };
