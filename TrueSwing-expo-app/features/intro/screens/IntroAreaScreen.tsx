@@ -33,35 +33,37 @@ export default function IntroAreaScreen({
     return (
         <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
             <ScrollView
-                contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
+                contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
             >
                 <IntroHeader eyebrow="First focus" heading={"Where do you\nlose shots?"} onBack={onBack} />
 
-                {status === "loading" ? (
-                    <View className="mt-12 items-center">
-                        <ActivityIndicator color="#E4C892" />
-                    </View>
-                ) : null}
-
-                {/* Inline, not a full-screen error: this screen is optional, and a
-                    golfer who cannot reach the server must still be able to walk
-                    past it to sign up. Blocking here would make an outage look
-                    like an app that does not open. */}
-                {status === "error" ? (
-                    <View className="mt-10">
-                        <Text className="text-[15px] leading-[22px] text-sand">
-                            We couldn&apos;t load the practice areas.
-                        </Text>
-                        {error ? (
-                            <Text className="mt-2 text-[13px] leading-[19px] text-sand-dim">{error}</Text>
-                        ) : null}
-                        <View className="mt-6">
-                            <IntroButton label="Try again" onPress={onRetry} />
+                <View className="flex-1 justify-center">
+                    {status === "loading" ? (
+                        <View className="items-center">
+                            <ActivityIndicator color="#E4C892" />
                         </View>
-                    </View>
-                ) : null}
+                    ) : null}
 
-                {status === "ready" ? <IntroAreaList areas={areas} onSelect={onSelect} /> : null}
+                    {/* Inline, not a full-screen error: this screen is optional, and a
+                        golfer who cannot reach the server must still be able to walk
+                        past it to sign up. Blocking here would make an outage look
+                        like an app that does not open. */}
+                    {status === "error" ? (
+                        <View>
+                            <Text className="text-[15px] leading-[22px] text-sand">
+                                We couldn&apos;t load the practice areas.
+                            </Text>
+                            {error ? (
+                                <Text className="mt-2 text-[13px] leading-[19px] text-sand-dim">{error}</Text>
+                            ) : null}
+                            <View className="mt-6">
+                                <IntroButton label="Try again" onPress={onRetry} />
+                            </View>
+                        </View>
+                    ) : null}
+
+                    {status === "ready" ? <IntroAreaList areas={areas} onSelect={onSelect} /> : null}
+                </View>
             </ScrollView>
 
             <View className="px-5" style={{ paddingBottom: insets.bottom + 12 }}>
