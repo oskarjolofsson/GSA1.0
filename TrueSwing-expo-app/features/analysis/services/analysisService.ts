@@ -29,6 +29,14 @@ class AnalysisService {
         return data?.video_url || null;
     }
 
+    /**
+     * Stamp reviewed_at the first time this analysis is shown as the active
+     * item in the home reel. Idempotent on the backend.
+     */
+    async markAnalysisReviewed(analysisId: string): Promise<void> {
+        await apiClient.patch<void>(routes.analyses.reviewed(analysisId));
+    }
+
     async deleteAnalysis(analysisId: string): Promise<void> {
         console.log('Deleting analysis with ID:', analysisId);
         await apiClient.delete<void>(routes.analyses.byId(analysisId));

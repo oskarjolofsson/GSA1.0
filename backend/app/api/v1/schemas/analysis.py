@@ -33,9 +33,10 @@ class GetAnalysis(BaseModel):
     created_at: datetime
     started_at: datetime | None
     completed_at: datetime | None
+    reviewed_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
-    
+
     @classmethod
     def from_domain(cls, dto, thumbnail_url: str | None = None) -> "GetAnalysis":
         """Convert GetAnalaysisDTO to GetAnalysis schema."""
@@ -51,6 +52,7 @@ class GetAnalysis(BaseModel):
             created_at=dto.created_at,
             started_at=dto.started_at,
             completed_at=dto.completed_at,
+            reviewed_at=dto.reviewed_at,
         )
     
     

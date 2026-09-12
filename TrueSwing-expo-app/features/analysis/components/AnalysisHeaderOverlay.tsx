@@ -10,6 +10,7 @@ type AnalysisHeaderOverlayProps = {
   onDeletePress: () => void;
   deleting?: boolean;
   onBack?: () => void;
+  isNew?: boolean;
 };
 
 export default function AnalysisHeaderOverlay({
@@ -17,6 +18,7 @@ export default function AnalysisHeaderOverlay({
   onDeletePress,
   deleting = false,
   onBack,
+  isNew = false,
 }: AnalysisHeaderOverlayProps) {
   const insets = useSafeAreaInsets();
 
@@ -105,10 +107,18 @@ export default function AnalysisHeaderOverlay({
                     opacity: fadeAnim,
                     transform: [{ translateY: slideAnim }],
                   }}
+                  className="flex-row items-center"
                 >
                   <Text className="text-[21px] font-semibold tracking-tight text-white">
                     {displayedDate}
                   </Text>
+                  {isNew ? (
+                    <View className="ml-2 rounded-full border border-gold px-2 py-0.5">
+                      <Text className="text-[10px] font-semibold tracking-wide text-gold">
+                        NEW
+                      </Text>
+                    </View>
+                  ) : null}
                 </Animated.View>
               </View>
 

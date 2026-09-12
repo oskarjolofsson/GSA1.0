@@ -18,6 +18,7 @@ from core.services.analysis_service import (
     create_analysis as service_create_analysis,
     run_analysis as service_run_analysis,
     get_analysis_by_id as service_get_analysis_by_id,
+    mark_analysis_reviewed as service_mark_analysis_reviewed,
     get_analyses_by_user_id as service_get_analyses_by_user_id,
     get_issue_swing_timeline as service_get_issue_swing_timeline,
     delete_analysis as service_delete_analysis,
@@ -102,6 +103,23 @@ def run_analysis(
     )
 
     result = service_run_analysis(dto, db_session=db)
+
+    return GetAnalysis.from_domain(result)
+
+
+@router.patch("/{analysis_id}/reviewed/", response_model=GetAnalysis, status_code=200)
+def mark_analysis_reviewed(
+    analysis_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Stamp reviewed_at the first time the owner views this analysis as the
+    active item in the home reel. Idempotent — a repeat call is a no-op.
+    """
+    result = service_mark_analysis_reviewed(
+        analysis_id, UUID(current_user["user_id"]), db_session=db
+    )
 
     return GetAnalysis.from_domain(result)
 

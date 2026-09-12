@@ -14,6 +14,7 @@ import InactiveAnalysisReel from "features/analysis/components/InActiveReel";
 import AnalysisHeaderOverlay from "features/analysis/components/AnalysisHeaderOverlay";
 import DeleteConfirmation from "features/analysis/components/DeleteConfirmation";
 import AnalysisReelItem from "features/analysis/components/AnalysisReelItem";
+import useMarkAnalysisReviewed from "features/analysis/hooks/useMarkAnalysisReviewed";
 import { useHomeAnalysis } from "features/home/context/HomeAnalysisContext";
 import { useRouter } from "expo-router";
 import { Issue } from "features/issues/types";
@@ -90,6 +91,8 @@ export default function AnalysisResultScreen({ onNext, onBack }: AnalysisResultS
             setShowDeleteConfirm(false);
         }
     }, [activeAnalysisId, deleteActiveAnalysis]);
+
+    useMarkAnalysisReviewed(activeAnalysis);
 
     const isReady = allAnalyses.length > 0;
     const isInitialLoad = loading && !isReady;
@@ -184,6 +187,7 @@ export default function AnalysisResultScreen({ onNext, onBack }: AnalysisResultS
                     deleting={isDeleting}
                     onDeletePress={() => setShowDeleteConfirm(true)}
                     onBack={onBack}
+                    isNew={!activeAnalysis.reviewed_at}
                 />
             ) : null}
 
