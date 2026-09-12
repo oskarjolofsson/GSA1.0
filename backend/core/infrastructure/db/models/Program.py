@@ -73,7 +73,7 @@ class Program(Base):
 
     status: Mapped[str] = mapped_column(
         Text,
-        CheckConstraint("status IN ('active','completed','abandoned')"),
+        CheckConstraint("status IN ('active','completed','abandoned','inactive')"),
         nullable=False,
         server_default="active",
     )
@@ -82,6 +82,14 @@ class Program(Base):
         DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+
+    # When this program was benched by deactivate_extra_focuses (status -> 'inactive').
+    # None while active/completed/abandoned, and cleared back to None by
+    # reactivate_on_resub. See 20260912000000_program_inactive_status.sql.
+    deactivated_at: Mapped[DateTime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
 
     # Relationships

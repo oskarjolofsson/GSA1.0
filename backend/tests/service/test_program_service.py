@@ -184,3 +184,231 @@ def test_resolve_grade_survives_a_score_for_a_drill_with_no_metric():
     # records; only the grade is lost.
     drill_id = uuid4()
     assert ps._resolve_grade(_grade(drill_id, metric_value=8), {drill_id: None}) is None
+
+
+# ---------------- deactivate_extra_focuses / reactivate_on_resub ----------------
+#
+# Fakes stand in for the repo and entitlement_service so the state-machine logic is
+# tested without a real database. Slot preservation (T12) and the subscribed-user no-op
+# (the critical safety check protecting the one live paying subscriber, T15) are both
+# asserted directly on the fake Program objects passed through, not re-derived.
+
+def _fake_program(created_at, status="active", area="PUTTING", slot=0, deactivated_at=None):
+    return SimpleNamespace(
+        id=uuid4(),
+        status=status,
+        created_at=created_at,
+        area=area,
+        slot=slot,
+        deactivated_at=deactivated_at,
+    )
+
+
+class _FakeProgramsRepo:
+    """Stands in for `core.infrastructure.db.repositories.programs`. `update_program` is
+    a no-op because the fakes are already the objects `deactivate_extra_focuses` /
+    `reactivate_on_resub` mutate in place -- same object identity in and out."""
+
+    def __init__(self, programs):
+        self.programs = programs
+        self.updated: list = []
+
+    def get_active_programs_by_user(self, user_id, session):
+        return [p for p in self.programs if p.status == "active"]
+
+    def get_programs_by_user(self, user_id, session):
+        return list(self.programs)
+
+    def update_program(self, program, session):
+        self.updated.append(program)
+        return program
+
+
+class _FakeEntitlement:
+    def __init__(self, subscribed: bool):
+        self.subscribed = subscribed
+        self.calls = 0
+
+    def is_subscribed(self, user_id, session):
+        self.calls += 1
+        return self.subscribed
+
+
+def _install(monkeypatch, programs, subscribed: bool):
+    fake_repo = _FakeProgramsRepo(programs)
+    fake_entitlement = _FakeEntitlement(subscribed)
+    monkeypatch.setattr(ps, "repo", fake_repo)
+    monkeypatch.setattr(ps, "entitlement_service", fake_entitlement)
+    return fake_repo, fake_entitlement
+
+
+_T0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+
+def test_deactivate_extra_focuses_noops_with_zero_active(monkeypatch):
+    repo_fake, ent = _install(monkeypatch, [], subscribed=False)
+    ps.deactivate_extra_focuses(uuid4(), object(), trigger="lazy_check")
+    assert repo_fake.updated == []
+
+
+def test_deactivate_extra_focuses_noops_with_one_active(monkeypatch):
+    programs = [_fake_program(_T0)]
+    repo_fake, ent = _install(monkeypatch, programs, subscribed=False)
+    ps.deactivate_extra_focuses(uuid4(), object(), trigger="lazy_check")
+    assert repo_fake.updated == []
+    assert programs[0].status == "active"
+
+
+def test_deactivate_extra_focuses_keeps_oldest_deactivates_rest_and_preserves_slot(monkeypatch):
+    """T4 + T12: the oldest active program survives untouched; every other active program
+    is benched, and its `slot` is never touched -- required so reactivation can restore it
+    to its original slot."""
+    oldest = _fake_program(_T0, area="PUTTING", slot=0)
+    newer1 = _fake_program(_T0 + timedelta(days=1), area="PUTTING", slot=1)
+    newer2 = _fake_program(_T0 + timedelta(days=2), area="CHIPPING", slot=0)
+    programs = [newer2, oldest, newer1]  # deliberately out of order
+    repo_fake, ent = _install(monkeypatch, programs, subscribed=False)
+
+    ps.deactivate_extra_focuses(uuid4(), object(), trigger="webhook")
+
+    assert oldest.status == "active"
+    assert oldest.deactivated_at is None
+
+    for benched, expected_slot, expected_area in [(newer1, 1, "PUTTING"), (newer2, 0, "CHIPPING")]:
+        assert benched.status == "inactive"
+        assert benched.deactivated_at is not None
+        assert benched.slot == expected_slot  # T12: slot untouched
+        assert benched.area == expected_area
+
+    assert {id(p) for p in repo_fake.updated} == {id(newer1), id(newer2)}
+
+
+def test_deactivate_extra_focuses_noops_when_subscribed(monkeypatch):
+    """T15 critical safety check: deactivate_extra_focuses checks entitlement itself and
+    must never touch a subscribed user's programs, however many they hold."""
+    programs = [_fake_program(_T0), _fake_program(_T0 + timedelta(days=1)), _fake_program(_T0 + timedelta(days=2))]
+    original = [(p.status, p.slot, p.deactivated_at) for p in programs]
+    repo_fake, ent = _install(monkeypatch, programs, subscribed=True)
+
+    ps.deactivate_extra_focuses(uuid4(), object(), trigger="webhook")
+
+    assert repo_fake.updated == []
+    assert [(p.status, p.slot, p.deactivated_at) for p in programs] == original
+    assert ent.calls == 1
+
+
+def test_deactivate_extra_focuses_noops_during_grace_period(monkeypatch):
+    """`is_subscribed` already honors the past_due/unpaid grace period (ADR-0006).
+    deactivate_extra_focuses must use that same predicate, not a narrower one, so a
+    lapsing-but-in-grace subscriber's extra focuses are not benched mid-retry."""
+    programs = [_fake_program(_T0), _fake_program(_T0 + timedelta(days=1))]
+    # `subscribed=True` here stands in for "is_subscribed returns True because the
+    # subscription is in its past_due/unpaid grace window" -- from this function's point
+    # of view that is indistinguishable from an ordinarily-active subscription, which is
+    # exactly the point: it must not special-case grace.
+    repo_fake, ent = _install(monkeypatch, programs, subscribed=True)
+
+    ps.deactivate_extra_focuses(uuid4(), object(), trigger="lazy_check")
+
+    assert repo_fake.updated == []
+    assert all(p.status == "active" for p in programs)
+
+
+def test_reactivate_on_resub_restores_oldest_first_when_slots_free(monkeypatch):
+    oldest = _fake_program(_T0, status="inactive", area="PUTTING", slot=0, deactivated_at=_T0)
+    newer = _fake_program(_T0 + timedelta(days=1), status="inactive", area="CHIPPING", slot=0, deactivated_at=_T0)
+    programs = [newer, oldest]
+    repo_fake, ent = _install(monkeypatch, programs, subscribed=True)
+
+    ps.reactivate_on_resub(uuid4(), object())
+
+    assert oldest.status == "active"
+    assert oldest.deactivated_at is None
+    assert oldest.slot == 0  # unchanged
+    assert newer.status == "active"
+    assert newer.deactivated_at is None
+    assert newer.slot == 0  # unchanged -- different area, no collision
+
+
+def test_reactivate_on_resub_skips_when_original_slot_is_now_taken(monkeypatch):
+    """A brand-new program was started in the same (area, slot) while the golfer was
+    unsubscribed. The benched program must NOT be reassigned to a different slot -- it
+    stays inactive, and the skip is logged for support."""
+    benched = _fake_program(_T0, status="inactive", area="PUTTING", slot=0, deactivated_at=_T0)
+    occupier = _fake_program(_T0 + timedelta(days=5), status="active", area="PUTTING", slot=0)
+    programs = [benched, occupier]
+    repo_fake, ent = _install(monkeypatch, programs, subscribed=True)
+
+    ps.reactivate_on_resub(uuid4(), object())
+
+    assert benched.status == "inactive"
+    assert benched.deactivated_at is not None
+    assert benched.slot == 0  # never reassigned
+    assert repo_fake.updated == []
+
+
+def test_reactivate_on_resub_noops_with_no_inactive_programs(monkeypatch):
+    programs = [_fake_program(_T0, status="active")]
+    repo_fake, ent = _install(monkeypatch, programs, subscribed=True)
+    ps.reactivate_on_resub(uuid4(), object())
+    assert repo_fake.updated == []
+
+
+def test_lapse_then_resub_full_cycle_restores_every_focus_when_slots_stayed_free(monkeypatch):
+    """T15: the full lapse -> resub cycle for a genuinely unsubscribed user with multiple
+    focuses. Oldest survives the lapse; nothing new claims the freed slots; resub restores
+    every benched program, oldest first."""
+    p1 = _fake_program(_T0, area="PUTTING", slot=0)
+    p2 = _fake_program(_T0 + timedelta(days=1), area="PUTTING", slot=1)
+    p3 = _fake_program(_T0 + timedelta(days=2), area="CHIPPING", slot=0)
+    programs = [p1, p2, p3]
+    repo_fake, ent = _install(monkeypatch, programs, subscribed=False)
+
+    ps.deactivate_extra_focuses(uuid4(), object(), trigger="webhook")
+    assert p1.status == "active"
+    assert p2.status == "inactive" and p2.slot == 1
+    assert p3.status == "inactive" and p3.slot == 0
+
+    ent.subscribed = True
+    ps.reactivate_on_resub(uuid4(), object())
+
+    assert p1.status == "active"
+    assert p2.status == "active" and p2.slot == 1 and p2.deactivated_at is None
+    assert p3.status == "active" and p3.slot == 0 and p3.deactivated_at is None
+
+
+# ---------------- _enforce_free_tier_focus_cap (T2: authoritative TOCTOU guard) ----------------
+
+class _FakeCapSession:
+    """Distinguishes the advisory-lock `text()` call from the `SELECT ... FOR UPDATE`
+    call by statement shape, so both can be faked without a real database."""
+
+    def __init__(self, active_ids):
+        self._active_ids = active_ids
+        self.advisory_lock_calls = 0
+
+    def execute(self, stmt, params=None):
+        if hasattr(stmt, "get_final_froms"):  # a Core Select construct
+            return SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: list(self._active_ids)))
+        self.advisory_lock_calls += 1
+        return None
+
+
+def test_enforce_free_tier_cap_noops_when_subscribed(monkeypatch):
+    monkeypatch.setattr(ps, "entitlement_service", _FakeEntitlement(subscribed=True))
+    session = _FakeCapSession(active_ids=[uuid4(), uuid4()])
+    ps._enforce_free_tier_focus_cap(uuid4(), session)  # must not raise
+    assert session.advisory_lock_calls == 1
+
+
+def test_enforce_free_tier_cap_allows_first_focus_when_unsubscribed(monkeypatch):
+    monkeypatch.setattr(ps, "entitlement_service", _FakeEntitlement(subscribed=False))
+    session = _FakeCapSession(active_ids=[])
+    ps._enforce_free_tier_focus_cap(uuid4(), session)  # must not raise
+
+
+def test_enforce_free_tier_cap_blocks_second_focus_when_unsubscribed(monkeypatch):
+    monkeypatch.setattr(ps, "entitlement_service", _FakeEntitlement(subscribed=False))
+    session = _FakeCapSession(active_ids=[uuid4()])
+    with pytest.raises(exceptions.FocusLimitExceeded):
+        ps._enforce_free_tier_focus_cap(uuid4(), session)
