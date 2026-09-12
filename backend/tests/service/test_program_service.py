@@ -378,37 +378,40 @@ def test_lapse_then_resub_full_cycle_restores_every_focus_when_slots_stayed_free
 
 
 # ---------------- _enforce_free_tier_focus_cap (T2: authoritative TOCTOU guard) ----------------
+#
+# The lock + locked count are built in the repository layer now (programs.
+# acquire_user_focus_lock / lock_active_program_ids_for_user), per test_layer_boundaries
+# -- services may not build statements themselves. Faking those two repo functions is
+# enough to exercise the service-level branching without a real database or session.
 
-class _FakeCapSession:
-    """Distinguishes the advisory-lock `text()` call from the `SELECT ... FOR UPDATE`
-    call by statement shape, so both can be faked without a real database."""
-
+class _FakeCapRepo:
     def __init__(self, active_ids):
         self._active_ids = active_ids
-        self.advisory_lock_calls = 0
+        self.lock_calls = 0
 
-    def execute(self, stmt, params=None):
-        if hasattr(stmt, "get_final_froms"):  # a Core Select construct
-            return SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: list(self._active_ids)))
-        self.advisory_lock_calls += 1
-        return None
+    def acquire_user_focus_lock(self, user_id, session):
+        self.lock_calls += 1
+
+    def lock_active_program_ids_for_user(self, user_id, session):
+        return list(self._active_ids)
 
 
 def test_enforce_free_tier_cap_noops_when_subscribed(monkeypatch):
     monkeypatch.setattr(ps, "entitlement_service", _FakeEntitlement(subscribed=True))
-    session = _FakeCapSession(active_ids=[uuid4(), uuid4()])
-    ps._enforce_free_tier_focus_cap(uuid4(), session)  # must not raise
-    assert session.advisory_lock_calls == 1
+    fake_repo = _FakeCapRepo(active_ids=[uuid4(), uuid4()])
+    monkeypatch.setattr(ps, "repo", fake_repo)
+    ps._enforce_free_tier_focus_cap(uuid4(), object())  # must not raise
+    assert fake_repo.lock_calls == 1
 
 
 def test_enforce_free_tier_cap_allows_first_focus_when_unsubscribed(monkeypatch):
     monkeypatch.setattr(ps, "entitlement_service", _FakeEntitlement(subscribed=False))
-    session = _FakeCapSession(active_ids=[])
-    ps._enforce_free_tier_focus_cap(uuid4(), session)  # must not raise
+    monkeypatch.setattr(ps, "repo", _FakeCapRepo(active_ids=[]))
+    ps._enforce_free_tier_focus_cap(uuid4(), object())  # must not raise
 
 
 def test_enforce_free_tier_cap_blocks_second_focus_when_unsubscribed(monkeypatch):
     monkeypatch.setattr(ps, "entitlement_service", _FakeEntitlement(subscribed=False))
-    session = _FakeCapSession(active_ids=[uuid4()])
+    monkeypatch.setattr(ps, "repo", _FakeCapRepo(active_ids=[uuid4()]))
     with pytest.raises(exceptions.FocusLimitExceeded):
-        ps._enforce_free_tier_focus_cap(uuid4(), session)
+        ps._enforce_free_tier_focus_cap(uuid4(), object())
