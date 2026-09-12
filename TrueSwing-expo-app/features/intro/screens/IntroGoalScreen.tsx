@@ -2,9 +2,9 @@ import { View, Text, Pressable } from "react-native";
 import { TrendingUp, Wrench } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import IntroHeader from "../components/IntroHeader";
-import IntroButton from "../components/IntroButton";
-import { tapHaptic } from "../utils/haptics";
+import Header from "features/shared/components/Header";
+import Button from "features/shared/components/Button";
+import { tapHaptic } from "features/shared/utils/haptics";
 import type { IntroIssue } from "../services/introCatalogService";
 
 type Kind = IntroIssue["kind"];
@@ -51,7 +51,7 @@ export default function IntroGoalScreen({
     return (
         <View className="flex-1" style={{ paddingTop: insets.top }}>
             <View className="flex-1 px-5 pt-2">
-                <IntroHeader eyebrow={areaLabel} heading={"What are you\nhere for?"} onBack={onBack} />
+                <Header eyebrow={areaLabel} heading={"What are you\nhere for?"} onBack={onBack} />
 
                 <View className="flex-1 flex-row items-center gap-3.5">
                     {OPTIONS.map(({ kind, label, blurb, Icon, gold }) => {
@@ -98,7 +98,7 @@ export default function IntroGoalScreen({
             </View>
 
             <View className="px-5" style={{ paddingBottom: insets.bottom + 12 }}>
-                <IntroButton label="Skip for now" onPress={onSkip} tone="quiet" />
+                <Button label="Skip for now" onPress={onSkip} tone="quiet" />
             </View>
         </View>
     );

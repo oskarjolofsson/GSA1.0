@@ -1,8 +1,8 @@
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import IntroHeader from "../components/IntroHeader";
-import IntroButton from "../components/IntroButton";
+import Header from "features/shared/components/Header";
+import Button from "features/shared/components/Button";
 import IntroAreaList from "../components/IntroAreaList";
 import type { IntroArea } from "../services/introCatalogService";
 
@@ -32,7 +32,7 @@ export default function IntroAreaScreen({
             <ScrollView
                 contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
             >
-                <IntroHeader eyebrow="First focus" heading={"Where do you\nlose shots?"} onBack={onBack} />
+                <Header eyebrow="First focus" heading={"Where do you\nlose shots?"} onBack={onBack} />
 
                 <View className="flex-1 justify-center">
                     {status === "loading" ? (
@@ -50,7 +50,7 @@ export default function IntroAreaScreen({
                                 <Text className="mt-2 text-[13px] leading-[19px] text-sand-dim">{error}</Text>
                             ) : null}
                             <View className="mt-6">
-                                <IntroButton label="Try again" onPress={onRetry} />
+                                <Button label="Try again" onPress={onRetry} />
                             </View>
                         </View>
                     ) : null}
@@ -60,7 +60,7 @@ export default function IntroAreaScreen({
             </ScrollView>
 
             <View className="px-5" style={{ paddingBottom: insets.bottom + 12 }}>
-                <IntroButton label="Skip for now" onPress={onSkip} tone="quiet" />
+                <Button label="Skip for now" onPress={onSkip} tone="quiet" />
             </View>
         </View>
     );

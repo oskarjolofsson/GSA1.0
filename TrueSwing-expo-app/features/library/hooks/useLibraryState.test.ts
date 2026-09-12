@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react-native";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 import { getIssueCatalog } from "features/issues/services/issueAuthoringService";
 import { fetchTaxonomy, readCachedTaxonomy, type Taxonomy } from "features/library/services/taxonomyService";
@@ -67,5 +67,42 @@ describe("useLibraryState", () => {
 
         await waitFor(() => expect(result.current.taxonomyStatus).toBe("error"));
         expect(result.current.areas).toEqual([]);
+    });
+
+    it("routes area -> kind -> focus, same fork intro asks about, then back down again", async () => {
+        const { result } = await renderHook(() => useLibraryState());
+        await waitFor(() => expect(result.current.taxonomyStatus).toBe("ready"));
+
+        const area = result.current.areas[0];
+        await act(async () => result.current.openArea(area));
+        expect(result.current.view).toBe("kind");
+        expect(result.current.area?.key).toBe(area.key);
+
+        await act(async () => result.current.chooseKind("fault"));
+        expect(result.current.view).toBe("focus");
+        expect(result.current.kind).toBe("fault");
+
+        // goBack walks back down one hierarchy level at a time, same as intro's
+        // back button, clearing the kind selection on the way past it.
+        await act(async () => {
+            const stillOpen = result.current.goBack();
+            expect(stillOpen).toBe(true);
+        });
+        expect(result.current.view).toBe("kind");
+        expect(result.current.kind).toBeNull();
+
+        await act(async () => {
+            const stillOpen = result.current.goBack();
+            expect(stillOpen).toBe(true);
+        });
+        expect(result.current.view).toBe("areas");
+        expect(result.current.area).toBeNull();
+
+        // Nowhere left to go -- the caller (LibraryScreen) dismisses the screen.
+        let atTop = true;
+        await act(async () => {
+            atTop = result.current.goBack();
+        });
+        expect(atTop).toBe(false);
     });
 });

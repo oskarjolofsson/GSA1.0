@@ -1,7 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 
-import { tapHaptic } from "../utils/haptics";
+import { tapHaptic } from "features/shared/utils/haptics";
 import type { IntroArea } from "../services/introCatalogService";
 
 type Props = {

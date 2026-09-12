@@ -1,8 +1,8 @@
 import { View, Text, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import IntroHeader from "../components/IntroHeader";
-import IntroButton from "../components/IntroButton";
+import Header from "features/shared/components/Header";
+import Button from "features/shared/components/Button";
 import IntroFocusList from "../components/IntroFocusList";
 import type { IntroArea, IntroIssue } from "../services/introCatalogService";
 
@@ -45,7 +45,7 @@ export default function IntroFocusScreen({
             <ScrollView
                 contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
             >
-                <IntroHeader
+                <Header
                     eyebrow={area.golfer_label}
                     heading={kind === "skill" ? "What do you\nwant to work on?" : "What do you\nwant to fix?"}
                     onBack={onBack}
@@ -63,14 +63,14 @@ export default function IntroFocusScreen({
             </ScrollView>
 
             <View className="px-5" style={{ paddingBottom: insets.bottom + 12 }}>
-                <IntroButton
+                <Button
                     label="Create your account"
                     onPress={onContinue}
                     disabled={!selectedId}
                     busy={saving}
                 />
                 <View className="mt-3">
-                    <IntroButton label="Skip for now" onPress={onSkip} tone="quiet" />
+                    <Button label="Skip for now" onPress={onSkip} tone="quiet" />
                 </View>
             </View>
         </View>

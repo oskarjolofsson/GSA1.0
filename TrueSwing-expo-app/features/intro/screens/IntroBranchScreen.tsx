@@ -2,9 +2,9 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import IntroHeader from "../components/IntroHeader";
-import IntroButton from "../components/IntroButton";
-import { tapHaptic } from "../utils/haptics";
+import Header from "features/shared/components/Header";
+import Button from "features/shared/components/Button";
+import { tapHaptic } from "features/shared/utils/haptics";
 import type { IntroBranch, IntroIssue } from "../services/introCatalogService";
 
 type Props = {
@@ -34,7 +34,7 @@ export default function IntroBranchScreen({
             <ScrollView
                 contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
             >
-                <IntroHeader
+                <Header
                     eyebrow={areaLabel}
                     heading={kind === "skill" ? "What's the\ngoal?" : "What does it\nlook like?"}
                     onBack={onBack}
@@ -71,7 +71,7 @@ export default function IntroBranchScreen({
             </ScrollView>
 
             <View className="px-5" style={{ paddingBottom: insets.bottom + 12 }}>
-                <IntroButton label="Skip for now" onPress={onSkip} tone="quiet" />
+                <Button label="Skip for now" onPress={onSkip} tone="quiet" />
             </View>
         </View>
     );

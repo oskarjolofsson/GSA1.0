@@ -1,76 +1,43 @@
-import type { ReactNode } from "react";
 import { View, Text, Pressable } from "react-native";
 import { ChevronRight, Camera } from "lucide-react-native";
 
-import type { AreaFork } from "../utils/libraryFork";
 import type { TaxonomyMiss, TaxonomyTerm } from "../services/taxonomyService";
 import StaggerRow from "./StaggerRow";
 
 type Props = {
-    fork: AreaFork;
+    items: (TaxonomyMiss | TaxonomyTerm)[];
     /** Gates the film hand-off; see the comment on the render condition below. */
     areaKey: string;
-    onSelectMiss: (miss: TaxonomyMiss) => void;
-    onSelectGoal: (goal: TaxonomyTerm) => void;
+    onSelect: (item: TaxonomyMiss | TaxonomyTerm) => void;
     onFilmSwing?: () => void;
 };
 
-/** Level two: the fork under one area. "Something's going wrong" leads to the
- *  area's misses, "nothing's broken" to its goals, and the two carry equal
- *  weight -- a golfer with nothing acutely broken still wants drills, and a
- *  filter chip row would have made that path a decoration on someone else's
- *  screen. Both branches land on the same candidate list. */
-export default function MissList({ fork, areaKey, onSelectMiss, onSelectGoal, onFilmSwing }: Props) {
+/** Level three: the area's misses or goals, one branch at a time -- the outer
+ *  header already states which ("What's the goal?" / "What does it look
+ *  like?"), so this is a flat list of rows, same shape as intro's branch
+ *  screen. */
+export default function MissList({ items, areaKey, onSelect, onFilmSwing }: Props) {
     // The AI analysis prompt is area-scoped server-side and defaults to
     // FULL_SWING, so this render condition is what keeps the hand-off correct --
     // there is no analysis for a bunker shot. Relaxing it means threading the
     // chosen area through the upload flow first.
     const showFilm = Boolean(onFilmSwing) && areaKey === "FULL_SWING";
 
-    // One index across the whole view rather than one per branch, so the two
-    // branches read as a single list arriving top to bottom instead of two lists
-    // racing each other.
-    let row = 0;
-
     return (
         <View>
-
-            {fork.goals.length > 0 ? (
-                <Branch label="Nothing's broken" question="Get better at:">
-                    {fork.goals.map((goal, index) => (
-                        <StaggerRow key={goal.key} index={row++}>
-                            <ForkRow
-                                title={goal.golfer_label}
-                                subtitle={goal.blurb}
-                                last={index === fork.goals.length - 1}
-                                onPress={() => onSelectGoal(goal)}
-                            />
-                        </StaggerRow>
-                    ))}
-                </Branch>
-            ) : null}
-
-            {fork.misses.length > 0 && fork.goals.length > 0 ? (
-                <View className="mt-8 h-px bg-white/[.13]" />
-            ) : null}
-
-            {fork.misses.length > 0 ? (
-                <Branch label="Something's going wrong" question="Technical issues:">
-                    {fork.misses.map((miss, index) => (
-                        <StaggerRow key={miss.key} index={row++}>
-                            <ForkRow
-                                title={miss.golfer_label}
-                                subtitle={miss.blurb}
-                                last={index === fork.misses.length - 1}
-                                onPress={() => onSelectMiss(miss)}
-                            />
-                        </StaggerRow>
-                    ))}
-                </Branch>
-            ) : null}
+            {items.map((item, index) => (
+                <StaggerRow key={item.key} index={index}>
+                    <ForkRow
+                        title={item.golfer_label}
+                        subtitle={item.blurb}
+                        last={index === items.length - 1}
+                        onPress={() => onSelect(item)}
+                    />
+                </StaggerRow>
+            ))}
 
             {showFilm ? (
-                <StaggerRow index={row++}>
+                <StaggerRow index={items.length}>
                     <Pressable
                         onPress={onFilmSwing}
                         accessibilityRole="button"
@@ -83,16 +50,6 @@ export default function MissList({ fork, areaKey, onSelectMiss, onSelectGoal, on
                     </Pressable>
                 </StaggerRow>
             ) : null}
-        </View>
-    );
-}
-
-function Branch({ label, question, children }: { label: string; question: string; children: ReactNode }) {
-    return (
-        <View className="mt-7">
-            {/* <Text className="text-[10px] uppercase tracking-[2.6px] text-gold">{label}</Text> */}
-            <Text className="mt-2 font-display text-[23px] text-gold text-center ">{question}</Text>
-            <View className="mt-2">{children}</View>
         </View>
     );
 }

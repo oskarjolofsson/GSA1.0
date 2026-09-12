@@ -15,7 +15,7 @@ import {
 } from "./services/introSelectionService";
 import type { IntroArea, IntroBranch, IntroIssue } from "./services/introCatalogService";
 
-import IntroStepTransition from "./components/IntroStepTransition";
+import StepTransition from "features/shared/components/StepTransition";
 import IntroProgressDots from "./components/IntroProgressDots";
 import IntroAmbientOverlay from "./components/IntroAmbientOverlay";
 import IntroWelcomeScreen from "./screens/IntroWelcomeScreen";
@@ -170,7 +170,7 @@ export default function IntroFlow() {
     return (
         <View className="flex-1 bg-ink">
             {/* Overlaid, not part of the flow: every step's own header (via
-                `IntroHeader` or the goal screen's own nav row) occupies the same
+                shared `Header` or the goal screen's own nav row) occupies the same
                 44pt band starting at insets.top + 8, so centering the dots there
                 lands them beside each back button without touching four screen
                 files or double-applying the safe-area inset. */}
@@ -206,7 +206,7 @@ export default function IntroFlow() {
                     <IntroProgressDots total={PICKABLE_STEPS.length} current={stepIndex} />
                 </View>
             )}
-            <IntroStepTransition screenKey={currentScreen} direction={direction} variant={transitionVariant}>
+            <StepTransition screenKey={currentScreen} direction={direction} variant={transitionVariant}>
             {currentScreen === "welcome" && (
                 <IntroWelcomeScreen onStart={goToArea} onSignIn={leaveToSignIn} />
             )}
@@ -258,7 +258,7 @@ export default function IntroFlow() {
                     onSkip={leaveToSignIn}
                 />
             )}
-            </IntroStepTransition>
+            </StepTransition>
         </View>
     );
 }

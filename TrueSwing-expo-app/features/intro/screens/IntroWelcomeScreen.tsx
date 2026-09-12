@@ -2,7 +2,7 @@ import { View, Text, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import IntroButton from "../components/IntroButton";
+import Button from "features/shared/components/Button";
 
 type Props = {
     onStart: () => void;
@@ -48,9 +48,9 @@ export default function IntroWelcomeScreen({ onStart, onSignIn }: Props) {
                 </View>
 
                 <View className="mt-8">
-                    <IntroButton label="Choose your first focus" onPress={onStart} icon />
+                    <Button label="Choose your first focus" onPress={onStart} icon />
                     <View className="mt-4">
-                        <IntroButton label="I already have an account" onPress={onSignIn} tone="quiet" />
+                        <Button label="I already have an account" onPress={onSignIn} tone="quiet" />
                     </View>
                 </View>
             </View>

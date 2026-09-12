@@ -1,17 +1,20 @@
-import { useCallback, useState } from "react";
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { View, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ChevronLeft, Search } from "lucide-react-native";
+import { Search } from "lucide-react-native";
 
 import { generateProgramFromIssue } from "features/programs/services/programService";
 import type { CatalogIssue } from "features/issues/services/issueAuthoringService";
 import { getErrorMessage } from "lib/errors";
+import Header from "features/shared/components/Header";
+import StepTransition from "features/shared/components/StepTransition";
 
-import { useLibraryState } from "./hooks/useLibraryState";
+import { useLibraryState, type LibraryView } from "./hooks/useLibraryState";
 import useAreaStats from "./hooks/useAreaStats";
 import SearchBar from "./components/SearchBar";
 import AreaGrid from "./components/AreaGrid";
 import AreaEmptyState from "./components/AreaEmptyState";
+import KindChoice from "./components/KindChoice";
 import MissList from "./components/MissList";
 import CandidateList from "./components/CandidateList";
 import IssueSheet from "./components/IssueSheet";
@@ -29,9 +32,17 @@ type Props = {
     initialAreaKey?: string;
 };
 
-/** Browse the practice library by AREA -> (miss | goal) -> plain-language focus,
- *  or search. The AI and coach paths already diagnose from video or notes; this
- *  is the manual path. Layout only -- state lives in useLibraryState. */
+// Depth of each view in the areas -> kind -> focus -> candidates hierarchy.
+// Drives the step transition's push direction the same way intro's
+// PICKABLE_STEPS index does, but keyed off the library's own state instead of
+// a linear step list.
+const VIEW_DEPTH: Record<LibraryView, number> = { areas: 0, kind: 1, focus: 2, candidates: 3 };
+
+/** Browse the practice library by AREA -> (fix something | get better) ->
+ *  plain-language focus, or search. Same fork intro asks about right after
+ *  the area, one level earlier than the old combined miss/goal list. The AI
+ *  and coach paths already diagnose from video or notes; this is the manual
+ *  path. Layout only -- state lives in useLibraryState. */
 export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAreaKey }: Props) {
     const insets = useSafeAreaInsets();
     const lib = useLibraryState(initialAreaKey);
@@ -87,41 +98,55 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAr
         ? "Search"
         : lib.view === "areas"
           ? "Where do you\nlose shots?"
-          : lib.view === "focus"
-            ? "What brings\nyou here?"
-            : (lib.filter?.label ?? "Your focus");
+          : lib.view === "kind"
+            ? "What are you\nhere for?"
+            : lib.view === "focus"
+              ? lib.kind === "skill"
+                  ? "What's the\ngoal?"
+                  : "What does it\nlook like?"
+              : (lib.filter?.label ?? "Your focus");
+
+    // Direction/variant for StepTransition. depth tracks lib.view's position in
+    // the hierarchy; search is orthogonal to it (can open from any depth), so
+    // entering/leaving search fades rather than pushing in a direction that
+    // wouldn't mean anything.
+    const depth = VIEW_DEPTH[lib.view];
+    const previousDepthRef = useRef(depth);
+    const previousSearchingRef = useRef(searching);
+    const direction: 1 | -1 = depth >= previousDepthRef.current ? 1 : -1;
+    const enteringOrLeavingSearch = searching !== previousSearchingRef.current;
+    const transitionVariant: "push" | "fade" = enteringOrLeavingSearch ? "fade" : "push";
+    useEffect(() => {
+        previousDepthRef.current = depth;
+        previousSearchingRef.current = searching;
+    }, [depth, searching]);
 
     return (
         <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
-            <ScrollView
-                contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 }}
-                keyboardShouldPersistTaps="handled"
-            >
-                <View className="min-h-[44px] flex-row items-center justify-between">
-                    <Pressable
-                        onPress={goBack}
-                        accessibilityRole="button"
-                        className="min-h-[44px] flex-row items-center pr-3 active:opacity-70"
-                    >
-                        <ChevronLeft size={16} color="#8A8676" />
-                        <Text className="ml-1 text-[13px] text-sand-dim">Back</Text>
-                    </Pressable>
-
-                    {showSearchIcon ? (
-                        <Pressable
-                            onPress={() => setSearchOpen(true)}
-                            accessibilityRole="button"
-                            accessibilityLabel="Search focus points"
-                            hitSlop={8}
-                            className="-mr-2 h-[44px] w-[44px] items-center justify-center active:opacity-70"
-                        >
-                            <Search size={19} color="#8A8676" />
-                        </Pressable>
-                    ) : null}
-                </View>
-
-                <Text className="mt-4 text-[10px] uppercase tracking-[2.6px] text-gold">{eyebrow}</Text>
-                <Text className="mt-3 font-display text-[29px] leading-[33px] text-sand">{heading}</Text>
+            {/* Fixed chrome: header and search bar don't scroll away, so
+                StepTransition below always animates against the same fixed point,
+                the way each intro step slides under its own static header band. */}
+            <View className="px-5 pt-2">
+                <Header
+                    eyebrow={eyebrow}
+                    heading={heading}
+                    onBack={goBack}
+                    backLabel="Back"
+                    align="center"
+                    rightSlot={
+                        showSearchIcon ? (
+                            <Pressable
+                                onPress={() => setSearchOpen(true)}
+                                accessibilityRole="button"
+                                accessibilityLabel="Search focus points"
+                                hitSlop={8}
+                                className="-mr-2 h-[44px] w-[44px] items-center justify-center active:opacity-70"
+                            >
+                                <Search size={19} color="#8A8676" />
+                            </Pressable>
+                        ) : undefined
+                    }
+                />
 
                 {/* Search is flat over focus points and bypasses the hierarchy, so it
                     stays reachable at every level -- behind an icon on the landing,
@@ -129,24 +154,45 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAr
                 {showSearchBar ? (
                     <SearchBar value={lib.query} onChange={lib.setQuery} autoFocus={searchOpen} />
                 ) : null}
+            </View>
 
-                {/* Keyed so the row stagger replays on every move through the
-                    hierarchy. Library navigation is state, not a remount, so without
-                    this the entrance would only ever play once per visit. */}
-                <View key={`${lib.view}:${lib.area?.key ?? ""}:${lib.filter?.label ?? ""}:${searching}`}>
-                    <Body
-                        lib={lib}
-                        statsByArea={statsByArea}
-                        searching={searching}
-                        onOpen={(issue) => {
-                            setStartError(null);
-                            setOpenIssue(issue);
-                        }}
-                        onBackToAreas={goBack}
-                        onFilmSwing={onFilmSwing}
-                    />
-                </View>
-            </ScrollView>
+            {/* flex-1 region StepTransition's absolute-fill MotiView animates
+                within. Body gets its own ScrollView here since the page-level one
+                that used to size it by content is gone -- that scroll now has to
+                happen inside this fixed-height region instead. */}
+            <View className="flex-1">
+                <StepTransition
+                    screenKey={`${lib.view}:${lib.area?.key ?? ""}:${lib.filter?.label ?? ""}:${searching}`}
+                    direction={direction}
+                    variant={transitionVariant}
+                >
+                    <ScrollView
+                        contentContainerStyle={
+                            // The kind step is two short-lived cards, not a list --
+                            // centered in the remaining space instead of sitting
+                            // tight under the search bar the way a scrolling list
+                            // starts. Every other view keeps its natural top-down
+                            // flow, where centering would fight the reading order.
+                            lib.view === "kind" && !searching
+                                ? { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 48, justifyContent: "center" }
+                                : { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 }
+                        }
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <Body
+                            lib={lib}
+                            statsByArea={statsByArea}
+                            searching={searching}
+                            onOpen={(issue) => {
+                                setStartError(null);
+                                setOpenIssue(issue);
+                            }}
+                            onBackToAreas={goBack}
+                            onFilmSwing={onFilmSwing}
+                        />
+                    </ScrollView>
+                </StepTransition>
+            </View>
 
             {/* Outside the ScrollView: a Modal is its own layer, and nesting it inside a
                 scroll container makes its scrim mis-measure on Android. */}
@@ -203,24 +249,51 @@ function Body({
         return <AreaGrid areas={lib.areas} statsByArea={statsByArea} onSelect={lib.openArea} />;
     }
 
+    if (lib.view === "kind") {
+        if (lib.catalogStatus === "loading" || lib.taxonomyStatus === "loading") {
+            return <SkeletonRows count={2} />;
+        }
+        if (lib.taxonomyStatus === "error") {
+            return <InlineRetry message={lib.taxonomyError} onRetry={lib.retryTaxonomy} />;
+        }
+        if (lib.catalogStatus === "error") {
+            return <InlineRetry message={lib.catalogError} onRetry={lib.retryCatalog} />;
+        }
+        const fork = lib.fork;
+        const skillAvailable = (fork?.goals.length ?? 0) > 0;
+        const faultAvailable = (fork?.misses.length ?? 0) > 0;
+        if (!skillAvailable && !faultAvailable) {
+            return <AreaEmptyState areaLabel={lib.area?.golfer_label ?? "This"} onBack={onBackToAreas} />;
+        }
+        return (
+            <KindChoice
+                skillAvailable={skillAvailable}
+                faultAvailable={faultAvailable}
+                onSelect={lib.chooseKind}
+            />
+        );
+    }
+
     if (lib.view === "focus") {
         if (lib.catalogStatus === "loading") return <SkeletonRows count={4} />;
         if (lib.catalogStatus === "error") {
             return <InlineRetry message={lib.catalogError} onRetry={lib.retryCatalog} />;
         }
         const fork = lib.fork;
-        if (!fork || (fork.misses.length === 0 && fork.goals.length === 0)) {
+        const items = lib.kind === "skill" ? (fork?.goals ?? []) : (fork?.misses ?? []);
+        if (items.length === 0) {
             return <AreaEmptyState areaLabel={lib.area?.golfer_label ?? "This"} onBack={onBackToAreas} />;
         }
         return (
             <MissList
-                fork={fork}
+                items={items}
                 areaKey={lib.area?.key ?? ""}
-                onSelectMiss={(miss) =>
-                    lib.openFilter({ type: "miss", miss: miss.key, label: miss.golfer_label })
-                }
-                onSelectGoal={(goal) =>
-                    lib.openFilter({ type: "goal", goal: goal.key, label: goal.golfer_label })
+                onSelect={(item) =>
+                    lib.openFilter(
+                        lib.kind === "skill"
+                            ? { type: "goal", goal: item.key, label: item.golfer_label }
+                            : { type: "miss", miss: item.key, label: item.golfer_label }
+                    )
                 }
                 onFilmSwing={onFilmSwing}
             />
