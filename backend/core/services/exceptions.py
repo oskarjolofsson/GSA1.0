@@ -47,3 +47,14 @@ class ForbiddenException(ServiceException):
 class ConflictException(ServiceException):
     def __init__(self, message: str):
         super().__init__(message)
+
+
+class FocusLimitExceeded(ServiceException):
+    """Raised when an unsubscribed user tries to start a second active focus.
+
+    An unsubscribed user may hold at most one active Program at a time. This is a
+    fast-fail, router-level check (see app.dependencies.entitlement.require_focus_capacity);
+    the authoritative, row-locked enforcement lives in program_service.generate_program.
+    """
+    def __init__(self, message: str = "Subscribe to start more than one focus at a time."):
+        super().__init__(message)

@@ -23,6 +23,7 @@ from core.infrastructure.db.repositories import processed_webhook_events as proc
 from core.config import EXPECTED_REVENUECAT_ENV
 from core.infrastructure.payment.revenuecat.webhook import RevenueCatWebhookVerifier
 from core.services.payment.serialization import json_safe
+from core.services.program_focus_hooks import deactivate_extra_focuses, reactivate_on_resub
 
 logger = logging.getLogger(__name__)
 
@@ -141,6 +142,18 @@ def _handle_subscription_event(
         session=db_session,
         event_created_at=event_created_at,
     )
+
+    # The subscription just fully lapsed (grace/retry window over, or paused) -- an
+    # unsubscribed user may hold at most one active focus, so shed the rest now
+    # rather than waiting for the next lazy check. Lane B's deactivate_extra_focuses
+    # no-ops fast when there's nothing to do.
+    if fields["status"] == "canceled" and event_type in ("EXPIRATION", "SUBSCRIPTION_PAUSED"):
+        deactivate_extra_focuses(user_id, db_session, trigger="webhook")
+
+    # The subscription became active again via renewal or the user turning
+    # auto-renew back on -- give back any focus that a lapse had deactivated.
+    if event_type in ("RENEWAL", "UNCANCELLATION"):
+        reactivate_on_resub(user_id, db_session)
 
 
 def _handle_transfer(event: dict, db_session: Session) -> None:
