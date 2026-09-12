@@ -1,6 +1,7 @@
 from ..models.Program import Program
 from ..models.ProgramStep import ProgramStep
 from ..models.ProgramDrillState import ProgramDrillState
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from uuid import UUID
@@ -224,6 +225,33 @@ def update_drill_state(state: ProgramDrillState, session: Session) -> ProgramDri
     session.add(state)
     session.flush()
     return state
+
+
+def acquire_user_focus_lock(user_id: UUID, session: Session) -> None:
+    """Transaction-scoped advisory lock keyed on the user.
+
+    Used by program_service._enforce_free_tier_focus_cap before it counts active
+    programs: a plain `SELECT ... FOR UPDATE` cannot serialize two concurrent callers
+    when the user holds zero active programs, because there is no row yet to lock. This
+    lock closes that gap regardless of row count. Released automatically at
+    commit/rollback (xact-scoped), so it needs no matching "release" call.
+    """
+    session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:user_id))"), {"user_id": str(user_id)})
+
+
+def lock_active_program_ids_for_user(user_id: UUID, session: Session) -> list[UUID]:
+    """The user's active Program ids, locked FOR UPDATE inside the caller's transaction.
+
+    Paired with `acquire_user_focus_lock`: once that lock serializes callers for this
+    user, this read (and the count the caller derives from it) is authoritative for the
+    rest of the transaction -- see program_service._enforce_free_tier_focus_cap (T2).
+    """
+    stmt = (
+        select(Program.id)
+        .where(Program.user_id == user_id, Program.status == "active")
+        .with_for_update()
+    )
+    return list(session.execute(stmt).scalars().all())
 
 
 def try_add_program(fields: dict, session: Session) -> Program | None:

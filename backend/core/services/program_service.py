@@ -3,7 +3,6 @@ from core.infrastructure.db.repositories import drills as drill_repo
 from core.infrastructure.db.repositories import analysis_issues as analysis_issue_repo
 from core.infrastructure.db.repositories import issues as issue_repo
 from core.infrastructure.db.repositories import taxonomy as taxonomy_repo
-from core.infrastructure.db.models.Program import Program
 from core.services import exceptions
 from core.services import drill_metrics
 from core.services.payment import entitlement_service
@@ -15,7 +14,6 @@ from core.services.dtos.program_service_dto import (
     DrillGradeDTO,
 )
 
-from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 from uuid import UUID
 from datetime import datetime, timezone
@@ -243,13 +241,8 @@ def _enforce_free_tier_focus_cap(user_id: UUID, session: Session) -> None:
     already honors the past_due/unpaid grace period -- see ADR-0006), so an existing
     subscriber's second, third, ... focus is never blocked here.
     """
-    session.execute(text("SELECT pg_advisory_xact_lock(hashtext(:user_id))"), {"user_id": str(user_id)})
-
-    active_ids = session.execute(
-        select(Program.id)
-        .where(Program.user_id == user_id, Program.status == "active")
-        .with_for_update()
-    ).scalars().all()
+    repo.acquire_user_focus_lock(user_id, session)
+    active_ids = repo.lock_active_program_ids_for_user(user_id, session)
 
     if entitlement_service.is_subscribed(user_id, session):
         return
