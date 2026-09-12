@@ -42,7 +42,8 @@ class GetAnalaysisDTO:
     created_at: datetime
     started_at: datetime
     completed_at: datetime
-    
+    reviewed_at: datetime | None = None
+
 @dataclass(frozen=True)
 class IssueSwingTimelineItemDTO:
     """One swing in an issue's progress timeline: the clip plus the AI's read of

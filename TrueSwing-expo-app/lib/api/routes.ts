@@ -18,6 +18,7 @@ export const routes = {
   analyses: {
     root: `${BASE}/analyses/`,
     byId: (analysisId: string) => `${BASE}/analyses/${analysisId}/`,
+    reviewed: (analysisId: string) => `${BASE}/analyses/${analysisId}/reviewed/`,
     byIssue: (issueId: string) => `${BASE}/analyses/by-issue/${issueId}/`,
     videoUrl: (analysisId: string, videoKey: string) =>
       `${BASE}/analyses/${analysisId}/video-url/?video_key=${encodeURIComponent(videoKey)}`,
