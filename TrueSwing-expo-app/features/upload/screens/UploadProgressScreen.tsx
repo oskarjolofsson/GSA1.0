@@ -5,13 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ErrorState from 'features/shared/components/ErrorState';
 import { ScreenProps } from 'features/shared/types';
 
+import AnalysisResultsReview from 'features/analysis/components/AnalysisResultsReview';
+
 import { AnalysisStatusResponse } from '../types';
 import { UploadProps } from '../hooks/useUpload';
-import AnalysisComplete from '../components/AnalysisComplete';
 import ProgressRail, { type RailStep } from '../components/ProgressRail';
 
 // Both callbacks are narrowed back to required: this screen hands them to
-// AnalysisComplete's two buttons and to the failure state's retry, so there is no
+// AnalysisResultsReview's two buttons and to the failure state's retry, so there is no
 // meaningful render without them.
 type ProgressScreenProps = ScreenProps & {
   onNext: () => void;
@@ -85,7 +86,14 @@ export default function ProgressScreen({ onBack, onNext, upload }: ProgressScree
     // onNext, not a router.push from here: navigating straight out skipped
     // UploadFlow's own reset, so re-entering the tab landed on a stale flow
     // still holding the finished video.
-    return <AnalysisComplete onNext={onNext} onBack={onBack} />;
+    return (
+      <AnalysisResultsReview
+        issues={status.analysis?.issues ?? []}
+        analysisId={status.analysis?.analysis_id ?? null}
+        onNext={onNext}
+        onBack={onBack}
+      />
+    );
   }
 
   // Byte counts are the one real number here, so they are shown only once they
