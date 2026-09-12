@@ -22,6 +22,12 @@ import { join } from 'path';
 
 const ADD_FOCUS_DIR = join(__dirname, '..', '..', 'app', '(app)', 'add-focus');
 
+// browse.tsx is deliberately excluded from the premium-entry guard below: browsing
+// the library and adding your first focus are always free under the subscription
+// model (see backend ADR/CEO review for "1 free focus, AI stays paywalled"). Only
+// the AI-analysis entry points (coach.tsx, upload.tsx) hard-gate on entry.
+const AI_GATED_ROUTES = ['coach.tsx', 'upload.tsx'];
+
 function routeFiles(): string[] {
   return readdirSync(ADD_FOCUS_DIR).filter(
     (f) => f.endsWith('.tsx') && !f.startsWith('_') && !f.includes('.test.')
@@ -35,13 +41,19 @@ describe('add-focus routes', () => {
     expect(routeFiles().sort()).toEqual(['browse.tsx', 'coach.tsx', 'upload.tsx']);
   });
 
-  it.each(routeFiles())('%s calls useRequirePremiumEntry', (file) => {
+  it.each(AI_GATED_ROUTES)('%s calls useRequirePremiumEntry', (file) => {
     const src = readFileSync(join(ADD_FOCUS_DIR, file), 'utf8');
 
     expect(src).toContain(
       "import { useRequirePremiumEntry } from 'features/billing/hooks/useRequirePremiumEntry'"
     );
     expect(src).toMatch(/useRequirePremiumEntry\(\);/);
+  });
+
+  it('browse.tsx does NOT gate on entry -- browsing and your first focus are free', () => {
+    const src = readFileSync(join(ADD_FOCUS_DIR, 'browse.tsx'), 'utf8');
+
+    expect(src).not.toContain('useRequirePremiumEntry');
   });
 
   it.each(routeFiles())('%s leaves via exitToHome, never a bare replace', (file) => {

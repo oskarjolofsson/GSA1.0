@@ -42,6 +42,11 @@ jest.mock("features/shared/components/StepTransition", () => ({
 
 jest.mock("./hooks/useAreaStats", () => () => ({}));
 
+// LibraryScreen registers a 402 retry via useBilling; not under test here.
+jest.mock("features/billing/BillingContext", () => ({
+    useBilling: () => ({ setPendingRetry: jest.fn() }),
+}));
+
 type MockLibState = {
     areas: unknown[];
     area: { key: string; golfer_label: string } | null;

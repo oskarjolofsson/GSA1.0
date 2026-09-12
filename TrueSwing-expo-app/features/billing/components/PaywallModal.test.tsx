@@ -11,7 +11,7 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import PaywallModal from './PaywallModal';
-import type { PaywallReason } from 'features/billing/types';
+import type { PaywallReason, PaywallTrigger } from 'features/billing/types';
 
 // react-native-purchases ships untranspiled ESM via @revenuecat/purchases-js-hybrid-mappings
 // and is not in jest-expo's transform allowlist, so it has to be mocked rather than
@@ -75,11 +75,12 @@ function renderPaywall() {
   );
 }
 
-function billing(reason: PaywallReason = 'manual') {
+function billing(reason: PaywallReason = 'manual', trigger?: PaywallTrigger) {
   mockUseBilling.mockReturnValue({
-    paywall: { open: true, reason },
+    paywall: { open: true, reason, trigger },
     closePaywall,
     refreshUntilPremium,
+    setPendingRetry: jest.fn(),
   });
 }
 
@@ -229,13 +230,22 @@ describe('reason routing', () => {
     }
   );
 
-  it('hides the value set on 402 and explains what happened instead', async () => {
-    // Someone whose access just died mid-practice does not need a feature list. They
-    // need to know nothing was charged and their work is still there.
+  it('hides the value set on 402 and explains that only this one thing is gated', async () => {
+    // Someone mid-action (adding a 2nd focus, or running AI analysis) does not need a
+    // feature list, and must not be told their plan ended -- practice keeps working.
     billing('402');
     const view = await renderPaywall();
 
     expect(view.queryByText('Film a swing, get it analysed')).toBeNull();
-    expect(view.getByText(/Nothing has been charged/)).toBeTruthy();
+    expect(view.queryByText(/plan.*has ended/i)).toBeNull();
+    expect(view.queryByText(/nothing has been charged/i)).toBeNull();
+    expect(view.getByText(/practice keeps working/i)).toBeTruthy();
+  });
+
+  it('shows the same 402 copy regardless of trigger', async () => {
+    // T11: trigger is metadata for analytics/retry only -- the copy stays generic.
+    billing('402', 'focus_limit');
+    const view = await renderPaywall();
+    expect(view.getByText(/practice keeps working/i)).toBeTruthy();
   });
 });
