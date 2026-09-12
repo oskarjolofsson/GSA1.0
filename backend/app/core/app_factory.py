@@ -47,7 +47,8 @@ def create_app() -> FastAPI:
         InvalidVideoException,
         ForbiddenException,
         UnauthorizedException,
-        ConflictException
+        ConflictException,
+        FocusLimitExceeded
     )
     from core.infrastructure.auth.exceptions import AuthenticationError
     from app.exception_handlers import (
@@ -61,7 +62,8 @@ def create_app() -> FastAPI:
         forbidden_exception_handler,
         unauthorized_exception_handler,
         revenuecat_webhook_verification_exception_handler,
-        conflict_exception_handler
+        conflict_exception_handler,
+        focus_limit_exceeded_exception_handler
     )
     
     app.add_exception_handler(NotFoundException, not_found_exception_handler)
@@ -75,6 +77,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(UnauthorizedException, unauthorized_exception_handler)
     app.add_exception_handler(RevenueCatWebhookVerificationError, revenuecat_webhook_verification_exception_handler)
     app.add_exception_handler(ConflictException, conflict_exception_handler)
+    app.add_exception_handler(FocusLimitExceeded, focus_limit_exceeded_exception_handler)
 
     # --- Routers ---
     from app.api.v1.api import api_router

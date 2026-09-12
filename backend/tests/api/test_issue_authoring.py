@@ -2,12 +2,13 @@
 HTTP contract tests for the user-authored issue paths (coach feedback + browse)
 and the issue_id program-generate path. Seeding goes through `db_session`; the AI
 formatter is monkeypatched so no API key/network is needed. `/structure-feedback/`
-is premium-gated, so we override `require_premium`.
+is gated by `require_ai_access` and `/programs/generate/` by
+`require_focus_capacity`, so `premium` overrides both.
 """
 import pytest
 
 from app.main import app
-from app.dependencies.entitlement import require_premium
+from app.dependencies.entitlement import require_ai_access, require_focus_capacity
 
 from core.infrastructure.db.models.Issue import Issue
 from core.infrastructure.db.models.Drill import Drill
@@ -17,9 +18,12 @@ from core.services import issue_authoring_service as ias
 
 @pytest.fixture
 def premium(test_user):
-    app.dependency_overrides[require_premium] = lambda: {"user_id": str(test_user["user_id"])}
+    override = lambda: {"user_id": str(test_user["user_id"])}
+    app.dependency_overrides[require_ai_access] = override
+    app.dependency_overrides[require_focus_capacity] = override
     yield
-    app.dependency_overrides.pop(require_premium, None)
+    app.dependency_overrides.pop(require_ai_access, None)
+    app.dependency_overrides.pop(require_focus_capacity, None)
 
 
 @pytest.fixture

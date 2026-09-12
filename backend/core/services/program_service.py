@@ -5,6 +5,7 @@ from core.infrastructure.db.repositories import issues as issue_repo
 from core.infrastructure.db.repositories import taxonomy as taxonomy_repo
 from core.services import exceptions
 from core.services import drill_metrics
+from core.services.payment import entitlement_service
 from core.services.dtos.program_service_dto import (
     ProgramDTO,
     ProgramStepDTO,
@@ -40,6 +41,10 @@ GRADE_STRENGTH_DELTA: dict[str, int] = {"rough": -1, "ok": 0, "dialed": 1}
 # partial unique index programs_one_active_per_area_slot -- this constant only names the
 # slot count that index implies.
 SLOTS_PER_AREA = 2
+
+# How many active programs a free-tier (unsubscribed) golfer may hold at once. Enforced
+# authoritatively inside generate_program itself -- see _enforce_free_tier_focus_cap.
+FREE_TIER_ACTIVE_PROGRAM_CAP = 1
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -91,6 +96,8 @@ def generate_program(
     existing = repo.get_active_program_for_issue_id(user_id, resolved_issue_id, session)
     if existing:
         return _program_to_dto(existing, session)
+
+    _enforce_free_tier_focus_cap(user_id, session)
 
     return _seed_program(
         user_id=user_id,
@@ -209,6 +216,151 @@ def _seed_program(
         },
     )
     return _program_to_dto(program, session)
+
+
+def _enforce_free_tier_focus_cap(user_id: UUID, session: Session) -> None:
+    """The AUTHORITATIVE free-tier focus cap, enforced inside the same transaction that
+    inserts the new Program row.
+
+    The router dependency (Lane A) is the fast, cheap gate for the ordinary case, but it
+    reads entitlement and the active-program count in a separate round trip from the
+    insert -- so two concurrent add-focus requests from the same unsubscribed user can
+    both read "0 active programs, cap is 1", both pass, and both insert. This closes that
+    TOCTOU race.
+
+    Two locking steps, both required:
+      1. `pg_advisory_xact_lock` keyed on the user serializes concurrent callers even
+         when the user currently holds zero active programs -- a `SELECT ... FOR UPDATE`
+         alone cannot do this, because there is no row yet to lock. The lock is held for
+         the rest of this transaction and released automatically on commit/rollback.
+      2. Having established that only one caller for this user proceeds at a time, `SELECT
+         ... FOR UPDATE` over the user's active Program rows is the count this function
+         acts on, taken and locked inside the same transaction as the insert that follows.
+
+    A no-op for subscribed users (checked via `entitlement_service.is_subscribed`, which
+    already honors the past_due/unpaid grace period -- see ADR-0006), so an existing
+    subscriber's second, third, ... focus is never blocked here.
+    """
+    repo.acquire_user_focus_lock(user_id, session)
+    active_ids = repo.lock_active_program_ids_for_user(user_id, session)
+
+    if entitlement_service.is_subscribed(user_id, session):
+        return
+
+    if len(active_ids) >= FREE_TIER_ACTIVE_PROGRAM_CAP:
+        log.info(
+            "free tier focus cap enforced (authoritative check)",
+            extra={"user_id": str(user_id), "active_count": len(active_ids)},
+        )
+        raise exceptions.FocusLimitExceeded()
+
+
+def deactivate_extra_focuses(user_id: UUID, db_session: Session, trigger: str) -> None:
+    """Bench every active Program but the oldest, for a user who has lapsed out of their
+    subscription (or is being lazily checked and found to have lapsed).
+
+    Safety-critical no-op: this function checks `entitlement_service.is_subscribed` itself
+    and returns immediately if the user is currently subscribed -- including during the
+    past_due/unpaid grace period, since `is_subscribed` already honors that (ADR-0006). A
+    caller must NEVER rely on having checked entitlement beforehand; this is the one
+    function standing between a webhook/lazy-check bug and silently benching a paying
+    subscriber's programs, so it re-checks rather than trusting the caller.
+
+    Keeps the oldest active program (by created_at, ascending) exactly as-is -- including
+    its `slot`, which is never touched here (see ADR-0004 / the two-per-area cap) so that
+    `reactivate_on_resub` can restore a benched program to the slot it originally held.
+    Every other active program moves to status='inactive' with deactivated_at=now(), in
+    one transaction.
+
+    `trigger` is a free-text label for the structured log line only (e.g. "webhook",
+    "lazy_check") -- it has no effect on behavior.
+    """
+    if entitlement_service.is_subscribed(user_id, db_session):
+        log.info(
+            "deactivate_extra_focuses no-op: user is subscribed",
+            extra={"user_id": str(user_id), "trigger": trigger},
+        )
+        return
+
+    active = repo.get_active_programs_by_user(user_id, db_session)
+    # get_active_programs_by_user orders by created_at DESCENDING; re-order ascending so
+    # index 0 is the oldest program, the one that survives.
+    active_asc = sorted(active, key=lambda p: p.created_at)
+
+    if len(active_asc) <= 1:
+        return
+
+    now = datetime.now(timezone.utc)
+    survivor, *extras = active_asc
+    for program in extras:
+        old_status = program.status
+        program.status = "inactive"
+        program.deactivated_at = now
+        repo.update_program(program, db_session)
+        log.info(
+            "program deactivated",
+            extra={
+                "user_id": str(user_id),
+                "program_id": str(program.id),
+                "trigger": trigger,
+                "old_status": old_status,
+                "new_status": program.status,
+            },
+        )
+
+
+def reactivate_on_resub(user_id: UUID, db_session: Session) -> None:
+    """Restore benched Program rows to active on resubscribe, oldest first, wherever
+    their original (area, slot) is still free.
+
+    A program's slot may no longer be free: the golfer could have started a brand-new
+    program in that same area+slot while unsubscribed (occupying the other slot, or the
+    survivor from `deactivate_extra_focuses` could have moved -- though it never does,
+    per T12). Rather than reassigning a reactivated program to a different slot, this
+    leaves it inactive and logs the skip, so support can see exactly why a golfer's old
+    focus did not come back. Reassigning would violate the "a program is a commitment to
+    a specific slot" reasoning in Program.slot's own docstring.
+    """
+    inactive = repo.get_programs_by_user(user_id, db_session)
+    inactive = [p for p in inactive if p.status == "inactive"]
+    inactive_asc = sorted(inactive, key=lambda p: p.created_at)
+
+    if not inactive_asc:
+        return
+
+    # Occupied (area, slot) pairs are re-read on every iteration: reactivating the oldest
+    # inactive program can occupy a slot that a later, more-recently-benched program in
+    # this same loop would otherwise (wrongly) see as free.
+    for program in inactive_asc:
+        taken = {
+            (p.area, p.slot)
+            for p in repo.get_active_programs_by_user(user_id, db_session)
+        }
+        key = (program.area, program.slot)
+        if key in taken:
+            log.info(
+                "program reactivation skipped: slot occupied",
+                extra={
+                    "user_id": str(user_id),
+                    "program_id": str(program.id),
+                    "area": program.area,
+                    "slot": program.slot,
+                },
+            )
+            continue
+
+        program.status = "active"
+        program.deactivated_at = None
+        repo.update_program(program, db_session)
+        log.info(
+            "program reactivated",
+            extra={
+                "user_id": str(user_id),
+                "program_id": str(program.id),
+                "area": program.area,
+                "slot": program.slot,
+            },
+        )
 
 
 def _allocate_slot(user_id: UUID, area: str, session: Session) -> int:

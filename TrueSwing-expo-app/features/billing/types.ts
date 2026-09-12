@@ -27,3 +27,13 @@ export type SubscriptionSummary = {
  * - '402'    — a premium backend call returned Payment Required mid-session
  */
 export type PaywallReason = 'manual' | 'gate' | '402';
+
+/**
+ * What specifically triggered a '402' paywall open. Not part of `PaywallReason` on
+ * purpose — the copy stays generic across both cases (CEO review: smaller diff, no new
+ * enum branch in the modal). This is metadata only, for analytics segmentation (which
+ * moment actually converts) and for retrying the original action after purchase.
+ * - 'focus_limit' — tried to add a 2nd+ focus while unsubscribed
+ * - 'ai_locked'   — tried to run AI analysis / structure-feedback while unsubscribed
+ */
+export type PaywallTrigger = 'focus_limit' | 'ai_locked';

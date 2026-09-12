@@ -1,3 +1,5 @@
+from fastapi import HTTPException, status
+
 from .dtos.analysis_service_dto import (
     CreateAnalysisDTO,
     GetAnalaysisIssueDTO,
@@ -7,6 +9,7 @@ from .dtos.analysis_service_dto import (
     IssueSwingTimelineItemDTO,
 )
 from .exceptions import NotFoundException, InvalidStateException, InvalidVideoException, ForbiddenException
+from core.services.payment import entitlement_service
 
 from ..infrastructure.storage.r2Adaptor import generate_upload_url, put_object
 from core.infrastructure.db.repositories import issues as issues_repo
@@ -207,6 +210,17 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         
         if not analysis_results.get("success", False):
             raise InvalidVideoException(analysis_results.get("error_message", "Video analysis failed"))
+
+        # T14: re-check entitlement immediately before persisting the analysis result.
+        # The dependency-level check at request start (require_ai_access) only proves the
+        # caller was subscribed when the PATCH was received; the AI call above can run long
+        # enough for a subscription to lapse mid-flight. Recheck here, right before the
+        # result is written, so a lapse can't slip a completed analysis through for free.
+        if not entitlement_service.is_subscribed(analysis_object.user_id, db_session):
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Subscription required",
+            )
 
         # Remake into analysis results object, that contains the analysis issues and drills, and the ids of those issues and drills once they are inserted into the database
         analysis_results_object = AnalysisResponseDTO(

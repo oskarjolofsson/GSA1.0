@@ -5,7 +5,8 @@ import { Search } from "lucide-react-native";
 
 import { generateProgramFromIssue } from "features/programs/services/programService";
 import type { CatalogIssue } from "features/issues/services/issueAuthoringService";
-import { getErrorMessage } from "lib/errors";
+import { getErrorMessage, ApiError } from "lib/errors";
+import { useBilling } from "features/billing/BillingContext";
 import Header from "features/shared/components/Header";
 import StepTransition from "features/shared/components/StepTransition";
 
@@ -56,6 +57,7 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAr
     // sheet rendering its own content while it animates out after a filter change.
     const [openIssue, setOpenIssue] = useState<CatalogIssue | null>(null);
     const [startError, setStartError] = useState<string | null>(null);
+    const { setPendingRetry, openPaywall } = useBilling();
 
     const start = useCallback(
         async (issue: CatalogIssue) => {
@@ -68,14 +70,18 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAr
                 // from an area the golfer never navigated into.
                 onDone(issue.area);
             } catch (err) {
-                // Leave the sheet open on failure -- the error renders behind it
-                // otherwise, and the golfer sees a dismissed sheet and no explanation.
-                setStartError(getErrorMessage(err));
+                if (err instanceof ApiError && err.status === 402) {
+                    setOpenIssue(null);
+                    openPaywall('gate', 'focus_limit');
+                    setPendingRetry(() => start(issue));
+                } else {
+                    setStartError(getErrorMessage(err));
+                }
             } finally {
                 setStartingId(null);
             }
         },
-        [onDone]
+        [onDone, setPendingRetry]
     );
 
     const goBack = useCallback(() => {

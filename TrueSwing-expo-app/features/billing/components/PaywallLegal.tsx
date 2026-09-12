@@ -21,19 +21,20 @@ async function openLink(url: string) {
  * never accidentally reword it. No paywall state, no props.
  *
  * Text is 13px, not the 12px it shipped at — DESIGN.md sets a 13px floor for anything a
- * golfer reads, because the app is used outdoors in sunlight.
+ * golfer reads, because the app is used outdoors in sunlight. Only vertical spacing
+ * (leading, margins) is tunable for compactness -- the wording and font size are not.
  */
 export default function PaywallLegal() {
   return (
     <View>
-      <Text className="text-[13px] leading-5 text-sand-dim/70">
+      <Text className="text-[13px] leading-[17px] text-sand-dim/70">
         Payment is charged to your Apple ID at confirmation. The subscription renews
         automatically at the same price and period unless cancelled at least 24 hours
         before the end of the current period. Manage or cancel anytime in your App Store
         account settings.
       </Text>
 
-      <View className="mt-3 flex-row items-center">
+      <View className="mt-2 flex-row items-center">
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => openLink(TERMS_OF_USE_URL)}

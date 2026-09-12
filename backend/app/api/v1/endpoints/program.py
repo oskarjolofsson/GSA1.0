@@ -4,7 +4,10 @@ from sqlalchemy.orm import Session
 
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
-from app.dependencies.entitlement import require_premium
+from app.dependencies.entitlement import require_focus_capacity
+
+from core.services.payment import entitlement_service
+from core.services.program_service import deactivate_extra_focuses
 
 from app.api.v1.schemas.program import (
     GenerateProgramRequest,
@@ -25,7 +28,7 @@ router = APIRouter()
 def generate_program(
     request: GenerateProgramRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_premium),
+    current_user: dict = Depends(require_focus_capacity),
 ):
     """
     Generate (or return the existing) active program.
@@ -83,6 +86,12 @@ def get_active_program(
     stopped being a meaningful question once a golfer could hold several; use GET
     /programs/ for the whole set.
     """
+    # Lazy check: an unsubscribed user may have lapsed since their last active-focus
+    # write. Cheap no-op when Lane B's deactivate_extra_focuses finds <=1 active focus.
+    user_id = UUID(current_user["user_id"])
+    if not entitlement_service.is_subscribed(user_id, db):
+        deactivate_extra_focuses(user_id, db, trigger="lazy_check")
+
     result = program_service.get_active_program(
         user_id=current_user["user_id"],
         analysis_issue_id=analysis_issue_id,

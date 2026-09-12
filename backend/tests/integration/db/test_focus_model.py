@@ -21,6 +21,14 @@ from core.services import exceptions
 from core.services.dtos.program_service_dto import DrillGradeDTO
 
 
+@pytest.fixture(autouse=True)
+def _subscribed(monkeypatch):
+    """This file tests area/slot mechanics, not the free-tier focus cap (see
+    test_program_service.py and test_program.py for that) -- treat every user here as
+    subscribed so `generate_program`'s free-tier cap never interferes."""
+    monkeypatch.setattr(ps.entitlement_service, "is_subscribed", lambda user_id, session: True)
+
+
 def _seed_issue(db_session, user_id, title, confidence, num_drills=0):
     issue = create_issue(Issue(title=title, description="d"), db_session)
     for i in range(num_drills):

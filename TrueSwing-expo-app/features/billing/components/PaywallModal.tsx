@@ -25,22 +25,31 @@ import type { PaywallReason } from 'features/billing/types';
  */
 
 // One record rather than three `reason ===` ternaries scattered through the render.
-// A golfer whose access just died mid-practice does not need a feature list, so 402
-// drops the value set and says what happened instead.
+// A golfer mid-action does not need a feature list, so 402 drops the value set and
+// says what happened instead.
+//
+// '402' fires for two distinct moments (a second+ focus, or an AI analysis) but stays
+// one generic copy on purpose -- see PaywallTrigger in features/billing/types.ts. It
+// must never say the plan "ended" or that nothing was charged: under this model 402
+// never means access broke, only that this one action needs a subscription while
+// practice keeps working.
 const COPY: Record<PaywallReason, { headline: string; showValueSet: boolean; note?: string }> = {
   manual: { headline: 'Keep practicing\nwith a plan', showValueSet: true },
   gate: { headline: "That one's part\nof the plan", showValueSet: true },
   '402': {
-    headline: 'Your plan\nhas ended',
+    headline: "That one needs\na subscription",
     showValueSet: false,
-    note: 'Nothing has been charged. Your focuses and history are still here.',
+    note: 'Practice keeps working either way -- this is just for that one.',
   },
 };
 
+// Mirrors exactly the three server-side paywalls (require_ai_access x2,
+// require_focus_capacity) -- see backend/app/api/v1/endpoints/{analysis,issue,program}.py.
+// Add a line here only when a new gate is added there, never before.
 const VALUE_SET = [
   'Film a swing, get it analysed',
-  'Drills chosen for what you actually lose shots on',
-  'A plan that adapts as you improve',
+  'Lesson Notes from your coach on any focus',
+  'Work more than one focus at a time',
 ];
 
 export default function PaywallModal() {
@@ -215,7 +224,7 @@ export default function PaywallModal() {
           </Text>
         </TouchableOpacity>
 
-        <View className="mt-6">
+        <View className="mt-4">
           <PaywallLegal />
         </View>
       </View>

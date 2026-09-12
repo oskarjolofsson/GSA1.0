@@ -133,6 +133,66 @@ def test_todays_issue_requires_auth(client):
     assert resp.status_code == 401
 
 
+# =========== LAZY-CHECK HOOK (T5) ===========
+
+def test_todays_issue_lazy_check_fires_for_unsubscribed_user(client, auth_headers, monkeypatch):
+    """An unsubscribed caller hitting /todays-issue/ triggers the cheap lazy-check hook.
+    test_user has no billing_subscription row, so is_subscribed is False by default."""
+    import app.api.v1.endpoints.issue as issue_endpoint
+
+    calls = []
+    monkeypatch.setattr(
+        issue_endpoint,
+        "deactivate_extra_focuses",
+        lambda user_id, db, trigger: calls.append(trigger),
+    )
+
+    resp = client.get("/api/v1/issues/todays-issue/", headers=auth_headers)
+    assert resp.status_code == 200
+    assert calls == ["lazy_check"]
+
+
+def test_todays_issue_lazy_check_skipped_for_subscribed_user(
+    client, db_session, test_user, auth_headers, monkeypatch
+):
+    """A subscribed caller never pays for the lazy-check hook at all."""
+    from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
+    from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
+    import app.api.v1.endpoints.issue as issue_endpoint
+
+    billing_customer = billing_customer_repo.create_billing_customer(
+        user_id=test_user["user_id"],
+        customer_id="cus_todays_issue_lazy_skip",
+        provider="revenuecat",
+        session=db_session,
+    )
+    billing_subscription_repo.upsert_subscription(
+        billing_customer_id=billing_customer.id,
+        provider="revenuecat",
+        external_subscription_id="sub_todays_issue_lazy_skip",
+        external_price_id="price_todays_issue_lazy_skip",
+        status="active",
+        current_period_start=None,
+        current_period_end=None,
+        cancel_at_period_end=False,
+        canceled_at=None,
+        ended_at=None,
+        session=db_session,
+    )
+    db_session.flush()
+
+    calls = []
+    monkeypatch.setattr(
+        issue_endpoint,
+        "deactivate_extra_focuses",
+        lambda user_id, db, trigger: calls.append(trigger),
+    )
+
+    resp = client.get("/api/v1/issues/todays-issue/", headers=auth_headers)
+    assert resp.status_code == 200
+    assert calls == []
+
+
 def test_create_issue(client, db_session, auth_headers):
     """Test creating a new issue."""
     response = client.post(
