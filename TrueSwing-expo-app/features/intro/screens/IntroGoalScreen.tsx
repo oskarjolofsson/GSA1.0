@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import IntroHeader from "../components/IntroHeader";
 import IntroButton from "../components/IntroButton";
+import IntroAmbientBackground from "../components/IntroAmbientBackground";
 import { tapHaptic } from "../utils/haptics";
 import type { IntroIssue } from "../services/introCatalogService";
 
@@ -49,7 +50,8 @@ export default function IntroGoalScreen({
     const available: Record<Kind, boolean> = { skill: skillAvailable, fault: faultAvailable };
 
     return (
-        <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
+        <IntroAmbientBackground source={require("../../../assets/hero/ambient-goal.webp")}>
+        <View className="flex-1" style={{ paddingTop: insets.top }}>
             <View className="flex-1 px-5 pt-2">
                 <IntroHeader eyebrow={areaLabel} heading={"What are you\nhere for?"} onBack={onBack} />
 
@@ -101,5 +103,6 @@ export default function IntroGoalScreen({
                 <IntroButton label="Skip for now" onPress={onSkip} tone="quiet" />
             </View>
         </View>
+        </IntroAmbientBackground>
     );
 }

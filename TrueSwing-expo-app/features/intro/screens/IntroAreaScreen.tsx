@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import IntroHeader from "../components/IntroHeader";
 import IntroButton from "../components/IntroButton";
 import IntroAreaList from "../components/IntroAreaList";
+import IntroAmbientBackground from "../components/IntroAmbientBackground";
 import type { IntroArea } from "../services/introCatalogService";
 
 type Props = {
@@ -13,12 +14,9 @@ type Props = {
     onRetry: () => void;
     onSelect: (area: IntroArea) => void;
     onBack: () => void;
-    /** Straight to sign-up without picking. Always available — see below. */
     onSkip: () => void;
 };
 
-/** Step one: which part of the game. The library's own first question, asked
- *  before the account exists. */
 export default function IntroAreaScreen({
     areas,
     status,
@@ -31,7 +29,8 @@ export default function IntroAreaScreen({
     const insets = useSafeAreaInsets();
 
     return (
-        <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
+        <IntroAmbientBackground source={require("../../../assets/hero/ambient-area.webp")}>
+        <View className="flex-1" style={{ paddingTop: insets.top }}>
             <ScrollView
                 contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
             >
@@ -44,10 +43,6 @@ export default function IntroAreaScreen({
                         </View>
                     ) : null}
 
-                    {/* Inline, not a full-screen error: this screen is optional, and a
-                        golfer who cannot reach the server must still be able to walk
-                        past it to sign up. Blocking here would make an outage look
-                        like an app that does not open. */}
                     {status === "error" ? (
                         <View>
                             <Text className="text-[15px] leading-[22px] text-sand">
@@ -70,5 +65,6 @@ export default function IntroAreaScreen({
                 <IntroButton label="Skip for now" onPress={onSkip} tone="quiet" />
             </View>
         </View>
+        </IntroAmbientBackground>
     );
 }
