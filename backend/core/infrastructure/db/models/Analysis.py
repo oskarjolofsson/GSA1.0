@@ -59,6 +59,7 @@ class Analysis(Base):
     )
     started_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True))
+    reviewed_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True))
 
     video = relationship("Video", back_populates="analyses")
     issues = relationship(
