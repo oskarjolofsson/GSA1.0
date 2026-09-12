@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from core.services.payment import entitlement_service
 from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
 from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
-from core.infrastructure.db.repositories import profiles as profiles_repo
 
 
 def test_is_subscribed_returns_false_when_user_has_no_active_subscription(db_session, test_user):
@@ -187,52 +188,18 @@ def test_is_subscribed_false_when_not_yet_started(db_session, test_user):
 	assert entitlement_service.is_subscribed(test_user["user_id"], db_session) is False
 
 
-def test_has_free_tier_returns_true_for_recent_profile(db_session, test_user):
-	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
-	assert profile is not None
-	profile.created_at = datetime.now(timezone.utc) - timedelta(days=2)
-	db_session.flush()
-
-	result = entitlement_service.has_free_tier(test_user["user_id"], db_session)
-	assert result is True
-
-
-def test_has_free_tier_returns_false_for_old_profile(db_session, test_user):
-	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
-	assert profile is not None
-	profile.created_at = datetime.now(timezone.utc) - timedelta(days=15)
-	db_session.flush()
-
-	result = entitlement_service.has_free_tier(test_user["user_id"], db_session)
-	assert result is not True
-
-
-def test_can_access_premium_features_returns_true_when_free_tier_is_true(db_session, test_user):
-	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
-	assert profile is not None
-	profile.created_at = datetime.now(timezone.utc) - timedelta(days=1)
-	db_session.flush()
-
-	result = entitlement_service.can_access_premium_features(test_user["user_id"], db_session)
-	assert result is True
-
-
-def test_can_access_premium_features_returns_true_when_subscribed(db_session, test_user):
-	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
-	assert profile is not None
-	profile.created_at = datetime.now(timezone.utc) - timedelta(days=30)
-
+def _subscribe(db_session, test_user, *, customer_id, external_id):
 	billing_customer = billing_customer_repo.create_billing_customer(
 		user_id=test_user["user_id"],
-		customer_id="cus_entitlement_combo",
+		customer_id=customer_id,
 		provider="revenuecat",
 		session=db_session,
 	)
 	billing_subscription_repo.upsert_subscription(
 		billing_customer_id=billing_customer.id,
 		provider="revenuecat",
-		external_subscription_id="sub_entitlement_combo",
-		external_price_id="price_entitlement_combo",
+		external_subscription_id=external_id,
+		external_price_id="price_x",
 		status="active",
 		current_period_start=None,
 		current_period_end=None,
@@ -243,18 +210,73 @@ def test_can_access_premium_features_returns_true_when_subscribed(db_session, te
 	)
 	db_session.flush()
 
-	result = entitlement_service.can_access_premium_features(test_user["user_id"], db_session)
-	assert result is True
+
+# --- require_ai_access / require_focus_capacity (T1/T8) --------------------
+#
+# There is no free tier any more (has_free_tier / can_access_premium_features /
+# free_tier_expires_at were removed): is_subscribed is the only entitlement signal
+# left, and these two FastAPI dependencies are the only gates built on it. Called
+# directly here (not through the HTTP layer) since they are plain functions.
+
+from fastapi import HTTPException
+
+from app.dependencies.entitlement import require_ai_access, require_focus_capacity
+from core.services.exceptions import FocusLimitExceeded
+from core.infrastructure.db.repositories import programs as programs_repo
+from core.infrastructure.db.models.Program import Program
 
 
-def test_can_access_premium_features_returns_false_when_not_subscribed_and_no_free_tier(
-	db_session,
-	test_user,
+def test_require_ai_access_blocks_unsubscribed_user(db_session, test_user):
+	current_user = {"user_id": str(test_user["user_id"])}
+	with pytest.raises(HTTPException) as exc_info:
+		require_ai_access(current_user=current_user, db=db_session)
+	assert exc_info.value.status_code == 402
+
+
+def test_require_ai_access_allows_subscribed_user(db_session, test_user):
+	_subscribe(db_session, test_user, customer_id="cus_ai_access", external_id="sub_ai_access")
+	current_user = {"user_id": str(test_user["user_id"])}
+	assert require_ai_access(current_user=current_user, db=db_session) == current_user
+
+
+def test_require_focus_capacity_allows_unsubscribed_user_with_zero_active_focuses(
+	db_session, test_user
 ):
-	profile = profiles_repo.get_profile_by_id(test_user["user_id"], db_session)
-	assert profile is not None
-	profile.created_at = datetime.now(timezone.utc) - timedelta(days=30)
+	current_user = {"user_id": str(test_user["user_id"])}
+	assert require_focus_capacity(current_user=current_user, db=db_session) == current_user
+
+
+def test_require_focus_capacity_blocks_unsubscribed_user_with_one_active_focus(
+	db_session, test_user
+):
+	db_session.add(
+		Program(
+			user_id=test_user["user_id"],
+			title="Existing focus",
+			status="active",
+			area="FULL_SWING",
+			slot=0,
+		)
+	)
 	db_session.flush()
 
-	result = entitlement_service.can_access_premium_features(test_user["user_id"], db_session)
-	assert result is not True
+	current_user = {"user_id": str(test_user["user_id"])}
+	with pytest.raises(FocusLimitExceeded):
+		require_focus_capacity(current_user=current_user, db=db_session)
+
+
+def test_require_focus_capacity_always_allows_subscribed_user(db_session, test_user):
+	_subscribe(db_session, test_user, customer_id="cus_focus_cap", external_id="sub_focus_cap")
+	db_session.add(
+		Program(
+			user_id=test_user["user_id"],
+			title="Existing focus",
+			status="active",
+			area="FULL_SWING",
+			slot=0,
+		)
+	)
+	db_session.flush()
+
+	current_user = {"user_id": str(test_user["user_id"])}
+	assert require_focus_capacity(current_user=current_user, db=db_session) == current_user

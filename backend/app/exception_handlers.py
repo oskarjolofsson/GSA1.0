@@ -8,7 +8,8 @@ from core.services.exceptions import (
     ServiceException,
     InvalidVideoException,
     ForbiddenException,
-    ConflictException
+    ConflictException,
+    FocusLimitExceeded
 )
 from core.infrastructure.payment.revenuecat.exceptions import (
     RevenueCatWebhookVerificationError,
@@ -83,6 +84,13 @@ async def unauthorized_exception_handler(request: Request, exc: UnauthorizedExce
 async def conflict_exception_handler(request: Request, exc: ConflictException):
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
+        content={"detail": str(exc)},
+    )
+
+
+async def focus_limit_exceeded_exception_handler(request: Request, exc: FocusLimitExceeded):
+    return JSONResponse(
+        status_code=status.HTTP_402_PAYMENT_REQUIRED,
         content={"detail": str(exc)},
     )
 

@@ -1,6 +1,5 @@
 from uuid import UUID
 from sqlalchemy.orm import Session
-from datetime import timedelta, datetime, timezone
 
 from core.infrastructure.db.repositories import profiles
 from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
@@ -16,32 +15,6 @@ def is_subscribed(user_id: UUID, db_session: Session) -> bool:
     billing_subscription = billing_subscription_repo.get_active_subscriptions_for_user(user_id, db_session)
     if billing_subscription: return True
     return False
-
-
-def has_free_tier(user_id: UUID, db_session: Session) -> bool:
-    """
-    True while the user is inside the 7-day trial that starts at signup.
-
-    The window runs from profile creation, not from first use, so it expires on
-    schedule whether or not the golfer ever opened the app.
-    """
-    profile = profiles.get_profile_by_id(user_id, db_session)
-    if not profile:
-        raise exceptions.NotFoundException("User", str(user_id))
-
-    return profile.created_at >= datetime.now(timezone.utc) - timedelta(days=7)
-    
-    
-def can_access_premium_features(user_id: UUID, db_session: Session) -> bool:
-    """The single flag to gate premium features on. Prefer it over recombining the two below."""
-    return is_subscribed(user_id, db_session) or has_free_tier(user_id, db_session)
-
-
-def free_tier_expires_at(user_id: UUID, db_session: Session) -> datetime:
-    profile = profiles.get_profile_by_id(user_id, db_session)
-    if not profile:
-        raise exceptions.NotFoundException("User", str(user_id))
-    return profile.created_at + timedelta(days=7)
 
 
 def get_subscription_summary(user_id: UUID, db_session: Session) -> dict | None:

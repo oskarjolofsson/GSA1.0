@@ -6,6 +6,18 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 
+# T13 audit (subscription model rework, HOLD SCOPE review): every query in this file and
+# in core/services/program_service.py that filters Program by status already uses an
+# explicit allowlist (`Program.status == "active"`, `ProgramStep.status == "pending"`,
+# `ProgramStep.status == "completed"`), never a denylist (`!= "completed"` etc). Confirmed
+# by grep across both files before Lane B's migration adds "inactive" to the status CHECK
+# constraint, so old code cannot silently start treating an inactive Program as active (or
+# vice versa) once that value exists. `get_programs_by_user` and `get_programs_for_issue`
+# intentionally filter by status not at all ("any status") -- that is correct as-is, not a
+# denylist bug, since both are used to look across every program a user has ever had.
+# No changes were needed here for T13.
+
+
 # ---------------- PROGRAMS ----------------
 
 def create_program(program: Program, session: Session) -> Program:

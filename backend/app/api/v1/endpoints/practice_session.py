@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
-from app.dependencies.entitlement import require_premium
 
 from app.api.v1.schemas.practice_session import (
     StartPracticeSessionRequest,
@@ -32,7 +31,7 @@ router = APIRouter()
 def start_practice_session(
     request: StartPracticeSessionRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_premium),
+    current_user: dict = Depends(get_current_user),
 ):
     """Start a practice session for the current user.
 
@@ -100,7 +99,7 @@ def start_drill_run(
     session_id: UUID,
     request: StartDrillRunRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_premium),
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Start a new drill run within a practice session.

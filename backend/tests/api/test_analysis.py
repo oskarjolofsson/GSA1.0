@@ -4,6 +4,12 @@ import uuid
 
 from sqlalchemy import text
 
+from fastapi import Depends
+
+from app.main import app
+from app.dependencies.auth import get_current_user
+from app.dependencies.entitlement import require_ai_access
+
 from core.infrastructure.db.repositories.analysis import get_analysis_by_id, get_analyses_by_user_id
 from core.infrastructure.db.repositories.videos import get_video_by_analysis_id, get_video_by_id
 from core.infrastructure.db.repositories.analysis_issues import get_analysis_issues_by_analysis_id as get_analysis_issues_by_analysis_id, get_analysis_issue_by_id
@@ -15,8 +21,29 @@ from pathlib import Path
 from core.infrastructure.storage.r2Adaptor import generate_upload_url, delete
 from core.infrastructure.AI.model_selection import get_active_analysis_model
 from core.infrastructure.db.repositories.issues import get_all_issues
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import requests
+
+
+def _bypass_ai_access(current_user: dict = Depends(get_current_user)) -> dict:
+    """Stand-in for `require_ai_access` that keeps real caller identity (via the real
+    `get_current_user`) but skips the subscription check -- so ownership/auth tests
+    using a *different* caller's headers still see that caller, not always `test_user`."""
+    return current_user
+
+
+@pytest.fixture(autouse=True)
+def _premium():
+    """Every analysis endpoint in this file is AI-gated (`require_ai_access`).
+
+    There is no free tier any more (T8): `test_user` has no billing_subscription row,
+    so without this override every one of these tests would 402 at the dependency.
+    Gate *behavior itself* (block/allow, and the T14 mid-analysis recheck) is covered
+    by the dedicated tests below, which do NOT use this override.
+    """
+    app.dependency_overrides[require_ai_access] = _bypass_ai_access
+    yield
+    app.dependency_overrides.pop(require_ai_access, None)
 
 
 @pytest.fixture()
@@ -327,3 +354,88 @@ def test_analysis_endpoints_reject_non_owner(
 
     # The analysis must survive the rejected DELETE.
     assert get_analysis_by_id(analysis_id=analysis_id, session=db_session) is not None
+
+
+# =========== require_ai_access gate (T1/T8) ===========
+#
+# These bypass the file's `_premium` autouse override so they hit the real
+# dependency against `test_user`, who has no billing_subscription row.
+
+def test_create_analysis_blocks_unsubscribed_user(client, auth_headers):
+    app.dependency_overrides.pop(require_ai_access, None)
+    response = client.post(
+        "/api/v1/analyses/",
+        json={"start_time": 0, "end_time": 10},
+        headers=auth_headers,
+    )
+    assert response.status_code == 402
+
+
+def test_run_analysis_blocks_unsubscribed_user(client, auth_headers):
+    """Even with a real (or nonexistent) analysis_id, the gate fires before the
+    service is ever reached, so a fake id is fine here."""
+    app.dependency_overrides.pop(require_ai_access, None)
+    response = client.patch(
+        f"/api/v1/analyses/{uuid.uuid4()}/",
+        headers=auth_headers,
+    )
+    assert response.status_code == 402
+
+
+# =========== T14: mid-analysis entitlement recheck ===========
+
+def test_run_analysis_rechecks_entitlement_before_persisting(
+    client, db_session, analysis_with_id, auth_headers
+):
+    """Closes the race where a subscription lapses while the AI call is in flight:
+    `run_analysis` (the dependency) only proves the caller was subscribed when the
+    PATCH request started. This simulates a lapse happening during `analyze_video`
+    by monkeypatching `entitlement_service.is_subscribed` to flip to False for the
+    second-persist-time check, and asserts the same 402 the dependency raises, with
+    nothing persisted.
+    """
+    analysis_id, _user_id = analysis_with_id
+
+    issue = Issue(title="Test issue for T14 recheck", description="d")
+    db_session.add(issue)
+    db_session.flush()
+    canned_result = {
+        "metadata": {"camera_view": "face_on", "club_type": "iron"},
+        "club_type": "iron",
+        "camera_view": "face_on",
+        "issues": [{"issue_id": str(issue.id), "confidence": 0.9}],
+        "success": True,
+    }
+
+    fake_video_file = MagicMock()
+    fake_video_file.path.return_value = "/tmp/does-not-matter.mp4"
+    fake_video_file.read.return_value = b"not-a-real-video"
+
+    with patch(
+        "core.services.analysis_service.analyze_video",
+        return_value=canned_result,
+    ), patch("core.services.analysis_service.GoogleAnalysisClient"), patch(
+        # No real video was uploaded (this test only exercises the entitlement
+        # recheck, not the video pipeline) -- stub the R2 read/write and the video
+        # file wrapper around it so the request reaches the recheck instead of
+        # 422'ing on a missing/undetectable video.
+        "core.services.analysis_service.get_object",
+        return_value=b"not-a-real-video",
+    ), patch(
+        "core.services.analysis_service.put_object",
+    ), patch(
+        "core.services.analysis_service.Video_file",
+        return_value=fake_video_file,
+    ), patch(
+        "core.services.analysis_service.entitlement_service.is_subscribed",
+        return_value=False,
+    ):
+        response = client.patch(
+            f"/api/v1/analyses/{analysis_id}/",
+            headers=auth_headers,
+        )
+
+    assert response.status_code == 402
+
+    analysis_issues = get_analysis_issues_by_analysis_id(analysis_id=analysis_id, session=db_session)
+    assert len(analysis_issues) == 0

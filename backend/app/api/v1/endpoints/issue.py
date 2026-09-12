@@ -6,8 +6,11 @@ from uuid import UUID
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
 from app.dependencies.require_admin import require_admin
-from app.dependencies.entitlement import require_premium
+from app.dependencies.entitlement import require_ai_access
 from sqlalchemy.orm import Session
+
+from core.services.payment import entitlement_service
+from core.services.program_service import deactivate_extra_focuses
 
 from app.api.v1.schemas.issue import (
     CreateIssueRequest,
@@ -147,7 +150,7 @@ def get_issues_by_user(db: Session = Depends(get_db), current_user: dict = Depen
 def structure_feedback(
     request: StructureFeedbackRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_premium),
+    current_user: dict = Depends(require_ai_access),
 ):
     """
     Coach-feedback path (premium): format a real coach's lesson feedback into a
@@ -237,6 +240,12 @@ def get_todays_issue(
 
     NOTE: declared before /{issue_id}/ so "todays-issue" is not parsed as a UUID.
     """
+    # Lazy check: an unsubscribed user may have lapsed since their last active-focus
+    # write. Cheap no-op when Lane B's deactivate_extra_focuses finds <=1 active focus.
+    user_id = UUID(current_user["user_id"])
+    if not entitlement_service.is_subscribed(user_id, db):
+        deactivate_extra_focuses(user_id, db, trigger="lazy_check")
+
     issue = service_get_todays_issue(current_user["user_id"], db_session=db)
     return GetIssue.from_domain(issue) if issue else None
 

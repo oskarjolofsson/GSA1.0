@@ -50,18 +50,14 @@ class ConflictException(ServiceException):
 
 
 class FocusLimitExceeded(ServiceException):
-    """Raised when a free-tier (unsubscribed) user tries to hold more than one active
-    Program at once.
+    """Raised when an unsubscribed user tries to hold more than one active focus.
 
-    This is the AUTHORITATIVE, transaction-scoped check inside
-    `program_service.generate_program` -- see its docstring / ADR context for why the
-    router-level entitlement dependency alone is not enough to close the TOCTOU race
-    between two concurrent add-focus requests.
-
-    Minimal placeholder: Lane A (entitlement dependency splitting) may define a richer
-    version of this exception in the same module. If so, reconcile at merge -- the name
-    and import path (`core.services.exceptions.FocusLimitExceeded`) must stay stable so
-    callers on both lanes keep working.
+    An unsubscribed user may hold at most one active Program at a time. This is
+    checked twice: a fast-fail, router-level check (see
+    app.dependencies.entitlement.require_focus_capacity), and the AUTHORITATIVE,
+    row-locked check inside program_service.generate_program -- the router-level
+    check alone cannot close the TOCTOU race between two concurrent add-focus
+    requests.
     """
-    def __init__(self, message: str = "You already have an active focus. Subscribe to add more."):
+    def __init__(self, message: str = "Subscribe to start more than one focus at a time."):
         super().__init__(message)

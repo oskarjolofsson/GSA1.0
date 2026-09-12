@@ -4,13 +4,14 @@ Program engine HTTP contract tests.
 Seeding goes straight through `db_session` (the same connection the TestClient's
 get_db override yields), so rows are visible to the API call and rolled back
 after each test. user_id uses the real `test_user` (FK to auth.users). The
-`/generate/` route is premium-gated, so we override `require_premium`.
+`/generate/` route is gated by `require_focus_capacity` (focus-capacity check, not
+the AI-access gate), so we override that dependency to bypass it in these tests.
 """
 import uuid
 import pytest
 
 from app.main import app
-from app.dependencies.entitlement import require_premium
+from app.dependencies.entitlement import require_focus_capacity
 
 from core.infrastructure.db.models.Issue import Issue
 from core.infrastructure.db.models.Drill import Drill
@@ -21,9 +22,11 @@ from core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
 
 @pytest.fixture
 def premium(test_user):
-    app.dependency_overrides[require_premium] = lambda: {"user_id": str(test_user["user_id"])}
+    """Name kept as `premium` for minimal churn across this file's tests; it now
+    overrides `require_focus_capacity` (the dependency actually gating /generate/)."""
+    app.dependency_overrides[require_focus_capacity] = lambda: {"user_id": str(test_user["user_id"])}
     yield
-    app.dependency_overrides.pop(require_premium, None)
+    app.dependency_overrides.pop(require_focus_capacity, None)
 
 
 @pytest.fixture
@@ -308,9 +311,143 @@ def test_auth_required(client, analysis_issue_id):
     Calls the /active/ endpoint with an invalid token
     Tests that the returned status code is 401 (unauthorized)
     """
-    
+
     resp = client.get(
         f"/api/v1/programs/active/?analysis_issue_id={analysis_issue_id}",
         headers={"Authorization": "Bearer invalid-token"},
     )
     assert resp.status_code == 401
+
+
+# ---------------- require_focus_capacity (T1/T13) ----------------
+#
+# These tests exercise the real dependency (no `premium` override) against `test_user`,
+# who has no billing_subscription row and so is unsubscribed by default.
+
+def test_unsubscribed_user_with_zero_active_focuses_can_generate(
+    client, auth_headers, analysis_issue_id
+):
+    """0 active focuses -> require_focus_capacity allows an unsubscribed user through."""
+    resp = _generate(client, auth_headers, analysis_issue_id)
+    assert resp.status_code == 201
+
+
+def test_unsubscribed_user_with_one_active_focus_is_blocked(
+    client, auth_headers, db_session, test_user, analysis_issue_id
+):
+    """1 active focus + unsubscribed -> 402, before the request even reaches the service
+    layer's row-locked check."""
+    second = _seed_analysis_issue(db_session, test_user, "Second swing fault")
+
+    assert _generate(client, auth_headers, analysis_issue_id).status_code == 201
+
+    resp = _generate(client, auth_headers, second)
+    assert resp.status_code == 402
+
+
+def test_subscribed_user_always_has_focus_capacity(
+    client, auth_headers, db_session, test_user, analysis_issue_id
+):
+    """A subscribed user is never blocked by the focus-capacity dependency, even with an
+    active focus already open (the per-area slot cap is a separate, later check)."""
+    from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
+    from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
+
+    billing_customer = billing_customer_repo.create_billing_customer(
+        user_id=test_user["user_id"],
+        customer_id="cus_focus_capacity",
+        provider="revenuecat",
+        session=db_session,
+    )
+    billing_subscription_repo.upsert_subscription(
+        billing_customer_id=billing_customer.id,
+        provider="revenuecat",
+        external_subscription_id="sub_focus_capacity",
+        external_price_id="price_focus_capacity",
+        status="active",
+        current_period_start=None,
+        current_period_end=None,
+        cancel_at_period_end=False,
+        canceled_at=None,
+        ended_at=None,
+        session=db_session,
+    )
+    db_session.flush()
+
+    second = _seed_analysis_issue(db_session, test_user, "Second swing fault")
+    putting = _seed_analysis_issue(db_session, test_user, "Lag putting", area="PUTTING")
+
+    assert _generate(client, auth_headers, analysis_issue_id).status_code == 201
+    # Second focus, same area, still under the per-area cap of two -> allowed.
+    assert _generate(client, auth_headers, second).status_code == 201
+    # Different area entirely -> also allowed.
+    assert _generate(client, auth_headers, putting).status_code == 201
+
+
+# ---------------- lazy check on GET /programs/active/ (T5) ----------------
+
+def test_active_program_lazy_check_fires_for_unsubscribed_user(
+    client, premium, auth_headers, analysis_issue_id, monkeypatch
+):
+    """An unsubscribed caller hitting /active/ triggers the cheap lazy-check hook."""
+    import app.api.v1.endpoints.program as program_endpoint
+
+    calls = []
+    monkeypatch.setattr(
+        program_endpoint,
+        "deactivate_extra_focuses",
+        lambda user_id, db, trigger: calls.append(trigger),
+    )
+
+    _generate(client, auth_headers, analysis_issue_id)
+    resp = client.get(
+        f"/api/v1/programs/active/?analysis_issue_id={analysis_issue_id}",
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert calls == ["lazy_check"]
+
+
+def test_active_program_lazy_check_skipped_for_subscribed_user(
+    client, premium, auth_headers, db_session, test_user, analysis_issue_id, monkeypatch
+):
+    """A subscribed caller never pays for the lazy-check hook at all."""
+    from core.infrastructure.db.repositories import billing_customer as billing_customer_repo
+    from core.infrastructure.db.repositories import billing_subscription as billing_subscription_repo
+    import app.api.v1.endpoints.program as program_endpoint
+
+    billing_customer = billing_customer_repo.create_billing_customer(
+        user_id=test_user["user_id"],
+        customer_id="cus_lazy_check_skip",
+        provider="revenuecat",
+        session=db_session,
+    )
+    billing_subscription_repo.upsert_subscription(
+        billing_customer_id=billing_customer.id,
+        provider="revenuecat",
+        external_subscription_id="sub_lazy_check_skip",
+        external_price_id="price_lazy_check_skip",
+        status="active",
+        current_period_start=None,
+        current_period_end=None,
+        cancel_at_period_end=False,
+        canceled_at=None,
+        ended_at=None,
+        session=db_session,
+    )
+    db_session.flush()
+
+    calls = []
+    monkeypatch.setattr(
+        program_endpoint,
+        "deactivate_extra_focuses",
+        lambda user_id, db, trigger: calls.append(trigger),
+    )
+
+    _generate(client, auth_headers, analysis_issue_id)
+    resp = client.get(
+        f"/api/v1/programs/active/?analysis_issue_id={analysis_issue_id}",
+        headers=auth_headers,
+    )
+    assert resp.status_code == 200
+    assert calls == []
