@@ -43,10 +43,13 @@ const COPY: Record<PaywallReason, { headline: string; showValueSet: boolean; not
   },
 };
 
+// Mirrors exactly the three server-side paywalls (require_ai_access x2,
+// require_focus_capacity) -- see backend/app/api/v1/endpoints/{analysis,issue,program}.py.
+// Add a line here only when a new gate is added there, never before.
 const VALUE_SET = [
   'Film a swing, get it analysed',
-  'Drills chosen for what you actually lose shots on',
-  'A plan that adapts as you improve',
+  'Lesson Notes from your coach on any focus',
+  'Work more than one focus at a time',
 ];
 
 export default function PaywallModal() {
@@ -221,7 +224,7 @@ export default function PaywallModal() {
           </Text>
         </TouchableOpacity>
 
-        <View className="mt-6">
+        <View className="mt-4">
           <PaywallLegal />
         </View>
       </View>
