@@ -25,15 +25,21 @@ import type { PaywallReason } from 'features/billing/types';
  */
 
 // One record rather than three `reason ===` ternaries scattered through the render.
-// A golfer whose access just died mid-practice does not need a feature list, so 402
-// drops the value set and says what happened instead.
+// A golfer mid-action does not need a feature list, so 402 drops the value set and
+// says what happened instead.
+//
+// '402' fires for two distinct moments (a second+ focus, or an AI analysis) but stays
+// one generic copy on purpose -- see PaywallTrigger in features/billing/types.ts. It
+// must never say the plan "ended" or that nothing was charged: under this model 402
+// never means access broke, only that this one action needs a subscription while
+// practice keeps working.
 const COPY: Record<PaywallReason, { headline: string; showValueSet: boolean; note?: string }> = {
   manual: { headline: 'Keep practicing\nwith a plan', showValueSet: true },
   gate: { headline: "That one's part\nof the plan", showValueSet: true },
   '402': {
-    headline: 'Your plan\nhas ended',
+    headline: "That one needs\na subscription",
     showValueSet: false,
-    note: 'Nothing has been charged. Your focuses and history are still here.',
+    note: 'Practice keeps working either way -- this is just for that one.',
   },
 };
 

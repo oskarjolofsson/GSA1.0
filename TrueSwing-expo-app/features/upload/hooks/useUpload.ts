@@ -6,6 +6,8 @@ import {
   get_analysis_status,
 } from '../services/uploadService';
 import type { Prompt, CreateAnalysisResponse, AnalysisStatusResponse } from '../types';
+import { ApiError } from 'lib/errors';
+import { useBilling } from 'features/billing/BillingContext';
 
 /** Where the flow has actually got to.
  *
@@ -40,6 +42,7 @@ export function useUpload(): UploadProps {
   const [phase, setPhase] = useState<UploadPhase>('idle');
   const [sentBytes, setSentBytes] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
+  const { setPendingRetry } = useBilling();
 
   const startUpload = async (
     videoUri: string,
@@ -77,6 +80,14 @@ export function useUpload(): UploadProps {
       console.error('Upload process failed:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred during upload');
       setPhase('error');
+      // 402 on create_analysis (AI locked, unsubscribed): the paywall the interceptor
+      // just opened knows this was an ai_locked trigger. Register the retry so a
+      // successful purchase re-attempts this same upload+analysis from the top.
+      if (err instanceof ApiError && err.status === 402) {
+        setPendingRetry(() => {
+          void startUpload(videoUri, prompt, startTime, endTime);
+        });
+      }
     } finally {
       setLoading(false);
     }

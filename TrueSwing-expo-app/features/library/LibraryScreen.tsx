@@ -5,7 +5,8 @@ import { Search } from "lucide-react-native";
 
 import { generateProgramFromIssue } from "features/programs/services/programService";
 import type { CatalogIssue } from "features/issues/services/issueAuthoringService";
-import { getErrorMessage } from "lib/errors";
+import { getErrorMessage, ApiError } from "lib/errors";
+import { useBilling } from "features/billing/BillingContext";
 import Header from "features/shared/components/Header";
 import StepTransition from "features/shared/components/StepTransition";
 
@@ -56,6 +57,7 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAr
     // sheet rendering its own content while it animates out after a filter change.
     const [openIssue, setOpenIssue] = useState<CatalogIssue | null>(null);
     const [startError, setStartError] = useState<string | null>(null);
+    const { setPendingRetry } = useBilling();
 
     const start = useCallback(
         async (issue: CatalogIssue) => {
@@ -71,11 +73,19 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAr
                 // Leave the sheet open on failure -- the error renders behind it
                 // otherwise, and the golfer sees a dismissed sheet and no explanation.
                 setStartError(getErrorMessage(err));
+                // 402 (already has a focus, unsubscribed): the paywall the interceptor
+                // just opened knows this was a focus_limit trigger. Register the retry
+                // so a successful purchase re-attempts starting THIS issue, landing the
+                // golfer back with their selection already made rather than dumping
+                // them at a bare sheet.
+                if (err instanceof ApiError && err.status === 402) {
+                    setPendingRetry(() => start(issue));
+                }
             } finally {
                 setStartingId(null);
             }
         },
-        [onDone]
+        [onDone, setPendingRetry]
     );
 
     const goBack = useCallback(() => {
