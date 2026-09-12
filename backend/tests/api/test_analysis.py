@@ -33,15 +33,24 @@ def _bypass_ai_access(current_user: dict = Depends(get_current_user)) -> dict:
 
 
 @pytest.fixture(autouse=True)
-def _premium():
+def _premium(monkeypatch):
     """Every analysis endpoint in this file is AI-gated (`require_ai_access`).
 
     There is no free tier any more (T8): `test_user` has no billing_subscription row,
     so without this override every one of these tests would 402 at the dependency.
-    Gate *behavior itself* (block/allow, and the T14 mid-analysis recheck) is covered
-    by the dedicated tests below, which do NOT use this override.
+    T14 also added a *second*, authoritative recheck of `entitlement_service.is_subscribed`
+    directly inside `analysis_service.run_analysis` (closing the race where a
+    subscription lapses mid-analysis) -- that check is not affected by the dependency
+    override above, so it's patched to True here too. Gate *behavior itself*
+    (block/allow, and the T14 mid-analysis recheck) is covered by the dedicated tests
+    below, which do NOT use this override (the router-gate tests pop the dependency
+    override; the T14 recheck test patches is_subscribed back to False inside its own
+    `with patch(...)` block, which wins over this fixture's default).
     """
+    from core.services import analysis_service
+
     app.dependency_overrides[require_ai_access] = _bypass_ai_access
+    monkeypatch.setattr(analysis_service.entitlement_service, "is_subscribed", lambda user_id, session: True)
     yield
     app.dependency_overrides.pop(require_ai_access, None)
 
@@ -359,10 +368,16 @@ def test_analysis_endpoints_reject_non_owner(
 # =========== require_ai_access gate (T1/T8) ===========
 #
 # These bypass the file's `_premium` autouse override so they hit the real
-# dependency against `test_user`, who has no billing_subscription row.
+# dependency against `test_user`, who has no billing_subscription row. They also
+# restore the real (unsubscribed) is_subscribed() the autouse fixture patched to
+# True -- that patch is a shared-module attribute, so it would otherwise leak into
+# these tests' router-level check too.
 
-def test_create_analysis_blocks_unsubscribed_user(client, auth_headers):
+def test_create_analysis_blocks_unsubscribed_user(client, auth_headers, monkeypatch):
+    from core.services import analysis_service
+
     app.dependency_overrides.pop(require_ai_access, None)
+    monkeypatch.setattr(analysis_service.entitlement_service, "is_subscribed", lambda user_id, session: False)
     response = client.post(
         "/api/v1/analyses/",
         json={"start_time": 0, "end_time": 10},
@@ -371,10 +386,13 @@ def test_create_analysis_blocks_unsubscribed_user(client, auth_headers):
     assert response.status_code == 402
 
 
-def test_run_analysis_blocks_unsubscribed_user(client, auth_headers):
+def test_run_analysis_blocks_unsubscribed_user(client, auth_headers, monkeypatch):
     """Even with a real (or nonexistent) analysis_id, the gate fires before the
     service is ever reached, so a fake id is fine here."""
+    from core.services import analysis_service
+
     app.dependency_overrides.pop(require_ai_access, None)
+    monkeypatch.setattr(analysis_service.entitlement_service, "is_subscribed", lambda user_id, session: False)
     response = client.patch(
         f"/api/v1/analyses/{uuid.uuid4()}/",
         headers=auth_headers,

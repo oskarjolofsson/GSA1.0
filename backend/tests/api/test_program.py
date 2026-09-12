@@ -22,11 +22,29 @@ from core.infrastructure.db.models.AnalysisIssue import AnalysisIssue
 
 @pytest.fixture
 def premium(test_user):
-    """Name kept as `premium` for minimal churn across this file's tests; it now
-    overrides `require_focus_capacity` (the dependency actually gating /generate/)."""
+    """Name kept as `premium` for minimal churn across this file's tests; it
+    overrides `require_focus_capacity` (the router-level dependency gating
+    /generate/). Tests that create more than one active focus also need
+    `subscribed_for_service_layer` below -- this fixture alone does not satisfy
+    the authoritative, row-locked check inside `program_service.generate_program`
+    (see ADR-0004 / CEO review Section 3), which calls entitlement_service
+    directly and ignores FastAPI dependency overrides."""
     app.dependency_overrides[require_focus_capacity] = lambda: {"user_id": str(test_user["user_id"])}
     yield
     app.dependency_overrides.pop(require_focus_capacity, None)
+
+
+@pytest.fixture
+def subscribed_for_service_layer(monkeypatch):
+    """Patches entitlement_service.is_subscribed so program_service's authoritative
+    free-tier cap doesn't block a test that intentionally creates 2+ active focuses
+    to exercise area-cap/slot mechanics unrelated to the free-tier cap itself. Only
+    use this alongside `premium` in tests that create multiple focuses -- tests
+    exercising the actual unsubscribed lazy-check/deactivation behavior must NOT
+    use this, since it makes is_subscribed() unconditionally True."""
+    from core.services import program_service as ps
+
+    monkeypatch.setattr(ps.entitlement_service, "is_subscribed", lambda user_id, session: True)
 
 
 @pytest.fixture
@@ -86,7 +104,7 @@ def test_list_programs_is_empty_for_a_new_golfer(client, auth_headers):
 
 
 def test_list_programs_returns_every_open_program_with_its_next_step(
-    client, premium, auth_headers, db_session, test_user, analysis_issue_id
+    client, premium, subscribed_for_service_layer, auth_headers, db_session, test_user, analysis_issue_id
 ):
     """One request has to render the whole slate. Before this endpoint existed a client
     had to fetch each program's next step separately, which is a round trip per program
@@ -132,7 +150,7 @@ def test_list_programs_is_scoped_to_the_caller(
 
 
 def test_third_program_in_an_area_is_a_clean_409(
-    client, premium, auth_headers, db_session, test_user, analysis_issue_id
+    client, premium, subscribed_for_service_layer, auth_headers, db_session, test_user, analysis_issue_id
 ):
     """Hitting the cap is an expected outcome, so it has to arrive as a 409 the client can
     show, not a 500 from an IntegrityError leaking out of the unique index. The message
@@ -150,7 +168,7 @@ def test_third_program_in_an_area_is_a_clean_409(
 
 
 def test_cap_does_not_block_a_different_area(
-    client, premium, auth_headers, db_session, test_user, analysis_issue_id
+    client, premium, subscribed_for_service_layer, auth_headers, db_session, test_user, analysis_issue_id
 ):
     """A full slate of full-swing work must leave putting open -- the entire reason the
     cap is per-area."""

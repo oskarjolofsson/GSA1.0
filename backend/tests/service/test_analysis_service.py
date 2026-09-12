@@ -22,10 +22,30 @@ from core.infrastructure.db import models
 from core.infrastructure.db.session import SessionLocal
 from core.infrastructure.db.engine import engine
 from core.infrastructure.storage.r2Adaptor import delete
+from core.services import analysis_service
 import requests
 
 
 # ============================ FIXTURES ============================
+
+@pytest.fixture(scope="class", autouse=True)
+def _subscribed():
+    """This file calls `run_analysis` (the service) directly, with no router in front
+    of it -- so there's no dependency to override. T14's mid-analysis entitlement
+    recheck calls `entitlement_service.is_subscribed` directly inside the service;
+    without this, every test here 402s since `test_user` has no billing_subscription
+    row. This file tests analysis orchestration, not entitlement gating (that's
+    tests/api/test_analysis.py's job).
+
+    Class-scoped with manual setattr/restore (not `monkeypatch`, which is
+    function-scoped only) because `completed_analysis_shared` below is itself
+    class-scoped and must see this patch already applied on its first use.
+    """
+    original = analysis_service.entitlement_service.is_subscribed
+    analysis_service.entitlement_service.is_subscribed = lambda user_id, session: True
+    yield
+    analysis_service.entitlement_service.is_subscribed = original
+
 
 @pytest.fixture(scope="session")
 def shared_connection():
