@@ -1,4 +1,5 @@
 import { Pressable, Text, ActivityIndicator, View } from "react-native";
+import { ArrowRight } from "lucide-react-native";
 
 import { tapHaptic } from "../utils/haptics";
 
@@ -10,6 +11,8 @@ type Props = {
     busy?: boolean;
     /** Quiet variant for the escape hatches — "I already have an account", "Skip". */
     tone?: "primary" | "quiet";
+    /** Leading arrow on the primary tone only — the welcome screen's one CTA. */
+    icon?: boolean;
 };
 
 /** The intro's only button. Sized to the 44pt touch minimum at every tone. */
@@ -19,6 +22,7 @@ export default function IntroButton({
     disabled = false,
     busy = false,
     tone = "primary",
+    icon = false,
 }: Props) {
     const inert = disabled || busy;
     const handlePress = () => {
@@ -52,6 +56,10 @@ export default function IntroButton({
             {busy ? (
                 <View className="mr-2">
                     <ActivityIndicator size="small" color="#0A0F1A" />
+                </View>
+            ) : icon ? (
+                <View className="mr-2">
+                    <ArrowRight size={18} color="#0A0F1A" strokeWidth={2.2} />
                 </View>
             ) : null}
             <Text className="font-sans-semibold text-[16px] text-ink">{label}</Text>
