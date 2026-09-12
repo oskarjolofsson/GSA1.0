@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import IntroHeader from "../components/IntroHeader";
 import IntroButton from "../components/IntroButton";
 import IntroAreaList from "../components/IntroAreaList";
-import IntroAmbientBackground from "../components/IntroAmbientBackground";
 import type { IntroArea } from "../services/introCatalogService";
 
 type Props = {
@@ -29,7 +28,6 @@ export default function IntroAreaScreen({
     const insets = useSafeAreaInsets();
 
     return (
-        <IntroAmbientBackground source={require("../../../assets/hero/ambient-area.webp")}>
         <View className="flex-1" style={{ paddingTop: insets.top }}>
             <ScrollView
                 contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
@@ -65,6 +63,5 @@ export default function IntroAreaScreen({
                 <IntroButton label="Skip for now" onPress={onSkip} tone="quiet" />
             </View>
         </View>
-        </IntroAmbientBackground>
     );
 }

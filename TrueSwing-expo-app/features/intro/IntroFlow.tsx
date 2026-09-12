@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { View, ActivityIndicator } from "react-native";
+import { View, Image, ActivityIndicator, type ImageSourcePropType } from "react-native";
 import { Redirect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -17,6 +17,7 @@ import type { IntroArea, IntroBranch, IntroIssue } from "./services/introCatalog
 
 import IntroStepTransition from "./components/IntroStepTransition";
 import IntroProgressDots from "./components/IntroProgressDots";
+import IntroAmbientOverlay from "./components/IntroAmbientOverlay";
 import IntroWelcomeScreen from "./screens/IntroWelcomeScreen";
 import IntroAreaScreen from "./screens/IntroAreaScreen";
 import IntroGoalScreen from "./screens/IntroGoalScreen";
@@ -27,6 +28,15 @@ const SIGN_IN = "/(public)/sign-in" as const;
 
 // area/goal/branch/focus — welcome is the entry point, not a step to count.
 const PICKABLE_STEPS: IntroScreen[] = ["area", "goal", "branch", "focus"];
+
+// Metro needs each require() written out literally — a variable path won't
+// resolve. One photo per picking step; welcome has its own bespoke hero.
+const AMBIENT_IMAGE: Partial<Record<IntroScreen, ImageSourcePropType>> = {
+    area: require("../../assets/hero/ambient-area.webp"),
+    goal: require("../../assets/hero/ambient-goal.webp"),
+    branch: require("../../assets/hero/ambient-branch.webp"),
+    focus: require("../../assets/hero/ambient-focus.webp"),
+};
 
 /**
  * The pre-signup intro: welcome -> area -> goal -> branch -> focus -> sign up.
@@ -56,6 +66,10 @@ export default function IntroFlow() {
     // since the last render, back when it shrank (or repeated, e.g. "Skip").
     const previousIndexRef = useRef(currentIndex);
     const direction: 1 | -1 = currentIndex >= previousIndexRef.current ? 1 : -1;
+    // Welcome (index 0) is the one screen with its own separate hero image, not
+    // the shared static background — a fade in or out of it is safe either way.
+    const transitionVariant: "push" | "fade" =
+        currentIndex === 0 || previousIndexRef.current === 0 ? "fade" : "push";
     useEffect(() => {
         previousIndexRef.current = currentIndex;
     }, [currentIndex]);
@@ -154,12 +168,28 @@ export default function IntroFlow() {
     if (seen) return <Redirect href={SIGN_IN} />;
 
     return (
-        <View style={{ flex: 1 }}>
+        <View className="flex-1 bg-ink">
             {/* Overlaid, not part of the flow: every step's own header (via
                 `IntroHeader` or the goal screen's own nav row) occupies the same
                 44pt band starting at insets.top + 8, so centering the dots there
                 lands them beside each back button without touching four screen
                 files or double-applying the safe-area inset. */}
+            {stepIndex >= 0 && (
+                <>
+                    {/* Static: never keyed by screen, never inside the sliding
+                        transition. A background that animated WAS the bug —
+                        opacity on a screen meant opacity on its darkening too,
+                        so mid-transition the dimming visibly lifted. The photo
+                        still changes per step, but as a hard cut, and the wash
+                        + gradient on top of it never move at all. */}
+                    <Image
+                        source={AMBIENT_IMAGE[currentScreen]}
+                        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+                        resizeMode="cover"
+                    />
+                    <IntroAmbientOverlay />
+                </>
+            )}
             {stepIndex >= 0 && (
                 <View
                     pointerEvents="none"
@@ -176,7 +206,7 @@ export default function IntroFlow() {
                     <IntroProgressDots total={PICKABLE_STEPS.length} current={stepIndex} />
                 </View>
             )}
-            <IntroStepTransition screenKey={currentScreen} direction={direction}>
+            <IntroStepTransition screenKey={currentScreen} direction={direction} variant={transitionVariant}>
             {currentScreen === "welcome" && (
                 <IntroWelcomeScreen onStart={goToArea} onSignIn={leaveToSignIn} />
             )}

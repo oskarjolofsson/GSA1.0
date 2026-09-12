@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import IntroHeader from "../components/IntroHeader";
 import IntroButton from "../components/IntroButton";
-import IntroAmbientBackground from "../components/IntroAmbientBackground";
 import { tapHaptic } from "../utils/haptics";
 import type { IntroBranch, IntroIssue } from "../services/introCatalogService";
 
@@ -31,7 +30,6 @@ export default function IntroBranchScreen({
     const insets = useSafeAreaInsets();
 
     return (
-        <IntroAmbientBackground source={require("../../../assets/hero/ambient-branch.webp")}>
         <View className="flex-1" style={{ paddingTop: insets.top }}>
             <ScrollView
                 contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
@@ -76,6 +74,5 @@ export default function IntroBranchScreen({
                 <IntroButton label="Skip for now" onPress={onSkip} tone="quiet" />
             </View>
         </View>
-        </IntroAmbientBackground>
     );
 }

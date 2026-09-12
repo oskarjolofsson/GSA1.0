@@ -4,6 +4,4 @@
 export const INTRO_ANIM = {
     /** Step transition duration (ms). */
     stepDuration: 150,
-    /** px a step slides in from / out to. */
-    stepTravel: 40,
 } as const;

@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import IntroHeader from "../components/IntroHeader";
 import IntroButton from "../components/IntroButton";
 import IntroFocusList from "../components/IntroFocusList";
-import IntroAmbientBackground from "../components/IntroAmbientBackground";
 import type { IntroArea, IntroIssue } from "../services/introCatalogService";
 
 type Props = {
@@ -42,7 +41,6 @@ export default function IntroFocusScreen({
     const insets = useSafeAreaInsets();
 
     return (
-        <IntroAmbientBackground source={require("../../../assets/hero/ambient-focus.webp")}>
         <View className="flex-1" style={{ paddingTop: insets.top }}>
             <ScrollView
                 contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
@@ -76,6 +74,5 @@ export default function IntroFocusScreen({
                 </View>
             </View>
         </View>
-        </IntroAmbientBackground>
     );
 }
