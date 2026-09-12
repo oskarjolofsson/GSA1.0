@@ -57,7 +57,7 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAr
     // sheet rendering its own content while it animates out after a filter change.
     const [openIssue, setOpenIssue] = useState<CatalogIssue | null>(null);
     const [startError, setStartError] = useState<string | null>(null);
-    const { setPendingRetry } = useBilling();
+    const { setPendingRetry, openPaywall } = useBilling();
 
     const start = useCallback(
         async (issue: CatalogIssue) => {
@@ -70,16 +70,12 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAr
                 // from an area the golfer never navigated into.
                 onDone(issue.area);
             } catch (err) {
-                // Leave the sheet open on failure -- the error renders behind it
-                // otherwise, and the golfer sees a dismissed sheet and no explanation.
-                setStartError(getErrorMessage(err));
-                // 402 (already has a focus, unsubscribed): the paywall the interceptor
-                // just opened knows this was a focus_limit trigger. Register the retry
-                // so a successful purchase re-attempts starting THIS issue, landing the
-                // golfer back with their selection already made rather than dumping
-                // them at a bare sheet.
                 if (err instanceof ApiError && err.status === 402) {
+                    setOpenIssue(null);
+                    openPaywall('gate', 'focus_limit');
                     setPendingRetry(() => start(issue));
+                } else {
+                    setStartError(getErrorMessage(err));
                 }
             } finally {
                 setStartingId(null);
