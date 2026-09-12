@@ -87,8 +87,8 @@ describe("IntroFlow", () => {
         fireEvent.press(await screen.findByText("Choose your first focus"));
         fireEvent.press(await screen.findByText("Putting"));
 
-        // Goal step: get better vs fix an issue.
-        fireEvent.press(await screen.findByText("Fix an issue"));
+        // Goal step: get better vs fix something.
+        fireEvent.press(await screen.findByText("Fix something"));
 
         // Branch step: the one more layer the library has, narrowing by miss.
         fireEvent.press(await screen.findByText("I decelerate"));
@@ -96,5 +96,30 @@ describe("IntroFlow", () => {
         // Focus step shows only the fault-kind issue on that miss.
         await waitFor(() => expect(screen.queryByText("Stop decelerating")).toBeTruthy());
         expect(screen.queryByText("Better distance control")).toBeNull();
+    });
+
+    it("disables a goal kind with nothing catalogued for this area, instead of hiding it", async () => {
+        const skillOnlyCatalog = {
+            ...catalog,
+            issues: catalog.issues.filter((issue) => issue.kind === "skill"),
+        };
+        mockGetCatalog.mockResolvedValue(skillOnlyCatalog);
+
+        const screen = await render(
+            <SafeAreaProvider initialMetrics={METRICS}>
+                <IntroFlow />
+            </SafeAreaProvider>
+        );
+
+        fireEvent.press(await screen.findByText("Choose your first focus"));
+        fireEvent.press(await screen.findByText("Putting"));
+
+        const fixSomething = await screen.findByText("Fix something");
+        expect(await screen.findByText("Coming soon")).toBeTruthy();
+
+        // Disabled: tapping it must not advance to the branch step.
+        fireEvent.press(fixSomething);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(screen.queryByText("I decelerate")).toBeNull();
     });
 });

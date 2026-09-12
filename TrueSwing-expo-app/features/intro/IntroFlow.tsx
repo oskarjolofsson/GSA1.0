@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { Redirect, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "features/auth/AuthProvider";
 import { getErrorMessage } from "lib/errors";
 
-import { useIntroFlowSequence } from "./hooks/useIntroFlowSequence";
+import { useIntroFlowSequence, type IntroScreen } from "./hooks/useIntroFlowSequence";
 import { useIntroCatalog } from "./hooks/useIntroCatalog";
 import {
     hasSeenIntro,
@@ -15,6 +16,7 @@ import {
 import type { IntroArea, IntroBranch, IntroIssue } from "./services/introCatalogService";
 
 import IntroStepTransition from "./components/IntroStepTransition";
+import IntroProgressDots from "./components/IntroProgressDots";
 import IntroWelcomeScreen from "./screens/IntroWelcomeScreen";
 import IntroAreaScreen from "./screens/IntroAreaScreen";
 import IntroGoalScreen from "./screens/IntroGoalScreen";
@@ -22,6 +24,9 @@ import IntroBranchScreen from "./screens/IntroBranchScreen";
 import IntroFocusScreen from "./screens/IntroFocusScreen";
 
 const SIGN_IN = "/(public)/sign-in" as const;
+
+// area/goal/branch/focus — welcome is the entry point, not a step to count.
+const PICKABLE_STEPS: IntroScreen[] = ["area", "goal", "branch", "focus"];
 
 /**
  * The pre-signup intro: welcome -> area -> goal -> branch -> focus -> sign up.
@@ -44,6 +49,8 @@ export default function IntroFlow() {
     const { currentScreen, currentIndex, goToWelcome, goToArea, goToGoal, goToBranch, goToFocus } =
         useIntroFlowSequence();
     const catalog = useIntroCatalog();
+    const insets = useSafeAreaInsets();
+    const stepIndex = PICKABLE_STEPS.indexOf(currentScreen);
 
     // Direction the transition should slide: forward when the step index grew
     // since the last render, back when it shrank (or repeated, e.g. "Skip").
@@ -148,6 +155,27 @@ export default function IntroFlow() {
 
     return (
         <View style={{ flex: 1 }}>
+            {/* Overlaid, not part of the flow: every step's own header (via
+                `IntroHeader` or the goal screen's own nav row) occupies the same
+                44pt band starting at insets.top + 8, so centering the dots there
+                lands them beside each back button without touching four screen
+                files or double-applying the safe-area inset. */}
+            {stepIndex >= 0 && (
+                <View
+                    pointerEvents="none"
+                    style={{
+                        position: "absolute",
+                        top: insets.top + 8,
+                        left: 0,
+                        right: 0,
+                        height: 44,
+                        justifyContent: "center",
+                        zIndex: 10,
+                    }}
+                >
+                    <IntroProgressDots total={PICKABLE_STEPS.length} current={stepIndex} />
+                </View>
+            )}
             <IntroStepTransition screenKey={currentScreen} direction={direction}>
             {currentScreen === "welcome" && (
                 <IntroWelcomeScreen onStart={goToArea} onSignIn={leaveToSignIn} />
@@ -166,6 +194,11 @@ export default function IntroFlow() {
             {currentScreen === "goal" && area && (
                 <IntroGoalScreen
                     areaLabel={area.golfer_label}
+                    // A kind with nothing behind it in this area (e.g. an area
+                    // that's skill-only, no faults catalogued yet) still shows,
+                    // disabled — hiding it would look like the tap missed.
+                    skillAvailable={catalog.branchesIn(area.key, "skill").length > 0}
+                    faultAvailable={catalog.branchesIn(area.key, "fault").length > 0}
                     onSelect={chooseKind}
                     onBack={backToAreas}
                     onSkip={leaveToSignIn}
