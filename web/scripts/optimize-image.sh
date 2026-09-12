@@ -49,6 +49,7 @@ CROP="${4:-}"
 
 command -v magick >/dev/null || { echo "ERROR: ImageMagick not found. brew install imagemagick"; exit 1; }
 [[ -f "$SRC" ]] || { echo "ERROR: no such file: $SRC"; exit 1; }
+SRC="$(cd "$(dirname "$SRC")" && pwd)/$(basename "$SRC")"
 
 cd "$(dirname "$0")/.."
 OUT_DIR="public"

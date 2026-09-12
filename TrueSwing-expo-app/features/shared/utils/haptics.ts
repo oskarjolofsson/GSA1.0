@@ -1,0 +1,9 @@
+import * as Haptics from "expo-haptics";
+
+/** One light tap for every primary interaction. Fire-and-forget: haptics are a
+ *  nice-to-have, never worth blocking or failing a screen transition over. */
+export function tapHaptic(): void {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch((err) => {
+        console.warn("tapHaptic failed", err);
+    });
+}

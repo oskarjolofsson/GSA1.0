@@ -2,7 +2,7 @@ from fastapi import APIRouter
 api_router = APIRouter()
 
 # Include endpoint routers
-from .endpoints import drill, feedback, user, analysis, issue, issue_drill, admin, admin_content, admin_subscriptions, admin_taxonomy, practice_session, webhooks, billing, activity, program, taxonomy
+from .endpoints import drill, feedback, user, analysis, issue, issue_drill, admin, admin_content, admin_subscriptions, admin_taxonomy, practice_session, webhooks, billing, activity, program, taxonomy, onboarding
 
 api_router.include_router(
     router=admin.router,
@@ -101,4 +101,12 @@ api_router.include_router(
     router=taxonomy.router,
     prefix="/taxonomy",
     tags=["taxonomy"],
+)
+
+# The only unauthenticated router: the pre-signup intro has no token yet. It serves
+# the admin-authored catalog and nothing user-scoped — see the endpoint's docstring.
+api_router.include_router(
+    router=onboarding.router,
+    prefix="/onboarding",
+    tags=["onboarding"],
 )

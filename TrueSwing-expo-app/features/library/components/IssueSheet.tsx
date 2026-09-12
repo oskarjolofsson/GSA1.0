@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X, ChevronDown, ChevronRight } from "lucide-react-native";
 
 import { parseInstructionSteps } from "features/shared/utils/parseInstructionSteps";
+import Button from "features/shared/components/Button";
 
 import type { CatalogIssue } from "features/issues/services/issueAuthoringService";
 
@@ -140,25 +141,14 @@ export default function IssueSheet({ issue, areaLabel, starting, error, onClose,
                         {error ? (
                             <Text className="mb-3 text-[13px] leading-[19px] text-danger">{error}</Text>
                         ) : null}
-                        <Pressable
+                        <Button
+                            label="Start this plan"
+                            busyLabel="Starting…"
                             onPress={onStart}
-                            disabled={starting || drills.length === 0}
-                            accessibilityRole="button"
-                            accessibilityState={{ disabled: starting || drills.length === 0 }}
-                            className={`min-h-[52px] items-center justify-center rounded-2xl border ${
-                                starting || drills.length === 0
-                                    ? "border-white/[.13]"
-                                    : "border-gold active:opacity-70"
-                            }`}
-                        >
-                            <Text
-                                className={`text-[14px] uppercase tracking-[1.6px] ${
-                                    starting || drills.length === 0 ? "text-sand-dim" : "text-gold"
-                                }`}
-                            >
-                                {starting ? "Starting…" : "Start this plan"}
-                            </Text>
-                        </Pressable>
+                            disabled={drills.length === 0}
+                            busy={starting}
+                            tone="outline"
+                        />
                     </View>
                 </View>
             </View>

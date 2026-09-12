@@ -12,7 +12,10 @@ import {
 } from "../services/taxonomyService";
 import { buildAreaFork, issuesForGoal, issuesForMiss, searchIssues } from "../utils/libraryFork";
 
-export type LibraryView = "areas" | "focus" | "candidates";
+export type LibraryView = "areas" | "kind" | "focus" | "candidates";
+/** "Get better" (skill) or "fix something" (fault) — the same fork intro asks
+ *  about on its goal step, one level under the area. */
+export type LibraryKind = CatalogIssue["kind"];
 /** Which branch of the fork the golfer took. `label` rides along so the leaf can title
  *  itself without re-resolving the term out of the taxonomy. */
 export type CandidateFilter =
@@ -33,6 +36,7 @@ export function useLibraryState(initialAreaKey?: string) {
 
     const [view, setView] = useState<LibraryView>("areas");
     const [area, setArea] = useState<TaxonomyTerm | null>(null);
+    const [kind, setKind] = useState<LibraryKind | null>(null);
     const [filter, setFilter] = useState<CandidateFilter | null>(null);
     const [query, setQuery] = useState("");
 
@@ -93,7 +97,7 @@ export function useLibraryState(initialAreaKey?: string) {
         initialAreaApplied.current = true;
         if (!term) return;
         setArea(term);
-        setView("focus");
+        setView("kind");
     }, [areas, initialAreaKey]);
 
     const fork = useMemo(
@@ -124,6 +128,12 @@ export function useLibraryState(initialAreaKey?: string) {
 
     const openArea = useCallback((next: TaxonomyTerm) => {
         setArea(next);
+        setKind(null);
+        setView("kind");
+    }, []);
+
+    const chooseKind = useCallback((next: LibraryKind) => {
+        setKind(next);
         setView("focus");
     }, []);
 
@@ -137,14 +147,15 @@ export function useLibraryState(initialAreaKey?: string) {
     const goBack = useCallback((): boolean => {
         if (query) { setQuery(""); return true; }
         if (view === "candidates") { setView("focus"); setFilter(null); return true; }
-        if (view === "focus") { setView("areas"); setArea(null); return true; }
+        if (view === "focus") { setView("kind"); setKind(null); return true; }
+        if (view === "kind") { setView("areas"); setArea(null); return true; }
         return false;
     }, [query, view]);
 
     return {
-        areas, area, fork, issues, candidates, view, filter, query,
+        areas, area, kind, fork, issues, candidates, view, filter, query,
         taxonomyStatus, taxonomyError, catalogStatus, catalogError,
-        setQuery, openArea, openFilter, goBack,
+        setQuery, openArea, chooseKind, openFilter, goBack,
         retryTaxonomy: loadTaxonomy, retryCatalog: loadCatalog,
     };
 }

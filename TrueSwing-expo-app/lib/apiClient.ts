@@ -90,6 +90,44 @@ export async function fetchWithAuth<T>(
 }
 
 /**
+ * Unauthenticated GET, for the handful of reads that happen before there is an
+ * account to authenticate as — currently only the pre-signup intro.
+ *
+ * Separate from `fetchWithAuth` rather than a flag on it: that function throws
+ * "Not signed in" by design, and every caller depends on that. Keeping the two
+ * apart means no authenticated call can silently degrade into an anonymous one
+ * if a session read happens to fail.
+ *
+ * Errors surface as the same `ApiError`, so callers share `getErrorMessage`.
+ */
+export async function fetchPublic<T>(url: string): Promise<T> {
+    if (__DEV__) {
+        console.log(`API Request (public): GET ${`${API}${url}`}`);
+    }
+
+    const response = await fetch(`${API}${url}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+        let detail: string | undefined;
+        try {
+            const errorData = await response.json();
+            detail =
+                typeof errorData.detail === 'string'
+                    ? errorData.detail
+                    : JSON.stringify(errorData.detail);
+        } catch {
+            detail = response.statusText;
+        }
+        throw new ApiError(response.status, detail || `Server error ${response.status}`, detail);
+    }
+
+    return response.json();
+}
+
+/**
  * Convenience methods for common HTTP operations
  */
 export const apiClient = {

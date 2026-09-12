@@ -64,6 +64,12 @@ export const routes = {
       `${BASE}/programs/${programId}/steps/${stepId}/complete/`,
   },
 
+  onboarding: {
+    // The one unauthenticated read: the intro runs before the golfer has a token.
+    // Fetch it with `fetchPublic`, not `apiClient` — see lib/apiClient.ts.
+    catalog: `${BASE}/onboarding/catalog/`,
+  },
+
   practice: {
     sessionsStart: `${BASE}/practice/sessions/start/`,
     session: (sessionId: string) => `${BASE}/practice/sessions/${sessionId}/`,

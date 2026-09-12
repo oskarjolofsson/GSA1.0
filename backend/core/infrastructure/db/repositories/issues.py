@@ -118,6 +118,21 @@ def get_catalog_and_user_issues(user_id: UUID, session: Session) -> list[models.
     )
 
 
+def get_global_catalog_issues(session: Session) -> list[models.Issue]:
+    """The global admin catalog alone (user_id IS NULL), with drills.
+
+    Deliberately takes no user_id: this is what the signed-out onboarding screen
+    reads, and it must be impossible for it to return anyone's custom issues.
+    """
+    return (
+        session.query(models.Issue)
+        .filter(models.Issue.user_id.is_(None))
+        .order_by(models.Issue.title)
+        .options(*_CATALOG_OPTS)
+        .all()
+    )
+
+
 def search_catalog_issues_by_text(
     tokens: list[str], session: Session, limit: int = 5
 ) -> list[models.Issue]:
