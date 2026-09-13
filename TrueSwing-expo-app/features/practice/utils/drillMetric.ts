@@ -166,6 +166,16 @@ const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
  * Sentence under the input. Names the consequence for the golfer's program, not a
  * compliment -- a readout, not encouragement. See ADR-0020.
  */
+/** A `BlockRating` result worth counting toward the review prompt: the best grade
+ *  either way it can be recorded — a `dialed` feel, or a scored value that grades `dialed`. */
+export function isPositiveBlockResult(
+  metric: unknown,
+  result: { feel: string | null; metricValue: number | null }
+): boolean {
+  if (result.feel) return result.feel === 'dialed';
+  return gradePreview(asMetric(metric), result.metricValue) === 'dialed';
+}
+
 export function gradeCaption(grade: string | null): string | null {
   switch (grade) {
     case 'dialed':
