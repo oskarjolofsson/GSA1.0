@@ -188,19 +188,6 @@ export default function ProfileScreen() {
                     </Text>
                 </TouchableOpacity>
 
-                {/* DEBUG ONLY: jumps to the post-analysis review screen for a hardcoded
-                    analysis. Delete along with app/(app)/add-focus/debug-review.tsx once
-                    the review-screen bug is fixed. */}
-                <TouchableOpacity
-                    onPress={() => router.push('/add-focus/debug-review')}
-                    activeOpacity={0.7}
-                    className="mt-4 px-5"
-                >
-                    <Text className="text-center text-sm font-medium text-slate-400 border border-white/10 rounded-lg py-3 mx-auto px-10">
-                        DEBUG: Analysis review screen
-                    </Text>
-                </TouchableOpacity>
-
                 {/* Delete Account */}
                 <TouchableOpacity
                     onPress={() => Alert.alert("Delete Account", "Are you sure you want to delete your account? This action cannot be undone.", [

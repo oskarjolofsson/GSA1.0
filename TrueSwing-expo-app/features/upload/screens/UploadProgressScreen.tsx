@@ -75,9 +75,8 @@ export default function ProgressScreen({ onBack, onNext, upload }: ProgressScree
 
   // GetAnalysis (the status response) never carries issues -- they live in their
   // own table -- so fetch them separately once the analysis has actually finished.
-  // AnalysisResultsReview seeds its own state from `issues` only once, at mount
-  // (useAnalysisReview.ts), so it must not mount before this fetch resolves --
-  // otherwise it mounts on an empty array and never picks up the real issues.
+  // Gated behind issuesLoaded so the review screen never flashes its
+  // "no issues found" empty state before the real list has arrived.
   useEffect(() => {
     if (status?.status !== 'completed' || !analysisId) return;
 
@@ -110,7 +109,7 @@ export default function ProgressScreen({ onBack, onNext, upload }: ProgressScree
     return (
       <AnalysisResultsReview
         issues={issues}
-        analysisId={status.analysis?.analysis_id ?? null}
+        analysisId={status.analysis_id ?? null}
         onNext={onNext}
         onBack={onBack}
       />
@@ -127,6 +126,10 @@ export default function ProgressScreen({ onBack, onNext, upload }: ProgressScree
       : `${fmtMB(totalBytes)} sent`
     : null;
 
+  // Two real steps only. A third "Building your program" step used to sit here
+  // with nothing ever driving it active -- program creation happens later, on
+  // a different screen, after Continue -- so it could never honestly show as
+  // in progress. DESIGN.md: never show a stage/percentage you cannot compute.
   const steps: RailStep[] = [
     {
       key: 'upload',
@@ -137,10 +140,6 @@ export default function ProgressScreen({ onBack, onNext, upload }: ProgressScree
       key: 'analyse',
       title: 'Analysing',
       detail: 'Reading your swing frame by frame',
-    },
-    {
-      key: 'program',
-      title: 'Building your program',
     },
   ];
 

@@ -16,6 +16,18 @@ jest.mock("features/drill/services/drillService", () => ({
     default: { getDrillsByIssue: jest.fn() },
 }));
 
+jest.mock("features/library/services/taxonomyService", () => ({
+    __esModule: true,
+    fetchTaxonomy: jest.fn().mockResolvedValue({
+        areas: [],
+        goals: [],
+        misses_by_area: {
+            FULL_SWING: [{ key: "slice", golfer_label: "Slicing it" }],
+        },
+    }),
+    readCachedTaxonomy: jest.fn().mockResolvedValue(null),
+}));
+
 const mockGetIssues = issueService.getIssuesByAnalysis as jest.Mock;
 const mockGetDrills = drillService.getDrillsByIssue as jest.Mock;
 
@@ -60,8 +72,8 @@ describe("useAnalysisIssueDetails", () => {
         expect(mockGetIssues).not.toHaveBeenCalled();
     });
 
-    it("starts loading, then joins issue title/description with its drills by issue_id", async () => {
-        mockGetIssues.mockResolvedValue([issue()]);
+    it("starts loading, then joins issue title/description/misses with its drills by issue_id", async () => {
+        mockGetIssues.mockResolvedValue([issue({ misses: ["slice"] })]);
         mockGetDrills.mockResolvedValue([drill()]);
 
         const { result } = await renderHook(() => useAnalysisIssueDetails("analysis-1"));
@@ -71,6 +83,8 @@ describe("useAnalysisIssueDetails", () => {
         expect(result.current.detailsByIssueId["issue-1"]).toEqual({
             title: "Early extension",
             description: "You're standing up through impact.",
+            area: "FULL_SWING",
+            missLabels: ["Slicing it"],
             drills: [drill()],
         });
     });

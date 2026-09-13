@@ -3,13 +3,21 @@ import { useEffect, useState } from 'react';
 import issueService from 'features/issues/services/issueService';
 import drillService from 'features/drill/services/drillService';
 import type { Drill } from 'features/drill/types';
+import { fetchTaxonomy, readCachedTaxonomy, type Taxonomy } from 'features/library/services/taxonomyService';
 import { getErrorMessage } from 'lib/errors';
 
 export interface IssueDetails {
   title: string;
   description: string | null;
   area: string;
+  /** Golfer-facing miss labels ("Slicing it", "Chunking it"), not raw taxonomy keys. */
+  missLabels: string[];
   drills: Drill[];
+}
+
+function labelForMiss(taxonomy: Taxonomy | null, area: string, missKey: string): string {
+  const match = taxonomy?.misses_by_area?.[area]?.find((miss) => miss.key === missKey);
+  return match?.golfer_label ?? missKey;
 }
 
 interface UseAnalysisIssueDetailsReturn {
@@ -47,7 +55,12 @@ export default function useAnalysisIssueDetails(analysisId: string | null): UseA
 
     const load = async () => {
       try {
-        const issues = await issueService.getIssuesByAnalysis(analysisId);
+        const [issues, taxonomy] = await Promise.all([
+          issueService.getIssuesByAnalysis(analysisId),
+          // Cache first, best-effort refresh: a stale/missing taxonomy just
+          // means miss tags fall back to their raw key, never a broken screen.
+          fetchTaxonomy().catch(() => readCachedTaxonomy()),
+        ]);
         if (!isActive) return;
 
         const drillsByIssueId = await Promise.all(
@@ -68,6 +81,7 @@ export default function useAnalysisIssueDetails(analysisId: string | null): UseA
             title: issue.title,
             description: issue.description,
             area: issue.area,
+            missLabels: (issue.misses ?? []).map((miss) => labelForMiss(taxonomy, issue.area, miss)),
             drills: drillsMap[issue.id] ?? [],
           };
         }
