@@ -4,14 +4,20 @@ import { View } from 'react-native';
 import { useHomeAnalysis } from 'features/home/context/HomeAnalysisContext';
 import type { Issue } from 'features/issues/types';
 import type { ProgramContext, StepAdvance } from 'features/programs/types';
+import {
+  notePositiveBlockRating,
+  notePracticeSessionFinished,
+} from 'features/reviewPrompt/services/reviewPromptService';
 import ErrorState from 'features/shared/components/ErrorState';
 
+import type { BlockResult } from './components/BlockRating';
 import { useDrillQueue } from './hooks/useDrillQueue';
 import { usePracticeFlowSequence } from './hooks/usePracticeFlowSequence';
 import { usePracticeRunner, type SessionOutcome } from './hooks/usePracticeRunner';
 import DrillPracticeScreen from './screens/DrillPracticeScreen';
 import SessionCompleteScreen from './screens/SessionCompleteScreen';
 import type { PracticeSession } from './types';
+import { isPositiveBlockResult } from './utils/drillMetric';
 
 /**
  * A range visit: work through a step's drills, then either continue into the next step or
@@ -53,6 +59,7 @@ export default function PracticeFlow({
 
   const handleSessionCompleted = useCallback(
     (next: SessionOutcome) => {
+      void notePracticeSessionFinished();
       setOutcome(next);
       goToResult();
     },
@@ -65,6 +72,16 @@ export default function PracticeFlow({
     programContext,
     onSessionCompleted: handleSessionCompleted,
   });
+
+  const handleCompleteBlock = useCallback(
+    (result: BlockResult) => {
+      if (isPositiveBlockResult(queue.activeDrill?.metric, result)) {
+        void notePositiveBlockRating();
+      }
+      completeBlock(result);
+    },
+    [queue.activeDrill?.metric, completeBlock]
+  );
 
   const handleContinue = useCallback(async () => {
     if (!outcome || outcome.kind !== 'advanced') return false;
@@ -104,7 +121,7 @@ export default function PracticeFlow({
           activeDrill={queue.activeDrill}
           drillNumber={queue.drillNumber}
           totalDrills={queue.totalDrills}
-          onCompleteBlock={completeBlock}
+          onCompleteBlock={handleCompleteBlock}
           onGiveUp={onBack}
         />
       )}

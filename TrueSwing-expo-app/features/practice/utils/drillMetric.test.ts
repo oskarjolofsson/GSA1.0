@@ -1,6 +1,7 @@
 import {
   asMetric,
   isCounted,
+  isPositiveBlockResult,
   isRenderable,
   promptFor,
   proximityStart,
@@ -11,6 +12,31 @@ import {
   gradePreview,
   gradeCaption,
 } from './drillMetric';
+
+describe('isPositiveBlockResult', () => {
+  it('is positive for a dialed feel', () => {
+    expect(isPositiveBlockResult(null, { feel: 'dialed', metricValue: null })).toBe(true);
+  });
+
+  it('is not positive for a rough or ok feel', () => {
+    expect(isPositiveBlockResult(null, { feel: 'rough', metricValue: null })).toBe(false);
+    expect(isPositiveBlockResult(null, { feel: 'ok', metricValue: null })).toBe(false);
+  });
+
+  it('is positive for a scored value that grades dialed', () => {
+    const metric = { type: 'make_rate', reps: 10 };
+    expect(isPositiveBlockResult(metric, { feel: null, metricValue: 9 })).toBe(true);
+  });
+
+  it('is not positive for a scored value that grades ok or rough', () => {
+    const metric = { type: 'make_rate', reps: 10 };
+    expect(isPositiveBlockResult(metric, { feel: null, metricValue: 3 })).toBe(false);
+  });
+
+  it('is not positive for a skipped block', () => {
+    expect(isPositiveBlockResult(null, { feel: null, metricValue: null })).toBe(false);
+  });
+});
 
 describe('asMetric', () => {
   it('reads a well-formed metric', () => {
