@@ -38,11 +38,17 @@ def get_all_issues(session: Session) -> list[models.Issue]:
 
 
 def get_issues_by_analysis_id(analysis_id: UUID, session: Session) -> list[models.Issue]:
-    """Get all issues associated with a specific analysis through the analysis_issues junction table."""
+    """Get all issues associated with a specific analysis through the analysis_issues junction table.
+
+    Excludes issues the user has since dismissed (AnalysisIssue.active = False) via
+    delete_analysis_issue, which deactivates every occurrence of that issue_id for the
+    user -- otherwise a rejected issue kept reappearing here even though
+    GET /analyses/{id}/issues/ (which does filter on active) correctly hid it.
+    """
     return (
         session.query(models.Issue)
         .join(AnalysisIssue, models.Issue.id == AnalysisIssue.issue_id)
-        .filter(AnalysisIssue.analysis_id == analysis_id)
+        .filter(AnalysisIssue.analysis_id == analysis_id, AnalysisIssue.active == True)
         .options(*_TAG_OPTS)
         .all()
     )

@@ -74,8 +74,16 @@ export function useUpload(): UploadProps {
         }
       );
 
-      await confirm_upload(createAnalaysisResponse.analysis_id);
+      // confirm_upload's PATCH is the endpoint that actually runs the analysis
+      // server-side (download the clip, call Gemini, wait for the response) --
+      // it's synchronous and is the entire real wait, often ~40s. `analysing`
+      // has to be set BEFORE awaiting it, not after: setting it after meant the
+      // screen sat on `uploading` for the whole wait and only flipped to
+      // `analysing` once the backend had already finished, so the very next
+      // poll immediately found `completed` and the analysing step never got
+      // to show as in-progress for more than an instant.
       setPhase('analysing');
+      await confirm_upload(createAnalaysisResponse.analysis_id);
     } catch (err) {
       console.error('Upload process failed:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred during upload');

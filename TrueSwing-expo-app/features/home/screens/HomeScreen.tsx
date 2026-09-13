@@ -219,7 +219,12 @@ export default function HomeScreen({
           {startable.length > 0 || showSecondary ? (
             <Section>
               {startable.length > 0 ? (
-                <StartableList issues={startable} startingId={startingId} onStart={handleStart} />
+                <StartableList
+                  issues={startable}
+                  startingId={startingId}
+                  onStart={handleStart}
+                  onOpenInfo={(issueId) => setInfoIssue(issues.find((i) => i.id === issueId) ?? null)}
+                />
               ) : null}
 
               {showSecondary ? (

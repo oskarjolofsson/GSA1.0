@@ -54,6 +54,8 @@ from datetime import datetime, timezone
 
 
 def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
+    """Create a new analysis and return the upload URL for the video."""
+    
     analysis = None
     try:
         video = add_video(
@@ -260,6 +262,22 @@ def get_analysis_by_id(analysis_id: UUID, user_id: UUID, db_session) -> GetAnala
     return return_analysis_object
 
 
+def mark_analysis_reviewed(analysis_id: UUID, user_id: UUID, db_session) -> GetAnalaysisDTO:
+    """Stamp reviewed_at the first time the owner views this analysis as active.
+
+    Idempotent: a second call on an already-stamped analysis is a no-op.
+    """
+    analysis_object = load_owned_analysis(
+        analysis_id=analysis_id, user_id=user_id, db_session=db_session
+    )
+
+    if analysis_object.reviewed_at is None:
+        analysis_object.reviewed_at = datetime.now(timezone.utc)
+        analysis_object = update_analysis(analysis=analysis_object, session=db_session)
+
+    return from_analysis_object_to_dto(analysis_object)
+
+
 def get_analyses_by_user_id(user_id: UUID, db_session) -> list[GetAnalaysisDTO]:
     analysis_objects = get_analyses_by_user_id_in_db(
         user_id=user_id, session=db_session
@@ -379,6 +397,7 @@ def from_analysis_object_to_dto(analysis_object) -> GetAnalaysisDTO:
         created_at=analysis_object.created_at,
         started_at=analysis_object.started_at,
         completed_at=analysis_object.completed_at,
+        reviewed_at=analysis_object.reviewed_at,
     )
 
 

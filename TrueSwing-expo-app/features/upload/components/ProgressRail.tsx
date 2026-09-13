@@ -1,5 +1,6 @@
 import { View, Text } from 'react-native';
 import { MotiView } from 'moti';
+import { Easing } from 'react-native-reanimated';
 
 export type RailStep = {
   key: string;
@@ -39,8 +40,9 @@ export default function ProgressRail({ steps, activeIndex }: Props) {
 
             <View className={`flex-1 pl-4 ${last ? '' : 'pb-9'}`}>
               <Text
-                className={`font-display text-[18px] leading-[22px] ${
-                  done || active ? 'text-sand' : 'text-sand-dim'
+                testID={active ? 'progress-rail-active-title' : undefined}
+                className={`text-[18px] leading-[22px] ${
+                  active ? 'font-display-bold text-sand' : done ? 'font-display text-sand' : 'font-display text-sand-dim'
                 }`}>
                 {step.title}
               </Text>
@@ -59,21 +61,32 @@ export default function ProgressRail({ steps, activeIndex }: Props) {
 
 function Node({ done, active }: { done: boolean; active: boolean }) {
   if (done) {
-    return <View className="h-3.5 w-3.5 rounded-full bg-gold" />;
+    return <View testID="progress-rail-node-done" className="h-3.5 w-3.5 rounded-full bg-gold" />;
   }
 
   if (active) {
+    // A real rotating ring, not `ActivityIndicator`: that native spinner is
+    // driven by the OS's own Animator and silently sits still wherever
+    // animations are turned off system-side (an emulator's "Window/Transition/
+    // Animator duration scale" dev setting, e.g.) -- this one runs on
+    // reanimated/moti like the rest of the app's motion, so it always spins.
     return (
-      <View className="h-3.5 w-3.5 items-center justify-center rounded-full border border-gold">
-        <MotiView
-          from={{ opacity: 0.35, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'timing', duration: 900, loop: true, repeatReverse: true }}
-          className="h-1.5 w-1.5 rounded-full bg-gold"
-        />
-      </View>
+      <MotiView
+        testID="progress-rail-active-spinner"
+        from={{ rotate: '0deg' }}
+        animate={{ rotate: '360deg' }}
+        transition={{ type: 'timing', duration: 800, easing: Easing.linear, loop: true }}
+        style={{
+          height: 14,
+          width: 14,
+          borderRadius: 7,
+          borderWidth: 2,
+          borderColor: 'rgba(228,200,146,0.25)',
+          borderTopColor: '#E4C892',
+        }}
+      />
     );
   }
 
-  return <View className="h-3.5 w-3.5 rounded-full border border-sand/20" />;
+  return <View testID="progress-rail-node-pending" className="h-3.5 w-3.5 rounded-full border border-sand/20" />;
 }

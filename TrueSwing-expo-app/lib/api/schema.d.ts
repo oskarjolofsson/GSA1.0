@@ -775,6 +775,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analyses/{analysis_id}/reviewed/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Mark Analysis Reviewed
+         * @description Stamp reviewed_at the first time the owner views this analysis as the
+         *     active item in the home reel. Idempotent — a repeat call is a no-op.
+         */
+        patch: operations["mark_analysis_reviewed_api_v1_analyses__analysis_id__reviewed__patch"];
+        trace?: never;
+    };
     "/api/v1/analyses/by-issue/{issue_id}/": {
         parameters: {
             query?: never;
@@ -1448,10 +1469,8 @@ export interface paths {
          * Status
          * @description Everything the client needs to decide what a user may access and what to render.
          *
-         *     `can_access_premium` is the flag to gate features on — it is true for both paying
-         *     subscribers and users still inside the 7-day free tier, so callers should not try
-         *     to recombine `is_subscribed` and `has_free_tier` themselves. `subscription` is
-         *     None when the user has never subscribed.
+         *     There is no free tier: `is_subscribed` is the single flag to gate premium/AI
+         *     features on. `subscription` is None when the user has never subscribed.
          */
         get: operations["status_api_v1_billing_status_get"];
         put?: never;
@@ -2561,6 +2580,8 @@ export interface components {
             started_at: string | null;
             /** Completed At */
             completed_at: string | null;
+            /** Reviewed At */
+            reviewed_at?: string | null;
         };
         /** GetAnalysisIssue */
         GetAnalysisIssue: {
@@ -4828,6 +4849,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateAnalysisResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_analysis_reviewed_api_v1_analyses__analysis_id__reviewed__patch: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+            };
+            path: {
+                analysis_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAnalysis"];
                 };
             };
             /** @description Validation Error */

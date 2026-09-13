@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useBilling } from 'features/billing/BillingContext';
 import { useRequirePremium } from 'features/billing/hooks/useRequirePremium';
 
 /**
@@ -13,11 +14,18 @@ import { useRequirePremium } from 'features/billing/hooks/useRequirePremium';
  */
 export function useRequirePremiumEntry() {
   const router = useRouter();
+  const { invalidate } = useBilling();
   const { requirePremium } = useRequirePremium();
+
+  const requirePremiumRef = useRef(requirePremium);
+  useEffect(() => {
+    requirePremiumRef.current = requirePremium;
+  }, [requirePremium]);
 
   useFocusEffect(
     useCallback(() => {
-      requirePremium(() => router.replace('/'));
-    }, [requirePremium, router])
+      invalidate();
+      requirePremiumRef.current(() => router.replace('/'));
+    }, [invalidate, router])
   );
 }
