@@ -1,4 +1,4 @@
-import type { Analysis, AnalysisIssue } from 'features/analysis/types';
+import type { Analysis } from 'features/analysis/types';
 
 // CreateAnalysisResponse is derived from the backend schema and re-exported from the
 // analysis feature.
@@ -19,8 +19,7 @@ export interface Prompt {
 export interface AnalysisStatusResponse {
   status: string;
   error_message: string | null;
-  // `issues` isn't on the generated `Analysis` schema (GetAnalysis) — this whole
-  // response type is hand-written because the route has no response_model, so
-  // it's extended here rather than in schema.d.ts.
-  analysis: (Analysis & { issues?: AnalysisIssue[] }) | null;
+  // Never carries issues -- GetAnalysis has no issues field. Fetch those
+  // separately via analysisService.getAnalysisIssues() once status is 'completed'.
+  analysis: Analysis | null;
 }

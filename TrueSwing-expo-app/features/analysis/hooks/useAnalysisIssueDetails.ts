@@ -3,16 +3,20 @@ import { useEffect, useState } from 'react';
 import issueService from 'features/issues/services/issueService';
 import drillService from 'features/drill/services/drillService';
 import type { Drill } from 'features/drill/types';
+import { getErrorMessage } from 'lib/errors';
 
 export interface IssueDetails {
   title: string;
   description: string | null;
+  area: string;
   drills: Drill[];
 }
 
 interface UseAnalysisIssueDetailsReturn {
   detailsByIssueId: Record<string, IssueDetails>;
   loading: boolean;
+  /** Set when the join fetch itself failed outright (not a per-issue drills miss). */
+  error: string | null;
 }
 
 /**
@@ -27,16 +31,19 @@ interface UseAnalysisIssueDetailsReturn {
 export default function useAnalysisIssueDetails(analysisId: string | null): UseAnalysisIssueDetailsReturn {
   const [detailsByIssueId, setDetailsByIssueId] = useState<Record<string, IssueDetails>>({});
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!analysisId) {
       setDetailsByIssueId({});
       setLoading(false);
+      setError(null);
       return;
     }
 
     let isActive = true;
     setLoading(true);
+    setError(null);
 
     const load = async () => {
       try {
@@ -60,12 +67,16 @@ export default function useAnalysisIssueDetails(analysisId: string | null): UseA
           next[issue.id] = {
             title: issue.title,
             description: issue.description,
+            area: issue.area,
             drills: drillsMap[issue.id] ?? [],
           };
         }
         setDetailsByIssueId(next);
-      } catch {
+      } catch (err) {
+        if (!isActive) return;
+        console.error('useAnalysisIssueDetails: failed to join issue details for analysis', analysisId, err);
         setDetailsByIssueId({});
+        setError(getErrorMessage(err));
       } finally {
         if (isActive) setLoading(false);
       }
@@ -78,5 +89,5 @@ export default function useAnalysisIssueDetails(analysisId: string | null): UseA
     };
   }, [analysisId]);
 
-  return { detailsByIssueId, loading };
+  return { detailsByIssueId, loading, error };
 }

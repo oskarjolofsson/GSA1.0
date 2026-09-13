@@ -3,9 +3,10 @@ import { View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ErrorState from 'features/shared/components/ErrorState';
-import { ScreenProps } from 'features/shared/types';
 
 import AnalysisResultsReview from 'features/analysis/components/AnalysisResultsReview';
+import analysisService from 'features/analysis/services/analysisService';
+import type { AnalysisIssue } from 'features/analysis/types';
 
 import { AnalysisStatusResponse } from '../types';
 import { UploadProps } from '../hooks/useUpload';
@@ -13,9 +14,10 @@ import ProgressRail, { type RailStep } from '../components/ProgressRail';
 
 // Both callbacks are narrowed back to required: this screen hands them to
 // AnalysisResultsReview's two buttons and to the failure state's retry, so there is no
-// meaningful render without them.
-type ProgressScreenProps = ScreenProps & {
-  onNext: () => void;
+// meaningful render without them. onNext takes the area of the diagnosed issues so the
+// caller can land the golfer there instead of a bare home root.
+type ProgressScreenProps = {
+  onNext: (areaKey?: string | null) => void;
   onBack: () => void;
   upload: UploadProps;
 };
@@ -41,6 +43,8 @@ const fmtMB = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
  */
 export default function ProgressScreen({ onBack, onNext, upload }: ProgressScreenProps) {
   const [status, setStatus] = useState<AnalysisStatusResponse | null>(null);
+  const [issues, setIssues] = useState<AnalysisIssue[]>([]);
+  const [issuesLoaded, setIssuesLoaded] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { phase, analysisId, sentBytes, totalBytes, checkAnalysisStatus } = upload;
@@ -69,6 +73,26 @@ export default function ProgressScreen({ onBack, onNext, upload }: ProgressScree
     };
   }, [phase, analysisId, checkAnalysisStatus]);
 
+  // GetAnalysis (the status response) never carries issues -- they live in their
+  // own table -- so fetch them separately once the analysis has actually finished.
+  // AnalysisResultsReview seeds its own state from `issues` only once, at mount
+  // (useAnalysisReview.ts), so it must not mount before this fetch resolves --
+  // otherwise it mounts on an empty array and never picks up the real issues.
+  useEffect(() => {
+    if (status?.status !== 'completed' || !analysisId) return;
+
+    let isActive = true;
+    void analysisService.getAnalysisIssues(analysisId).then((result) => {
+      if (!isActive) return;
+      setIssues(result);
+      setIssuesLoaded(true);
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [status?.status, analysisId]);
+
   if (upload.error) {
     return (
       <ErrorState
@@ -82,13 +106,10 @@ export default function ProgressScreen({ onBack, onNext, upload }: ProgressScree
     return <ErrorState message={`Analysis failed: ${status.error_message}`} onRetry={onBack} />;
   }
 
-  if (status?.status === 'completed') {
-    // onNext, not a router.push from here: navigating straight out skipped
-    // UploadFlow's own reset, so re-entering the tab landed on a stale flow
-    // still holding the finished video.
+  if (status?.status === 'completed' && issuesLoaded) {
     return (
       <AnalysisResultsReview
-        issues={status.analysis?.issues ?? []}
+        issues={issues}
         analysisId={status.analysis?.analysis_id ?? null}
         onNext={onNext}
         onBack={onBack}

@@ -8,6 +8,9 @@ type FocusPointCardProps = {
   issue: ReviewIssue;
   details?: IssueDetails;
   detailsLoading: boolean;
+  /** Set when the title/description/drills join failed outright, so this can say
+   *  so instead of silently falling back to a bare confidence number. */
+  detailsError?: string | null;
   onReject: () => void;
 };
 
@@ -18,7 +21,13 @@ type FocusPointCardProps = {
  * this shows a plain loading placeholder rather than blocking the whole screen on
  * it. Gold stroke voice per DESIGN.md: no green, no exclamation marks.
  */
-export default function FocusPointCard({ issue, details, detailsLoading, onReject }: FocusPointCardProps) {
+export default function FocusPointCard({
+  issue,
+  details,
+  detailsLoading,
+  detailsError,
+  onReject,
+}: FocusPointCardProps) {
   return (
     <View className="mb-4 rounded-[24px] border border-white/10 bg-black/35 p-5">
       {details ? (
@@ -31,8 +40,12 @@ export default function FocusPointCard({ issue, details, detailsLoading, onRejec
         </>
       ) : detailsLoading ? (
         <View className="h-6 w-2/3 rounded-full bg-white/10" />
+      ) : detailsError ? (
+        <Text className="text-[13px] text-sand-dim">
+          Couldn't load details for this issue ({detailsError}) — {Math.round(issue.confidence * 100)}% confidence.
+        </Text>
       ) : (
-        // Details fetch failed outright — fall back to what the payload itself has.
+        // Details join returned nothing for this issue_id specifically.
         <Text className="font-display text-[20px] leading-[26px] text-sand">
           {Math.round(issue.confidence * 100)}% confidence
         </Text>

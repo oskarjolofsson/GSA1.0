@@ -106,7 +106,7 @@ def get_issues_by_analysis(
     Returns:
         JSON response with a list of issues
     """
-    issues = service_get_issues_by_analysis_id(analysis_id, current_user["user_id"], db_session=db)
+    issues = service_get_issues_by_analysis_id(analysis_id, UUID(current_user["user_id"]), db_session=db)
 
     return [GetIssue.from_domain(issue) for issue in issues]
 

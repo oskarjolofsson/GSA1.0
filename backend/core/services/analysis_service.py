@@ -54,6 +54,8 @@ from datetime import datetime, timezone
 
 
 def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
+    """Create a new analysis and return the upload URL for the video."""
+    
     analysis = None
     try:
         video = add_video(

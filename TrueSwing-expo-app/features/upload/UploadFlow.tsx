@@ -11,6 +11,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { AiConsentModal } from 'features/privacy/components/AIconsentModel';
+import { exitToHome } from 'features/shared/utils/exitToHome';
 import {
   hasValidAiConsent,
   saveAiConsent,
@@ -105,10 +106,11 @@ export default function UploadFlow({ onCancel }: { onCancel: () => void }) {
           onBack={resetFlow}
           // Reset before leaving: the flow keeps the finished video and
           // prompt in state, and re-entering the tab would otherwise land
-          // on a stale flow rather than the camera.
-          onNext={() => {
+          // on a stale flow rather than the camera. Lands on the area the
+          // diagnosed issues belong to (usually full swing), not just home.
+          onNext={(areaKey) => {
             resetFlow();
-            router.push('/');
+            exitToHome(router, areaKey);
           }}
           upload={upload}
         />

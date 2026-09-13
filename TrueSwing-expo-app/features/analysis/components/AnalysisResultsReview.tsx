@@ -8,7 +8,9 @@ import FocusPointCard from './FocusPointCard';
 type AnalysisResultsReviewProps = {
   issues: AnalysisIssue[];
   analysisId: string | null;
-  onNext: () => void;
+  /** Called with the area of the first surviving issue, so the caller can land
+   *  the golfer on the home area these results belong to. */
+  onNext: (areaKey?: string | null) => void;
   onBack: () => void;
 };
 
@@ -28,7 +30,11 @@ export default function AnalysisResultsReview({
   onBack,
 }: AnalysisResultsReviewProps) {
   const { issues: reviewIssues, reject } = useAnalysisReview(issues);
-  const { detailsByIssueId, loading: detailsLoading } = useAnalysisIssueDetails(analysisId);
+  const {
+    detailsByIssueId,
+    loading: detailsLoading,
+    error: detailsError,
+  } = useAnalysisIssueDetails(analysisId);
 
   return (
     <View className="flex-1 bg-ink px-6 pt-16">
@@ -49,6 +55,7 @@ export default function AnalysisResultsReview({
               issue={item}
               details={detailsByIssueId[item.issue_id]}
               detailsLoading={detailsLoading}
+              detailsError={detailsError}
               onReject={() => reject(item.analysis_issue_id)}
             />
           )}
@@ -57,7 +64,7 @@ export default function AnalysisResultsReview({
 
       <View className="pb-6 pt-6">
         <Pressable
-          onPress={onNext}
+          onPress={() => onNext(detailsByIssueId[reviewIssues[0]?.issue_id]?.area)}
           accessibilityRole="button"
           className="min-h-[44px] w-full items-center justify-center rounded-full border border-gold px-6 py-4 active:opacity-70">
           <Text className="font-sans-medium text-[15px] text-gold">Continue</Text>
