@@ -46,7 +46,7 @@ export default function HomeHero({ image, title, subtitle, onAddFocus }: Props) 
 
       {image ? (
         <LinearGradient
-          colors={['rgba(10,15,26,0.46)', 'rgba(10,15,26,0.22)', 'rgba(10,15,26,0.80)', '#0A0F1A']}
+          colors={['rgba(10,15,26,0.46)', 'rgba(10,15,26,0.22)', 'rgba(10,15,26,0.80)', colors.ink]}
           locations={[0, 0.34, 0.76, 1]}
           style={{ position: 'absolute', inset: 0 }}
           pointerEvents="none"

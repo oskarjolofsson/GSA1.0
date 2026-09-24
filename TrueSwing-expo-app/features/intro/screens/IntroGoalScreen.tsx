@@ -6,6 +6,7 @@ import Header from "features/shared/components/Header";
 import Button from "features/shared/components/Button";
 import { tapHaptic } from "features/shared/utils/haptics";
 import type { IntroIssue } from "../services/introCatalogService";
+import colors from "lib/colors";
 
 type Kind = IntroIssue["kind"];
 
@@ -81,7 +82,7 @@ export default function IntroGoalScreen({
                                 >
                                     <Icon
                                         size={24}
-                                        color={gold && !disabled ? "#E4C892" : "#EADFC8"}
+                                        color={gold && !disabled ? colors.gold : colors.sand}
                                         strokeWidth={1.8}
                                     />
                                 </View>

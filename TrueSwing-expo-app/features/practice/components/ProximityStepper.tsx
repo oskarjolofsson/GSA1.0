@@ -2,6 +2,7 @@ import { Minus, Plus } from 'lucide-react-native';
 import { Pressable, Text, View } from 'react-native';
 
 import { formatProximity, PROXIMITY_STEP, stepProximity } from '../utils/drillMetric';
+import colors from 'lib/colors';
 
 type Props = {
     value: number;
@@ -32,7 +33,7 @@ export default function ProximityStepper({ value, unit, onChange, disabled = fal
                     disabled={disabled || atFloor}
                     onPress={() => onChange(stepProximity(value, -1))}
                 >
-                    <Minus size={26} color="#EADFC8" />
+                    <Minus size={26} color={colors.sand} />
                 </StepButton>
 
                 <View className="min-w-[132px] flex-row items-baseline justify-center">
@@ -47,7 +48,7 @@ export default function ProximityStepper({ value, unit, onChange, disabled = fal
                     disabled={disabled}
                     onPress={() => onChange(stepProximity(value, 1))}
                 >
-                    <Plus size={26} color="#EADFC8" />
+                    <Plus size={26} color={colors.sand} />
                 </StepButton>
             </View>
         </View>

@@ -5,6 +5,7 @@ import { Play } from 'lucide-react-native';
 import useReelPlayback from '../hooks/useReelPlayback';
 import useScrubFriendlyVideo from '../hooks/useScrubFriendlyVideo';
 import VideoSeekBar from './VideoSeekBar';
+import colors from 'lib/colors';
 
 type Props = {
   videoURL: string | null;
@@ -51,7 +52,7 @@ export default function InlineSwingVideo({ videoURL, analysisId, active }: Props
                 className="absolute inset-0 items-center justify-center"
               >
                 <View className="h-12 w-12 items-center justify-center rounded-full bg-black/50">
-                  <Play size={20} color="#EADFC8" fill="#EADFC8" />
+                  <Play size={20} color={colors.sand} fill={colors.sand} />
                 </View>
               </View>
             ) : null}

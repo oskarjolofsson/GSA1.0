@@ -6,6 +6,7 @@ import { Search } from "lucide-react-native";
 import { generateProgramFromIssue } from "features/programs/services/programService";
 import type { CatalogIssue } from "features/issues/services/issueAuthoringService";
 import { getErrorMessage, ApiError } from "lib/errors";
+import colors from "lib/colors";
 import { useBilling } from "features/billing/BillingContext";
 import Header from "features/shared/components/Header";
 import StepTransition from "features/shared/components/StepTransition";
@@ -148,7 +149,7 @@ export default function LibraryScreen({ onCancel, onDone, onFilmSwing, initialAr
                                 hitSlop={8}
                                 className="-mr-2 h-[44px] w-[44px] items-center justify-center active:opacity-70"
                             >
-                                <Search size={19} color="#8A8676" />
+                                <Search size={19} color={colors['sand-dim']} />
                             </Pressable>
                         ) : undefined
                     }

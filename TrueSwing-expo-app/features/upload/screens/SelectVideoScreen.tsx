@@ -11,6 +11,7 @@ import { LibraryBig, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import FramingGuide from '../components/FramingGuide';
+import colors from 'lib/colors';
 
 const RecordingTimer = memo(function RecordingTimer({
   isRecording,
@@ -195,7 +196,7 @@ export default function SelectVideoScreen({
   if (!cameraPermission || !microphonePermission) {
     return (
       <View className="flex-1 items-center justify-center bg-ink">
-        <ActivityIndicator color="#8A8676" />
+        <ActivityIndicator color={colors['sand-dim']} />
       </View>
     );
   }
@@ -276,7 +277,7 @@ export default function SelectVideoScreen({
           accessibilityRole="button"
           accessibilityLabel="Go back"
           className="h-11 w-11 items-center justify-center rounded-full bg-ink/50 active:opacity-70">
-          <ChevronLeft size={24} color="#EADFC8" />
+          <ChevronLeft size={24} color={colors.sand} />
         </Pressable>
       </View>
 
@@ -332,7 +333,7 @@ export default function SelectVideoScreen({
               accessibilityRole="button"
               accessibilityLabel="Choose a video from your library"
               className="min-h-[44px] min-w-[72px] items-center justify-center px-2 py-2 active:opacity-70">
-              <LibraryBig size={20} color="#EADFC8" />
+              <LibraryBig size={20} color={colors.sand} />
               <Text className="mt-1.5 text-[13px] text-sand">Library</Text>
             </Pressable>
           </View>

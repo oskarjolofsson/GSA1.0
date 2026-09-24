@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 
 import type { ProgramSummary } from 'features/programs/types';
+import colors from 'lib/colors';
 
 type Props = {
   program: ProgramSummary;
@@ -11,7 +12,7 @@ type Props = {
   onOpenInfo: () => void;
 };
 
-const SAND_DIM = '#8A8676';
+const SAND_DIM = colors['sand-dim'];
 
 /**
  * One open program: title, the drills in the next session, a progress bar, and the screen's
@@ -52,7 +53,7 @@ export default function ProgramRow({ program, starting, onStart, onOpenInfo }: P
           accessibilityRole="button"
           accessibilityLabel={`About ${program.title}`}
           className="h-[26px] w-[26px] items-center justify-center rounded-full border border-sand/30 active:opacity-60">
-          <Text className="font-display text-[12px] leading-none" style={{ color: SAND_DIM }}>
+          <Text className="font-display text-[12px] leading-none text-sand-dim">
             i
           </Text>
         </Pressable>
@@ -79,7 +80,7 @@ export default function ProgramRow({ program, starting, onStart, onOpenInfo }: P
         accessibilityState={{ disabled: starting }}
         accessibilityLabel={`Start practice for ${program.title}`}
         className="mt-4 min-h-[44px] items-center justify-center rounded-[8px] border active:opacity-70"
-        style={{ borderColor: starting ? SAND_DIM : '#E4C892' }}>
+        style={{ borderColor: starting ? SAND_DIM : colors.gold }}>
         <Text
           className={`font-sans-semibold text-[13px] ${starting ? 'text-sand-dim' : 'text-gold'}`}>
           {starting ? 'Starting…' : 'Start practice'}

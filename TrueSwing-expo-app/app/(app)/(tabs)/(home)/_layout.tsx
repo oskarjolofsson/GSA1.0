@@ -2,6 +2,7 @@ import { useWindowDimensions } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
 
 import AddFocusDrawer from 'features/addFocus/AddFocusDrawer';
+import colors from 'lib/colors';
 
 /**
  * Home is the app. The drawer is the only other thing at this level, and it holds
@@ -23,7 +24,7 @@ export default function DrawerLayout() {
         drawerType: 'front',
         drawerStyle: {
           width: Math.min(300, width * 0.8),
-          backgroundColor: '#0A0F1A',
+          backgroundColor: colors.ink,
           borderRightWidth: 1,
           borderRightColor: 'rgba(232,220,196,.13)',
         },

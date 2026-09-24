@@ -10,9 +10,10 @@ import type { Analysis, AnalysisIssue } from '../types';
 import InlineSwingVideo from './InlineSwingVideo';
 import FocusDrillsSheet from './FocusDrillsSheet';
 import AnalysisSummaryScreen from './AnalysisSummaryScreen';
+import colors from 'lib/colors';
 
-const SAND_DIM = '#8A8676';
-const SAND = '#EADFC8';
+const SAND_DIM = colors['sand-dim'];
+const SAND = colors.sand;
 
 type AnalysisResultsReviewProps = {
   issues: AnalysisIssue[];

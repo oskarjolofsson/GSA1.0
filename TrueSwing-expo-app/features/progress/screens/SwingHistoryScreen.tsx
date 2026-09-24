@@ -8,6 +8,7 @@ import analysisService from "features/analysis/services/analysisService";
 import { useHomeAnalysis } from "features/home/context/HomeAnalysisContext";
 import type { Analysis, IssueSwingTimelineItem } from "features/analysis/types";
 import type { Issue } from "features/issues/types";
+import colors from "lib/colors";
 
 type SwingHistoryScreenProps = {
     issue: Issue;
@@ -103,7 +104,7 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
                         {item.thumbnail_url ? (
                             <Image source={{ uri: item.thumbnail_url }} className="h-full w-full" resizeMode="cover" />
                         ) : (
-                            <Film size={22} color="#8A8676" />
+                            <Film size={22} color={colors['sand-dim']} />
                         )}
                     </View>
                     <View className="flex-1">
@@ -139,11 +140,11 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
                     hitSlop={8}
                     className="m-4 flex-row items-center gap-1 self-start active:opacity-70"
                 >
-                    <ChevronLeft size={20} color="#E4C892" />
+                    <ChevronLeft size={20} color={colors.gold} />
                     <Text className="font-sans-medium text-[15px] text-sand">All swings</Text>
                 </Pressable>
                 <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator color="#E4C892" />
+                    <ActivityIndicator color={colors.gold} />
                 </View>
             </View>
         );
@@ -153,7 +154,7 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
         <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
             <View className="flex-row items-center gap-2 px-4 pt-2 pb-2">
                 <Pressable onPress={onBack} hitSlop={8} className="p-1 active:opacity-70">
-                    <ArrowLeft size={22} color="#E4C892" />
+                    <ArrowLeft size={22} color={colors.gold} />
                 </Pressable>
                 <View className="flex-1">
                     <Text className="font-sans-medium text-[11px] uppercase tracking-[2px] text-sand-dim">
@@ -171,7 +172,7 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
 
             {loading ? (
                 <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator color="#E4C892" />
+                    <ActivityIndicator color={colors.gold} />
                 </View>
             ) : error ? (
                 <View className="flex-1 items-center justify-center px-8">
@@ -179,7 +180,7 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
                 </View>
             ) : items.length === 0 ? (
                 <View className="flex-1 items-center justify-center px-8">
-                    <Film size={28} color="#8A8676" />
+                    <Film size={28} color={colors['sand-dim']} />
                     <Text className="mt-3 text-center font-sans text-[15px] text-sand-dim">
                         No swings for this issue yet. Re-test to capture one you can compare against later.
                     </Text>

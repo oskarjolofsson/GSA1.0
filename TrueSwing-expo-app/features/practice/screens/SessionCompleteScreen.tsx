@@ -7,6 +7,7 @@ import SessionScoreList from '../components/SessionScoreList';
 import type { SessionOutcome } from '../hooks/usePracticeRunner';
 import { usePracticeResultsState } from '../hooks/usePracticeResultsState';
 import type { PracticeSession } from '../types/Session';
+import colors from 'lib/colors';
 
 /**
  * The end of a range visit, and the way into the next one. Four states:
@@ -84,7 +85,7 @@ export default function SessionCompleteScreen({
         ) : (
           <>
             <View className="flex-row items-center gap-3">
-              <CheckCircle2 size={22} color="#E4C892" />
+              <CheckCircle2 size={22} color={colors.gold} />
               <Text className="text-[11px] font-semibold uppercase tracking-[2.5px] text-sand-dim">
                 Session complete
               </Text>
@@ -152,7 +153,7 @@ export default function SessionCompleteScreen({
               <Text className="font-sans-bold text-xl text-ink">
                 {continuing ? 'Starting…' : 'Continue practice'}
               </Text>
-              {continuing ? null : <ArrowRight size={22} color="#0A0F1A" />}
+              {continuing ? null : <ArrowRight size={22} color={colors.ink} />}
             </Pressable>
           ) : focusComplete ? (
             <Pressable

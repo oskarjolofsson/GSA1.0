@@ -1,6 +1,8 @@
 import { View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
+import colors from "lib/colors";
+
 /**
  * The flat dim + bottom gradient that sits on top of the picking screens'
  * background photo. Rendered exactly once at the `IntroFlow` level, never
@@ -24,7 +26,7 @@ export default function IntroAmbientOverlay() {
                 }}
             />
             <LinearGradient
-                colors={["transparent", "rgba(10,15,26,0.75)", "#0A0F1A"]}
+                colors={["transparent", "rgba(10,15,26,0.75)", colors.ink]}
                 locations={[0.3, 0.6, 0.78]}
                 style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
             />

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "features/auth/AuthProvider";
 import { getErrorMessage } from "lib/errors";
+import colors from "lib/colors";
 
 import { useIntroFlowSequence, type IntroScreen } from "./hooks/useIntroFlowSequence";
 import { useIntroCatalog } from "./hooks/useIntroCatalog";
@@ -161,7 +162,7 @@ export default function IntroFlow() {
     if (seen === null) {
         return (
             <View className="flex-1 items-center justify-center bg-ink">
-                <ActivityIndicator color="#E4C892" />
+                <ActivityIndicator color={colors.gold} />
             </View>
         );
     }

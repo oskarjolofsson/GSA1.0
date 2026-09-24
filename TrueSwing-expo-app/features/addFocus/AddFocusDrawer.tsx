@@ -5,7 +5,9 @@ import { useRouter } from 'expo-router';
 import type { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { List, Video, FileText } from 'lucide-react-native';
 
-const GOLD = '#E4C892';
+import colors from 'lib/colors';
+
+const GOLD = colors.gold;
 
 type Entry = {
   key: string;

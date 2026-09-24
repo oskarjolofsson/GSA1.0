@@ -2,6 +2,7 @@ import { View, Text, Pressable } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 
 import type { CatalogIssue } from "features/issues/services/issueAuthoringService";
+import colors from "lib/colors";
 
 type Props = {
     issue: CatalogIssue;
@@ -41,7 +42,7 @@ export default function IssueRow({ issue, onOpen }: Props) {
             <Text className="mr-2 text-[13px] text-sand-dim">
                 {drillCount} {drillCount === 1 ? "drill" : "drills"}
             </Text>
-            <ChevronRight size={16} color="#8A8676" />
+            <ChevronRight size={16} color={colors['sand-dim']} />
         </Pressable>
     );
 }

@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import type { ScreenProps } from 'features/shared/types';
+import colors from 'lib/colors';
 import InlineRetry from 'features/library/components/InlineRetry';
 
 import type { UsePromptReturn } from '../hooks/usePrompt';
@@ -109,7 +110,7 @@ export default function PromptScreen({ onBack, onNext, prompt }: Props) {
               {/* Independent fetches fail independently: the shape chips above
                                 render regardless, so a dead taxonomy costs this section only. */}
               {status === 'loading' && misses.length === 0 ? (
-                <ActivityIndicator color="#8A8676" />
+                <ActivityIndicator color={colors['sand-dim']} />
               ) : status === 'error' ? (
                 <InlineRetry message={error ?? "Couldn't load the miss list."} onRetry={retry} />
               ) : misses.length === 0 ? (
@@ -134,7 +135,7 @@ export default function PromptScreen({ onBack, onNext, prompt }: Props) {
               <TextInput
                 className="min-h-[88px] border-b border-sand/[.13] pb-3 text-[15px] text-sand"
                 placeholder="Conditions, club, what you were working on"
-                placeholderTextColor="#8A8676"
+                placeholderTextColor={colors['sand-dim']}
                 multiline
                 textAlignVertical="top"
                 value={promptData.extra}

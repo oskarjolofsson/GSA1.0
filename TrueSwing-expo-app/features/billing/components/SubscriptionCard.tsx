@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react-native';
 
 import { useBilling } from 'features/billing/BillingContext';
 import { daysLeft } from 'features/billing/utils/Trial';
+import colors from 'lib/colors';
 
 // Native store subscription-management deep links.
 const STORE_SUBSCRIPTIONS_URL = Platform.select({
@@ -64,7 +65,7 @@ export default function SubscriptionCard() {
             <Text className="text-[15px] font-semibold text-sand">View subscription plans</Text>
             <Text className="mt-1 text-[13px] text-sand-dim">TrueSwing Monthly</Text>
           </View>
-          <ChevronRight size={20} color="#8A8676" />
+          <ChevronRight size={20} color={colors['sand-dim']} />
         </TouchableOpacity>
       </View>
     );
@@ -106,7 +107,7 @@ export default function SubscriptionCard() {
             {`Opens your ${Platform.OS === 'ios' ? 'App Store' : 'Play Store'} settings`}
           </Text>
         </View>
-        <ChevronRight size={20} color="#8A8676" />
+        <ChevronRight size={20} color={colors['sand-dim']} />
       </TouchableOpacity>
     </View>
   );

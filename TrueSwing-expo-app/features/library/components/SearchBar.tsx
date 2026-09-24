@@ -1,6 +1,8 @@
 import { View, TextInput, Pressable } from "react-native";
 import { Search, X } from "lucide-react-native";
 
+import colors from "lib/colors";
+
 type Props = {
     value: string;
     onChange: (text: string) => void;
@@ -15,12 +17,12 @@ type Props = {
 export default function SearchBar({ value, onChange, autoFocus = false }: Props) {
     return (
         <View className="mt-6 flex-row items-center border-b border-white/[.13] pb-3">
-            <Search size={14} color="#8A8676" />
+            <Search size={14} color={colors['sand-dim']} />
             <TextInput
                 value={value}
                 onChangeText={onChange}
                 placeholder="Search focus points"
-                placeholderTextColor="#8A8676"
+                placeholderTextColor={colors['sand-dim']}
                 className="ml-3 flex-1 py-1 text-[14px] text-sand"
                 autoFocus={autoFocus}
                 autoCorrect={false}
@@ -29,7 +31,7 @@ export default function SearchBar({ value, onChange, autoFocus = false }: Props)
             />
             {value.length > 0 ? (
                 <Pressable onPress={() => onChange("")} hitSlop={12} className="active:opacity-60">
-                    <X size={16} color="#8A8676" />
+                    <X size={16} color={colors['sand-dim']} />
                 </Pressable>
             ) : null}
         </View>

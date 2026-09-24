@@ -2,7 +2,9 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { Plus } from 'lucide-react-native';
 
-const GOLD = '#E4C892';
+import colors from 'lib/colors';
+
+const GOLD = colors.gold;
 
 type Props = {
   onStart: () => void;

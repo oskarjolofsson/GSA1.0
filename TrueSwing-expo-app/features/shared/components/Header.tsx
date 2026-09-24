@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
 
 import { tapHaptic } from "../utils/haptics";
+import colors from "lib/colors";
 
 const BACK_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 };
 
@@ -50,7 +51,7 @@ export default function Header({
                                 : "min-h-[44px] w-8 justify-center active:opacity-70"
                         }
                     >
-                        <ChevronLeft size={backLabel ? 16 : 22} color="#8A8676" />
+                        <ChevronLeft size={backLabel ? 16 : 22} color={colors['sand-dim']} />
                         {backLabel ? (
                             <Text className="ml-1 text-[13px] text-sand-dim">{backLabel}</Text>
                         ) : null}

@@ -3,6 +3,7 @@ import { TrendingUp, Wrench } from "lucide-react-native";
 
 import { tapHaptic } from "features/shared/utils/haptics";
 import type { LibraryKind } from "../hooks/useLibraryState";
+import colors from "lib/colors";
 
 type Props = {
     /** Whether this area has any catalogued content of that kind — an area can
@@ -51,7 +52,7 @@ export default function KindChoice({ skillAvailable, faultAvailable, onSelect }:
                                 gold && !disabled ? "bg-gold/10" : "bg-white/[.06]"
                             }`}
                         >
-                            <Icon size={24} color={gold && !disabled ? "#E4C892" : "#EADFC8"} strokeWidth={1.8} />
+                            <Icon size={24} color={gold && !disabled ? colors.gold : colors.sand} strokeWidth={1.8} />
                         </View>
                         <Text className="text-center font-display text-[17px] leading-[21px] text-sand">
                             {label}

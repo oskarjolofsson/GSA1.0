@@ -11,8 +11,6 @@ type Props = {
   onOpenInfo: (issueId: string | null) => void;
 };
 
-const SAND_DIM = '#8A8676';
-
 /**
  * Issues in this area that have been diagnosed but not started.
  *
@@ -63,7 +61,7 @@ export default function StartableList({ issues, startingId, onStart, onOpenInfo 
                 accessibilityRole="button"
                 accessibilityLabel={`About ${issue.title}`}
                 className="h-[26px] w-[26px] items-center justify-center rounded-full border border-sand/30 active:opacity-60">
-                <Text className="font-display text-[12px] leading-none" style={{ color: SAND_DIM }}>
+                <Text className="font-display text-[12px] leading-none text-sand-dim">
                   i
                 </Text>
               </Pressable>
