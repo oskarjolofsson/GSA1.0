@@ -18,7 +18,7 @@ import {
 import type { ProgramContext, StepAdvance } from 'features/programs/types';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { View, Alert } from 'react-native';
 import { ApiError } from 'lib/errors';
 import React from 'react';
@@ -26,7 +26,6 @@ import React from 'react';
 export default function HomeFlow() {
   const { currentScreen, goToHome, goToAnalysis, goToPractice, goToHistory } =
     useHomeFlowSequence();
-  const router = useRouter();
   const navigation = useNavigation<DrawerNavigationProp<Record<string, undefined>>>();
   const { requirePremium } = useRequirePremium();
   const analysisController = useHomeAnalysisController();
@@ -179,7 +178,6 @@ export default function HomeFlow() {
             selectedArea={selectedArea}
             onSelectArea={setSelectedArea}
             onOpenArchive={goToAnalysis}
-            onOpenProfile={() => router.push('/profile')}
             onAddFocus={() => navigation.openDrawer()}
             onStartPractice={startProgramSession}
             onOpenHistory={openHistory}

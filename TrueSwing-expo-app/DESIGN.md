@@ -12,7 +12,7 @@ truth for how they apply on a phone.
 
 ## Palette
 
-| Token (`tailwind.config.js`) | Hex | Use |
+| Token (`lib/colors.js`) | Hex | Use |
 |---|---|---|
 | `ink` | `#0A0F1A` | Every screen background. Obsidian Black. |
 | `ink-raised` | `#141F30` | The rare raised surface. Prefer air and a rule. |

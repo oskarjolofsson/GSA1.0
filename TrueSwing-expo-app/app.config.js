@@ -53,7 +53,11 @@ module.exports = {
         },
         orientation: "portrait",
         icon: "./assets/true_swing_logo.png",
-        userInterfaceStyle: "light",
+        // iOS only in practice: prebuild writes this to Info.plist as UIUserInterfaceStyle,
+        // which is what covers app launch before JS boots. On Android it is a no-op without
+        // expo-system-ui -- `Appearance.setColorScheme('dark')` in app/_layout.tsx is what
+        // pins Android. Change one, change the other.
+        userInterfaceStyle: "dark",
         splash: {
             image: "./assets/true_swing_logo2.png",
             resizeMode: "contain",
