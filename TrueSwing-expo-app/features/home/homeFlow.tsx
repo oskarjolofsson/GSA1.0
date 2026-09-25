@@ -1,6 +1,5 @@
 import { useHomeFlowSequence } from 'features/home/hooks/useHomeFlowSequence';
 import HomeScreen from 'features/home/screens/HomeScreen';
-import AnalysisResultScreen from 'features/analysis/screens/AnalysisResultScreen';
 import PracticeFlow from 'features/practice/practiceFlow';
 import SwingHistoryScreen from 'features/progress/screens/SwingHistoryScreen';
 import useHomeAnalysisController from 'features/home/hooks/useHomeAnalysisController';
@@ -24,8 +23,7 @@ import { ApiError } from 'lib/errors';
 import React from 'react';
 
 export default function HomeFlow() {
-  const { currentScreen, goToHome, goToAnalysis, goToPractice, goToHistory } =
-    useHomeFlowSequence();
+  const { currentScreen, goToHome, goToPractice, goToHistory } = useHomeFlowSequence();
   const navigation = useNavigation<DrawerNavigationProp<Record<string, undefined>>>();
   const { requirePremium } = useRequirePremium();
   const analysisController = useHomeAnalysisController();
@@ -177,14 +175,10 @@ export default function HomeFlow() {
           <HomeScreen
             selectedArea={selectedArea}
             onSelectArea={setSelectedArea}
-            onOpenArchive={goToAnalysis}
             onAddFocus={() => navigation.openDrawer()}
             onStartPractice={startProgramSession}
             onOpenHistory={openHistory}
           />
-        )}
-        {currentScreen === 'Analysis' && (
-          <AnalysisResultScreen onBack={goToHome} onNext={startProgramSession} />
         )}
         {currentScreen === 'Practice' && (
           <PracticeFlow

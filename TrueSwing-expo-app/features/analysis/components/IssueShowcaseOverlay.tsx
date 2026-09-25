@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Dimensions, FlatList, Text, TouchableOpacity, View } from "react-native";
-import { ChevronLeft, ChevronRight, Dumbbell } from "lucide-react-native";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
 
 import type { Issue } from "features/issues/types";
 import IssuePill from "./IssuePill";
@@ -14,14 +14,12 @@ type IssueShowcaseOverlayProps = {
     issues: IssueWithConfidence[];
     activeIssueIndex: number;
     onActiveIssueChange: (index: number) => void;
-    startPractice: (activeIssue: Issue) => void;
 };
 
 export default function IssueShowcaseOverlay({
     issues,
     activeIssueIndex,
     onActiveIssueChange,
-    startPractice,
 }: IssueShowcaseOverlayProps) {
     const issueRailRef = useRef<FlatList<IssueWithConfidence>>(null);
     const issueCardsRef = useRef<FlatList<IssueWithConfidence>>(null);
@@ -50,8 +48,6 @@ export default function IssueShowcaseOverlay({
         if (activeIssueIndex >= issues.length - 1) return;
         onActiveIssueChange(activeIssueIndex + 1);
     };
-
-    const activeIssue = issues[activeIssueIndex];
 
     return (
         <SafeAreaView
@@ -97,20 +93,6 @@ export default function IssueShowcaseOverlay({
                                         </Text>
                                     )}
 
-                                    {/* <TouchableOpacity
-                                        activeOpacity={0.9}
-                                        className="mt-5 self-start rounded-2xl bg-white px-5 py-3 flex-row items-center gap-2"
-                                        onPress={() => {
-                                            if (!activeIssue) return;
-                                            startPractice(activeIssue);
-                                        }}
-                                        disabled={!activeIssue}
-                                    >
-                                        <Dumbbell size={16} color="#000" />
-                                        <Text className="font-semibold text-black">
-                                            Start practice
-                                        </Text>
-                                    </TouchableOpacity> */}
                                 </View>
                             )}
                         />

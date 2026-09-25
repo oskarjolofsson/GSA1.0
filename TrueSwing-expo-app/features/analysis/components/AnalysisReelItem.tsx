@@ -5,7 +5,6 @@ import type { Analysis } from "features/analysis/types";
 import useAnalysisData from "features/analysis/hooks/useAnalysisData";
 import Reel from "features/analysis/components/Reel";
 import IssueShowcaseOverlay from "features/analysis/components/IssueShowcaseOverlay";
-import { Issue } from "features/issues/types";
 import { Ruler, ArrowBigDown, ArrowBigUp } from "lucide-react-native";
 import DetailedVideo from "features/analysis/components/DetailedVideo";
 
@@ -18,7 +17,6 @@ type AnalysisReelItemProps = {
     onDrawingModeChange: (isDrawingMode: boolean) => void;
     activeIssueIndex: number;
     onActiveIssueChange: (index: number) => void;
-    startPractice: (activeIssue: Issue) => void;
 };
 
 export default function AnalysisReelItem({
@@ -28,7 +26,6 @@ export default function AnalysisReelItem({
     onDrawingModeChange,
     activeIssueIndex,
     onActiveIssueChange,
-    startPractice,
 }: AnalysisReelItemProps) {
     const { videoURL, issues } = useAnalysisData(analysis);
 
@@ -70,7 +67,6 @@ export default function AnalysisReelItem({
                 issues={issues}
                 activeIssueIndex={activeIssueIndex}
                 onActiveIssueChange={onActiveIssueChange}
-                startPractice={startPractice}
             />
 
             <View
