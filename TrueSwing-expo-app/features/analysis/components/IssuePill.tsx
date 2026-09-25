@@ -1,4 +1,4 @@
-import { TouchableOpacity, Text, View } from "react-native";
+import { TouchableOpacity, Text } from "react-native";
 
 export default function IssuePill({
     label,
@@ -13,7 +13,7 @@ export default function IssuePill({
         <TouchableOpacity
             activeOpacity={0.85}
             onPress={onPress}
-            className={`mr-2 rounded-full border px-4 py-2 ${active ? "border-white bg-white" : "border-white/20 bg-black/35"
+            className={`mr-2 min-h-[44px] justify-center rounded-full border px-4 ${active ? "border-white bg-white" : "border-white/20 bg-black/35"
                 }`}
         >
             <Text

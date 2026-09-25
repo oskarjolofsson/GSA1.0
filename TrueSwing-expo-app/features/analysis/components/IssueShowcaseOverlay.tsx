@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Dimensions, FlatList, Text, TouchableOpacity, View } from "react-native";
-import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { Dimensions, FlatList, Text, View } from "react-native";
 
 import type { Issue } from "features/issues/types";
 import IssuePill from "./IssuePill";
@@ -38,16 +37,6 @@ export default function IssueShowcaseOverlay({
             viewPosition: 0.5,
         });
     }, [activeIssueIndex, issues.length]);
-
-    const goPrevIssue = () => {
-        if (activeIssueIndex <= 0) return;
-        onActiveIssueChange(activeIssueIndex - 1);
-    };
-
-    const goNextIssue = () => {
-        if (activeIssueIndex >= issues.length - 1) return;
-        onActiveIssueChange(activeIssueIndex + 1);
-    };
 
     return (
         <SafeAreaView
@@ -106,34 +95,6 @@ export default function IssueShowcaseOverlay({
 
                     {issues.length > 0 && (
                         <View className="mb-4">
-                            <View className="mb-3 flex-row items-center justify-between">
-                                <View className="flex-row items-center">
-                                    <TouchableOpacity
-                                        onPress={goPrevIssue}
-                                        disabled={activeIssueIndex === 0}
-                                        className={`mr-2 rounded-full border p-2 ${
-                                            activeIssueIndex === 0
-                                                ? "border-white/10 bg-black/15"
-                                                : "border-white/20 bg-black/35"
-                                        }`}
-                                    >
-                                        <ChevronLeft size={16} color="#fff" />
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        onPress={goNextIssue}
-                                        disabled={activeIssueIndex === issues.length - 1}
-                                        className={`rounded-full border p-2 ${
-                                            activeIssueIndex === issues.length - 1
-                                                ? "border-white/10 bg-black/15"
-                                                : "border-white/20 bg-black/35"
-                                        }`}
-                                    >
-                                        <ChevronRight size={16} color="#fff" />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
                             <FlatList
                                 ref={issueRailRef}
                                 data={issues}

@@ -183,6 +183,7 @@ export default function AnalysisResultScreen({ onBack }: AnalysisResultScreenPro
                     dateLabel={activeAnalysis.created_at ? new Date(activeAnalysis.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
                     deleting={isDeleting}
                     onDeletePress={() => setShowDeleteConfirm(true)}
+                    onDrawPress={() => setActiveDrawingAnalysisId(activeAnalysisId ?? null)}
                     onBack={onBack}
                     isNew={!activeAnalysis.reviewed_at}
                 />

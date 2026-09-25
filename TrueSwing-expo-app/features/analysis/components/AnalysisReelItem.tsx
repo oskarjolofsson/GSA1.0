@@ -1,11 +1,10 @@
-import { useCallback, useEffect } from "react";
-import { Dimensions, Pressable, StyleSheet, View, Text } from "react-native";
+import { useEffect } from "react";
+import { Dimensions, View } from "react-native";
 
 import type { Analysis } from "features/analysis/types";
 import useAnalysisData from "features/analysis/hooks/useAnalysisData";
 import Reel from "features/analysis/components/Reel";
 import IssueShowcaseOverlay from "features/analysis/components/IssueShowcaseOverlay";
-import { Ruler, ArrowBigDown, ArrowBigUp } from "lucide-react-native";
 import DetailedVideo from "features/analysis/components/DetailedVideo";
 
 const { height } = Dimensions.get("window");
@@ -40,11 +39,6 @@ export default function AnalysisReelItem({
         }
     }, [activeIssueIndex, issues.length, onActiveIssueChange]);
 
-    const openDrawingMode = useCallback(() => {
-        onDrawingModeChange(true);
-    }, [onDrawingModeChange]);
-
-
     if (isDrawingMode) {
         return (
             <DetailedVideo
@@ -68,67 +62,6 @@ export default function AnalysisReelItem({
                 activeIssueIndex={activeIssueIndex}
                 onActiveIssueChange={onActiveIssueChange}
             />
-
-            <View
-                pointerEvents="box-none"
-                style={StyleSheet.absoluteFill}
-            >
-                <Pressable
-                    onPress={openDrawingMode}
-                    className="absolute h-12 w-12 rounded-full border-2 border-white/50"
-                    style={{
-                        left: 16,
-                        top: "35%",
-                        marginTop: -24,
-                        zIndex: 999,
-                        elevation: 999,
-                    }}
-                >
-                    {({ pressed }) => (
-                        <View
-                            className="flex-1 items-center justify-center rounded-full border border-white/10"
-                            style={{
-                                backgroundColor: pressed
-                                    ? "rgba(0,0,0,0.8)"
-                                    : "rgba(0,0,0,0.6)",
-                                transform: [{ scale: pressed ? 0.95 : 1 }],
-                            }}
-                        >
-                            <Ruler size={20} color="white" />
-                        </View>
-                    )}
-                </Pressable>
-            </View>
-
-            {/* <View
-                pointerEvents="box-none"
-                style={StyleSheet.absoluteFill}
-            >
-                <Pressable
-                    onPress={() => {}}
-                    className="absolute h-16 w-16 rounded-full border-2 border-white/10"
-                    style={{
-                        right: 16,
-                        top: "85%",
-                        marginTop: -24,
-                        zIndex: 999,
-                        elevation: 999,
-                    }}
-                >
-                    {({ pressed }) => (
-                        <View
-                            className="flex-1 items-center justify-center rounded-full border border-white/10"
-                            style={{backgroundColor: "rgba(0,0,0,0.2)"}}
-                        >
-                            <ArrowBigDown size={22} color="white" />
-                            <Text className="text-xs text-white/80 -mt-1">Swipe</Text>
-                        </View>
-                    )}
-                </Pressable>
-            </View> */}
-
-            
-
         </View>
     );
 }

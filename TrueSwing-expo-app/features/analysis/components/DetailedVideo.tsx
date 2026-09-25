@@ -1,7 +1,9 @@
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View, Dimensions, type PressableStateCallbackType } from "react-native";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View, Dimensions } from "react-native";
 import { VideoView, type VideoSource } from "expo-video";
 import { LinearGradient } from "expo-linear-gradient";
-import { ArrowLeft, Trash2, Play, Pause, Undo, Pencil } from "lucide-react-native";
+import { ChevronLeft, Trash2, Play, Pause, Undo, Pencil } from "lucide-react-native";
+import GlassSurface from "features/shared/components/GlassSurface";
+import colors from "lib/colors";
 import type { Analysis } from "features/analysis/types";
 import { useCallback, useEffect, useState } from "react";
 import useAnalysisDrawing from "features/analysis/hooks/useAnalysisDrawing";
@@ -16,52 +18,39 @@ import VideoSeekBar from "features/analysis/components/VideoSeekBar";
 // OverlayIconButton
 // ---------------------------------------------------------------------------
 
+export const OVERLAY_BUTTON = 44;
+
 type OverlayIconButtonProps = {
     onPress: () => void;
     icon: React.ReactNode;
-    /** Side length of the inner circular icon container. Defaults to 40. */
-    iconSize?: number;
+    accessibilityLabel: string;
     hitSlop?: number;
 };
 
-function OverlayIconButton({ onPress, icon, iconSize = 40, hitSlop = 10 }: OverlayIconButtonProps) {
+function OverlayIconButton({ onPress, icon, accessibilityLabel, hitSlop = 10 }: OverlayIconButtonProps) {
     return (
         <Pressable
             onPress={onPress}
             hitSlop={hitSlop}
-            android_ripple={{ color: "rgba(255,255,255,0.12)", borderless: false }}
-            style={({ pressed }: PressableStateCallbackType) => ({
-                alignSelf: "flex-start",
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                borderRadius: 999,
-                borderWidth: 1,
-                borderColor: "rgba(255,255,255,0.22)",
-                backgroundColor: pressed ? "rgba(8,12,20,0.85)" : "rgba(8,12,20,0.62)",
-                transform: [{ scale: pressed ? 0.98 : 1 }],
-                shadowColor: "#000",
-                shadowOpacity: 0.28,
-                shadowRadius: 14,
-                shadowOffset: { width: 0, height: 6 },
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
+            style={({ pressed }) => ({
+                opacity: pressed ? 0.6 : 1,
+                transform: [{ scale: pressed ? 0.97 : 1 }],
             })}
         >
-            <View
+            <GlassSurface
+                radius={OVERLAY_BUTTON / 2}
+                interactive
                 style={{
-                    width: iconSize,
-                    height: iconSize,
-                    borderRadius: iconSize / 2,
+                    width: OVERLAY_BUTTON,
+                    height: OVERLAY_BUTTON,
                     alignItems: "center",
                     justifyContent: "center",
-                    backgroundColor: "rgba(255,255,255,0.12)",
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.18)",
                 }}
             >
                 {icon}
-            </View>
+            </GlassSurface>
         </Pressable>
     );
 }
@@ -229,8 +218,8 @@ export default function DetailedVideo({ analysis, videoURL, onExit, isActive }: 
             >
                 <OverlayIconButton
                     onPress={closeDrawingMode}
-                    iconSize={50}
-                    icon={<ArrowLeft size={30} color="#E2E8F0" />}
+                    accessibilityLabel="Back"
+                    icon={<ChevronLeft size={26} color={colors.sand} strokeWidth={2} style={{ marginLeft: -2 }} />}
                 />
             </View>
 
@@ -253,11 +242,14 @@ export default function DetailedVideo({ analysis, videoURL, onExit, isActive }: 
             {/* ── Top-right: Undo ── */}
             <View
                 pointerEvents="box-none"
-                style={{ position: "absolute", top: topY, right: 66, zIndex: 50, elevation: 50 }}
+                // 16 (the clear button's inset) + its 44 + 10 of air. The old pills were
+                // 68 wide against a 50px gap, so undo sat partly underneath clear.
+                style={{ position: "absolute", top: topY, right: 70, zIndex: 50, elevation: 50 }}
             >
                 <OverlayIconButton
                     onPress={undoLastStroke}
-                    icon={<Undo size={20} color="#E2E8F0" />}
+                    accessibilityLabel="Undo last stroke"
+                    icon={<Undo size={20} color={colors.sand} />}
                 />
             </View>
 
@@ -268,7 +260,8 @@ export default function DetailedVideo({ analysis, videoURL, onExit, isActive }: 
             >
                 <OverlayIconButton
                     onPress={clearAllStrokes}
-                    icon={<Trash2 size={20} color="#E2E8F0" />}
+                    accessibilityLabel="Clear all drawing"
+                    icon={<Trash2 size={20} color={colors.sand} />}
                 />
             </View>
 
@@ -287,6 +280,7 @@ export default function DetailedVideo({ analysis, videoURL, onExit, isActive }: 
                 >
                     <OverlayIconButton
                         onPress={drawPlayback.togglePlayPause}
+                        accessibilityLabel={drawPlayback.isPlaying ? "Pause" : "Play"}
                         icon={
                             <MotiView
                                 key={drawPlayback.isPlaying ? "pause" : "play"}
@@ -295,9 +289,16 @@ export default function DetailedVideo({ analysis, videoURL, onExit, isActive }: 
                                 transition={{ type: "timing", duration: 120 }}
                             >
                                 {drawPlayback.isPlaying ? (
-                                    <Pause size={20} color="#E2E8F0" />
+                                    <Pause size={20} color={colors.sand} fill={colors.sand} />
                                 ) : (
-                                    <Play size={20} color="#E2E8F0" fill="#E2E8F0" />
+                                    // Nudged right: a play triangle centred on its bounding
+                                    // box reads as sitting left of centre in a circle.
+                                    <Play
+                                        size={20}
+                                        color={colors.sand}
+                                        fill={colors.sand}
+                                        style={{ marginLeft: 2 }}
+                                    />
                                 )}
                             </MotiView>
                         }
