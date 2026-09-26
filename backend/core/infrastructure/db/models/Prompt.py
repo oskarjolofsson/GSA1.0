@@ -45,6 +45,7 @@ class Prompt(Base):
     notes: Mapped[str | None] = mapped_column(Text)
 
     # Null means "not given": areas other than full swing may not ask for them.
+    # club_type can be anything, just an indication by user of what they used. camera_view is restricted to the two known values, but null means "not given".
     club_type: Mapped[str | None] = mapped_column(Text)
     camera_view: Mapped[str | None] = mapped_column(Text)
 
@@ -58,10 +59,6 @@ class Prompt(Base):
 
     __table_args__ = (
         Index("idx_prompts_analysis_id", "analysis_id"),
-        CheckConstraint(
-            "club_type IN ('driver', 'wood', 'hybrid', 'iron', 'wedge', 'putter')",
-            name="prompts_club_type_check",
-        ),
         CheckConstraint(
             "camera_view IN ('face_on', 'down_the_line')",
             name="prompts_camera_view_check",

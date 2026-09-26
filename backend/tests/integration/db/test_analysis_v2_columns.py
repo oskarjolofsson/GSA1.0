@@ -2,7 +2,7 @@
 
 All of them are nullable so v1, which never writes them, keeps working. What the
 database must still guarantee is that a value, once given, is a real taxonomy term or
-an allowed club / camera value. That the miss belongs to the area is not a database
+an allowed camera view. club_type is free text. That the miss belongs to the area is not a database
 rule; the service checks it.
 """
 
@@ -58,16 +58,16 @@ class TestPromptInputs:
         with pytest.raises(IntegrityError):
             _prompt(db_session, analysis, **{field: value})
 
-    @pytest.mark.parametrize("field, value", [
-        ("club_type", "spoon"),
-        ("club_type", "Driver"),
-        ("camera_view", "behind"),
-        ("camera_view", "unknown"),
-    ])
-    def test_value_outside_the_allowed_list_is_rejected(self, db_session, analysis, field, value):
+    @pytest.mark.parametrize("value", ["behind", "Face_on", "unknown"])
+    def test_camera_view_outside_the_allowed_list_is_rejected(self, db_session, analysis, value):
         """Case-sensitive, and no 'unknown': null already means not given."""
         with pytest.raises(IntegrityError):
-            _prompt(db_session, analysis, **{field: value})
+            _prompt(db_session, analysis, camera_view=value)
+
+    def test_club_type_accepts_any_text(self, db_session, analysis):
+        prompt = _prompt(db_session, analysis, club_type="3 hybrid")
+
+        assert prompt.club_type == "3 hybrid"
 
     def test_deleting_a_miss_an_analysis_was_made_with_is_refused(self, db_session, analysis):
         """RESTRICT: retire a miss with active = false instead."""

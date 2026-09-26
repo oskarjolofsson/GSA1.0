@@ -18,8 +18,9 @@
 --
 -- club_type / camera_view are nullable on purpose: areas other than full swing (putting,
 -- chipping) may not ask for them. Null means "not given", so there is no 'unknown' value.
--- The allowed values are a CHECK rather than taxonomy tables until a coach needs to edit
--- them; the client still reads them from /taxonomy/, never from a local list.
+-- club_type is free text: the set of clubs is open. camera_view is a CHECK because the
+-- AI prompt depends on exactly these two angles; the client still reads the allowed
+-- values from /taxonomy/, never from a local list.
 
 ALTER TABLE public.prompts
     ADD COLUMN IF NOT EXISTS area        text REFERENCES public.taxonomy_areas(key)  ON DELETE RESTRICT,
@@ -29,8 +30,6 @@ ALTER TABLE public.prompts
     ADD COLUMN IF NOT EXISTS camera_view text;
 
 ALTER TABLE public.prompts
-    ADD CONSTRAINT prompts_club_type_check
-        CHECK (club_type IN ('driver', 'wood', 'hybrid', 'iron', 'wedge', 'putter')),
     ADD CONSTRAINT prompts_camera_view_check
         CHECK (camera_view IN ('face_on', 'down_the_line'));
 
@@ -49,7 +48,6 @@ ALTER TABLE public.analysis
 --   ALTER TABLE public.analysis DROP COLUMN IF EXISTS law;
 --   ALTER TABLE public.prompts
 --       DROP CONSTRAINT IF EXISTS prompts_camera_view_check,
---       DROP CONSTRAINT IF EXISTS prompts_club_type_check,
 --       DROP COLUMN IF EXISTS camera_view,
 --       DROP COLUMN IF EXISTS club_type,
 --       DROP COLUMN IF EXISTS notes,
