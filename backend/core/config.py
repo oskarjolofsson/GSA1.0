@@ -19,10 +19,10 @@ THUMBNAIL_FILENAME = "thumbnail.jpg"
 # AI CONFIGURATION
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Which model runs an analysis. Single source of truth, overridable via env.
-# Read through core.infrastructure.AI.model_selection.get_active_analysis_model(),
-# never directly, so a future admin-board / DB-backed selector is a one-function swap.
-ANALYSIS_MODEL = os.getenv("ANALYSIS_MODEL", "gemini-3.1-pro-preview")
+# Which Gemini model every AI job runs with. Single source of truth, overridable via env.
+# Read through core.infrastructure.ai.get_model(), never directly, so a future per-job or
+# admin-selected model is a one-function swap.
+AI_MODEL = os.getenv("AI_MODEL", "gemini-3.8-flash")
 
 # DATABASE CONFIGURATION
 

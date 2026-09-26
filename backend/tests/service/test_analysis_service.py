@@ -11,7 +11,7 @@ from ...core.services.analysis_service import (
     run_analysis,
 )
 from ...core.services.dtos.analysis_service_dto import CreateAnalysisDTO, RunAnalysisDTO
-from ...core.infrastructure.AI.model_selection import get_active_analysis_model
+from core.infrastructure.ai import get_model
 from ...core.infrastructure.db.repositories.analysis import get_analysis_by_id
 from ...core.infrastructure.db.repositories.videos import get_video_by_id
 
@@ -187,7 +187,7 @@ class TestCreateAnalysis:
         analysis = get_analysis_by_id(result["analysis_id"], session=db_session)
         assert analysis is not None
         assert analysis.user_id == test_user["user_id"]
-        assert analysis.model_version == get_active_analysis_model()
+        assert analysis.model_version == get_model()
         assert analysis.video_id is not None
 
     def test_create_analysis_returns_correct_values(self, db_session, test_user):

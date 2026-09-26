@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from core.infrastructure.db.repositories import issues as issue_repo
 from core.infrastructure.db.repositories import drills as drill_repo
 from core.infrastructure.db.repositories import issue_drills as issue_drill_repo
-from core.infrastructure.AI.model_selection import get_active_analysis_model
+from core.infrastructure.ai import get_model
 from core.services.dtos.issue_authoring_service_dto import (
     DraftDrillDTO,
     DraftIssueDTO,
@@ -63,11 +63,11 @@ def _significant_tokens(text: str) -> list[str]:
 def _default_structurer(text: str, image_bytes: bytes | None, image_mime: str | None) -> dict:
     """Lazily build the Google client so importing this module never needs an API
     key (tests inject a fake structurer instead)."""
-    from core.infrastructure.AI.google.client import GoogleAnalysisClient
+    from core.infrastructure.ai.google.client import GoogleAnalysisClient
 
     return GoogleAnalysisClient().structure_coach_feedback(
         text=text,
-        model=get_active_analysis_model(),
+        model=get_model(),
         image_bytes=image_bytes,
         image_mime=image_mime,
     )

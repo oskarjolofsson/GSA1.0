@@ -1,5 +1,5 @@
 import pytest
-from core.infrastructure.AI.google.client import GoogleAnalysisClient
+from core.infrastructure.ai.google.client import GoogleAnalysisClient
 from core.infrastructure.db.repositories.issues import get_all_issues
 
 

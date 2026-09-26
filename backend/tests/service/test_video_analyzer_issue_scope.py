@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import pytest
 
-from ...core.infrastructure.AI.google import videoAnalyzer
+from ...core.infrastructure.ai.google import videoAnalyzer
 from ...core.infrastructure.db.models.Issue import Issue
 from ...core.infrastructure.db.repositories.issues import create_issue
 

@@ -107,7 +107,7 @@ def analyze_video(
     """Analyze a golf swing video with Google Gemini and return the parsed result.
 
     `model` is required and has no default — callers resolve it via
-    `model_selection.get_active_analysis_model()`, so a model change takes effect without
+    `core.infrastructure.ai.get_model()`, so a model change takes effect without
     touching this code. Raises ValueError on a missing model or an empty/invalid response.
     """
     if not model:

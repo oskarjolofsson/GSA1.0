@@ -40,9 +40,9 @@ from ..infrastructure.storage.r2Adaptor import get_object
 from ..infrastructure.storage.r2Client import r2_client
 from ..infrastructure.local_files.file_types.Video_file import Video_file
 
-from ..infrastructure.AI.google.client import GoogleAnalysisClient
-from ..infrastructure.AI.google.videoAnalyzer import analyze_video
-from ..infrastructure.AI.model_selection import get_active_analysis_model
+from ..infrastructure.ai.google.client import GoogleAnalysisClient
+from ..infrastructure.ai.google.videoAnalyzer import analyze_video
+from ..infrastructure.ai import get_model
 from uuid import UUID
 from ..infrastructure.db.repositories.prompts import (
     add_prompt,
@@ -68,7 +68,7 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
         analysis = add_analysis(
             {
                 "user_id": dto.user_id,
-                "model_version": get_active_analysis_model(),
+                "model_version": get_model(),
                 "video_id": video.id,
                 "status": "awaiting_upload",
             },

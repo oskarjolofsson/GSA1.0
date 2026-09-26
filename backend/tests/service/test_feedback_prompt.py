@@ -16,7 +16,7 @@ Two bugs this guards, both introduced the moment the vocabulary moved into the d
 """
 
 from core.infrastructure.db import models
-from core.infrastructure.AI.google.feedbackStructurer import build_system_instructions
+from core.infrastructure.ai.google.feedbackStructurer import build_system_instructions
 from core.services import taxonomy
 
 

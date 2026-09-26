@@ -36,7 +36,7 @@ class GoogleAnalysisClient:
     ) -> dict:
         """Analyze a golf swing video with Gemini and return the parsed result.
 
-        `model` is required — callers resolve it via model_selection.get_active_analysis_model().
+        `model` is required — callers resolve it via core.infrastructure.ai.get_model().
         """
         return videoAnalyzer.analyze_video(
             client=self.client,

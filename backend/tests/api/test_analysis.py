@@ -19,7 +19,7 @@ from core.infrastructure.db.models.Analysis import Analysis
 from core.infrastructure.db.models.Issue import Issue
 from pathlib import Path
 from core.infrastructure.storage.r2Adaptor import generate_upload_url, delete
-from core.infrastructure.AI.model_selection import get_active_analysis_model
+from core.infrastructure.ai import get_model
 from core.infrastructure.db.repositories.issues import get_all_issues
 from unittest.mock import patch, MagicMock
 import requests
@@ -158,7 +158,7 @@ def test_create_analysis(client, test_user, db_session, auth_headers):
     analysis_result: Analysis = get_analysis_by_id(analysis_id=analysis_id, session=db_session)
     assert analysis_result is not None
     assert analysis_result.user_id == test_user["user_id"]
-    assert analysis_result.model_version == get_active_analysis_model()
+    assert analysis_result.model_version == get_model()
     assert analysis_result.status == "awaiting_upload"
     assert analysis_result.video_id is not None
     
@@ -200,7 +200,7 @@ def test_get_analysis(client, test_user, analysis_with_id, auth_headers):
     
     assert uuid.UUID(data["analysis_id"]) == analysis_id
     assert uuid.UUID(data["user_id"]) == user_id
-    assert data["model_version"] == get_active_analysis_model()
+    assert data["model_version"] == get_model()
     assert data["status"] == "awaiting_upload"
     assert "created_at" in data
     assert "video_id" in data
