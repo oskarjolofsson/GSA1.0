@@ -9,7 +9,6 @@ from ...core.services.analysis_service import (
     delete_analysis_issue,
     delete_analysis,
     run_analysis,
-    get_analysis_by_id_in_db
 )
 from ...core.services.dtos.analysis_service_dto import CreateAnalysisDTO, RunAnalysisDTO
 from ...core.infrastructure.AI.model_selection import get_active_analysis_model
@@ -135,7 +134,7 @@ def _run_completed_analysis(test_user, shared_db_session, sample_video_path):
     )
     
     # Get video key from db and delete the uploaded video from R2 to clean up after test
-    analysis = get_analysis_by_id_in_db(analysis_id=analysis_id, session=shared_db_session)
+    analysis = get_analysis_by_id(analysis_id=analysis_id, session=shared_db_session)
     video_key = analysis.video.video_key
     delete(video_key)
     

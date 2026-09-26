@@ -8,7 +8,8 @@ from .dtos.analysis_service_dto import (
     GetAnalaysisDTO,
     IssueSwingTimelineItemDTO,
 )
-from .exceptions import NotFoundException, InvalidStateException, InvalidVideoException, ForbiddenException
+from .exceptions import NotFoundException, InvalidStateException, InvalidVideoException
+from .analysis_common import load_owned_analysis, make_thumbnail_jpeg
 from core.services.payment import entitlement_service
 
 from ..infrastructure.storage.r2Adaptor import generate_upload_url, put_object
@@ -17,7 +18,6 @@ from core.infrastructure.db.repositories import programs as programs_repo
 from ..infrastructure.db.repositories.analysis import (
     add_analysis,
     commit_failed_state,
-    get_analysis_by_id as get_analysis_by_id_in_db,
     update_analysis,
     get_analyses_by_user_id as get_analyses_by_user_id_in_db,
     delete_analysis as delete_analysis_in_db,
@@ -44,8 +44,6 @@ from ..infrastructure.AI.google.client import GoogleAnalysisClient
 from ..infrastructure.AI.google.videoAnalyzer import analyze_video
 from ..infrastructure.AI.model_selection import get_active_analysis_model
 from uuid import UUID
-import os
-import tempfile
 from ..infrastructure.db.repositories.prompts import (
     add_prompt,
     get_prompt_by_analysis_id,
@@ -103,26 +101,6 @@ def create_analysis(dto: CreateAnalysisDTO, db_session) -> dict:
         raise
 
 
-def load_owned_analysis(analysis_id: UUID, user_id: UUID, db_session):
-    """Load an analysis and authorize the caller as its owner.
-
-    Every analysis endpoint addresses a row by an id taken from the request, so the
-    ownership comparison belongs here rather than in each caller. Not-found is raised
-    before forbidden: the id is an unguessable UUID, so a caller holding one that does
-    not exist learns nothing from the distinction.
-    """
-    analysis_object = get_analysis_by_id_in_db(
-        analysis_id=analysis_id, session=db_session
-    )
-    if analysis_object is None:
-        raise NotFoundException("Analysis", str(analysis_id))
-
-    if analysis_object.user_id != user_id:
-        raise ForbiddenException("You do not have access to this analysis.")
-
-    return analysis_object
-
-
 def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
     """
     Drive one analysis from `awaiting_upload` through to `completed` or `failed`.
@@ -174,31 +152,11 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         
         # Extract thumbnail from video and upload to R2
         try:
-            # Create temporary file for thumbnail
-            tmp_dir = tempfile.mkdtemp()
-            local_thumb = os.path.join(tmp_dir, "thumbnail.jpg")
-
-            try:
-                # Extract thumbnail from video file
-                _extract_thumbnail_jpeg(
-                    video_file.path(),
-                    local_thumb,
-                    timestamp=1.5,
-                )
-
-                # Upload thumbnail to R2
-                with open(local_thumb, "rb") as f:
-                    put_object(
-                        key=video_object.thumbnail_key,
-                        data=f.read(),
-                        content_type="image/jpeg"
-                    )
-            finally:
-                # Cleanup thumbnail temp files
-                if os.path.exists(local_thumb):
-                    os.remove(local_thumb)
-                if os.path.exists(tmp_dir):
-                    os.rmdir(tmp_dir)
+            put_object(
+                key=video_object.thumbnail_key,
+                data=make_thumbnail_jpeg(video_file.path(), timestamp=1.5),
+                content_type="image/jpeg",
+            )
         except Exception as e:
             # A thumbnail failure must NOT fail an otherwise-successful analysis.
             # Log and continue; the missing object just shows a placeholder.
@@ -411,26 +369,4 @@ def from_analysis_issue_object_to_dto(
         confidence=analysis_issue_object.confidence,
         created_at=analysis_issue_object.created_at,
     )
-    
-    
-import subprocess
 
-
-def _extract_thumbnail_jpeg(
-    input_path: str,
-    output_path: str,
-    timestamp: float,
-) -> None:
-    # JPEG (mjpeg) thumbnail — decoded natively on every client, no WebP coder
-    # needed. -q:v 3 is high-quality but tiny for a single frame.
-    cmd = [
-        "ffmpeg",
-        "-y",
-        "-ss", str(timestamp),
-        "-i", input_path,
-        "-frames:v", "1",
-        "-q:v", "3",
-        output_path,
-    ]
-
-    subprocess.run(cmd, check=True)

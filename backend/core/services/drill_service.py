@@ -14,7 +14,7 @@ from core.infrastructure.db.repositories.drills import (
 from .dtos.drill_service_dto import CreateDrillDTO, UpdateDrillDTO, DrillResponseDTO
 from ..infrastructure.db.session import SessionLocal
 
-from core.services.analysis_service import load_owned_analysis
+from core.services.analysis_common import load_owned_analysis
 from core.services.exceptions import NotFoundException
 
 

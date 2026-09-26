@@ -9,7 +9,7 @@ from core.infrastructure.db.repositories.videos import (
 )
 from core.infrastructure.db.session import SessionLocal
 from core.infrastructure.storage.r2Adaptor import generate_read_url
-from .analysis_service import load_owned_analysis
+from .analysis_common import load_owned_analysis
 from .exceptions import NotFoundException
 from .dtos.video_service_dto import VideoResponseDTO, VideoUrlResponseDTO, VideoThumbnailListResponseDTO
 
