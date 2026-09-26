@@ -119,11 +119,12 @@ def analyze_video(
         # Upload video and wait for processing
         video_file: types.File = _upload_and_wait(client, video_path)
         
-        # Get list of all issues in database
+        # The global catalog plus this user's own custom issues. Never every issue:
+        # another user's custom issues are private and must not reach the prompt.
         if not db_session:
             raise ValueError("Database session is required to retrieve issues")
     
-        issues: list[models.Issue] = issue_repo.get_all_issues(session=db_session)
+        issues: list[models.Issue] = issue_repo.get_catalog_and_user_issues(user_id, db_session)
         print(f"Retrieved {len(issues)} issues from database for user_id: {user_id}")
         print(f"Issue names: {[str(issue.title) for issue in issues]}")
         
