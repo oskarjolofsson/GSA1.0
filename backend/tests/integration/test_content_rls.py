@@ -33,16 +33,18 @@ UNMATCHABLE_ID = "00000000-0000-0000-0000-000000000000"
 # pass against a wide-open catalog.
 INSUFFICIENT_PRIVILEGE = "42501"
 
-# The taxonomy tables were locked down in their creating migration (20260802000000)
-# rather than a follow-up, precisely because issue_goals and issue_misses shipped
+# The taxonomy tables were locked down in their creating migration (20260802000000, and
+# the law tables in 20260926000000 / 20260926000200) rather than a follow-up, precisely because issue_goals and issue_misses shipped
 # world-writable for nineteen days when they were not. This is what proves it held.
 WRITE_PROTECTED_TABLES = [
     "issues", "drills", "issue_drill",
     "taxonomy_areas", "taxonomy_goals", "taxonomy_misses",
+    "taxonomy_laws", "taxonomy_miss_laws",
 ]
 READABLE_TABLES = [
-    "issues", "drills", "issue_drill", "issue_goals", "issue_misses",
+    "issues", "drills", "issue_drill", "issue_goals", "issue_misses", "issue_laws",
     "taxonomy_areas", "taxonomy_goals", "taxonomy_misses",
+    "taxonomy_laws", "taxonomy_miss_laws",
 ]
 
 # Which column the update/delete probes filter on. Everything in the catalog is keyed
@@ -53,6 +55,15 @@ ID_COLUMN = {
     "taxonomy_areas": "key",
     "taxonomy_goals": "key",
     "taxonomy_misses": "key",
+    "taxonomy_laws": "key",
+    # A junction keyed on (miss, law); either column works for an unmatchable filter.
+    "taxonomy_miss_laws": "miss",
+}
+
+# The update probe needs a column that exists on the table. `sort` on the taxonomy
+# tables and `created_at` on the catalog ones cover everything except the junction.
+UPDATE_PATCHES = {
+    "taxonomy_miss_laws": {"rank": 999},
 }
 UNMATCHABLE_KEY = "RLS_PROBE_NO_SUCH_KEY"
 
@@ -86,6 +97,11 @@ INSERT_PAYLOADS = {
         "key": "RLS_PROBE_MISS", "area": "RLS_PROBE_NOPE",
         "label": "rls probe", "golfer_label": "rls probe",
     },
+    "taxonomy_laws": {
+        "key": "RLS_PROBE_LAW", "label": "rls probe", "golfer_label": "rls probe",
+    },
+    # Both foreign keys unresolvable, so only a 42501 counts as the refusal.
+    "taxonomy_miss_laws": {"miss": "RLS_PROBE_NOPE", "law": "RLS_PROBE_NOPE", "rank": 1},
 }
 
 
@@ -173,7 +189,9 @@ def test_client_roles_cannot_update(request, role, table):
     column, value = _unmatchable(table)
     # `sort` exists on the taxonomy tables, `created_at` on the catalog ones. Either
     # way the column must exist, or the request fails on the wrong thing.
-    patch = {"sort": 999} if column == "key" else {"created_at": "2020-01-01T00:00:00Z"}
+    patch = UPDATE_PATCHES.get(table) or (
+        {"sort": 999} if column == "key" else {"created_at": "2020-01-01T00:00:00Z"}
+    )
 
     with pytest.raises(APIError) as exc:
         client.table(table).update(patch).eq(column, value).execute()
@@ -193,7 +211,7 @@ def test_client_roles_cannot_delete(request, role, table):
 
 
 @pytest.mark.parametrize("role", ["anon", "authenticated"])
-@pytest.mark.parametrize("table", ["issue_goals", "issue_misses"])
+@pytest.mark.parametrize("table", ["issue_goals", "issue_misses", "issue_laws"])
 def test_tag_tables_are_readable_but_not_writable(request, role, table):
     """These two had no grants at all, so PostgREST could not see them even though
     their parent issues were readable. They are now SELECT-only."""
