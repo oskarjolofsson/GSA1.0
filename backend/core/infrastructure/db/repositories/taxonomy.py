@@ -1,4 +1,4 @@
-"""Reads of the three taxonomy tables.
+"""Reads of the taxonomy tables.
 
 Every caller wants the same slice — active rows, in display order — so the filter and
 the ordering live here once rather than being restated at each call site. `active` is
@@ -20,7 +20,9 @@ from ..models.IssueGoal import IssueGoal
 from ..models.IssueMiss import IssueMiss
 from ..models.TaxonomyArea import TaxonomyArea
 from ..models.TaxonomyGoal import TaxonomyGoal
+from ..models.TaxonomyLaw import TaxonomyLaw
 from ..models.TaxonomyMiss import TaxonomyMiss
+from ..models.TaxonomyMissLaw import TaxonomyMissLaw
 
 
 def _active_in_display_order(model):
@@ -46,6 +48,27 @@ def list_active_misses(session: Session) -> list[TaxonomyMiss]:
     return list(session.scalars(_active_in_display_order(TaxonomyMiss)).all())
 
 
+def list_active_laws(session: Session) -> list[TaxonomyLaw]:
+    """Active laws of ball flight, in display order: direction first, speed last."""
+    return list(session.scalars(_active_in_display_order(TaxonomyLaw)).all())
+
+
+def list_laws_for_miss(miss: str, session: Session) -> list[TaxonomyLaw]:
+    """The active laws that can cause `miss`, most likely first (taxonomy_miss_laws.rank).
+
+    Empty when the miss has no links yet. The caller decides what that means; the
+    analysis treats it as "every law is a candidate".
+    """
+    return list(
+        session.scalars(
+            select(TaxonomyLaw)
+            .join(TaxonomyMissLaw, TaxonomyMissLaw.law == TaxonomyLaw.key)
+            .where(TaxonomyMissLaw.miss == miss, TaxonomyLaw.active.is_(True))
+            .order_by(TaxonomyMissLaw.rank)
+        ).all()
+    )
+
+
 def list_active_area_keys(session: Session) -> list[str]:
     """Just the area keys, for the validator cache."""
     return list(
@@ -64,6 +87,17 @@ def list_active_goal_keys(session: Session) -> list[str]:
             select(TaxonomyGoal.key)
             .where(TaxonomyGoal.active.is_(True))
             .order_by(TaxonomyGoal.sort, TaxonomyGoal.key)
+        ).all()
+    )
+
+
+def list_active_law_keys(session: Session) -> list[str]:
+    """Just the law keys, for the validator cache."""
+    return list(
+        session.scalars(
+            select(TaxonomyLaw.key)
+            .where(TaxonomyLaw.active.is_(True))
+            .order_by(TaxonomyLaw.sort, TaxonomyLaw.key)
         ).all()
     )
 

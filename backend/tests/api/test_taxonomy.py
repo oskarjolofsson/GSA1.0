@@ -28,9 +28,11 @@ def test_taxonomy_returns_every_vocabulary(client, auth_headers):
     assert set(response.json()) == {
         "areas",
         "goals",
+        "laws",
         "misses",
         "misses_by_area",
         "kinds",
+        "camera_views",
         "default_area",
         "default_kind",
     }
@@ -92,8 +94,10 @@ def test_taxonomy_matches_what_the_validators_enforce(client, auth_headers):
 
     assert [a["key"] for a in data["areas"]] == list(taxonomy.allowed_areas())
     assert [g["key"] for g in data["goals"]] == list(taxonomy.allowed_goals())
+    assert [l["key"] for l in data["laws"]] == list(taxonomy.allowed_laws())
     assert [m["key"] for m in data["misses"]] == list(taxonomy.allowed_misses())
     assert data["kinds"] == list(taxonomy.ALLOWED_KINDS)
+    assert data["camera_views"] == list(taxonomy.ALLOWED_CAMERA_VIEWS)
     assert data["default_area"] == taxonomy.DEFAULT_AREA
     assert data["default_kind"] == taxonomy.DEFAULT_KIND
 

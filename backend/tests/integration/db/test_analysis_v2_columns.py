@@ -14,6 +14,7 @@ from ....core.infrastructure.db.models.Analysis import Analysis
 from ....core.infrastructure.db.models.Prompt import Prompt
 from ....core.infrastructure.db.models.TaxonomyLaw import TaxonomyLaw
 from ....core.infrastructure.db.models.TaxonomyMiss import TaxonomyMiss
+from core.services import taxonomy
 
 
 @pytest.fixture()
@@ -57,6 +58,15 @@ class TestPromptInputs:
     def test_unknown_taxonomy_term_is_rejected(self, db_session, analysis, field, value):
         with pytest.raises(IntegrityError):
             _prompt(db_session, analysis, **{field: value})
+
+    def test_every_camera_view_the_api_offers_is_accepted(self, db_session, test_user):
+        """Drift guard: ALLOWED_CAMERA_VIEWS (served by /taxonomy/) and the CHECK
+        constraint are two copies of one list. A value the client is offered must save."""
+        for view in taxonomy.ALLOWED_CAMERA_VIEWS:
+            row = Analysis(user_id=test_user["user_id"], model_version="test", status="awaiting_upload")
+            db_session.add(row)
+            db_session.flush()
+            assert _prompt(db_session, row, camera_view=view).camera_view == view
 
     @pytest.mark.parametrize("value", ["behind", "Face_on", "unknown"])
     def test_camera_view_outside_the_allowed_list_is_rejected(self, db_session, analysis, value):

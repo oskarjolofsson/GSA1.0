@@ -1,7 +1,9 @@
 """Canonical practice-taxonomy vocabularies, read from the database.
 
 Four axes describe an issue: area (WHERE in the game), miss (WHAT the golfer sees,
-scoped to one area), goal (WHY they practice) and kind (fault vs skill).
+scoped to one area), goal (WHY they practice) and kind (fault vs skill). A fifth, law,
+is the physical cause behind a miss (face, path, ...), which the analysis walks through
+on its way from miss to issue.
 
 Validators are pure and read a process-level cache, so admin writes must call
 `reset_cache()` and tests must start cold. See ADR-0001.
@@ -28,6 +30,12 @@ DEFAULT_KIND = "fault"
 # is a full-swing issue. Deleting this area is blocked by RESTRICT while any issue uses it.
 DEFAULT_AREA = "FULL_SWING"
 
+# The angles a swing video can be filmed from. Mirrors the prompts_camera_view_check
+# constraint (20260927000000) rather than a table: the AI prompt is written for exactly
+# these two, so a new one needs a code change anyway. Served through /taxonomy/ so the
+# client never keeps its own copy.
+ALLOWED_CAMERA_VIEWS = ("face_on", "down_the_line")
+
 
 @dataclass(frozen=True)
 class _Vocabulary:
@@ -35,6 +43,7 @@ class _Vocabulary:
 
     areas: tuple[str, ...]
     goals: tuple[str, ...]
+    laws: tuple[str, ...]
     misses: tuple[str, ...]                     # every miss, flat, across all areas
     misses_by_area: dict[str, tuple[str, ...]]
     area_of_miss: dict[str, str]
@@ -65,6 +74,7 @@ def _load(session=None) -> _Vocabulary:
     with (nullcontext(session) if session is not None else SessionLocal()) as session:
         areas = tuple(taxonomy_repo.list_active_area_keys(session))
         goals = tuple(taxonomy_repo.list_active_goal_keys(session))
+        laws = tuple(taxonomy_repo.list_active_law_keys(session))
         miss_rows = taxonomy_repo.list_active_miss_keys_with_area(session)
 
     by_area: dict[str, list[str]] = {area: [] for area in areas}
@@ -76,6 +86,7 @@ def _load(session=None) -> _Vocabulary:
     return _Vocabulary(
         areas=areas,
         goals=goals,
+        laws=laws,
         misses=tuple(key for key, _ in miss_rows),
         misses_by_area={a: tuple(m) for a, m in by_area.items()},
         area_of_miss=area_of,
@@ -130,6 +141,10 @@ def allowed_areas() -> tuple[str, ...]:
 
 def allowed_goals() -> tuple[str, ...]:
     return _vocab().goals
+
+
+def allowed_laws() -> tuple[str, ...]:
+    return _vocab().laws
 
 
 def allowed_misses() -> tuple[str, ...]:
@@ -260,6 +275,19 @@ def normalize_goals_strict(values) -> list[str]:
     return _normalize_strict(values, _vocab().goals, "goal")
 
 
+def normalize_law_strict(value: str | None) -> str:
+    """Validated law. Required: unlike area there is no default, so blank raises too."""
+    if value is None or str(value).strip() == "":
+        raise ValidationException("A law is required.")
+    key = _normalize_key(value)
+    laws = _vocab().laws
+    if key not in laws:
+        raise ValidationException(
+            f"Unknown law '{key}'. Allowed values: {', '.join(laws)}."
+        )
+    return key
+
+
 def normalize_area_strict(value: str | None) -> str:
     """Validated area, defaulting when absent. Raises on an unknown value."""
     if value is None or str(value).strip() == "":
@@ -294,6 +322,18 @@ def normalize_kind_strict(value: str | None) -> str:
     if key not in ALLOWED_KINDS:
         raise ValidationException(
             f"Unknown kind '{key}'. Allowed values: {', '.join(ALLOWED_KINDS)}."
+        )
+    return key
+
+
+def normalize_camera_view_optional(value: str | None) -> str | None:
+    """Validated camera view where absent means not given. Raises on an unknown value."""
+    if value is None or str(value).strip() == "":
+        return None
+    key = str(value).strip().lower()
+    if key not in ALLOWED_CAMERA_VIEWS:
+        raise ValidationException(
+            f"Unknown camera view '{key}'. Allowed values: {', '.join(ALLOWED_CAMERA_VIEWS)}."
         )
     return key
 
@@ -339,9 +379,11 @@ def get_vocabulary(session) -> TaxonomyVocabularyDTO:
     return TaxonomyVocabularyDTO(
         areas=[term(a) for a in areas],
         goals=[term(g) for g in taxonomy_repo.list_active_goals(session)],
+        laws=[term(l) for l in taxonomy_repo.list_active_laws(session)],
         misses=misses,
         misses_by_area=by_area,
         kinds=list(ALLOWED_KINDS),
+        camera_views=list(ALLOWED_CAMERA_VIEWS),
         default_area=DEFAULT_AREA,
         default_kind=DEFAULT_KIND,
     )

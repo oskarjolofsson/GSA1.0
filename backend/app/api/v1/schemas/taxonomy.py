@@ -74,12 +74,12 @@ class TaxonomyResponse(BaseModel):
 
     areas: list[TaxonomyTermSchema]
     goals: list[TaxonomyTermSchema]
+    laws: list[TaxonomyTermSchema]
     misses: list[TaxonomyMissSchema]
     misses_by_area: dict[str, list[TaxonomyMissSchema]]
 
-    # `kind` is not table-driven: two structural values that change program behaviour
-    # rather than vocabulary anyone authors. Sent as plain strings, as before.
     kinds: list[str]
+    camera_views: list[str]
     default_area: str
     default_kind: str
 
@@ -93,12 +93,14 @@ class TaxonomyResponse(BaseModel):
         return cls(
             areas=[TaxonomyTermSchema.from_dto(a) for a in vocabulary.areas],
             goals=[TaxonomyTermSchema.from_dto(g) for g in vocabulary.goals],
+            laws=[TaxonomyTermSchema.from_dto(l) for l in vocabulary.laws],
             misses=[TaxonomyMissSchema.from_dto(m) for m in vocabulary.misses],
             misses_by_area={
                 area: [TaxonomyMissSchema.from_dto(m) for m in misses]
                 for area, misses in vocabulary.misses_by_area.items()
             },
             kinds=list(vocabulary.kinds),
+            camera_views=list(vocabulary.camera_views),
             default_area=vocabulary.default_area,
             default_kind=vocabulary.default_kind,
         )

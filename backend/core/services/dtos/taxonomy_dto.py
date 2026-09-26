@@ -43,9 +43,11 @@ class TaxonomyVocabularyDTO:
 
     areas: list[TaxonomyTermDTO] = field(default_factory=list)
     goals: list[TaxonomyTermDTO] = field(default_factory=list)
+    laws: list[TaxonomyTermDTO] = field(default_factory=list)
     misses: list[TaxonomyMissDTO] = field(default_factory=list)
     misses_by_area: dict[str, list[TaxonomyMissDTO]] = field(default_factory=dict)
     kinds: list[str] = field(default_factory=list)
+    camera_views: list[str] = field(default_factory=list)
     default_area: str = ""
     default_kind: str = ""
 

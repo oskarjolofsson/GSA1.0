@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from ....core.infrastructure.db.models.TaxonomyLaw import TaxonomyLaw
 from ....core.infrastructure.db.models.TaxonomyMiss import TaxonomyMiss
 from ....core.infrastructure.db.models.TaxonomyMissLaw import TaxonomyMissLaw
+from ....core.infrastructure.db.repositories.taxonomy import list_laws_for_miss
 
 
 def _test_miss(session) -> TaxonomyMiss:
@@ -143,6 +144,37 @@ class TestMissLawRanking:
 
         with pytest.raises(IntegrityError):
             db_session.flush()
+
+
+class TestListLawsForMiss:
+    """The repository read the analysis narrows its law candidates with."""
+
+    def test_returns_laws_most_likely_first(self, db_session):
+        _test_miss(db_session)
+        db_session.add_all([
+            TaxonomyMissLaw(miss="TEST_MISS", law="PATH", rank=2),
+            TaxonomyMissLaw(miss="TEST_MISS", law="FACE", rank=1),
+        ])
+        db_session.flush()
+
+        assert [l.key for l in list_laws_for_miss("TEST_MISS", db_session)] == ["FACE", "PATH"]
+
+    def test_leaves_out_retired_laws(self, db_session):
+        _test_miss(db_session)
+        db_session.add(TaxonomyLaw(key="TEST_LAW", label="t", golfer_label="t", active=False))
+        db_session.flush()
+        db_session.add_all([
+            TaxonomyMissLaw(miss="TEST_MISS", law="FACE", rank=1),
+            TaxonomyMissLaw(miss="TEST_MISS", law="TEST_LAW", rank=2),
+        ])
+        db_session.flush()
+
+        assert [l.key for l in list_laws_for_miss("TEST_MISS", db_session)] == ["FACE"]
+
+    def test_unmapped_miss_returns_empty(self, db_session):
+        _test_miss(db_session)
+
+        assert list_laws_for_miss("TEST_MISS", db_session) == []
 
 
 class TestMissLawDeletes:

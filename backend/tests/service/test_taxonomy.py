@@ -24,6 +24,9 @@ from core.services.taxonomy import (
     DEFAULT_AREA,
     DEFAULT_KIND,
     ALLOWED_KINDS,
+    ALLOWED_CAMERA_VIEWS,
+    normalize_camera_view_optional,
+    normalize_law_strict,
     normalize_area_strict,
     normalize_goals,
     normalize_goals_strict,
@@ -152,6 +155,54 @@ class TestCacheFreshness:
         assert FULL_SWING in taxonomy.allowed_areas()
 
 
+class TestStrictLaws:
+    def test_accepts_every_seeded_law(self):
+        for law in ("FACE", "PATH", "CENTEREDNESS", "ANGLE_OF_ATTACK", "DYNAMIC_LOFT", "SPEED"):
+            assert normalize_law_strict(law) == law
+
+    def test_upper_cases_and_strips(self):
+        assert normalize_law_strict("  face ") == "FACE"
+
+    def test_raises_on_unknown_value(self):
+        with pytest.raises(exceptions.ValidationException, match="BANANA"):
+            normalize_law_strict("banana")
+
+    @pytest.mark.parametrize("value", [None, "", "   "])
+    def test_raises_when_absent(self, value):
+        """No default law: a missing one is an error, not FACE."""
+        with pytest.raises(exceptions.ValidationException):
+            normalize_law_strict(value)
+
+    def test_retired_law_is_refused(self, db_session):
+        db_session.execute(
+            models.TaxonomyLaw.__table__.update()
+            .where(models.TaxonomyLaw.key == "SPEED")
+            .values(active=False)
+        )
+        taxonomy.prime_from(db_session)
+
+        assert "SPEED" not in taxonomy.allowed_laws()
+        with pytest.raises(exceptions.ValidationException):
+            normalize_law_strict("SPEED")
+
+
+class TestOptionalCameraView:
+    def test_accepts_every_allowed_value(self):
+        for view in ALLOWED_CAMERA_VIEWS:
+            assert normalize_camera_view_optional(view) == view
+
+    def test_lower_cases_and_strips(self):
+        assert normalize_camera_view_optional(" Face_On ") == "face_on"
+
+    @pytest.mark.parametrize("value", [None, "", "   "])
+    def test_absent_means_not_given(self, value):
+        assert normalize_camera_view_optional(value) is None
+
+    def test_raises_on_unknown_value(self):
+        with pytest.raises(exceptions.ValidationException, match="behind"):
+            normalize_camera_view_optional("behind")
+
+
 class TestStrictGoals:
     def test_accepts_every_allowed_value(self):
         goals = list(taxonomy.allowed_goals())
@@ -238,7 +289,9 @@ class TestVocabulariesAreNonEmptyAndConsistent:
             taxonomy.allowed_areas(),
             taxonomy.allowed_misses(),
             taxonomy.allowed_goals(),
+            taxonomy.allowed_laws(),
             ALLOWED_KINDS,
+            ALLOWED_CAMERA_VIEWS,
         ):
             assert len(vocab) == len(set(vocab))
 
