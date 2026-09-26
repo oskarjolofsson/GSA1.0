@@ -1,8 +1,11 @@
-from sqlalchemy import select, text, func
-from sqlalchemy.orm import Session
+from sqlalchemy import select, text, func, update
+from sqlalchemy.orm import Session, selectinload
 from uuid import UUID
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from ..models.Analysis import Analysis
+from ..models.AnalysisIssue import AnalysisIssue
+from ..models.Issue import Issue
+from ..models.IssueDrill import IssueDrill
 
 
 def get_activity_counts_by_day(
@@ -59,6 +62,64 @@ def get_completed_analyses_in_range(
 
 def get_analysis_by_id(analysis_id: str, session: Session) -> Analysis:
     return session.get(Analysis, analysis_id)
+
+
+def get_analysis_with_details(analysis_id: UUID, session: Session) -> Analysis | None:
+    """An analysis with everything the details screen shows, in a fixed number of queries:
+    its prompt, and each analysis issue with the issue and that issue's drills.
+
+    Only keys come back for area, miss and law. Their labels are served by /taxonomy/,
+    which the client already holds (ADR-0008).
+    """
+    return session.scalars(
+        select(Analysis)
+        .where(Analysis.id == analysis_id)
+        .options(
+            selectinload(Analysis.prompt),
+            selectinload(Analysis.issues)
+            .selectinload(AnalysisIssue.issue)
+            .selectinload(Issue.issue_drills)
+            .selectinload(IssueDrill.drill),
+        )
+    ).first()
+
+
+def claim_for_processing(analysis_id: UUID, session: Session) -> bool:
+    """Move an analysis from awaiting_upload to processing. True if this call did it.
+
+    One conditional UPDATE rather than read-then-write, so two concurrent starts (a
+    double tap, a client retry) cannot both win: the second finds the status already
+    changed and gets False.
+    """
+    claimed = session.execute(
+        update(Analysis)
+        .where(Analysis.id == analysis_id, Analysis.status == "awaiting_upload")
+        .values(status="processing", started_at=func.now())
+        .returning(Analysis.id)
+    ).first()
+    return claimed is not None
+
+
+def fail_if_stale(analysis_id: UUID, older_than: timedelta, session: Session) -> bool:
+    """Mark an analysis failed if it has been processing longer than `older_than`.
+    True if this call did it.
+
+    The background job dies with its worker on a deploy or crash and leaves the row in
+    processing for good. Nothing else would ever move it, so the status read calls this.
+    Conditional like claim_for_processing, so a job that finishes at the same moment is
+    never overwritten.
+    """
+    failed = session.execute(
+        update(Analysis)
+        .where(
+            Analysis.id == analysis_id,
+            Analysis.status == "processing",
+            Analysis.started_at < func.now() - older_than,
+        )
+        .values(status="failed", success=False, error_message="Analysis timed out")
+        .returning(Analysis.id)
+    ).first()
+    return failed is not None
 
 
 def get_analysis_count_by_user_id(user_id: UUID, session: Session) -> int:

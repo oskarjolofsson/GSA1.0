@@ -139,6 +139,32 @@ def get_global_catalog_issues(session: Session) -> list[models.Issue]:
     )
 
 
+def get_ranked_issues_for_laws(
+    laws: list[str], area: str, user_id: UUID, session: Session
+) -> list[models.IssueLaw]:
+    """
+    Get the issues that break each of the given laws, ordered by (law, rank).
+
+    Only returns issues that are either global (user_id IS NULL) or belong to the given user."""
+    if not laws:
+        return []
+    return list(
+        session.scalars(
+            select(models.IssueLaw)
+            .join(models.Issue, models.Issue.id == models.IssueLaw.issue_id)
+            .where(models.IssueLaw.law.in_(laws))
+            .where(models.Issue.area == area)
+            .where(or_(models.Issue.user_id.is_(None), models.Issue.user_id == user_id))
+            .order_by(models.IssueLaw.law, models.IssueLaw.rank)
+            .options(
+                selectinload(models.IssueLaw.issue)
+                .selectinload(models.Issue.issue_drills)
+                .selectinload(models.IssueDrill.drill)
+            )
+        ).all()
+    )
+
+
 def search_catalog_issues_by_text(
     tokens: list[str], session: Session, limit: int = 5
 ) -> list[models.Issue]:
