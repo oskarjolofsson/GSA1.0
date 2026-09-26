@@ -132,7 +132,7 @@ def prime_from(session) -> None:
 #
 # Functions rather than module constants on purpose. `from taxonomy import ALLOWED_MISSES`
 # would snapshot the tuple at import time and never see an admin edit — which is exactly
-# the bug feedbackStructurer.py had, baking the list into a Gemini prompt at module load.
+# the bug the coach-feedback prompt had, baking the list into a Gemini prompt at module load.
 
 
 def allowed_areas() -> tuple[str, ...]:

@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from core.infrastructure.db.repositories import issues as issue_repo
 from core.infrastructure.db.repositories import drills as drill_repo
 from core.infrastructure.db.repositories import issue_drills as issue_drill_repo
-from core.infrastructure.ai import get_model
+from core.infrastructure import ai
 from core.services.dtos.issue_authoring_service_dto import (
     DraftDrillDTO,
     DraftIssueDTO,
@@ -28,6 +28,8 @@ from core.services.exceptions import NotFoundException
 from core.services.taxonomy import (
     DEFAULT_AREA,
     DEFAULT_KIND,
+    allowed_goals,
+    misses_for,
     normalize_area_strict,
     normalize_goals,
     normalize_goals_strict,
@@ -60,14 +62,23 @@ def _significant_tokens(text: str) -> list[str]:
     return seen[:8]
 
 
-def _default_structurer(text: str, image_bytes: bytes | None, image_mime: str | None) -> dict:
-    """Lazily build the Google client so importing this module never needs an API
-    key (tests inject a fake structurer instead)."""
-    from core.infrastructure.ai.google.client import GoogleAnalysisClient
+def _default_structurer(
+    text: str,
+    image_bytes: bytes | None,
+    image_mime: str | None,
+    area: str = DEFAULT_AREA,
+) -> dict:
+    """Format coach feedback with Gemini (tests inject a fake structurer instead).
 
-    return GoogleAnalysisClient().structure_coach_feedback(
+    The vocabulary is read here, per request and scoped to `area`, and handed to the AI
+    layer, which never reads the taxonomy itself.
+    """
+    return ai.structure_coach_feedback(
         text=text,
-        model=get_model(),
+        area=area,
+        allowed_misses=list(misses_for(area)),
+        allowed_goals=list(allowed_goals()),
+        model=ai.get_model(),
         image_bytes=image_bytes,
         image_mime=image_mime,
     )
@@ -177,7 +188,7 @@ def persist_issue_with_drills(
         # Lenient path: AI-generated input, where an unrecognised tag is dropped rather
         # than raised on. normalize_miss stays area-agnostic on purpose — a model that
         # returns a miss from the wrong area should lose that one tag, not fail the whole
-        # request. The prompt is area-scoped upstream (feedbackStructurer) so this is a
+        # request. The prompt is area-scoped upstream (ai.coach_feedback) so this is a
         # backstop, not the primary defence.
         misses = [m for m in (normalize_miss(v) for v in raw_misses) if m]
         goals = normalize_goals(issue.goals)

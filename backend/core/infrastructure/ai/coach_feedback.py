@@ -5,40 +5,28 @@ explanations and wording as much as possible and only fill the structural fields
 the practice engine needs (success_signal / fault_indicator) when the coach didn't
 say them. Anything the AI inferred is flagged in `ai_filled` so the user can review
 it. Nothing is persisted here.
+
+The tag vocabulary is passed in, never read here. The caller resolves it per request
+from the taxonomy tables, scoped to one area. That keeps this module free of the
+services and the database, and keeps the prompt fresh after an admin edit: it used to
+snapshot the misses at import, so a new miss never reached the model until a restart,
+and it used to list every area's misses, so chipping notes came back tagged SLICE.
 """
 
-import json
 from typing import Optional
 
-from google import genai
-from google.genai import types
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
-from core.services import taxonomy
-
-# The vocabulary is deliberately NOT snapshotted at module import.
-#
-# It used to be: `_ALLOWED_MISSES = list(ALLOWED_MISSES)` at load time, interpolated into
-# the instructions below. That broke in two ways once the taxonomy moved into the database:
-#
-#   1. A miss added from the admin dashboard never reached the model until a restart, so
-#      the CMS silently did nothing for this path.
-#   2. The prompt listed every miss across every area, so given chipping notes the model
-#      would happily answer SLICE — which the area-scoped validator then rejects with a
-#      422. A user-triggerable failure, in the paid tier, that reads as the AI being broken.
-#
-# Both go away by building the instructions per request, scoped to the target area.
+from . import gemini
+from .errors import AIInvalidResponse
 
 
-def build_system_instructions(area: str) -> str:
+def build_system_instructions(area: str, allowed_misses: list[str], allowed_goals: list[str]) -> str:
     """The formatter instructions, with the tag vocabulary for one area only.
 
     Scoping matters: offering the model all ~40 misses and hoping it picks an in-area one
     is a worse contract than showing it the six that can possibly be right.
     """
-    allowed_misses = list(taxonomy.misses_for(area))
-    allowed_goals = list(taxonomy.allowed_goals())
-
     return f"""
 You convert a golfer's notes from a real coaching lesson into a structured practice
 focus. You are a FORMATTER, not a coach. Follow these rules exactly:
@@ -94,60 +82,40 @@ def _build_contents(text: str, image_bytes: Optional[bytes], image_mime: Optiona
 
 
 def structure_coach_feedback(
-    client: genai.Client,
+    *,
     text: str,
+    area: str,
+    allowed_misses: list[str],
+    allowed_goals: list[str],
     model: str,
     image_bytes: Optional[bytes] = None,
     image_mime: Optional[str] = None,
-    area: str = taxonomy.DEFAULT_AREA,
 ) -> dict:
-    """Return a draft dict `{issue: {...}, drills: [...]}`. Raises ValueError on a
-    missing model or an unparseable response.
+    """Return a draft dict `{issue: {...}, drills: [...]}`.
 
-    `area` scopes both the prompt and the output scrub. It defaults to full swing so every
-    existing caller keeps working unchanged; the coach-feedback screen passes the real one
-    once the user has picked where on the course this focus belongs.
+    Raises ValueError on empty feedback text, AIInvalidResponse when the answer does not
+    fit the draft shape, and the other AIError subclasses from gemini.generate_json.
     """
-    if not model:
-        raise ValueError("structure_coach_feedback requires an explicit model; none was provided")
     if not text or not text.strip():
         raise ValueError("structure_coach_feedback requires non-empty feedback text")
 
-    # Built per request, not at import: the vocabulary lives in the database now, and this
-    # is also where it gets narrowed to the misses valid for `area`.
-    allowed_misses = list(taxonomy.misses_for(area))
-    allowed_goals = list(taxonomy.allowed_goals())
-
-    response = client.models.generate_content(
+    data = gemini.generate_json(
         model=model,
-        config=types.GenerateContentConfig(
-            system_instruction=[{"text": build_system_instructions(area)}],
-            temperature=0.0,
-            top_p=0.1,
-            top_k=1,
-            response_mime_type="application/json",
-            response_json_schema=FeedbackDraft.model_json_schema(),
-        ),
+        system_instruction=build_system_instructions(area, allowed_misses, allowed_goals),
         contents=_build_contents(text, image_bytes, image_mime),
+        schema=FeedbackDraft.model_json_schema(),
     )
 
-    if not response or not response.text or not response.text.strip():
-        raise ValueError("No response returned from Gemini API")
-
     try:
-        data = json.loads(response.text.strip())
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Failed to parse JSON response: {str(e)}")
+        draft = FeedbackDraft.model_validate(data)
+    except ValidationError as e:
+        raise AIInvalidResponse(f"Coach feedback draft did not match the schema: {e}") from e
 
-    # Validate/normalize through the schema (drops unknown keys, enforces shape).
-    draft = FeedbackDraft.model_validate(data)
     # Drop tags outside the vocabulary so a bad AI value never reaches the foreign keys
     # (the service layer also re-normalizes defensively). Scoped to `area`, matching the
     # prompt: a miss from another part of the game is wrong here even though it exists,
     # and silently dropping it beats letting it 422 at the persistence layer.
-    if draft.issue.miss is not None and draft.issue.miss.upper() not in allowed_misses:
-        draft.issue.miss = None
-    else:
-        draft.issue.miss = draft.issue.miss.upper() if draft.issue.miss else None
+    miss = draft.issue.miss.upper() if draft.issue.miss else None
+    draft.issue.miss = miss if miss in allowed_misses else None
     draft.issue.goals = [g.upper() for g in draft.issue.goals if g and g.upper() in allowed_goals]
     return draft.model_dump()

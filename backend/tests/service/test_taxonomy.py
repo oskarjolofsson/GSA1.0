@@ -256,7 +256,7 @@ class TestLenientStillLenient:
     def test_lenient_miss_is_deliberately_not_area_scoped(self, db_session):
         """A model returning an out-of-area miss should lose that tag, not fail the call.
 
-        The prompt is scoped upstream (feedbackStructurer builds it per area), so this is
+        The prompt is scoped upstream (ai.coach_feedback builds it per area), so this is
         a backstop. Raising here would turn a stray AI value into a user-visible 500 on
         the premium coach-feedback path.
         """
