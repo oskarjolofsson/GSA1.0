@@ -61,6 +61,12 @@ class Analysis(Base):
     completed_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True))
     reviewed_at: Mapped[DateTime | None] = mapped_column(DateTime(timezone=True))
 
+    # The law of ball flight a v2 analysis settled on. Null for v1, unfinished and failed
+    # analyses. RESTRICT: retire a law with active = false rather than deleting it.
+    law: Mapped[str | None] = mapped_column(
+        Text, ForeignKey("taxonomy_laws.key", ondelete="RESTRICT")
+    )
+
     video = relationship("Video", back_populates="analyses")
     issues = relationship(
         "AnalysisIssue",
