@@ -229,7 +229,7 @@ def test_tag_tables_are_readable_but_not_writable(request, role, table):
 #
 # Unlike the catalog above, these are not readable either: nothing reaches them
 # through PostgREST, so they carry no grants and no policies. Guarded by
-# 20260730020000_close_remaining_tables.sql.
+# 20260730020000_close_remaining_tables.sql and 20260927000100_close_analysis_tables.sql.
 # ---------------------------------------------------------------------------
 
 # table -> (column, value) for a filter that matches nothing. The column has to
@@ -247,6 +247,11 @@ CLOSED_TABLE_PROBES = {
     "billing_customers": ("created_at", "1970-01-01T00:00:00Z"),
     "billing_subscriptions": ("created_at", "1970-01-01T00:00:00Z"),
     "processed_webhook_events": ("processed_at", "1970-01-01T00:00:00Z"),
+    # 20260927000100_close_analysis_tables.sql: owner-writable until then, so a user
+    # could mark their own analysis completed or repoint a video key via PostgREST.
+    "analysis": ("created_at", "1970-01-01T00:00:00Z"),
+    "analysis_issues": ("created_at", "1970-01-01T00:00:00Z"),
+    "videos": ("created_at", "1970-01-01T00:00:00Z"),
 }
 CLOSED_TABLES = sorted(CLOSED_TABLE_PROBES)
 
