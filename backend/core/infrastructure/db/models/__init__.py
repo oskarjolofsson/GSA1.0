@@ -8,6 +8,7 @@ from ..base import Base
 from .TaxonomyArea import TaxonomyArea
 from .TaxonomyGoal import TaxonomyGoal
 from .TaxonomyMiss import TaxonomyMiss
+from .TaxonomyLaw import TaxonomyLaw
 from .Profile import Profile
 from .Video import Video
 from .Drill import Drill
@@ -38,6 +39,7 @@ __all__ = [
     "TaxonomyArea",
     "TaxonomyGoal",
     "TaxonomyMiss",
+    "TaxonomyLaw",
     "Profile",
     "Video",
     "Drill",
