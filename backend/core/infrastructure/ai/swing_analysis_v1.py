@@ -1,8 +1,33 @@
-from  ..return_format import RETURN_FORMAT
+"""v1 swing analysis: a video and the golfer's free-text notes, matched against a flat
+list of issues. Replaced by the law-first v2 flow; delete this module with the v1 API.
+
+Takes the issue list as plain data. The caller loads it, scoped to the catalog plus the
+caller's own custom issues; this module never touches the database.
+"""
+
 import json
-        
-        
-VIDEO_SYSTEM_INSTRUCTIONS2 = f"""
+from typing import Optional
+
+from pydantic import BaseModel, Field
+
+from . import gemini
+
+RETURN_FORMAT = {
+    "metadata": {
+        "camera_view": "unknown | face_on | down_the_line",
+        "club_type": "unknown | driver | iron | wedge"
+    },
+    "issues": [
+        {
+            "issue_id": "string",
+            "confidence": 0.0
+        }
+    ],
+    "success": True
+}
+
+
+SYSTEM_INSTRUCTIONS = f"""
 You are a professional golf coach and structured swing analysis engine.
 Your task is to analyze a golf swing video and identify issues from a predefined list.
 
@@ -64,11 +89,19 @@ CONSTRAINTS (HARD):
 - If no issues are clearly visible, return an empty issues array
 
 Failure to follow any rule is an error.
-"""        
-        
+"""
 
 
-import json
+class MetaData(BaseModel):
+    camera_view: str = Field(..., description="Camera view of the swing (unknown | face_on | down_the_line)")
+    club_type: str = Field(..., description="Type of club used in the swing (unknown | driver | iron | wedge)")
+
+
+class AnalysisResponse(BaseModel):
+    metadata: MetaData
+    issues: list = Field(default_factory=list)
+    success: bool = Field(..., description="Indicates if the analysis was successful")
+
 
 def format_content(
     shape: str = None,
@@ -115,3 +148,27 @@ def format_content(
     """
     return final_prompt
 
+
+def analyze_video(
+    *,
+    video_path: str,
+    issues: list[dict],
+    model: str,
+    shape: Optional[str] = None,
+    height: Optional[str] = None,
+    misses: Optional[str] = None,
+    extra: Optional[str] = None,
+) -> dict:
+    """Analyze a golf swing video against `issues` and return Gemini's parsed answer.
+
+    `issues` is what the model may choose from, one dict per issue with its id, name,
+    motions and description. Raises AIError subclasses from the gemini module.
+    """
+    prompt = format_content(shape=shape, height=height, misses=misses, extra=extra, issue_list=issues)
+    with gemini.uploaded_video(video_path) as video:
+        return gemini.generate_json(
+            model=model,
+            system_instruction=SYSTEM_INSTRUCTIONS,
+            contents=[{"role": "user", "parts": [{"text": prompt}, gemini.video_part(video)]}],
+            schema=AnalysisResponse.model_json_schema(),
+        )

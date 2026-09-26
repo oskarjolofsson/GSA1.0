@@ -12,8 +12,8 @@ load_dotenv()
 backend_dir = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(backend_dir))
 
-from core.infrastructure.ai.google.client import GoogleAnalysisClient
-from core.infrastructure.ai import get_model
+from core.infrastructure.ai import analyze_video, get_model
+from core.services.analysis_service import issues_offered_to_ai
 
 from ....core.infrastructure.db.session import SessionLocal
 
@@ -59,45 +59,34 @@ def gemini_api_key():
 
 
 @pytest.fixture(scope="module")
-def google_client(gemini_api_key):
-    """Initialized Google Analysis Client."""
-    return GoogleAnalysisClient()
-
-
-@pytest.fixture(scope="module")
-def analysis_result(google_client, test_video_path, db_session, test_user):
+def analysis_result(gemini_api_key, test_video_path, db_session, test_user):
     """Run analysis once and share result across all tests."""
-    result = google_client.analyze_video(
+    return analyze_video(
         video_path=test_video_path[0],
-        db_session=db_session,
-        user_id=test_user["user_id"],
+        issues=issues_offered_to_ai(test_user["user_id"], db_session),
         model=get_model(),
     )
-    return result
 
 
 @pytest.fixture(scope="module")
-def analysis_result_with_context(google_client, test_video_path, db_session, test_user):
+def analysis_result_with_context(gemini_api_key, test_video_path, db_session, test_user):
     """Run analysis with user context once."""
-    result = google_client.analyze_video(
-        video_path=test_video_path[0],  # Use the first video for this test
-        user_id=test_user["user_id"],
+    return analyze_video(
+        video_path=test_video_path[0],
+        issues=issues_offered_to_ai(test_user["user_id"], db_session),
         shape="draw",
         height="mid",
         misses="right",
         extra=None,
         model=get_model(),
-        db_session=db_session
     )
-    return result
 
 
 @pytest.fixture(scope="module")
-def analysis_result_non_golf(google_client, test_video_path, db_session):
+def analysis_result_non_golf(gemini_api_key, test_video_path, db_session, test_user):
     """Run analysis once and share result across all tests."""
-    result = google_client.analyze_video(
+    return analyze_video(
         video_path=test_video_path[1],
-        db_session=db_session,
+        issues=issues_offered_to_ai(test_user["user_id"], db_session),
         model=get_model(),
     )
-    return result

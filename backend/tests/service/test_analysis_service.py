@@ -103,7 +103,7 @@ def completed_analysis_shared(test_user, shared_db_session, sample_video_path):
     with patch(
         f"{service_module}.analyze_video",
         return_value=canned_result,
-    ), patch(f"{service_module}.GoogleAnalysisClient"):
+    ):
         return _run_completed_analysis(test_user, shared_db_session, sample_video_path)
 
 

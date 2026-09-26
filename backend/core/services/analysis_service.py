@@ -40,9 +40,7 @@ from ..infrastructure.storage.r2Adaptor import get_object
 from ..infrastructure.storage.r2Client import r2_client
 from ..infrastructure.local_files.file_types.Video_file import Video_file
 
-from ..infrastructure.ai.google.client import GoogleAnalysisClient
-from ..infrastructure.ai.google.videoAnalyzer import analyze_video
-from ..infrastructure.ai import get_model
+from ..infrastructure.ai import analyze_video, get_model
 from uuid import UUID
 from ..infrastructure.db.repositories.prompts import (
     add_prompt,
@@ -136,18 +134,14 @@ def run_analysis(dto: RunAnalysisDTO, db_session) -> GetAnalaysisDTO:
         put_object(key=video_object.video_key, data=video_file.read(), content_type="video/mp4")    # Update the video in R2 to be trimmed
 
         # Start analysis process with prompts from database
-        analysis_results: dict = (
-            analyze_video(
-                client=GoogleAnalysisClient().client,
-                video_path=video_file.path(),
-                user_id=analysis_object.user_id,
-                shape=prompt_object.prompt_shape if prompt_object else None,
-                height=prompt_object.prompt_height if prompt_object else None,
-                misses=prompt_object.prompt_misses if prompt_object else None,
-                extra=prompt_object.prompt_extra if prompt_object else None,
-                model=analysis_object.model_version,
-                db_session=db_session,
-            )
+        analysis_results: dict = analyze_video(
+            video_path=video_file.path(),
+            issues=issues_offered_to_ai(analysis_object.user_id, db_session),
+            shape=prompt_object.prompt_shape if prompt_object else None,
+            height=prompt_object.prompt_height if prompt_object else None,
+            misses=prompt_object.prompt_misses if prompt_object else None,
+            extra=prompt_object.prompt_extra if prompt_object else None,
+            model=analysis_object.model_version,
         )
         
         # Extract thumbnail from video and upload to R2
@@ -341,6 +335,23 @@ def delete_analysis_issue(analysis_issue_id: UUID, db_session, user_id: UUID) ->
 
 
 # ------------------------------ Helper functions ------------------------------
+
+
+def issues_offered_to_ai(user_id: UUID, db_session) -> list[dict]:
+    """The issues v1 lets the model choose from: the global catalog plus this user's own
+    custom issues, never another user's. Those are private, and one attached to a
+    stranger's analysis would leak onto their home screen too.
+    """
+    return [
+        {
+            "issue_id": str(issue.id),
+            "name": issue.title,
+            "current motion that causes the issue": issue.current_motion,
+            "desired motion that fixes the issue": issue.expected_motion,
+            "description of the issue": issue.description,
+        }
+        for issue in issues_repo.get_catalog_and_user_issues(user_id, db_session)
+    ]
 
 
 def from_analysis_object_to_dto(analysis_object) -> GetAnalaysisDTO:

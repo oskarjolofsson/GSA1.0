@@ -110,7 +110,7 @@ def run_analysis_and_set_completed(client, db_session, analysis_with_id, auth_he
     with patch(
         "core.services.analysis_service.analyze_video",
         return_value=canned_result,
-    ), patch("core.services.analysis_service.GoogleAnalysisClient"):
+    ):
         response = client.patch(
             f"/api/v1/analyses/{analysis_id}/",
             headers=auth_headers,
@@ -432,7 +432,7 @@ def test_run_analysis_rechecks_entitlement_before_persisting(
     with patch(
         "core.services.analysis_service.analyze_video",
         return_value=canned_result,
-    ), patch("core.services.analysis_service.GoogleAnalysisClient"), patch(
+    ), patch(
         # No real video was uploaded (this test only exercises the entitlement
         # recheck, not the video pipeline) -- stub the R2 read/write and the video
         # file wrapper around it so the request reaches the recheck instead of
