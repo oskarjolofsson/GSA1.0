@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { FlatList, Text, View, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { useAuth } from 'features/auth/AuthProvider';
@@ -15,11 +15,13 @@ import SwingGridEmpty from 'features/profile/components/SwingGridEmpty';
 const GUTTER = 20;
 const GAP = 8;
 const COLUMNS = 2;
+const MENU_ROW = 52;
 
 export default function ProfileScreen() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const { allAnalyses, loading, error, refetch } = useAnalyses();
 
   useFocusEffect(
@@ -49,10 +51,6 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-ink" edges={['top']}>
-      <View className="flex-row justify-end px-6 pt-2">
-        <MenuButton onPress={() => router.push('/settings')} />
-      </View>
-
       <FlatList
         data={allAnalyses}
         keyExtractor={(item) => item.analysis_id}
@@ -62,7 +60,7 @@ export default function ProfileScreen() {
         columnWrapperStyle={{ gap: GAP }}
         ItemSeparatorComponent={() => <View style={{ height: GAP }} />}
         ListHeaderComponent={
-          <View className="pb-8 pt-4">
+          <View className="pb-8" style={{ paddingTop: MENU_ROW + 16 }}>
             <View className="flex-row items-center">
               <Avatar
                 photoURL={user.photoURL}
@@ -101,6 +99,13 @@ export default function ProfileScreen() {
           />
         )}
       />
+
+      <View
+        pointerEvents="box-none"
+        className="absolute left-0 right-0 flex-row justify-end px-6"
+        style={{ top: insets.top + 8 }}>
+        <MenuButton onPress={() => router.push('/settings')} />
+      </View>
     </SafeAreaView>
   );
 }

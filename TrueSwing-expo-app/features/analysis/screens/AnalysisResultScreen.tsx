@@ -173,6 +173,7 @@ export default function AnalysisResultScreen({ onBack }: AnalysisResultScreenPro
                             onActiveIssueChange={(nextIssueIndex) =>
                                 handleActiveIssueChange(item.analysis_id, nextIssueIndex)
                             }
+                            onBack={onBack}
                         />
                     );
                 }}

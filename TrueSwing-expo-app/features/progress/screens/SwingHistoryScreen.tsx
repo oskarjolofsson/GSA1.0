@@ -3,7 +3,10 @@ import { View, Text, Pressable, FlatList, Image, ActivityIndicator } from "react
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, ChevronLeft, Film } from "lucide-react-native";
 import DetailedVideo from "features/analysis/components/DetailedVideo";
+import ReelVideoSurface from "features/analysis/components/ReelVideoSurface";
 import useVideoURL from "features/analysis/hooks/useVideoURL";
+import useReelPlayback from "features/analysis/hooks/useReelPlayback";
+import useScrubFriendlyVideo from "features/analysis/hooks/useScrubFriendlyVideo";
 import analysisService from "features/analysis/services/analysisService";
 import { useHomeAnalysis } from "features/home/context/HomeAnalysisContext";
 import type { Analysis, IssueSwingTimelineItem } from "features/analysis/types";
@@ -48,6 +51,21 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
     const [fullAnalysis, setFullAnalysis] = useState<Analysis | null>(null);
 
     const videoURL = useVideoURL(fullAnalysis);
+
+    // The player lives here rather than in the overlay, so the drawing chrome can sit on
+    // top of a video that never gets torn down.
+    const { uri: playableUri, status: prepStatus } = useScrubFriendlyVideo(
+        fullAnalysis?.analysis_id ?? null,
+        videoURL,
+        !!selected,
+    );
+    const isPreparing = prepStatus === "preparing";
+    const playback = useReelPlayback({
+        source: playableUri,
+        shouldPlay: !!selected && !isPreparing,
+        muted: true,
+        loop: false,
+    });
 
     useEffect(() => {
         let active = true;
@@ -125,12 +143,15 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
     if (selected) {
         if (fullAnalysis && videoURL) {
             return (
-                <DetailedVideo
-                    analysis={fullAnalysis}
-                    videoURL={videoURL}
-                    isActive
-                    onExit={() => setSelected(null)}
-                />
+                <View className="flex-1 bg-black">
+                    <ReelVideoSurface
+                        player={playback.player}
+                        hasVideo={!!playableUri}
+                        thumbnailUrl={fullAnalysis.thumbnail_url}
+                        isPreparing={isPreparing}
+                    />
+                    <DetailedVideo playback={playback} onExitDrawing={() => setSelected(null)} />
+                </View>
             );
         }
         return (

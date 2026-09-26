@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, Text, View } from 'react-native';
-import { ChevronLeft, MoreHorizontal } from 'lucide-react-native';
+import { Animated, Text, View } from 'react-native';
+import { MoreHorizontal } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import GlassSurface from 'features/shared/components/GlassSurface';
+import GlassIconButton, {
+  BackChevronButton,
+  CHROME_INSET,
+  CHROME_TOP_GAP,
+  GLASS_BUTTON,
+} from 'features/analysis/components/GlassIconButton';
 import ReelMenu from 'features/analysis/components/ReelMenu';
 import colors from 'lib/colors';
-
-const BUTTON = 44;
 
 type AnalysisHeaderOverlayProps = {
   dateLabel?: string;
@@ -55,31 +59,12 @@ export default function AnalysisHeaderOverlay({
   return (
     <View
       pointerEvents="box-none"
-      className="absolute left-0 right-0 z-50 flex-row items-center justify-between px-4"
-      style={{ top: insets.top + 8 }}>
+      className="absolute left-0 right-0 z-50 flex-row items-center justify-between"
+      style={{ top: insets.top + CHROME_TOP_GAP, paddingHorizontal: CHROME_INSET }}>
       {onBack ? (
-        <Pressable
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          hitSlop={8}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-          <GlassSurface
-            radius={BUTTON / 2}
-            interactive
-            style={{
-              width: BUTTON,
-              height: BUTTON,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            {/* 26px, light stroke, nudged left of centre: the system back chevron's
-                optical balance, not a UI glyph centred in a box. */}
-            <ChevronLeft size={26} color={colors.sand} strokeWidth={2} style={{ marginLeft: -2 }} />
-          </GlassSurface>
-        </Pressable>
+        <BackChevronButton onPress={onBack} />
       ) : (
-        <View style={{ width: BUTTON, height: BUTTON }} />
+        <View style={{ width: GLASS_BUTTON, height: GLASS_BUTTON }} />
       )}
 
       {displayedDate ? (
@@ -107,28 +92,15 @@ export default function AnalysisHeaderOverlay({
       ) : null}
 
       {deleting ? (
-        <View style={{ width: BUTTON }} className="items-end">
+        <View style={{ width: GLASS_BUTTON }} className="items-end">
           <Text className="text-xs font-medium text-sand/50">Deleting…</Text>
         </View>
       ) : (
-        <Pressable
+        <GlassIconButton
           onPress={() => setMenuOpen(true)}
-          accessibilityRole="button"
           accessibilityLabel="More options"
-          hitSlop={8}
-          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-          <GlassSurface
-            radius={BUTTON / 2}
-            interactive
-            style={{
-              width: BUTTON,
-              height: BUTTON,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <MoreHorizontal size={20} color={colors.sand} />
-          </GlassSurface>
-        </Pressable>
+          icon={<MoreHorizontal size={20} color={colors.sand} />}
+        />
       )}
 
       <ReelMenu
