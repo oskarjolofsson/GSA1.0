@@ -5,18 +5,10 @@ module.exports = {
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
-      colors: {
-        // Home screen palette — deep navy field, raised card, sand ink, warm gold.
-        ink: '#0A0F1A',
-        'ink-raised': '#141F30',
-        sand: '#EADFC8',
-        'sand-dim': '#8A8676',
-        gold: '#E4C892',
-        'gold-deep': '#D2B271',
-        danger: '#E0776B',
-        'grid-low': '#39705A',
-        'grid-high': '#6FA98A',
-      },
+      // Defined in lib/colors.js so
+      // that components needing a raw value (icon `color` props, gradients, the native
+      // tab bar) read the same numbers these class tokens are built from.
+      colors: require('./lib/colors'),
       fontFamily: {
         // Display = Fraunces (editorial serif); Sans = Hanken Grotesk (quiet grotesk).
         display: ['Fraunces_600SemiBold'],

@@ -3,8 +3,9 @@ import { View, Text, Pressable } from 'react-native';
 import { Plus } from 'lucide-react-native';
 
 import type { TaxonomyTerm } from 'features/library/services/taxonomyService';
+import colors from 'lib/colors';
 
-const GOLD = '#E4C892';
+const GOLD = colors.gold;
 
 type Props = {
   area: TaxonomyTerm | null;

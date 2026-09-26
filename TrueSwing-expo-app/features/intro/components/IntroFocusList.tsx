@@ -3,6 +3,7 @@ import { Check } from "lucide-react-native";
 
 import { tapHaptic } from "features/shared/utils/haptics";
 import type { IntroIssue } from "../services/introCatalogService";
+import colors from "lib/colors";
 
 type Props = {
     issues: IntroIssue[];
@@ -59,7 +60,7 @@ export default function IntroFocusList({ issues, selectedId, onSelect }: Props) 
                                 selected ? "border-gold bg-gold" : "border-white/20"
                             }`}
                         >
-                            {selected ? <Check size={15} color="#0A0F1A" strokeWidth={3} /> : null}
+                            {selected ? <Check size={15} color={colors.ink} strokeWidth={3} /> : null}
                         </View>
                     </Pressable>
                 );

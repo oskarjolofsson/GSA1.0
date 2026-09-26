@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Button from "features/shared/components/Button";
+import colors from "lib/colors";
 
 type Props = {
     onStart: () => void;
@@ -21,7 +22,7 @@ export default function IntroWelcomeScreen({ onStart, onSignIn }: Props) {
                 resizeMode="contain"
             />
             <LinearGradient
-                colors={["transparent", "rgba(10,15,26,0.35)", "rgba(10,15,26,0.92)", "#0A0F1A"]}
+                colors={["transparent", "rgba(10,15,26,0.35)", "rgba(10,15,26,0.92)", colors.ink]}
                 locations={[0, 0.45, 0.78, 1]}
                 style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
             />

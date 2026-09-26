@@ -3,6 +3,7 @@ import { Check, ChevronLeft } from 'lucide-react-native';
 
 import type { AnalysisIssue } from '../types';
 import type { IssueDetails } from '../hooks/useAnalysisIssueDetails';
+import colors from 'lib/colors';
 
 type Props = {
   keptIssues: AnalysisIssue[];
@@ -74,7 +75,7 @@ export default function AnalysisSummaryScreen({
                   key={issue.analysis_issue_id}
                   className="mt-3.5 items-center border-t border-white/[.07] pt-3.5"
                 >
-                  <Check size={16} color="#E4C892" />
+                  <Check size={16} color={colors.gold} />
                   <Text className="mt-1.5 font-display text-[17px] text-sand">
                     {details?.title ?? 'Untitled focus'}
                   </Text>
@@ -102,7 +103,7 @@ export default function AnalysisSummaryScreen({
           accessibilityLabel="Back to review"
           className="mb-4 min-h-[36px] flex-row items-center justify-center gap-1 active:opacity-70"
           style={{ opacity: committing ? 0.4 : 1 }}>
-          <ChevronLeft size={15} color="#8A8676" />
+          <ChevronLeft size={15} color={colors['sand-dim']} />
           <Text className="text-[13px] text-sand-dim">Back to review</Text>
         </Pressable>
 
@@ -112,7 +113,7 @@ export default function AnalysisSummaryScreen({
           accessibilityRole="button"
           className="min-h-[44px] w-full flex-row items-center justify-center gap-2 rounded-full border border-gold px-6 py-4 active:opacity-70"
           style={{ opacity: committing ? 0.6 : 1 }}>
-          {committing ? <ActivityIndicator size="small" color="#E4C892" /> : null}
+          {committing ? <ActivityIndicator size="small" color={colors.gold} /> : null}
           <Text className="font-sans-medium text-[15px] text-gold">
             {committing ? 'Saving…' : 'Continue'}
           </Text>

@@ -8,7 +8,6 @@ import AreaTabs from 'features/home/components/AreaTabs';
 import HomeAreaBody from 'features/home/components/HomeAreaBody';
 import StartableList from 'features/home/components/StartableList';
 import StreakPanel from 'features/home/components/StreakPanel';
-import ArchiveEntry from 'features/home/components/ArchiveEntry';
 import LoadingState from 'features/shared/components/LoadingState';
 import ErrorState from 'features/shared/components/ErrorState';
 
@@ -39,8 +38,6 @@ function Quiet({ children, first = false }: { children: React.ReactNode; first?:
 type HomeScreenProps = {
   selectedArea: string | null;
   onSelectArea: (areaKey: string) => void;
-  onOpenArchive: () => void;
-  onOpenProfile: () => void;
   /** Opens the focus drawer. The `+` in the hero is the only visible way in. */
   onAddFocus: () => void;
   onStartPractice: (issue: Issue) => Promise<void> | void;
@@ -57,8 +54,6 @@ type HomeScreenProps = {
 export default function HomeScreen({
   selectedArea,
   onSelectArea,
-  onOpenArchive,
-  onOpenProfile,
   onAddFocus,
   onStartPractice,
   onOpenHistory,
@@ -182,10 +177,6 @@ export default function HomeScreen({
           image={heroImage}
           title={greeting.title}
           subtitle={greeting.subtitle}
-          photoURL={user?.photoURL}
-          name={user?.name}
-          email={user?.email}
-          onOpenProfile={onOpenProfile}
           onAddFocus={onAddFocus}
         />
 
@@ -228,15 +219,9 @@ export default function HomeScreen({
               ) : null}
 
               {showSecondary ? (
-                <>
-                  <Quiet first={startable.length === 0}>
-                    <StreakPanel streakDays={stats.streakDays} month={stats.month} />
-                  </Quiet>
-
-                  <Quiet>
-                    <ArchiveEntry onPress={onOpenArchive} />
-                  </Quiet>
-                </>
+                <Quiet first={startable.length === 0}>
+                  <StreakPanel streakDays={stats.streakDays} month={stats.month} />
+                </Quiet>
               ) : null}
             </Section>
           ) : null}

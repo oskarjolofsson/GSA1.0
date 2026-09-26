@@ -11,6 +11,7 @@ import { X, Dumbbell, Film, ChevronRight } from "lucide-react-native";
 
 import useDayDetail from "features/home/hooks/useDayDetail";
 import type { DaySession, DayAnalysis } from "features/home/services/activityService";
+import colors from "lib/colors";
 
 type DayDetailModalProps = {
     // The day to show (YYYY-MM-DD) or null when closed.
@@ -71,13 +72,13 @@ export default function DayDetailModal({
                             hitSlop={8}
                             className="h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-ink active:opacity-70"
                         >
-                            <X size={18} color="#8A8676" />
+                            <X size={18} color={colors['sand-dim']} />
                         </Pressable>
                     </View>
 
                     {loading && (
                         <View className="items-center py-10">
-                            <ActivityIndicator color="#EADFC8" />
+                            <ActivityIndicator color={colors.sand} />
                         </View>
                     )}
 
@@ -165,7 +166,7 @@ function SessionRow({ session }: { session: DaySession }) {
     return (
         <View className="flex-row items-center gap-3 rounded-2xl border border-white/10 bg-ink p-4">
             <View className="h-10 w-10 items-center justify-center rounded-full border border-sand/15 bg-white/5">
-                <Dumbbell size={18} color="#EADFC8" />
+                <Dumbbell size={18} color={colors.sand} />
             </View>
             <View className="flex-1">
                 <Text className="font-sans-semibold text-base text-sand">
@@ -200,14 +201,14 @@ function AnalysisRow({
                         resizeMode="cover"
                     />
                 ) : (
-                    <Film size={20} color="#EADFC8" />
+                    <Film size={20} color={colors.sand} />
                 )}
             </View>
             <View className="flex-1">
                 <Text className="font-sans-semibold text-base text-sand">Swing analysis</Text>
                 <Text className="mt-0.5 font-sans text-sm text-sand-dim">View in your swings</Text>
             </View>
-            <ChevronRight size={20} color="#8A8676" />
+            <ChevronRight size={20} color={colors['sand-dim']} />
         </Pressable>
     );
 }

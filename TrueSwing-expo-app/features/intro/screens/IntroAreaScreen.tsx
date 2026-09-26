@@ -5,6 +5,7 @@ import Header from "features/shared/components/Header";
 import Button from "features/shared/components/Button";
 import IntroAreaList from "../components/IntroAreaList";
 import type { IntroArea } from "../services/introCatalogService";
+import colors from "lib/colors";
 
 type Props = {
     areas: IntroArea[];
@@ -37,7 +38,7 @@ export default function IntroAreaScreen({
                 <View className="flex-1 justify-center">
                     {status === "loading" ? (
                         <View className="items-center">
-                            <ActivityIndicator color="#E4C892" />
+                            <ActivityIndicator color={colors.gold} />
                         </View>
                     ) : null}
 

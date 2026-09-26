@@ -1,6 +1,5 @@
 import { useHomeFlowSequence } from 'features/home/hooks/useHomeFlowSequence';
 import HomeScreen from 'features/home/screens/HomeScreen';
-import AnalysisResultScreen from 'features/analysis/screens/AnalysisResultScreen';
 import PracticeFlow from 'features/practice/practiceFlow';
 import SwingHistoryScreen from 'features/progress/screens/SwingHistoryScreen';
 import useHomeAnalysisController from 'features/home/hooks/useHomeAnalysisController';
@@ -18,15 +17,13 @@ import {
 import type { ProgramContext, StepAdvance } from 'features/programs/types';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { View, Alert } from 'react-native';
 import { ApiError } from 'lib/errors';
 import React from 'react';
 
 export default function HomeFlow() {
-  const { currentScreen, goToHome, goToAnalysis, goToPractice, goToHistory } =
-    useHomeFlowSequence();
-  const router = useRouter();
+  const { currentScreen, goToHome, goToPractice, goToHistory } = useHomeFlowSequence();
   const navigation = useNavigation<DrawerNavigationProp<Record<string, undefined>>>();
   const { requirePremium } = useRequirePremium();
   const analysisController = useHomeAnalysisController();
@@ -178,15 +175,10 @@ export default function HomeFlow() {
           <HomeScreen
             selectedArea={selectedArea}
             onSelectArea={setSelectedArea}
-            onOpenArchive={goToAnalysis}
-            onOpenProfile={() => router.push('/profile')}
             onAddFocus={() => navigation.openDrawer()}
             onStartPractice={startProgramSession}
             onOpenHistory={openHistory}
           />
-        )}
-        {currentScreen === 'Analysis' && (
-          <AnalysisResultScreen onBack={goToHome} onNext={startProgramSession} />
         )}
         {currentScreen === 'Practice' && (
           <PracticeFlow

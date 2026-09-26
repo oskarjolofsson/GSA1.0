@@ -5,6 +5,7 @@ import type { Drill } from 'features/drill/types/Drill';
 import { parseInstructionSteps } from 'features/shared/utils/parseInstructionSteps';
 
 import { asMetric, repsOf, willLogSentence } from '../utils/drillMetric';
+import colors from 'lib/colors';
 
 /**
  * The screen a golfer reads once, before the phone goes in their pocket. There is no second
@@ -107,7 +108,7 @@ export default function DrillBrief({ drill, ready, onStart, onOpenInstructions }
           className={`mt-5 h-20 flex-row items-center justify-center gap-3 rounded-3xl ${
             ready ? 'bg-gold active:bg-gold-deep' : 'bg-gold/30'
           }`}>
-          <Play size={26} color="#0A0F1A" fill="#0A0F1A" />
+          <Play size={26} color={colors.ink} fill={colors.ink} />
           <Text className="font-sans-bold text-xl text-ink">Start drill</Text>
         </Pressable>
       </View>

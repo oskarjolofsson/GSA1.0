@@ -3,6 +3,7 @@ import { ChevronRight, Camera } from "lucide-react-native";
 
 import type { TaxonomyMiss, TaxonomyTerm } from "../services/taxonomyService";
 import StaggerRow from "./StaggerRow";
+import colors from "lib/colors";
 
 type Props = {
     items: (TaxonomyMiss | TaxonomyTerm)[];
@@ -43,7 +44,7 @@ export default function MissList({ items, areaKey, onSelect, onFilmSwing }: Prop
                         accessibilityRole="button"
                         className="mt-7 min-h-[44px] flex-row items-center border-t border-white/[.07] pt-5 active:opacity-70"
                     >
-                        <Camera size={16} color="#8A8676" />
+                        <Camera size={16} color={colors['sand-dim']} />
                         <Text className="ml-3 flex-1 text-[13px] leading-[19px] text-sand-dim">
                             Not sure? Film your swing and let the AI find it
                         </Text>
@@ -79,7 +80,7 @@ function ForkRow({
                     <Text className="mt-1 text-[13px] leading-[18px] text-sand-dim">{subtitle}</Text>
                 ) : null}
             </View>
-            <ChevronRight size={16} color="#8A8676" />
+            <ChevronRight size={16} color={colors['sand-dim']} />
         </Pressable>
     );
 }

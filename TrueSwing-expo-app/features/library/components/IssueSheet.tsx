@@ -7,6 +7,7 @@ import { parseInstructionSteps } from "features/shared/utils/parseInstructionSte
 import Button from "features/shared/components/Button";
 
 import type { CatalogIssue } from "features/issues/services/issueAuthoringService";
+import colors from "lib/colors";
 
 type Props = {
     /** The focus to show, or null when closed. */
@@ -86,7 +87,7 @@ export default function IssueSheet({ issue, areaLabel, starting, error, onClose,
                             accessibilityLabel="Close"
                             className="h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-ink active:opacity-70"
                         >
-                            <X size={17} color="#8A8676" />
+                            <X size={17} color={colors['sand-dim']} />
                         </Pressable>
                     </View>
 
@@ -206,7 +207,7 @@ function DrillEntry({
                     {open ? (
                         <ChevronDown size={15} color="#C5A059" />
                     ) : (
-                        <ChevronRight size={15} color="#8A8676" />
+                        <ChevronRight size={15} color={colors['sand-dim']} />
                     )}
                 </Pressable>
 

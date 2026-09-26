@@ -12,6 +12,7 @@ import DrillBrief from '../components/DrillBrief';
 import DrillInProgress from '../components/DrillInProgress';
 import DrillInstructionsOverlay from '../components/DrillInstructionsOverlay';
 import type { PracticeStatus } from '../hooks/usePracticeRunner';
+import colors from 'lib/colors';
 
 /**
  * One drill block: read the brief (ready), hit the balls (active), record it (rating).
@@ -103,7 +104,7 @@ export default function DrillPracticeScreen({
             accessibilityLabel="How to do this drill"
             className="mt-3.5 flex-row items-center gap-2 self-start border-b border-sand/[.35] pb-1"
             style={{ minHeight: 24 }}>
-            <ClipboardList size={15} color="#EADFC8" />
+            <ClipboardList size={15} color={colors.sand} />
             <Text className="font-sans-semibold text-[13px] text-sand">How to</Text>
           </Pressable>
         </View>

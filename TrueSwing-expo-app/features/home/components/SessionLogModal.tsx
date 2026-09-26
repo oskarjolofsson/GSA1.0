@@ -18,6 +18,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
+import colors from "lib/colors";
+
 type SessionLogModalProps = {
     visible: boolean;
     title: string;
@@ -88,7 +90,7 @@ export default function SessionLogModal({
                                         editable={!submitting}
                                         multiline
                                         placeholder="How did it go? Anything you noticed…"
-                                        placeholderTextColor="#8A8676"
+                                        placeholderTextColor={colors['sand-dim']}
                                         className="mt-2 min-h-[88px] rounded-2xl border border-white/10 bg-ink px-4 py-3 font-sans text-[15px] text-sand"
                                         textAlignVertical="top"
                                     />
@@ -102,7 +104,7 @@ export default function SessionLogModal({
                                 style={{ opacity: submitting ? 0.6 : 1 }}
                             >
                                 <LinearGradient
-                                    colors={["#ECD3A0", "#D2B271"]}
+                                    colors={["#ECD3A0", colors['gold-deep']]}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 1 }}
                                     style={{
@@ -113,7 +115,7 @@ export default function SessionLogModal({
                                         paddingVertical: 16,
                                     }}
                                 >
-                                    {submitting && <ActivityIndicator size="small" color="#0A0F1A" />}
+                                    {submitting && <ActivityIndicator size="small" color={colors.ink} />}
                                     <Text className="font-display-bold text-[17px] text-ink">
                                         {submitting ? "Saving…" : confirmLabel}
                                     </Text>

@@ -17,16 +17,14 @@ import AnalysisReelItem from "features/analysis/components/AnalysisReelItem";
 import useMarkAnalysisReviewed from "features/analysis/hooks/useMarkAnalysisReviewed";
 import { useHomeAnalysis } from "features/home/context/HomeAnalysisContext";
 import { useRouter } from "expo-router";
-import { Issue } from "features/issues/types";
 
 const { height } = Dimensions.get("window");
 
 type AnalysisResultScreenProps = {
-    onNext: (activeIssue: Issue) => void;
     onBack?: () => void;
 };
 
-export default function AnalysisResultScreen({ onNext, onBack }: AnalysisResultScreenProps) {
+export default function AnalysisResultScreen({ onBack }: AnalysisResultScreenProps) {
     const router = useRouter();
 
     const {
@@ -175,7 +173,7 @@ export default function AnalysisResultScreen({ onNext, onBack }: AnalysisResultS
                             onActiveIssueChange={(nextIssueIndex) =>
                                 handleActiveIssueChange(item.analysis_id, nextIssueIndex)
                             }
-                            startPractice={onNext}
+                            onBack={onBack}
                         />
                     );
                 }}
@@ -186,6 +184,7 @@ export default function AnalysisResultScreen({ onNext, onBack }: AnalysisResultS
                     dateLabel={activeAnalysis.created_at ? new Date(activeAnalysis.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
                     deleting={isDeleting}
                     onDeletePress={() => setShowDeleteConfirm(true)}
+                    onDrawPress={() => setActiveDrawingAnalysisId(activeAnalysisId ?? null)}
                     onBack={onBack}
                     isNew={!activeAnalysis.reviewed_at}
                 />

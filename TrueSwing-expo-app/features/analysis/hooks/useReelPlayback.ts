@@ -29,6 +29,9 @@ function formatTime(seconds: number) {
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
+/** What owners of a player hand down to the views that render over it. */
+export type ReelPlayback = ReturnType<typeof useReelPlayback>;
+
 export default function useReelPlayback({
     source,
     shouldPlay = true,
@@ -184,6 +187,15 @@ export default function useReelPlayback({
         }
     }, [player]);
 
+    /** Back to frame 0 and playing, wherever the playhead was. */
+    const restart = useCallback(() => {
+        if (!player) return;
+
+        player.replay();
+        setCurrentTimeIfChanged(0);
+        setIsPlaying(true);
+    }, [player, setCurrentTimeIfChanged]);
+
     const beginScrub = useCallback(() => {
         scrubWasPlayingRef.current = !!player?.playing;
         if (player?.playing) {
@@ -258,6 +270,7 @@ export default function useReelPlayback({
         scrubTime,
         progress,
         togglePlayPause,
+        restart,
         seekTo,
         beginScrub,
         updateScrub,

@@ -1,11 +1,12 @@
 import { View, Text } from "react-native";
 
 import type { AreaStats } from "../hooks/useAreaStats";
+import colors from "lib/colors";
 
 /** Bar height per session count, index = count clamped to 3. The floor tick is
  *  the 0 case: rest days render, they just render low. */
 const BAR_HEIGHTS = [3, 7, 11, 15];
-const BAR_COLOR = "#D2B271"; // gold-deep
+const BAR_COLOR = colors["gold-deep"];
 const FLOOR_COLOR = "rgba(255,255,255,0.07)";
 
 /** Slots the backend allows per area (ProgramSummary.slot is 0 or 1). Two dots

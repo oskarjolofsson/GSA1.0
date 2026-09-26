@@ -2,6 +2,8 @@ import { View, Text } from 'react-native';
 import { MotiView } from 'moti';
 import { Easing } from 'react-native-reanimated';
 
+import colors from 'lib/colors';
+
 export type RailStep = {
   key: string;
   title: string;
@@ -82,7 +84,7 @@ function Node({ done, active }: { done: boolean; active: boolean }) {
           borderRadius: 7,
           borderWidth: 2,
           borderColor: 'rgba(228,200,146,0.25)',
-          borderTopColor: '#E4C892',
+          borderTopColor: colors.gold,
         }}
       />
     );

@@ -14,6 +14,7 @@ import {
   hasPremiumEntitlement,
 } from 'features/billing/services/purchaseService';
 import type { PaywallReason } from 'features/billing/types';
+import colors from 'lib/colors';
 
 /**
  * Full-screen paywall, opened from `paywall.open` state rather than routed to.
@@ -143,7 +144,7 @@ export default function PaywallModal() {
           accessibilityLabel="Close"
           className="-ml-3 h-11 w-11 items-center justify-center"
         >
-          <X size={24} color="#EADFC8" />
+          <X size={24} color={colors.sand} />
         </TouchableOpacity>
 
         <View className="mt-8">
@@ -196,7 +197,7 @@ export default function PaywallModal() {
             className={`mt-7 h-14 items-center justify-center rounded-2xl ${ctaDisabled ? 'bg-gold/30' : 'bg-gold'}`}
           >
             {busy ? (
-              <ActivityIndicator color="#0A0F1A" />
+              <ActivityIndicator color={colors.ink} />
             ) : (
               <Text
                 className={`text-[15px] font-semibold ${ctaDisabled ? 'text-ink/50' : 'text-ink'}`}

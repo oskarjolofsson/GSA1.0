@@ -2,6 +2,7 @@ import type { PropsWithChildren } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 import { useApplyIntroSelection } from "../hooks/useApplyIntroSelection";
+import colors from "lib/colors";
 
 /**
  * Starts the focus picked in the pre-signup intro, before the app renders.
@@ -22,7 +23,7 @@ export default function IntroSelectionGate({ children }: PropsWithChildren) {
     if (state === "checking") {
         return (
             <View className="flex-1 items-center justify-center bg-ink">
-                <ActivityIndicator color="#E4C892" />
+                <ActivityIndicator color={colors.gold} />
             </View>
         );
     }
@@ -30,7 +31,7 @@ export default function IntroSelectionGate({ children }: PropsWithChildren) {
     if (state === "applying") {
         return (
             <View className="flex-1 items-center justify-center bg-ink px-8">
-                <ActivityIndicator color="#E4C892" />
+                <ActivityIndicator color={colors.gold} />
                 <Text className="mt-5 font-display text-[20px] text-sand">
                     Building your practice plan
                 </Text>

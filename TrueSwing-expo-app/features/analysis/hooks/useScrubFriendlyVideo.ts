@@ -33,6 +33,13 @@ function toFileUri(path: string): string {
 export default function useScrubFriendlyVideo(
     analysisId: string | null,
     remoteUrl: string | null,
+    /**
+     * Android only: whether the dense-keyframe copy is worth its download + transcode
+     * yet. The feed plays the remote URL; pass `true` once frame-accurate scrubbing is
+     * actually reachable, and keep it `true` afterwards so the source doesn't flip back
+     * and force the player to reload.
+     */
+    enabled = true,
 ): Result {
     const [result, setResult] = useState<Result>({ uri: null, status: "idle" });
     const cancelledRef = useRef(false);
@@ -47,8 +54,9 @@ export default function useScrubFriendlyVideo(
             return;
         }
 
-        // iOS scrubs natively without dense keyframes; same when the native module isn't built.
-        if (Platform.OS !== "android" || !rekeyframeAvailable) {
+        // iOS scrubs natively without dense keyframes; same when the native module isn't
+        // built, and while the caller hasn't asked for the scrub-friendly copy yet.
+        if (Platform.OS !== "android" || !rekeyframeAvailable || !enabled) {
             setResult({ uri: remoteUrl, status: "ready" });
             return;
         }
@@ -114,7 +122,7 @@ export default function useScrubFriendlyVideo(
                 void safeUnlink(originalCachePath(analysisId));
             }
         };
-    }, [analysisId, remoteUrl]);
+    }, [analysisId, remoteUrl, enabled]);
 
     return result;
 }

@@ -2,6 +2,7 @@ import { Pressable, Text, ActivityIndicator, View } from "react-native";
 import { ArrowRight } from "lucide-react-native";
 
 import { tapHaptic } from "../utils/haptics";
+import colors from "lib/colors";
 
 type Props = {
     label: string;
@@ -85,11 +86,11 @@ export default function Button({
         >
             {busy ? (
                 <View className="mr-2">
-                    <ActivityIndicator size="small" color="#0A0F1A" />
+                    <ActivityIndicator size="small" color={colors.ink} />
                 </View>
             ) : icon ? (
                 <View className="mr-2">
-                    <ArrowRight size={18} color="#0A0F1A" strokeWidth={2.2} />
+                    <ArrowRight size={18} color={colors.ink} strokeWidth={2.2} />
                 </View>
             ) : null}
             <Text className="font-sans-semibold text-[16px] text-ink">{label}</Text>

@@ -35,12 +35,12 @@ export default function Avatar({
 
     return (
         <View
-            className="items-center justify-center bg-indigo-500/15"
+            className="items-center justify-center border border-[rgba(232,220,196,0.13)] bg-ink-raised"
             style={dimension}
         >
             <Text
-                className="font-semibold text-indigo-200"
-                style={{ fontSize: size * 0.4 }}
+                className="font-display text-sand"
+                style={{ fontSize: size * 0.36 }}
             >
                 {getInitials(name, email)}
             </Text>

@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react-native";
 
 import { tapHaptic } from "features/shared/utils/haptics";
 import type { IntroArea } from "../services/introCatalogService";
+import colors from "lib/colors";
 
 type Props = {
     areas: IntroArea[];
@@ -44,7 +45,7 @@ export default function IntroAreaList({ areas, onSelect }: Props) {
                             </Text>
                         ) : null}
                     </View>
-                    <ChevronRight size={16} color="#8A8676" />
+                    <ChevronRight size={16} color={colors['sand-dim']} />
                 </Pressable>
             ))}
         </View>

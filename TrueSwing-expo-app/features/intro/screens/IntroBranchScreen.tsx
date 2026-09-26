@@ -6,6 +6,7 @@ import Header from "features/shared/components/Header";
 import Button from "features/shared/components/Button";
 import { tapHaptic } from "features/shared/utils/haptics";
 import type { IntroBranch, IntroIssue } from "../services/introCatalogService";
+import colors from "lib/colors";
 
 type Props = {
     areaLabel: string;
@@ -64,7 +65,7 @@ export default function IntroBranchScreen({
                                     </Text>
                                 ) : null}
                             </View>
-                            <ChevronRight size={16} color="#8A8676" />
+                            <ChevronRight size={16} color={colors['sand-dim']} />
                         </Pressable>
                     ))}
                 </View>

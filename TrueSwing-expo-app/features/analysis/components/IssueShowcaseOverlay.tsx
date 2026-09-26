@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Dimensions, FlatList, Text, TouchableOpacity, View } from "react-native";
-import { ChevronLeft, ChevronRight, Dumbbell } from "lucide-react-native";
+import { Dimensions, FlatList, Text, View } from "react-native";
 
 import type { Issue } from "features/issues/types";
 import IssuePill from "./IssuePill";
@@ -14,14 +13,12 @@ type IssueShowcaseOverlayProps = {
     issues: IssueWithConfidence[];
     activeIssueIndex: number;
     onActiveIssueChange: (index: number) => void;
-    startPractice: (activeIssue: Issue) => void;
 };
 
 export default function IssueShowcaseOverlay({
     issues,
     activeIssueIndex,
     onActiveIssueChange,
-    startPractice,
 }: IssueShowcaseOverlayProps) {
     const issueRailRef = useRef<FlatList<IssueWithConfidence>>(null);
     const issueCardsRef = useRef<FlatList<IssueWithConfidence>>(null);
@@ -40,18 +37,6 @@ export default function IssueShowcaseOverlay({
             viewPosition: 0.5,
         });
     }, [activeIssueIndex, issues.length]);
-
-    const goPrevIssue = () => {
-        if (activeIssueIndex <= 0) return;
-        onActiveIssueChange(activeIssueIndex - 1);
-    };
-
-    const goNextIssue = () => {
-        if (activeIssueIndex >= issues.length - 1) return;
-        onActiveIssueChange(activeIssueIndex + 1);
-    };
-
-    const activeIssue = issues[activeIssueIndex];
 
     return (
         <SafeAreaView
@@ -97,20 +82,6 @@ export default function IssueShowcaseOverlay({
                                         </Text>
                                     )}
 
-                                    {/* <TouchableOpacity
-                                        activeOpacity={0.9}
-                                        className="mt-5 self-start rounded-2xl bg-white px-5 py-3 flex-row items-center gap-2"
-                                        onPress={() => {
-                                            if (!activeIssue) return;
-                                            startPractice(activeIssue);
-                                        }}
-                                        disabled={!activeIssue}
-                                    >
-                                        <Dumbbell size={16} color="#000" />
-                                        <Text className="font-semibold text-black">
-                                            Start practice
-                                        </Text>
-                                    </TouchableOpacity> */}
                                 </View>
                             )}
                         />
@@ -124,34 +95,6 @@ export default function IssueShowcaseOverlay({
 
                     {issues.length > 0 && (
                         <View className="mb-4">
-                            <View className="mb-3 flex-row items-center justify-between">
-                                <View className="flex-row items-center">
-                                    <TouchableOpacity
-                                        onPress={goPrevIssue}
-                                        disabled={activeIssueIndex === 0}
-                                        className={`mr-2 rounded-full border p-2 ${
-                                            activeIssueIndex === 0
-                                                ? "border-white/10 bg-black/15"
-                                                : "border-white/20 bg-black/35"
-                                        }`}
-                                    >
-                                        <ChevronLeft size={16} color="#fff" />
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        onPress={goNextIssue}
-                                        disabled={activeIssueIndex === issues.length - 1}
-                                        className={`rounded-full border p-2 ${
-                                            activeIssueIndex === issues.length - 1
-                                                ? "border-white/10 bg-black/15"
-                                                : "border-white/20 bg-black/35"
-                                        }`}
-                                    >
-                                        <ChevronRight size={16} color="#fff" />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
                             <FlatList
                                 ref={issueRailRef}
                                 data={issues}

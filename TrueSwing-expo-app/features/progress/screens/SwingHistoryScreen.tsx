@@ -3,11 +3,15 @@ import { View, Text, Pressable, FlatList, Image, ActivityIndicator } from "react
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, ChevronLeft, Film } from "lucide-react-native";
 import DetailedVideo from "features/analysis/components/DetailedVideo";
+import ReelVideoSurface from "features/analysis/components/ReelVideoSurface";
 import useVideoURL from "features/analysis/hooks/useVideoURL";
+import useReelPlayback from "features/analysis/hooks/useReelPlayback";
+import useScrubFriendlyVideo from "features/analysis/hooks/useScrubFriendlyVideo";
 import analysisService from "features/analysis/services/analysisService";
 import { useHomeAnalysis } from "features/home/context/HomeAnalysisContext";
 import type { Analysis, IssueSwingTimelineItem } from "features/analysis/types";
 import type { Issue } from "features/issues/types";
+import colors from "lib/colors";
 
 type SwingHistoryScreenProps = {
     issue: Issue;
@@ -47,6 +51,21 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
     const [fullAnalysis, setFullAnalysis] = useState<Analysis | null>(null);
 
     const videoURL = useVideoURL(fullAnalysis);
+
+    // The player lives here rather than in the overlay, so the drawing chrome can sit on
+    // top of a video that never gets torn down.
+    const { uri: playableUri, status: prepStatus } = useScrubFriendlyVideo(
+        fullAnalysis?.analysis_id ?? null,
+        videoURL,
+        !!selected,
+    );
+    const isPreparing = prepStatus === "preparing";
+    const playback = useReelPlayback({
+        source: playableUri,
+        shouldPlay: !!selected && !isPreparing,
+        muted: true,
+        loop: false,
+    });
 
     useEffect(() => {
         let active = true;
@@ -103,7 +122,7 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
                         {item.thumbnail_url ? (
                             <Image source={{ uri: item.thumbnail_url }} className="h-full w-full" resizeMode="cover" />
                         ) : (
-                            <Film size={22} color="#8A8676" />
+                            <Film size={22} color={colors['sand-dim']} />
                         )}
                     </View>
                     <View className="flex-1">
@@ -124,12 +143,15 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
     if (selected) {
         if (fullAnalysis && videoURL) {
             return (
-                <DetailedVideo
-                    analysis={fullAnalysis}
-                    videoURL={videoURL}
-                    isActive
-                    onExit={() => setSelected(null)}
-                />
+                <View className="flex-1 bg-black">
+                    <ReelVideoSurface
+                        player={playback.player}
+                        hasVideo={!!playableUri}
+                        thumbnailUrl={fullAnalysis.thumbnail_url}
+                        isPreparing={isPreparing}
+                    />
+                    <DetailedVideo playback={playback} onExitDrawing={() => setSelected(null)} />
+                </View>
             );
         }
         return (
@@ -139,11 +161,11 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
                     hitSlop={8}
                     className="m-4 flex-row items-center gap-1 self-start active:opacity-70"
                 >
-                    <ChevronLeft size={20} color="#E4C892" />
+                    <ChevronLeft size={20} color={colors.gold} />
                     <Text className="font-sans-medium text-[15px] text-sand">All swings</Text>
                 </Pressable>
                 <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator color="#E4C892" />
+                    <ActivityIndicator color={colors.gold} />
                 </View>
             </View>
         );
@@ -153,7 +175,7 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
         <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
             <View className="flex-row items-center gap-2 px-4 pt-2 pb-2">
                 <Pressable onPress={onBack} hitSlop={8} className="p-1 active:opacity-70">
-                    <ArrowLeft size={22} color="#E4C892" />
+                    <ArrowLeft size={22} color={colors.gold} />
                 </Pressable>
                 <View className="flex-1">
                     <Text className="font-sans-medium text-[11px] uppercase tracking-[2px] text-sand-dim">
@@ -171,7 +193,7 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
 
             {loading ? (
                 <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator color="#E4C892" />
+                    <ActivityIndicator color={colors.gold} />
                 </View>
             ) : error ? (
                 <View className="flex-1 items-center justify-center px-8">
@@ -179,7 +201,7 @@ export default function SwingHistoryScreen({ issue, onBack }: SwingHistoryScreen
                 </View>
             ) : items.length === 0 ? (
                 <View className="flex-1 items-center justify-center px-8">
-                    <Film size={28} color="#8A8676" />
+                    <Film size={28} color={colors['sand-dim']} />
                     <Text className="mt-3 text-center font-sans text-[15px] text-sand-dim">
                         No swings for this issue yet. Re-test to capture one you can compare against later.
                     </Text>
