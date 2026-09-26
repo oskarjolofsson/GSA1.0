@@ -1,6 +1,6 @@
 from ..base import Base
 import uuid
-from sqlalchemy import Text, ForeignKey, Index
+from sqlalchemy import Text, Integer, ForeignKey, CheckConstraint, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -25,8 +25,17 @@ class IssueLaw(Base):
         primary_key=True,
     )
 
+    # 1 = the issue that breaks this law most often. Unique per law; deferred so a reorder
+    # can swap two ranks inside one transaction.
+    rank: Mapped[int] = mapped_column(Integer, nullable=False)
+
     issue = relationship("Issue", back_populates="laws")
 
     __table_args__ = (
-        Index("idx_issue_laws_law", "law"),
+        CheckConstraint("rank > 0", name="issue_laws_rank_positive"),
+        UniqueConstraint(
+            "law", "rank",
+            name="uq_issue_laws_law_rank",
+            deferrable=True, initially="DEFERRED",
+        ),
     )
