@@ -10,9 +10,12 @@ import pytest
 
 from core.infrastructure.db import models
 from core.infrastructure.db.repositories.issues import create_issue
+from core.infrastructure.ai.swing_analysis import response_schema
 from core.services.analysis_candidates import (
     MAX_ISSUES,
+    MIN_CONFIDENCE,
     build_candidates,
+    to_ai_context,
     validate_result,
 )
 from core.services.dtos.analysis_v2_dto import IssueCandidate, LawCandidate
@@ -212,3 +215,52 @@ class TestValidateResultIssues:
         result = validate_result({"success": True, "law": "FACE", "issues": issues}, CANDIDATES)
 
         assert (result.law, result.issues) == ("FACE", ())
+
+
+# ------------------------------ to_ai_context ------------------------------
+
+
+def _context(**inputs):
+    defaults = dict(area="FULL_SWING", miss="SLICE", notes="n", club_type=None, camera_view=None)
+    defaults.update(inputs)
+    return to_ai_context(CANDIDATES, **defaults)
+
+
+class TestToAiContext:
+    def test_carries_the_golfers_inputs_and_the_limits(self):
+        context = _context(notes="driver only", club_type="driver", camera_view="face_on")
+
+        assert {k: context[k] for k in ("area", "miss", "notes", "club_type", "camera_view")} == {
+            "area": "FULL_SWING", "miss": "SLICE", "notes": "driver only",
+            "club_type": "driver", "camera_view": "face_on",
+        }
+        assert (context["max_issues"], context["min_confidence"]) == (MAX_ISSUES, MIN_CONFIDENCE)
+
+    def test_laws_and_issues_keep_their_order_and_rank(self):
+        context = _context()
+
+        assert [law["key"] for law in context["laws"]] == ["FACE", "PATH"]
+        assert [(i["issue_id"], i["rank"]) for i in context["laws"][0]["issues"]] == [
+            (str(FACE_1), 1), (str(FACE_2), 2), (str(FACE_3), 3), (str(FACE_4), 4),
+        ]
+
+    def test_is_plain_json(self):
+        """The AI layer serialises it into the prompt; a UUID or DTO would not survive."""
+        import json
+
+        assert json.loads(json.dumps(_context())) == _context()
+
+    def test_an_answer_the_schema_allows_passes_validation(self):
+        """The contract between the two layers: whatever the schema lets Gemini say,
+        validate_result must be able to read."""
+        schema = response_schema(_context())
+        law = schema["properties"]["law"]["enum"][0]
+        issue_id = schema["properties"]["issues"]["items"]["properties"]["issue_id"]["enum"][0]
+
+        result = validate_result(
+            {"observation": "o", "law": law, "success": True,
+             "issues": [{"issue_id": issue_id, "confidence": 0.9}]},
+            CANDIDATES,
+        )
+
+        assert (result.law, [str(i.issue_id) for i in result.issues]) == (law, [issue_id])

@@ -2,6 +2,7 @@
 answer is kept.
 
     build_candidates   miss -> candidate laws -> each law's ranked issues in the area
+    to_ai_context      candidates + the golfer's inputs -> the plain dict the AI layer takes
     validate_result    the AI's raw dict -> a law from the candidates, issues under it
 
 Neither touches the AI, so both are tested without it. Whatever the model returns, only
@@ -69,6 +70,49 @@ def build_candidates(area: str, miss: str, user_id: UUID, session) -> list[LawCa
             "nothing to analyze against."
         )
     return candidates
+
+
+def to_ai_context(
+    candidates: list[LawCandidate],
+    *,
+    area: str,
+    miss: str,
+    notes: str | None,
+    club_type: str | None,
+    camera_view: str | None,
+) -> dict:
+    """The plain-data context ai.analyze_swing takes. The AI layer cannot import these
+    DTOs, so the service hands it dicts; the limits travel with them so this module stays
+    the one place that owns them."""
+    return {
+        "area": area,
+        "miss": miss,
+        "notes": notes,
+        "club_type": club_type,
+        "camera_view": camera_view,
+        "max_issues": MAX_ISSUES,
+        "min_confidence": MIN_CONFIDENCE,
+        "laws": [
+            {
+                "key": law.key,
+                "label": law.label,
+                "golfer_label": law.golfer_label,
+                "blurb": law.blurb,
+                "issues": [
+                    {
+                        "issue_id": str(issue.issue_id),
+                        "rank": issue.rank,
+                        "title": issue.title,
+                        "description": issue.description,
+                        "current_motion": issue.current_motion,
+                        "expected_motion": issue.expected_motion,
+                    }
+                    for issue in law.issues
+                ],
+            }
+            for law in candidates
+        ],
+    }
 
 
 def validate_result(raw: dict, candidates: list[LawCandidate]) -> ValidatedResult:
