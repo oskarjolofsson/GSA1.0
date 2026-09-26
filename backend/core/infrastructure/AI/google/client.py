@@ -3,7 +3,6 @@ from typing import Optional
 from dotenv import load_dotenv
 from google import genai
 
-from ..ports import AnalysisAI
 from . import videoAnalyzer
 from . import feedbackStructurer
 from uuid import UUID
@@ -11,7 +10,7 @@ from uuid import UUID
 
 
 
-class GoogleAnalysisClient(AnalysisAI):
+class GoogleAnalysisClient:
     """Google Gemini-based video analysis client."""
     
     def __init__(self):

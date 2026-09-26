@@ -1,7 +1,6 @@
 import pytest
 from uuid import UUID
 
-from backend.core.infrastructure.AI import exceptions
 from ...core.services.drill_service import (
     create_drill,
     get_drill_by_id,

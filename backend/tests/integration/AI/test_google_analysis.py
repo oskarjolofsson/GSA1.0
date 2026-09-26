@@ -102,17 +102,3 @@ class TestGoogleAnalysisIntegration:
         
         # Verify success is false
         assert result["success"] == False, "Non-golf video should return success: false"
-    
-
-class TestGoogleAnalysisProtocol:
-    """Test that GoogleAnalysisClient conforms to AnalysisAI protocol."""
-    
-    def test_client_implements_protocol(self):
-        """Test that client implements the AnalysisAI protocol."""
-        from core.infrastructure.AI.ports import AnalysisAI
-        
-        client = GoogleAnalysisClient()
-        
-        # Verify client has analyze_video method
-        assert hasattr(client, 'analyze_video'), "Client missing analyze_video method"
-        assert callable(client.analyze_video), "analyze_video is not callable"
