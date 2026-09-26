@@ -24,6 +24,7 @@ from .AnalysisIssue import AnalysisIssue
 from .IssueDrill import IssueDrill
 from .IssueGoal import IssueGoal
 from .IssueMiss import IssueMiss
+from .IssueLaw import IssueLaw
 from .UserRole import UserRole
 
 from .PracticeSession import PracticeSession
@@ -54,6 +55,7 @@ __all__ = [
     "IssueDrill",
     "IssueGoal",
     "IssueMiss",
+    "IssueLaw",
     "UserRole",
     "PracticeSession",
     "PracticeDrillRun",

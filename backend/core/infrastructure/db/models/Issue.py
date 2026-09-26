@@ -98,3 +98,10 @@ class Issue(Base):
         back_populates="issue",
         cascade="all, delete-orphan",
     )
+
+    # Laws of ball flight this issue breaks. Cascade so deleting an issue clears them.
+    laws = relationship(
+        "IssueLaw",
+        back_populates="issue",
+        cascade="all, delete-orphan",
+    )
